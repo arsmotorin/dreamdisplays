@@ -1,6 +1,7 @@
 # gradle
 
 mod/.gradle/
+.gradle
 build/
 out/
 classes/

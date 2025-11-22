@@ -5,9 +5,9 @@
 Download our mod or plugin on [Modrinth](https://modrinth.com/mod/dreamdisplays)!
 
 ## Available platforms
-- Fabric on Minecraft version 1.21.5
-- Spigot, Paper, Folia and other forks on versions 1.21.x
-- In the future: Forge, NeoForge and other versions
+- Client: Fabric, NeoForge, Quilt
+- Server: Spigot, Paper, Folia and other forks
+- In the future: Forge support
 
 > [!NOTE]
 > For this mod to work, you need to install the client mod and the server plugin. Without this, Dream Displays will not work.

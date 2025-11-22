@@ -26,9 +26,7 @@ jobs:
       - name: Extract version
         id: version
         run: |
-          VERSION=$(grep '^version=' gradle.properties | cut -d'=' -f2)
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-
+          VERSION=$(grep '^version' gradle.properties | cut -d'=' -f2 | tr -d ' ')
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
 
@@ -58,7 +56,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: dreamdisplays-fabric-${{ steps.version.outputs.VERSION }}
+          name: dreamdisplays-fabric-${{ steps.version.outputs.version }}
           path: build/libs/dreamdisplays-fabric-*.jar
           if-no-files-found: warn
           retention-days: 30
@@ -69,7 +67,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: dreamdisplays-spigot-${{ steps.version.outputs.VERSION }}
+          name: dreamdisplays-spigot-${{ steps.version.outputs.version }}
           path: build/libs/dreamdisplays-spigot-*.jar
           if-no-files-found: warn
           retention-days: 30

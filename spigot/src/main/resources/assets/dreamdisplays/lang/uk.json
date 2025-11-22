@@ -18,6 +18,7 @@
   "reportTooQuickly": "&7D |&f Ви надсилаєте звіти занадто швидко! Зачекайте перед надсиланням іншого звіту",
   "reportSent": "&7D |&f Звіт надіслано!",
   "newVersion": "&7D |&f Нова версія Dream Displays (%s)! Будь ласка, оновіть!",
+  "newPluginVersion": "&7D |&f Доступна нова версія плагіна Dream Displays (%s)! Будь ласка, оновіть плагін на сервері!",
   "usageHeader": ["&a-== Dream Displays ==-", "&aВстановлено: &f{0}&7/&f{1}", "&a-== Версії ==-"],
   "usageVersionEntry": " &7- &f{0}&a: &f{1}",
   "usageFooter": "&a-====== ======-",

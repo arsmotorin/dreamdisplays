@@ -18,6 +18,7 @@
   "reportTooQuickly": "&7D |&f Wysyłasz raporty zbyt szybko! Poczekaj przed wysłaniem innego raportu",
   "reportSent": "&7D |&f Raport wysłany!",
   "newVersion": "&7D |&f Nowa wersja Dream Displays (%s)! Proszę zaktualizować!",
+  "newPluginVersion": "&7D |&f Nowa wersja pluginu Dream Displays (%s)! Proszę zaktualizować go na serwerze!",
   "usageHeader": ["&a-== Dream Displays ==-", "&aZainstalowane: &f{0}&7/&f{1}", "&a-== Wersje ==-"],
   "usageVersionEntry": " &7- &f{0}&a: &f{1}",
   "usageFooter": "&a-====== ======-",

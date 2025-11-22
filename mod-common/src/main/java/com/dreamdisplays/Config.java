@@ -1,0 +1,29 @@
+package com.dreamdisplays
+;
+import me.inotsleep.utils.config.AbstractConfig;
+import me.inotsleep.utils.config.Path;
+
+import java.io.File;
+
+public class Config extends AbstractConfig {
+
+    static {
+        System.setProperty("file.encoding", "UTF-8");
+    }
+
+    @Path("mute-on-alt-tab")
+    public boolean muteOnAltTab = true;
+
+    @Path("default-render-distance")
+    public int defaultDistance = 64;
+
+    @Path("default-sync-display-volume")
+    public double syncDisplayVolume = 0.25;
+
+    @Path("default-default-display-volume")
+    public double defaultDisplayVolume = 0.5;
+
+    public Config(File baseDir) {
+        super(baseDir, "config.yml");
+    }
+}
