@@ -33,14 +33,12 @@ object State {
         data.duration = packet.limitTime
         val receivers = data.receivers
 
-        Utils.sendSyncPacket(receivers.stream().filter { p: Player? -> p!!.uniqueId != player.uniqueId }
-            .toList(), packet)
+        Utils.sendSyncPacket(receivers.filter { it.uniqueId != player.uniqueId }.toMutableList(), packet)
     }
 
     @JvmStatic
     fun sendSyncPacket(id: UUID?, player: Player?) {
-        if (!playStates.containsKey(id)) return
-        val state: State = playStates[id]!!
+        val state = playStates[id] ?: return
 
         val packet = state.createPacket()
         Utils.sendSyncPacket(mutableListOf(player), packet)

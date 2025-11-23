@@ -22,7 +22,7 @@ object Player {
 
     @JvmStatic
     fun hasBeenNotifiedAboutModUpdate(player: Player): Boolean {
-        return modUpdateNotified.getOrDefault(player.uniqueId, false)!!
+        return modUpdateNotified[player.uniqueId] ?: false
     }
 
     @JvmStatic
@@ -32,7 +32,7 @@ object Player {
 
     @JvmStatic
     fun hasBeenNotifiedAboutPluginUpdate(player: Player): Boolean {
-        return pluginUpdateNotified.getOrDefault(player.uniqueId, false)!!
+        return pluginUpdateNotified[player.uniqueId] ?: false
     }
 
     @JvmStatic

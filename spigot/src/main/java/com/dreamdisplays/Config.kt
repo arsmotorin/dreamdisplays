@@ -64,11 +64,10 @@ class Config(private val plugin: Main) {
 
     // Extract language files
     private fun extractLangFiles(overwrite: Boolean) {
-        val langFolder = File(plugin.dataFolder, "lang").apply {
-            if (!exists() && !mkdirs()) {
-                plugin.logger.warning("Could not create lang folder")
-                return
-            }
+        val langFolder = File(plugin.dataFolder, "lang")
+        if (!langFolder.exists() && !langFolder.mkdirs()) {
+            plugin.logger.warning("Could not create lang folder")
+            return
         }
 
         LANGUAGE_FILES.forEach { fileName ->

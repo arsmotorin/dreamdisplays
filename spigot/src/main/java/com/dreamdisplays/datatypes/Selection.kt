@@ -24,7 +24,7 @@ class Selection(player: Player) {
     }
 
     fun getFace(): BlockFace {
-        return this.face!!
+        return face ?: throw IllegalStateException("Face is not set")
     }
 
     fun drawBox() {
@@ -38,9 +38,9 @@ class Selection(player: Player) {
     }
 
     fun generateDisplayData(): Display {
-        val p1 = pos1!!
-        val p2 = pos2!!
-        val f = face!!
+        val p1 = pos1 ?: throw IllegalStateException("pos1 is not set")
+        val p2 = pos2 ?: throw IllegalStateException("pos2 is not set")
+        val f = face ?: throw IllegalStateException("face is not set")
 
         val region = Region.calculateRegion(p1, p2)
         val dPos1 = region.getMinLocation(p1.world)

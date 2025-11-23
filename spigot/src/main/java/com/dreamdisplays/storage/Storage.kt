@@ -18,14 +18,15 @@ class Storage(var plugin: Main) {
     var tablePrefix: String? = null
 
     init {
-
         val connectTask = Runnable {
             tablePrefix = Main.config.storage.tablePrefix
             try {
-                connection =
-                    BaseConnection.createConnection(Main.config.storage, plugin.dataFolder)
-                connection!!.connect()
-
+                connection = BaseConnection.createConnection(Main.config.storage, plugin.dataFolder)
+                connection?.connect() ?: run {
+                    LoggingManager.error("Failed to create database connection")
+                    Main.disablePlugin()
+                    return@Runnable
+                }
                 onConnect()
             } catch (e: SQLException) {
                 LoggingManager.error("Could not connect to database", e)
@@ -38,7 +39,9 @@ class Storage(var plugin: Main) {
 
     @Throws(SQLException::class)
     private fun onConnect() {
-        connection!!.executeUpdate(
+        val conn = connection ?: throw SQLException("Connection is null")
+
+        conn.executeUpdate(
             "CREATE TABLE IF NOT EXISTS " + tablePrefix + "displays (" +
                     "id BINARY(16) PRIMARY KEY NOT NULL, " +
                     "ownerId BINARY(16) NOT NULL, " +
@@ -53,10 +56,10 @@ class Storage(var plugin: Main) {
                     ");"
         )
 
-        val meta = connection!!.metaData
+        val meta = conn.metaData
         meta.getColumns(null, null, tablePrefix + "displays", "lang").use { cols ->
             if (!cols.next()) {
-                connection!!.executeUpdate(
+                conn.executeUpdate(
                     "ALTER TABLE " + tablePrefix + "displays " +
                             "ADD COLUMN lang VARCHAR(255) DEFAULT '' NOT NULL"
                 )
@@ -66,12 +69,11 @@ class Storage(var plugin: Main) {
     }
 
     fun onDisable() {
-        if (connection == null) return
+        val conn = connection ?: return
 
         try {
             Manager.save { data: Display -> this.saveDisplay(data) }
-
-            connection!!.disconnect()
+            conn.disconnect()
         } catch (e: SQLException) {
             LoggingManager.error("Unable to save data", e)
         }
@@ -92,17 +94,27 @@ class Storage(var plugin: Main) {
     }
 
     fun saveDisplay(data: Display) {
+        val conn = connection ?: run {
+            LoggingManager.error("Cannot save display: connection is null")
+            return
+        }
+
+        val world = data.pos1.world ?: run {
+            LoggingManager.error("Cannot save display: world is null for display ${data.id}")
+            return
+        }
+
         val sql = "REPLACE INTO " + tablePrefix + "displays " +
                 "(id, ownerId, videoCode, world, pos1, pos2, size, facing, isSync, duration, lang) " +
                 "VALUES (?,?,?,?,?,?,?,?,?,?,?)"
 
         try {
-            connection!!.executeUpdate(
+            conn.executeUpdate(
                 sql,
                 uuidToBytes(data.id),
                 uuidToBytes(data.ownerId),
                 data.url,
-                data.pos1.getWorld()!!.name,
+                world.name,
                 packBlockPos(
                     data.pos1.blockX,
                     data.pos1.blockY,
@@ -114,14 +126,13 @@ class Storage(var plugin: Main) {
                     data.pos2.blockZ
                 ),
                 pack(data.width, data.height),
-                data.facing?.ordinal?.toByte(),
-                data.isSync,  // If duration is null, it will be saved as NULL in the database automatically.
-
+                data.facing?.ordinal?.toByte() ?: 0,
+                data.isSync,
                 data.duration,
                 data.lang
             )
         } catch (e: SQLException) {
-            LoggingManager.error("Could not fetch from database", e)
+            LoggingManager.error("Could not save display to database", e)
             Main.disablePlugin()
         }
     }
@@ -129,14 +140,18 @@ class Storage(var plugin: Main) {
     val allDisplays: MutableList<Display?>
         // Fetch all displays from the database
         get() {
+            val conn = connection ?: run {
+                LoggingManager.error("Cannot fetch displays: connection is null")
+                return mutableListOf()
+            }
+
             val sql =
                 "SELECT id, ownerId, videoCode, world, pos1, pos2, size, facing, isSync, duration, lang " +
                         "FROM " + tablePrefix + "displays"
-            val list: MutableList<Display?> =
-                ArrayList<Display?>()
+            val list: MutableList<Display?> = ArrayList()
 
             try {
-                connection!!.executeQuery(sql).use { rs ->
+                conn.executeQuery(sql).use { rs ->
                     while (rs.next()) {
                         val id = bytesToUuid(rs.getBytes("id"))
                         val ownerId = bytesToUuid(rs.getBytes("ownerId"))
@@ -184,9 +199,14 @@ class Storage(var plugin: Main) {
         }
 
     fun deleteDisplay(data: Display) {
+        val conn = connection ?: run {
+            LoggingManager.error("Cannot delete display: connection is null")
+            return
+        }
+
         val sql = "DELETE FROM " + tablePrefix + "displays WHERE id = ?"
         try {
-            connection!!.executeUpdate(sql, uuidToBytes(data.id))
+            conn.executeUpdate(sql, uuidToBytes(data.id))
         } catch (e: SQLException) {
             LoggingManager.error("Could not delete display from database", e)
             Main.disablePlugin()

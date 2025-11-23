@@ -16,6 +16,8 @@ object Outliner {
 
     // Show outline for a player between two positions
     fun showOutline(player: Player, pos1: Location, pos2: Location) {
+        val world = pos1.world ?: return
+
         val minX = minOf(pos1.blockX, pos2.blockX).toDouble()
         val minY = minOf(pos1.blockY, pos2.blockY).toDouble()
         val minZ = minOf(pos1.blockZ, pos2.blockZ).toDouble()
@@ -24,10 +26,10 @@ object Outliner {
         val maxZ = maxOf(pos1.blockZ, pos2.blockZ) + 1.0
 
         val box = BoundingBox(minX, minY, minZ, maxX, maxY, maxZ)
-        activeOutlines[player.uniqueId] = OutlineData(box, pos1.world!!)
+        activeOutlines[player.uniqueId] = OutlineData(box, world)
 
         // Draw the outline using particles
-        drawOutlineBox(player, box, pos1.world!!)
+        drawOutlineBox(player, box, world)
     }
 
     // Hide outline for a player

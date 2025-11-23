@@ -8,7 +8,8 @@ class State(private val id: UUID?) {
     private var lastReportedTime: Long = 0
     private var lastReportedTimeTimestamp: Long = 0
     private var limitTime: Long = 0
-    var displayData: com.dreamdisplays.datatypes.Display = Display.getDisplayData(id)!!
+    var displayData: com.dreamdisplays.datatypes.Display =
+        Display.getDisplayData(id) ?: throw IllegalStateException("Display data not found for id: $id")
 
     fun update(packet: Sync) {
         this.paused = packet.currentState
@@ -28,8 +29,8 @@ class State(private val id: UUID?) {
             currentTime = lastReportedTime + elapsed
         }
 
-        if (limitTime == 0L && displayData.duration != null) {
-            limitTime = displayData.duration!!
+        if (limitTime == 0L) {
+            displayData.duration?.let { limitTime = it }
         }
 
         if (limitTime > 0) {

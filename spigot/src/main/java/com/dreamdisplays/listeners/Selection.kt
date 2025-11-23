@@ -38,8 +38,10 @@ class Selection(plugin: Main) : Listener {
                     // Update display outlines for all players with active selections
                     selectionPoints.forEach { (playerId, selection) ->
                         val player = org.bukkit.Bukkit.getPlayer(playerId) ?: return@forEach
-                        if (selection.isReady && selection.pos1 != null && selection.pos2 != null) {
-                            com.dreamdisplays.utils.Outliner.showOutline(player, selection.pos1!!, selection.pos2!!)
+                        val pos1 = selection.pos1
+                        val pos2 = selection.pos2
+                        if (selection.isReady && pos1 != null && pos2 != null) {
+                            com.dreamdisplays.utils.Outliner.showOutline(player, pos1, pos2)
                         }
                     }
                 }
@@ -184,8 +186,12 @@ class Selection(plugin: Main) : Listener {
         if (Display.isContains(loc) != null) return true
 
         return selectionPoints.values
-            .filter { it.isReady && it.pos1 != null && it.pos2 != null }
-            .any { Region.isInBoundaries(it.pos1!!, it.pos2!!, loc) }
+            .filter { it.isReady }
+            .any { selection ->
+                val pos1 = selection.pos1
+                val pos2 = selection.pos2
+                pos1 != null && pos2 != null && Region.isInBoundaries(pos1, pos2, loc)
+            }
     }
 
     // Cancel event if location is protected
@@ -239,7 +245,7 @@ class Selection(plugin: Main) : Listener {
             if (height > Main.config.settings.maxHeight || width > Main.config.settings.maxWidth) return 4
 
             val required = Main.config.settings.baseMaterial
-            val world = pos1.world!!
+            val world = pos1.world ?: return 1
 
             for (x in minX..maxX) {
                 for (y in minY..maxY) {

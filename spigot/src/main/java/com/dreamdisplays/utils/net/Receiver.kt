@@ -89,12 +89,10 @@ class Receiver(var plugin: Main?) : PluginMessageListener {
             // Check for mod updates and notify all users with the mod
             val result = userVersion.compareTo(Main.modVersion)
             if (result < 0 && !hasBeenNotifiedAboutModUpdate(player)) {
+                val message = Main.config.messages["newVersion"] as? String ?: "&7D |&f New version of Dream Displays (%s) is available! Please update your mod!"
                 player.sendMessage(
                     ChatColor.translateAlternateColorCodes(
-                        '&', String.format(
-                            (Main.config.messages["newVersion"] as String?)!!,
-                            Main.modVersion.toString()
-                        )
+                        '&', String.format(message, Main.modVersion.toString())
                     )
                 )
                 setModUpdateNotified(player, true)
@@ -112,12 +110,11 @@ class Receiver(var plugin: Main?) : PluginMessageListener {
                     val latestPluginVersion = Version.parse(Main.pluginLatestVersion)
 
                     if (currentPluginVersion < latestPluginVersion) {
+                        val message = Main.config.messages["newPluginVersion"] as? String
+                            ?: "&7D |&f New version of Dream Displays plugin (%s) is available! Please update the server plugin!"
                         player.sendMessage(
                             ChatColor.translateAlternateColorCodes(
-                                '&', String.format(
-                                    (Main.config.messages["newPluginVersion"] as String?)!!,
-                                    Main.pluginLatestVersion
-                                )
+                                '&', String.format(message, Main.pluginLatestVersion)
                             )
                         )
                         setPluginUpdateNotified(player, true)
