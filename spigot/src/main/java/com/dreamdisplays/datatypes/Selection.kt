@@ -1,7 +1,7 @@
 package com.dreamdisplays.datatypes
 
-import com.dreamdisplays.DreamDisplaysPlugin
-import com.dreamdisplays.utils.ParticleUtil
+import com.dreamdisplays.Main
+import com.dreamdisplays.utils.Particle
 import org.bukkit.Bukkit
 import org.bukkit.Color
 import org.bukkit.Location
@@ -12,7 +12,7 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
-class SelectionData(player: Player) {
+class Selection(player: Player) {
     @JvmField
     var pos1: Location? = null
     @JvmField
@@ -41,17 +41,17 @@ class SelectionData(player: Player) {
 
         val player = Bukkit.getPlayer(playerId) ?: return
 
-        ParticleUtil.drawRectangleOnFace(
+        Particle.drawRectangleOnFace(
             player,
             p1,
             p2,
             f,
-            DreamDisplaysPlugin.config.settings.particlesPerBlock,
-            Color.fromRGB(DreamDisplaysPlugin.config.settings.particlesColor)
+            Main.config.settings.particlesPerBlock,
+            Color.fromRGB(Main.config.settings.particlesColor)
         )
     }
 
-    fun generateDisplayData(): DisplayData {
+    fun generateDisplayData(): Display {
         val p1 = pos1!!
         val p2 = pos2!!
         val f = face!!
@@ -73,6 +73,6 @@ class SelectionData(player: Player) {
         val dPos1 = Location(p1.world, minX.toDouble(), minY.toDouble(), minZ.toDouble())
         val dPos2 = Location(p1.world, maxX.toDouble(), maxY.toDouble(), maxZ.toDouble())
 
-        return DisplayData(UUID.randomUUID(), playerId, dPos1, dPos2, width, height, f)
+        return Display(UUID.randomUUID(), playerId, dPos1, dPos2, width, height, f)
     }
 }

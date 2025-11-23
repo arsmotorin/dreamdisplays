@@ -2,16 +2,16 @@ package com.dreamdisplays
 
 import com.dreamdisplays.scheduler.Provider
 import com.dreamdisplays.storage.Storage
-import com.dreamdisplays.listeners.PlayerListener
-import com.dreamdisplays.listeners.SelectionListener
-import com.dreamdisplays.commands.DisplayCommand
-import com.dreamdisplays.managers.DisplayManager
-import com.dreamdisplays.utils.GitHubUpdater
+import com.dreamdisplays.listeners.Player
+import com.dreamdisplays.listeners.Selection
+import com.dreamdisplays.commands.Command
+import com.dreamdisplays.managers.Display
+import com.dreamdisplays.utils.Updater
 import me.inotsleep.utils.AbstractPlugin
 import org.bukkit.Bukkit
 import com.github.zafarkhaja.semver.Version
 
-class DreamDisplaysPlugin : AbstractPlugin<DreamDisplaysPlugin>() {
+class Main : AbstractPlugin<Main>() {
 
     lateinit var storage: Storage
 
@@ -29,19 +29,19 @@ class DreamDisplaysPlugin : AbstractPlugin<DreamDisplaysPlugin>() {
         registerChannels()
         registerCommands()
 
-        Bukkit.getPluginManager().registerEvents(SelectionListener(this), this)
-        Bukkit.getPluginManager().registerEvents(PlayerListener(), this)
+        Bukkit.getPluginManager().registerEvents(Selection(this), this)
+        Bukkit.getPluginManager().registerEvents(Player(), this)
 
         // Updating displays
         Provider.adapter.runRepeatingAsync(
             this, 50L, 1000L
-        ) { DisplayManager.updateAllDisplays() }
+        ) { Display.updateAllDisplays() }
 
         // GitHub update checks
         if (Companion.config.settings.updatesEnabled) {
             Provider.adapter.runRepeatingAsync(
                 this, 20L, 20L * 3600L
-            ) { GitHubUpdater.checkForUpdates() }
+            ) { Updater.checkForUpdates() }
         }
     }
 
@@ -49,11 +49,11 @@ class DreamDisplaysPlugin : AbstractPlugin<DreamDisplaysPlugin>() {
         storage.onDisable()
     }
 
-    fun registerCommands() = DisplayCommand()
+    fun registerCommands() = Command()
 
     fun registerChannels() {
         val messenger = server.messenger
-        val receiver = com.dreamdisplays.utils.net.PacketReceiver(this)
+        val receiver = com.dreamdisplays.utils.net.Receiver(this)
 
         listOf(
             "dreamdisplays:display_info",
@@ -76,7 +76,7 @@ class DreamDisplaysPlugin : AbstractPlugin<DreamDisplaysPlugin>() {
         var modVersion: Version? = null
         var pluginLatestVersion: String? = null
 
-        fun getInstance(): DreamDisplaysPlugin = getInstanceByClazz(DreamDisplaysPlugin::class.java)
+        fun getInstance(): Main = getInstanceByClazz(Main::class.java)
 
         fun getIsFolia(): Boolean = runCatching {
             Class.forName("io.papermc.paper.threadedregions.RegionizedServer")

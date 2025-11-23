@@ -1,9 +1,9 @@
 package com.dreamdisplays.storage
 
-import com.dreamdisplays.DreamDisplaysPlugin
-import com.dreamdisplays.datatypes.DisplayData
-import com.dreamdisplays.managers.DisplayManager
-import com.dreamdisplays.utils.SchedulerUtil
+import com.dreamdisplays.Main
+import com.dreamdisplays.datatypes.Display
+import com.dreamdisplays.managers.Display as Manager
+import com.dreamdisplays.utils.Scheduler
 import me.inotsleep.utils.logging.LoggingManager
 import me.inotsleep.utils.storage.connection.BaseConnection
 import org.bukkit.Bukkit
@@ -13,27 +13,27 @@ import java.nio.ByteBuffer
 import java.sql.SQLException
 import java.util.*
 
-class Storage(var plugin: DreamDisplaysPlugin) {
+class Storage(var plugin: Main) {
     var connection: BaseConnection? = null
     var tablePrefix: String? = null
 
     init {
 
         val connectTask = Runnable {
-            tablePrefix = DreamDisplaysPlugin.config.storage.tablePrefix
+            tablePrefix = Main.config.storage.tablePrefix
             try {
                 connection =
-                    BaseConnection.createConnection(DreamDisplaysPlugin.config.storage, plugin.dataFolder)
+                    BaseConnection.createConnection(Main.config.storage, plugin.dataFolder)
                 connection!!.connect()
 
                 onConnect()
             } catch (e: SQLException) {
                 LoggingManager.error("Could not connect to database", e)
-                DreamDisplaysPlugin.disablePlugin()
+                Main.disablePlugin()
             }
         }
 
-        SchedulerUtil.runAsync(connectTask)
+        Scheduler.runAsync(connectTask)
     }
 
     @Throws(SQLException::class)
@@ -62,14 +62,14 @@ class Storage(var plugin: DreamDisplaysPlugin) {
                 )
             }
         }
-        DisplayManager.register(this.allDisplays.filterNotNull())
+        Manager.register(this.allDisplays.filterNotNull())
     }
 
     fun onDisable() {
         if (connection == null) return
 
         try {
-            DisplayManager.save { data: DisplayData -> this.saveDisplay(data) }
+            Manager.save { data: Display -> this.saveDisplay(data) }
 
             connection!!.disconnect()
         } catch (e: SQLException) {
@@ -91,7 +91,7 @@ class Storage(var plugin: DreamDisplaysPlugin) {
         return UUID(msb, lsb)
     }
 
-    fun saveDisplay(data: DisplayData) {
+    fun saveDisplay(data: Display) {
         val sql = "REPLACE INTO " + tablePrefix + "displays " +
                 "(id, ownerId, videoCode, world, pos1, pos2, size, facing, isSync, duration, lang) " +
                 "VALUES (?,?,?,?,?,?,?,?,?,?,?)"
@@ -122,18 +122,18 @@ class Storage(var plugin: DreamDisplaysPlugin) {
             )
         } catch (e: SQLException) {
             LoggingManager.error("Could not fetch from database", e)
-            DreamDisplaysPlugin.disablePlugin()
+            Main.disablePlugin()
         }
     }
 
-    val allDisplays: MutableList<DisplayData?>
+    val allDisplays: MutableList<Display?>
         // Fetch all displays from the database
         get() {
             val sql =
                 "SELECT id, ownerId, videoCode, world, pos1, pos2, size, facing, isSync, duration, lang " +
                         "FROM " + tablePrefix + "displays"
-            val list: MutableList<DisplayData?> =
-                ArrayList<DisplayData?>()
+            val list: MutableList<Display?> =
+                ArrayList<Display?>()
 
             try {
                 connection!!.executeQuery(sql).use { rs ->
@@ -156,7 +156,7 @@ class Storage(var plugin: DreamDisplaysPlugin) {
                         val width: Int = unpackHigh(sizePacked)
                         val height: Int = unpackLow(sizePacked)
 
-                        val data = DisplayData(
+                        val data = Display(
                             id, ownerId,
                             Location(world, x1.toDouble(), y1.toDouble(), z1.toDouble()),
                             Location(world, x2.toDouble(), y2.toDouble(), z2.toDouble()),
@@ -177,19 +177,19 @@ class Storage(var plugin: DreamDisplaysPlugin) {
                 }
             } catch (e: SQLException) {
                 LoggingManager.error("Could not fetch from database", e)
-                DreamDisplaysPlugin.disablePlugin()
+                Main.disablePlugin()
             }
 
             return list
         }
 
-    fun deleteDisplay(data: DisplayData) {
+    fun deleteDisplay(data: Display) {
         val sql = "DELETE FROM " + tablePrefix + "displays WHERE id = ?"
         try {
             connection!!.executeUpdate(sql, uuidToBytes(data.id))
         } catch (e: SQLException) {
             LoggingManager.error("Could not delete display from database", e)
-            DreamDisplaysPlugin.disablePlugin()
+            Main.disablePlugin()
         }
     }
 

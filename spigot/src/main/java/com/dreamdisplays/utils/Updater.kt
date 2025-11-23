@@ -1,33 +1,33 @@
 package com.dreamdisplays.utils
 
-import com.dreamdisplays.DreamDisplaysPlugin
+import com.dreamdisplays.Main
 import com.github.zafarkhaja.semver.Version
 import me.inotsleep.utils.logging.LoggingManager
 import java.util.regex.Pattern
 
-object GitHubUpdater {
+object Updater {
 
     private val tailPattern = Pattern.compile("\\d[\\s\\S]*")
 
     fun checkForUpdates() {
         try {
-            val settings = DreamDisplaysPlugin.config.settings
+            val settings = Main.config.settings
 
-            val releases = GithubReleaseFetcher.fetchReleases(
+            val releases = Fetcher.fetchReleases(
                 settings.repoOwner,
                 settings.repoName
             )
 
             if (releases.isEmpty()) return
 
-            DreamDisplaysPlugin.modVersion = releases
+            Main.modVersion = releases
                 .mapNotNull { parseVersion(it.tagName) }
                 .maxOrNull()
 
-            DreamDisplaysPlugin.pluginLatestVersion = releases
+            Main.pluginLatestVersion = releases
                 .filter { it.tagName.contains("spigot", ignoreCase = true) || it.tagName.contains("plugin", ignoreCase = true) }
                 .mapNotNull { parseVersion(it.tagName)?.toString() }
-                .maxOrNull() ?: DreamDisplaysPlugin.modVersion?.toString()
+                .maxOrNull() ?: Main.modVersion?.toString()
 
         } catch (e: Exception) {
             LoggingManager.warn("Unable to load versions from GitHub", e)

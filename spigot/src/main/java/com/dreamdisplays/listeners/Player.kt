@@ -1,13 +1,13 @@
 package com.dreamdisplays.listeners
 
-import com.dreamdisplays.managers.PlayerManager
+import com.dreamdisplays.managers.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerQuitEvent
 
-class PlayerListener : Listener {
+class Player : Listener {
     @EventHandler
     fun onPlayerLeave(event: PlayerQuitEvent) {
-        PlayerManager.removeVersion(event.getPlayer())
+        Player.removeVersion(event.getPlayer())
     }
 }

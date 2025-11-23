@@ -1,6 +1,6 @@
 package com.dreamdisplays.utils
 
-import com.dreamdisplays.datatypes.DisplayData
+import com.dreamdisplays.datatypes.Display
 import org.bukkit.Location
 import java.net.URI
 import java.net.URISyntaxException
@@ -25,7 +25,7 @@ object Utils {
         return minZ <= location.getBlockZ() && location.getBlockZ() <= maxZ
     }
 
-    fun getDistanceToScreen(location: Location, displayData: DisplayData): Double {
+    fun getDistanceToScreen(location: Location, displayData: Display): Double {
         val minX = min(displayData.pos1.getBlockX(), displayData.pos2!!.getBlockX())
         val minY = min(displayData.pos1.getBlockY(), displayData.pos2.getBlockY())
         val minZ = min(displayData.pos1.getBlockZ(), displayData.pos2.getBlockZ())

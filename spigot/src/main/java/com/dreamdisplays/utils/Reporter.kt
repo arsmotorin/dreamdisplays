@@ -13,7 +13,7 @@ import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-object ReportSender {
+object Reporter {
     private val client: HttpClient = HttpClient.newHttpClient()
 
     @Throws(IOException::class, InterruptedException::class)

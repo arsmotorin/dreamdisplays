@@ -1,8 +1,8 @@
 package com.dreamdisplays.datatypes
 
-import com.dreamdisplays.DreamDisplaysPlugin
+import com.dreamdisplays.Main
 import com.dreamdisplays.utils.Utils
-import com.dreamdisplays.utils.net.PacketUtils
+import com.dreamdisplays.utils.net.Utils as Net
 import org.bukkit.Location
 import org.bukkit.block.BlockFace
 import org.bukkit.entity.Player
@@ -11,7 +11,7 @@ import java.util.*
 import kotlin.math.max
 import kotlin.math.min
 
-class DisplayData(
+class Display(
     val id: UUID,
     val ownerId: UUID,
     val pos1: Location,
@@ -35,7 +35,7 @@ class DisplayData(
     )
 
     fun isInRange(loc: Location): Boolean {
-        val maxRender = DreamDisplaysPlugin.config.settings.maxRenderDistance
+        val maxRender = Main.config.settings.maxRenderDistance
         val clampedX = loc.blockX.coerceIn(box.minX.toInt(), box.maxX.toInt())
         val clampedY = loc.blockY.coerceIn(box.minY.toInt(), box.maxY.toInt())
         val clampedZ = loc.blockZ.coerceIn(box.minZ.toInt(), box.maxZ.toInt())
@@ -49,7 +49,7 @@ class DisplayData(
 
     fun sendUpdatePacket(players: List<Player>) {
         @Suppress("UNCHECKED_CAST")
-        PacketUtils.sendDisplayInfoPacket(
+        Net.sendDisplayInfoPacket(
             players as MutableList<Player?>, id, ownerId, box.min, width, height,
             url, lang, facing ?: BlockFace.NORTH, isSync
         )
@@ -57,6 +57,6 @@ class DisplayData(
 
     val receivers: List<Player>
         get() = pos1.world?.players
-            ?.filter { Utils.getDistanceToScreen(it.location, this) < DreamDisplaysPlugin.config.settings.maxRenderDistance }
+            ?.filter { Utils.getDistanceToScreen(it.location, this) < Main.config.settings.maxRenderDistance }
             ?: emptyList()
 }

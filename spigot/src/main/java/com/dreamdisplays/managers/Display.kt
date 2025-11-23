@@ -1,12 +1,12 @@
 package com.dreamdisplays.managers
 
-import com.dreamdisplays.DreamDisplaysPlugin
-import com.dreamdisplays.datatypes.DisplayData
-import com.dreamdisplays.datatypes.SelectionData
-import com.dreamdisplays.utils.MessageUtil
-import com.dreamdisplays.utils.ReportSender
-import com.dreamdisplays.utils.SchedulerUtil
-import com.dreamdisplays.utils.net.PacketUtils
+import com.dreamdisplays.Main
+import com.dreamdisplays.datatypes.Display
+import com.dreamdisplays.datatypes.Selection
+import com.dreamdisplays.utils.Message
+import com.dreamdisplays.utils.Reporter
+import com.dreamdisplays.utils.Scheduler
+import com.dreamdisplays.utils.net.Utils
 import me.inotsleep.utils.logging.LoggingManager
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -17,16 +17,16 @@ import java.util.function.Consumer
 import kotlin.math.max
 import kotlin.math.min
 
-object DisplayManager {
-    private val displays: MutableMap<UUID, DisplayData> = mutableMapOf()
+object Display {
+    private val displays: MutableMap<UUID, Display> = mutableMapOf()
     private val reportTime: MutableMap<UUID, Long> = mutableMapOf()
 
     @JvmStatic
-    fun getDisplayData(id: UUID?): DisplayData? = displays[id]
+    fun getDisplayData(id: UUID?): Display? = displays[id]
 
-    fun getDisplays(): List<DisplayData> = displays.values.toList()
+    fun getDisplays(): List<Display> = displays.values.toList()
 
-    fun register(displayData: DisplayData) {
+    fun register(displayData: Display) {
         displays[displayData.id] = displayData
         displayData.sendUpdatePacket(displayData.receivers)
     }
@@ -49,13 +49,13 @@ object DisplayManager {
         }
     }
 
-    fun delete(displayData: DisplayData) {
-        SchedulerUtil.runAsync {
-            DreamDisplaysPlugin.getInstance().storage.deleteDisplay(displayData)
+    fun delete(displayData: Display) {
+        Scheduler.runAsync {
+            Main.getInstance().storage.deleteDisplay(displayData)
         }
 
         @Suppress("UNCHECKED_CAST")
-        PacketUtils.sendDeletePacket(displayData.receivers as MutableList<Player?>, displayData.id)
+        Utils.sendDeletePacket(displayData.receivers as MutableList<Player?>, displayData.id)
         displays.remove(displayData.id)
     }
 
@@ -76,32 +76,32 @@ object DisplayManager {
         val displayData = displays[id] ?: return
         val lastReport = reportTime.getOrPut(id) { 0L }
 
-        if (System.currentTimeMillis() - lastReport < DreamDisplaysPlugin.config.settings.reportCooldown) {
-            MessageUtil.sendMessage(player, "reportTooQuickly")
+        if (System.currentTimeMillis() - lastReport < Main.config.settings.reportCooldown) {
+            Message.sendMessage(player, "reportTooQuickly")
             return
         }
 
         reportTime[id] = System.currentTimeMillis()
 
-        SchedulerUtil.runAsync {
+        Scheduler.runAsync {
             try {
-                if (DreamDisplaysPlugin.config.settings.webhookUrl.isEmpty()) return@runAsync
-                ReportSender.sendReport(
+                if (Main.config.settings.webhookUrl.isEmpty()) return@runAsync
+                Reporter.sendReport(
                     displayData.pos1,
                     displayData.url,
                     displayData.id,
                     player,
-                    DreamDisplaysPlugin.config.settings.webhookUrl,
+                    Main.config.settings.webhookUrl,
                     Bukkit.getOfflinePlayer(displayData.ownerId).name
                 )
-                MessageUtil.sendMessage(player, "reportSent")
+                Message.sendMessage(player, "reportSent")
             } catch (e: Exception) {
                 LoggingManager.error("Unable to send webhook message", e)
             }
         }
     }
 
-    fun isOverlaps(data: SelectionData): Boolean {
+    fun isOverlaps(data: Selection): Boolean {
         val pos1 = data.pos1 ?: return false
         val pos2 = data.pos2 ?: return false
         val selWorld = pos1.world
@@ -127,19 +127,19 @@ object DisplayManager {
         }
     }
 
-    fun isContains(location: Location): DisplayData? {
+    fun isContains(location: Location): Display? {
         return displays.values.firstOrNull { display ->
             display.pos1.world == location.world && display.box.contains(location.toVector())
         }
     }
 
-    fun register(list: List<DisplayData>) {
+    fun register(list: List<Display>) {
         list.forEach { display ->
             displays[display.id] = display
         }
     }
 
-    fun save(saveDisplay: Consumer<DisplayData>) {
+    fun save(saveDisplay: Consumer<Display>) {
         displays.values.forEach(saveDisplay)
     }
 }

@@ -1,8 +1,8 @@
 package com.dreamdisplays.scheduler
 
-import com.dreamdisplays.DreamDisplaysPlugin
+import com.dreamdisplays.Main
 
 object Provider {
     val adapter: Adapter =
-        if (DreamDisplaysPlugin.getIsFolia()) Folia else Bukkit
+        if (Main.getIsFolia()) Folia else Bukkit
 }

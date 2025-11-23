@@ -4,7 +4,7 @@ import com.github.zafarkhaja.semver.Version
 import org.bukkit.entity.Player
 import java.util.*
 
-object PlayerManager {
+object Player {
     private val versions: MutableMap<UUID?, Version?> = HashMap<UUID?, Version?>()
     private val modUpdateNotified: MutableMap<UUID?, Boolean?> = HashMap<UUID?, Boolean?>()
     private val pluginUpdateNotified: MutableMap<UUID?, Boolean?> = HashMap<UUID?, Boolean?>()

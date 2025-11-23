@@ -9,7 +9,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
-object GithubReleaseFetcher {
+object Fetcher {
     private val gson = Gson()
     private val client: HttpClient = HttpClient.newHttpClient()
 

@@ -1,19 +1,19 @@
 package com.dreamdisplays.utils
 
-import com.dreamdisplays.DreamDisplaysPlugin
+import com.dreamdisplays.Main
 import org.bukkit.scheduler.BukkitRunnable
 import java.lang.reflect.Proxy
 
-object SchedulerUtil {
+object Scheduler {
 
     // Runs a task asynchronously, compatible with both Bukkit and Folia
     fun runAsync(task: Runnable) {
-        if (DreamDisplaysPlugin.getIsFolia()) {
+        if (Main.getIsFolia()) {
             runFoliaAsync(task)
         } else {
             object : BukkitRunnable() {
                 override fun run() = task.run()
-            }.runTaskAsynchronously(DreamDisplaysPlugin.getInstance())
+            }.runTaskAsynchronously(Main.getInstance())
         }
     }
 
@@ -34,7 +34,7 @@ object SchedulerUtil {
 
             asyncScheduler.javaClass
                 .getMethod("runNow", Any::class.java, consumerClass)
-                .invoke(asyncScheduler, DreamDisplaysPlugin.getInstance(), consumerTask)
+                .invoke(asyncScheduler, Main.getInstance(), consumerTask)
         } catch (_: Exception) {
             // Fallback to direct execution if reflection fails
             task.run()

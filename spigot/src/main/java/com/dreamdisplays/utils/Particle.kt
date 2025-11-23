@@ -9,7 +9,7 @@ import org.bukkit.entity.Player
 import kotlin.math.max
 import kotlin.math.min
 
-object ParticleUtil {
+object Particle {
     fun drawLine(player: Player, from: Location, to: Location, particlesPerBlock: Int, color: Color) {
         val distance = from.distance(to)
         val particles = (distance * particlesPerBlock).toInt()

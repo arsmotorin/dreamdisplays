@@ -10,7 +10,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
-class Config(private val plugin: DreamDisplaysPlugin) {
+class Config(private val plugin: Main) {
     private val configFile: File = File(plugin.dataFolder, "config.toml")
     private var toml: Toml = Toml()
 

@@ -1,7 +1,7 @@
 package com.dreamdisplays.utils.net
 
-import com.dreamdisplays.DreamDisplaysPlugin
-import com.dreamdisplays.datatypes.SyncPacket
+import com.dreamdisplays.Main
+import com.dreamdisplays.datatypes.Sync
 import me.inotsleep.utils.logging.LoggingManager
 import org.bukkit.block.BlockFace
 import org.bukkit.entity.Player
@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.function.Consumer
 
-object PacketUtils {
+object Utils {
     fun sendDisplayInfoPacket(
         players: MutableList<Player?>,
         id: UUID,
@@ -53,14 +53,14 @@ object PacketUtils {
             val arr = byteStream.toByteArray()
 
             players.forEach(Consumer { player: Player? ->
-                player!!.sendPluginMessage(DreamDisplaysPlugin.getInstance(), "dreamdisplays:display_info", arr)
+                player!!.sendPluginMessage(Main.getInstance(), "dreamdisplays:display_info", arr)
             })
         } catch (exception: IOException) {
             LoggingManager.warn("Unable to send packet", exception)
         }
     }
 
-    fun sendSyncPacket(players: MutableList<Player?>, packet: SyncPacket) {
+    fun sendSyncPacket(players: MutableList<Player?>, packet: Sync) {
         try {
             val byteStream = ByteArrayOutputStream()
             val out = DataOutputStream(byteStream)
@@ -77,7 +77,7 @@ object PacketUtils {
             val arr = byteStream.toByteArray()
 
             players.forEach(Consumer { player: Player? ->
-                player!!.sendPluginMessage(DreamDisplaysPlugin.getInstance(), "dreamdisplays:sync", arr)
+                player!!.sendPluginMessage(Main.getInstance(), "dreamdisplays:sync", arr)
             })
         } catch (exception: IOException) {
             LoggingManager.warn("Unable to send packet", exception)
@@ -95,7 +95,7 @@ object PacketUtils {
             val arr = byteStream.toByteArray()
 
             players.forEach(Consumer { player: Player? ->
-                player!!.sendPluginMessage(DreamDisplaysPlugin.getInstance(), "dreamdisplays:delete", arr)
+                player!!.sendPluginMessage(Main.getInstance(), "dreamdisplays:delete", arr)
             })
         } catch (exception: IOException) {
             LoggingManager.warn("Unable to send packet", exception)
@@ -111,7 +111,7 @@ object PacketUtils {
 
             val arr = byteStream.toByteArray()
 
-            player.sendPluginMessage(DreamDisplaysPlugin.getInstance(), "dreamdisplays:premium", arr)
+            player.sendPluginMessage(Main.getInstance(), "dreamdisplays:premium", arr)
         } catch (exception: IOException) {
             LoggingManager.warn("Unable to send packet", exception)
         }

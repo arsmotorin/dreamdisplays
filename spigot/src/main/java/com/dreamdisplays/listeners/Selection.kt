@@ -1,9 +1,9 @@
 package com.dreamdisplays.listeners
 
-import com.dreamdisplays.DreamDisplaysPlugin
-import com.dreamdisplays.datatypes.SelectionData
-import com.dreamdisplays.managers.DisplayManager
-import com.dreamdisplays.utils.MessageUtil
+import com.dreamdisplays.Main
+import com.dreamdisplays.datatypes.Selection
+import com.dreamdisplays.managers.Display
+import com.dreamdisplays.utils.Message
 import com.dreamdisplays.utils.Utils
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -27,16 +27,16 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
-class SelectionListener(plugin: DreamDisplaysPlugin) : Listener {
+class Selection(plugin: Main) : Listener {
     init {
-        if (!DreamDisplaysPlugin.getIsFolia() && DreamDisplaysPlugin.config.settings.particlesEnabled) {
+        if (!Main.getIsFolia() && Main.config.settings.particlesEnabled) {
             val runnable: BukkitRunnable = object : BukkitRunnable() {
                 override fun run() {
-                    selectionPoints.forEach { (key: UUID?, value: SelectionData?) -> value!!.drawBox() }
+                    selectionPoints.forEach { (key: UUID?, value: Selection?) -> value!!.drawBox() }
                 }
             }
 
-            runnable.runTaskTimer(plugin, 0, DreamDisplaysPlugin.config.settings.particleRenderDelay.toLong())
+            runnable.runTaskTimer(plugin, 0, Main.config.settings.particleRenderDelay.toLong())
         }
     }
 
@@ -47,7 +47,7 @@ class SelectionListener(plugin: DreamDisplaysPlugin) : Listener {
         val player = event.getPlayer()
 
         if (player.getInventory().getItemInMainHand()
-                .getType() != DreamDisplaysPlugin.config.settings.selectionMaterial
+                .getType() != Main.config.settings.selectionMaterial
         ) return
 
         if (player.isSneaking() && (event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_AIR) && selectionPoints.containsKey(
@@ -55,20 +55,20 @@ class SelectionListener(plugin: DreamDisplaysPlugin) : Listener {
             )
         ) {
             selectionPoints.remove(player.getUniqueId())
-            MessageUtil.sendColoredMessage(
+            Message.sendColoredMessage(
                 player,
-                DreamDisplaysPlugin.config.messages.get("selectionClear") as String?
+                Main.config.messages.get("selectionClear") as String?
             )
             return
         }
 
         if (event.getClickedBlock() == null) return
-        if (event.getClickedBlock()!!.getType() != DreamDisplaysPlugin.config.settings.baseMaterial) return
+        if (event.getClickedBlock()!!.getType() != Main.config.settings.baseMaterial) return
 
         event.setCancelled(true)
 
         val location = event.getClickedBlock()!!.getLocation()
-        val data = selectionPoints.getOrDefault(player.getUniqueId(), SelectionData(player))
+        val data = selectionPoints.getOrDefault(player.getUniqueId(), Selection(player))
 
         if (data.pos1 != null && data.pos1!!.getWorld() !== location.getWorld() ||
             data.pos2 != null && data.pos2!!.getWorld() !== location.getWorld()
@@ -86,25 +86,25 @@ class SelectionListener(plugin: DreamDisplaysPlugin) : Listener {
         if (event.getAction() == Action.LEFT_CLICK_BLOCK || event.getAction() == Action.LEFT_CLICK_AIR) {
             data.pos1 = location.clone()
             data.setFace(face)
-            MessageUtil.sendColoredMessage(
+            Message.sendColoredMessage(
                 player,
-                DreamDisplaysPlugin.config.messages.get("firstPointSelected") as String?
+                Main.config.messages.get("firstPointSelected") as String?
             )
 
             val validationCode: Int = isValidDisplay(data)
             if (validationCode == 6) data.isReady = true
         } else if (event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_AIR) {
             if (data.pos1 == null) {
-                MessageUtil.sendColoredMessage(
+                Message.sendColoredMessage(
                     player,
-                    DreamDisplaysPlugin.config.messages.get("noDisplayTerritories") as String?
+                    Main.config.messages.get("noDisplayTerritories") as String?
                 )
                 return
             }
             data.pos2 = location.clone()
-            MessageUtil.sendColoredMessage(
+            Message.sendColoredMessage(
                 player,
-                DreamDisplaysPlugin.config.messages.get("secondPointSelected") as String?
+                Main.config.messages.get("secondPointSelected") as String?
             )
 
             val validationCode: Int = isValidDisplay(data)
@@ -118,9 +118,9 @@ class SelectionListener(plugin: DreamDisplaysPlugin) : Listener {
             }
 
             data.isReady = true
-            MessageUtil.sendColoredMessage(
+            Message.sendColoredMessage(
                 player,
-                DreamDisplaysPlugin.config.messages.get("createDisplayCommand") as String?
+                Main.config.messages.get("createDisplayCommand") as String?
             )
         }
 
@@ -135,16 +135,16 @@ class SelectionListener(plugin: DreamDisplaysPlugin) : Listener {
     @EventHandler
     fun onExplodeEvent(event: EntityExplodeEvent) {
         val toRemove: MutableList<Block?> = ArrayList<Block?>()
-        val dataList: MutableList<SelectionData> =
-            selectionPoints.values.stream().filter(SelectionData::isReady).toList()
+        val dataList: MutableList<Selection> =
+            selectionPoints.values.stream().filter(Selection::isReady).toList()
 
         event.blockList().stream()
-            .filter { block: Block? -> block!!.getType() == DreamDisplaysPlugin.config.settings.baseMaterial }
+            .filter { block: Block? -> block!!.getType() == Main.config.settings.baseMaterial }
             .forEach { block: Block? ->
-                if (block!!.getType() != DreamDisplaysPlugin.config.settings.baseMaterial) return@forEach
+                if (block!!.getType() != Main.config.settings.baseMaterial) return@forEach
                 val location = block.getLocation()
 
-                if (DisplayManager.isContains(location) != null) {
+                if (Display.isContains(location) != null) {
                     toRemove.add(block)
                     return@forEach
                 }
@@ -162,8 +162,8 @@ class SelectionListener(plugin: DreamDisplaysPlugin) : Listener {
     }
 
     private fun handleBlockDestroy(material: Material?, location: Location, event: Cancellable) {
-        if (material != DreamDisplaysPlugin.config.settings.baseMaterial) return
-        if (DisplayManager.isContains(location) != null) event.setCancelled(true)
+        if (material != Main.config.settings.baseMaterial) return
+        if (Display.isContains(location) != null) event.setCancelled(true)
 
         for (eData in selectionPoints.entries) {
             val uuid: UUID = eData.key!!
@@ -191,18 +191,18 @@ class SelectionListener(plugin: DreamDisplaysPlugin) : Listener {
     }
 
     private fun handlePistonEvent(blocks: MutableList<Block?>, event: Cancellable) {
-        val dataList: MutableList<SelectionData> =
-            selectionPoints.values.stream().filter(SelectionData::isReady).toList()
+        val dataList: MutableList<Selection> =
+            selectionPoints.values.stream().filter(Selection::isReady).toList()
 
         blocks.stream()
-            .filter { block: Block? -> block!!.getType() == DreamDisplaysPlugin.config.settings.baseMaterial }
+            .filter { block: Block? -> block!!.getType() == Main.config.settings.baseMaterial }
             .forEach { block: Block? ->
                 if (event.isCancelled()) return@forEach
-                if (block!!.getType() != DreamDisplaysPlugin.config.settings.baseMaterial) return@forEach
+                if (block!!.getType() != Main.config.settings.baseMaterial) return@forEach
 
                 val location = block.getLocation()
 
-                if (DisplayManager.isContains(location) != null) {
+                if (Display.isContains(location) != null) {
                     true.also { event.isCancelled = true }
                     return@forEach
                 }
@@ -218,43 +218,43 @@ class SelectionListener(plugin: DreamDisplaysPlugin) : Listener {
     }
 
     companion object {
-        var selectionPoints: MutableMap<UUID?, SelectionData> = HashMap<UUID?, SelectionData>()
+        var selectionPoints: MutableMap<UUID?, Selection> = HashMap<UUID?, Selection>()
 
         fun sendErrorMessage(player: Player, validationCode: Int) {
             when (validationCode) {
-                0 -> MessageUtil.sendColoredMessage(
+                0 -> Message.sendColoredMessage(
                     player,
-                    DreamDisplaysPlugin.config.messages.get("secondPointNotSelected") as String?
+                    Main.config.messages.get("secondPointNotSelected") as String?
                 )
 
-                1 -> MessageUtil.sendColoredMessage(
+                1 -> Message.sendColoredMessage(
                     player,
-                    DreamDisplaysPlugin.config.messages.get("displayOverlap") as String?
+                    Main.config.messages.get("displayOverlap") as String?
                 )
 
-                2 -> MessageUtil.sendColoredMessage(
+                2 -> Message.sendColoredMessage(
                     player,
-                    DreamDisplaysPlugin.config.messages.get("structureWrongDepth") as String?
+                    Main.config.messages.get("structureWrongDepth") as String?
                 )
 
-                3 -> MessageUtil.sendColoredMessage(
+                3 -> Message.sendColoredMessage(
                     player,
-                    DreamDisplaysPlugin.config.messages.get("structureTooSmall") as String?
+                    Main.config.messages.get("structureTooSmall") as String?
                 )
 
-                4 -> MessageUtil.sendColoredMessage(
+                4 -> Message.sendColoredMessage(
                     player,
-                    DreamDisplaysPlugin.config.messages.get("structureTooLarge") as String?
+                    Main.config.messages.get("structureTooLarge") as String?
                 )
 
-                5 -> MessageUtil.sendColoredMessage(
+                5 -> Message.sendColoredMessage(
                     player,
-                    DreamDisplaysPlugin.config.messages.get("wrongStructure") as String?
+                    Main.config.messages.get("wrongStructure") as String?
                 )
             }
         }
 
-        fun isValidDisplay(data: SelectionData): Int {
+        fun isValidDisplay(data: Selection): Int {
             val pos1 = data.pos1
             val pos2 = data.pos2
 
@@ -278,10 +278,10 @@ class SelectionListener(plugin: DreamDisplaysPlugin) : Listener {
             val width = max(deltaX, deltaZ)
             val height = abs(pos1.getBlockY() - pos2.getBlockY()) + 1
 
-            if (height < DreamDisplaysPlugin.config.settings.minHeight || width < DreamDisplaysPlugin.config.settings.minWidth) return 3
-            if (height > DreamDisplaysPlugin.config.settings.maxHeight || width > DreamDisplaysPlugin.config.settings.maxWidth) return 4
+            if (height < Main.config.settings.minHeight || width < Main.config.settings.minWidth) return 3
+            if (height > Main.config.settings.maxHeight || width > Main.config.settings.maxWidth) return 4
 
-            val requiredMaterial = DreamDisplaysPlugin.config.settings.baseMaterial
+            val requiredMaterial = Main.config.settings.baseMaterial
 
             val world = pos1.getWorld()
             for (x in minX..maxX) {

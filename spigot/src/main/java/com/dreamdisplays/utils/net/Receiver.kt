@@ -1,17 +1,18 @@
 package com.dreamdisplays.utils.net
 
-import com.dreamdisplays.DreamDisplaysPlugin
-import com.dreamdisplays.datatypes.SyncPacket
-import com.dreamdisplays.managers.DisplayManager.delete
-import com.dreamdisplays.managers.DisplayManager.report
-import com.dreamdisplays.managers.PlayStateManager.processSyncPacket
-import com.dreamdisplays.managers.PlayStateManager.sendSyncPacket
-import com.dreamdisplays.managers.PlayerManager.hasBeenNotifiedAboutModUpdate
-import com.dreamdisplays.managers.PlayerManager.hasBeenNotifiedAboutPluginUpdate
-import com.dreamdisplays.managers.PlayerManager.setModUpdateNotified
-import com.dreamdisplays.managers.PlayerManager.setPluginUpdateNotified
-import com.dreamdisplays.managers.PlayerManager.setVersion
+import com.dreamdisplays.Main
+import com.dreamdisplays.datatypes.Sync
+import com.dreamdisplays.managers.Display.delete
+import com.dreamdisplays.managers.Display.report
+import com.dreamdisplays.managers.State.processSyncPacket
+import com.dreamdisplays.managers.State.sendSyncPacket
+import com.dreamdisplays.managers.Player.hasBeenNotifiedAboutModUpdate
+import com.dreamdisplays.managers.Player.hasBeenNotifiedAboutPluginUpdate
+import com.dreamdisplays.managers.Player.setModUpdateNotified
+import com.dreamdisplays.managers.Player.setPluginUpdateNotified
+import com.dreamdisplays.managers.Player.setVersion
 import com.dreamdisplays.utils.Utils
+import com.dreamdisplays.utils.net.Utils as Net
 import com.github.zafarkhaja.semver.Version
 import me.inotsleep.utils.logging.LoggingManager
 import org.bukkit.ChatColor
@@ -22,7 +23,7 @@ import java.io.DataInputStream
 import java.io.IOException
 import java.util.*
 
-class PacketReceiver(var plugin: DreamDisplaysPlugin?) : PluginMessageListener {
+class Receiver(var plugin: Main?) : PluginMessageListener {
     override fun onPluginMessageReceived(channel: String, player: Player, message: ByteArray) {
         when (channel) {
             "dreamdisplays:sync" -> {
@@ -59,25 +60,25 @@ class PacketReceiver(var plugin: DreamDisplaysPlugin?) : PluginMessageListener {
     }
 
     private fun processVersionPacket(player: Player, message: ByteArray) {
-        if (DreamDisplaysPlugin.modVersion == null) return
+        if (Main.modVersion == null) return
         try {
             val `in` = DataInputStream(ByteArrayInputStream(message))
-            val len = PacketUtils.readVarInt(`in`)
+            val len = Net.readVarInt(`in`)
 
             val data = ByteArray(len)
 
             `in`.read(data, 0, len)
 
-            PacketUtils.sendPremiumPacket(
+            Net.sendPremiumPacket(
                 player,
-                player.hasPermission(DreamDisplaysPlugin.config.permissions.premium)
+                player.hasPermission(Main.config.permissions.premium)
             )
 
             val version = Utils.sanitize(String(data, 0, len))
 
             LoggingManager.log(
                 player.name + " has Dream Displays with version: " + version + ". Premium: " + player.hasPermission(
-                    DreamDisplaysPlugin.config.permissions.premium
+                    Main.config.permissions.premium
                 )
             )
 
@@ -86,13 +87,13 @@ class PacketReceiver(var plugin: DreamDisplaysPlugin?) : PluginMessageListener {
             setVersion(player, userVersion)
 
             // Check for mod updates and notify all users with the mod
-            val result = userVersion.compareTo(DreamDisplaysPlugin.modVersion)
+            val result = userVersion.compareTo(Main.modVersion)
             if (result < 0 && !hasBeenNotifiedAboutModUpdate(player)) {
                 player.sendMessage(
                     ChatColor.translateAlternateColorCodes(
                         '&', String.format(
-                            (DreamDisplaysPlugin.config.messages["newVersion"] as String?)!!,
-                            DreamDisplaysPlugin.modVersion.toString()
+                            (Main.config.messages["newVersion"] as String?)!!,
+                            Main.modVersion.toString()
                         )
                     )
                 )
@@ -100,22 +101,22 @@ class PacketReceiver(var plugin: DreamDisplaysPlugin?) : PluginMessageListener {
             }
 
             // Check for plugin updates and notify admins only
-            if (DreamDisplaysPlugin.config.settings.updatesEnabled &&
-                player.hasPermission(DreamDisplaysPlugin.config.permissions.updates) && !hasBeenNotifiedAboutPluginUpdate(
+            if (Main.config.settings.updatesEnabled &&
+                player.hasPermission(Main.config.permissions.updates) && !hasBeenNotifiedAboutPluginUpdate(
                     player
                 )
             ) {
-                val pluginVersion: String = DreamDisplaysPlugin.getInstance().description.version
-                if (DreamDisplaysPlugin.pluginLatestVersion != null) {
+                val pluginVersion: String = Main.getInstance().description.version
+                if (Main.pluginLatestVersion != null) {
                     val currentPluginVersion = Version.parse(pluginVersion)
-                    val latestPluginVersion = Version.parse(DreamDisplaysPlugin.pluginLatestVersion)
+                    val latestPluginVersion = Version.parse(Main.pluginLatestVersion)
 
                     if (currentPluginVersion < latestPluginVersion) {
                         player.sendMessage(
                             ChatColor.translateAlternateColorCodes(
                                 '&', String.format(
-                                    (DreamDisplaysPlugin.config.messages["newPluginVersion"] as String?)!!,
-                                    DreamDisplaysPlugin.pluginLatestVersion
+                                    (Main.config.messages["newPluginVersion"] as String?)!!,
+                                    Main.pluginLatestVersion
                                 )
                             )
                         )
@@ -131,15 +132,15 @@ class PacketReceiver(var plugin: DreamDisplaysPlugin?) : PluginMessageListener {
     private fun processSyncPacket(player: Player, message: ByteArray) {
         try {
             val `in` = DataInputStream(ByteArrayInputStream(message))
-            val id = PacketUtils.readUUID(`in`)
+            val id = Net.readUUID(`in`)
 
             val isSync = `in`.readBoolean()
             val currentState = `in`.readBoolean()
 
-            val currentTime = PacketUtils.readVarLong(`in`)
-            val limitTime = PacketUtils.readVarLong(`in`)
+            val currentTime = Net.readVarLong(`in`)
+            val limitTime = Net.readVarLong(`in`)
 
-            val packet = SyncPacket(id, isSync, currentState, currentTime, limitTime)
+            val packet = Sync(id, isSync, currentState, currentTime, limitTime)
             processSyncPacket(packet, player)
         } catch (e: IOException) {
             LoggingManager.warn("Unable to decode SyncPacket", e)
@@ -149,7 +150,7 @@ class PacketReceiver(var plugin: DreamDisplaysPlugin?) : PluginMessageListener {
     private fun processUUIDPacketWithException(message: ByteArray): UUID? {
         try {
             val `in` = DataInputStream(ByteArrayInputStream(message))
-            return PacketUtils.readUUID(`in`)
+            return Net.readUUID(`in`)
         } catch (e: IOException) {
             LoggingManager.error("Unable to decode RequestSyncPacket", e)
         }

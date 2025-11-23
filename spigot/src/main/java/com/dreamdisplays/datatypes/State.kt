@@ -1,23 +1,23 @@
 package com.dreamdisplays.datatypes
 
-import com.dreamdisplays.managers.DisplayManager
+import com.dreamdisplays.managers.Display
 import java.util.*
 
-class PlayState(private val id: UUID?) {
+class State(private val id: UUID?) {
     private var paused = false
     private var lastReportedTime: Long = 0
     private var lastReportedTimeTimestamp: Long = 0
     private var limitTime: Long = 0
-    var displayData: DisplayData = DisplayManager.getDisplayData(id)!!
+    var displayData: com.dreamdisplays.datatypes.Display = Display.getDisplayData(id)!!
 
-    fun update(packet: SyncPacket) {
+    fun update(packet: Sync) {
         this.paused = packet.currentState
         this.lastReportedTime = packet.currentTime
         this.lastReportedTimeTimestamp = System.nanoTime()
         limitTime = packet.limitTime
     }
 
-    fun createPacket(): SyncPacket {
+    fun createPacket(): Sync {
         val nanos = System.nanoTime()
         var currentTime: Long
 
@@ -36,6 +36,6 @@ class PlayState(private val id: UUID?) {
             currentTime %= limitTime
         }
 
-        return SyncPacket(id, true, paused, currentTime, limitTime)
+        return Sync(id, true, paused, currentTime, limitTime)
     }
 }

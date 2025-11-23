@@ -1,16 +1,16 @@
 package com.dreamdisplays.commands
 
-import com.dreamdisplays.DreamDisplaysPlugin
-import com.dreamdisplays.listeners.SelectionListener
-import com.dreamdisplays.managers.DisplayManager
-import com.dreamdisplays.utils.MessageUtil
+import com.dreamdisplays.Main
+import com.dreamdisplays.listeners.Selection
+import com.dreamdisplays.managers.Display
+import com.dreamdisplays.utils.Message
 import com.dreamdisplays.utils.Utils
 import me.inotsleep.utils.AbstractCommand
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
-class DisplayCommand : AbstractCommand(DreamDisplaysPlugin.getInstance().name, "display") {
+class Command : AbstractCommand(Main.getInstance().name, "display") {
 
     override fun toExecute(sender: CommandSender, s: String?, args: Array<String?>) {
         when (args.size) {
@@ -25,12 +25,12 @@ class DisplayCommand : AbstractCommand(DreamDisplaysPlugin.getInstance().name, "
         if (args[0] != "video") return
 
         val block = player.getTargetBlock(null, 32)
-        if (block.type != DreamDisplaysPlugin.config.settings.baseMaterial) {
+        if (block.type != Main.config.settings.baseMaterial) {
             msg(player, "noDisplay")
             return
         }
 
-        val data = DisplayManager.isContains(block.location)
+        val data = Display.isContains(block.location)
         if (data == null || data.ownerId != player.uniqueId) {
             msg(player, "noDisplay")
             return
@@ -62,60 +62,60 @@ class DisplayCommand : AbstractCommand(DreamDisplaysPlugin.getInstance().name, "
     private fun handleCreate(sender: CommandSender) {
         val player = sender as? Player ?: return
 
-        val sel = SelectionListener.selectionPoints[player.uniqueId]
+        val sel = Selection.selectionPoints[player.uniqueId]
             ?: return msg(player, "noDisplayTerritories")
 
-        val valid = SelectionListener.isValidDisplay(sel)
+        val valid = Selection.isValidDisplay(sel)
         if (valid != 6) {
-            SelectionListener.sendErrorMessage(player, valid)
+            Selection.sendErrorMessage(player, valid)
             return
         }
 
-        if (DisplayManager.isOverlaps(sel)) {
+        if (Display.isOverlaps(sel)) {
             msg(player, "displayOverlap")
             return
         }
 
         val displayData = sel.generateDisplayData()
-        SelectionListener.selectionPoints.remove(player.uniqueId)
+        Selection.selectionPoints.remove(player.uniqueId)
 
-        DisplayManager.register(displayData)
+        Display.register(displayData)
         msg(player, "successfulCreation")
     }
 
     private fun handleDelete(sender: CommandSender) {
         val player = sender as? Player ?: return
-        if (!player.hasPermission(DreamDisplaysPlugin.config.permissions.delete)) return
+        if (!player.hasPermission(Main.config.permissions.delete)) return
 
         val block = player.getTargetBlock(null, 32)
-        if (block.type != DreamDisplaysPlugin.config.settings.baseMaterial) {
+        if (block.type != Main.config.settings.baseMaterial) {
             msg(player, "noDisplay")
             return
         }
 
-        val data = DisplayManager.isContains(block.location)
+        val data = Display.isContains(block.location)
             ?: return msg(player, "noDisplay")
 
-        DisplayManager.delete(data)
+        Display.delete(data)
     }
 
     private fun handleReload(sender: CommandSender) {
-        if (!sender.hasPermission(DreamDisplaysPlugin.config.permissions.reload)) {
+        if (!sender.hasPermission(Main.config.permissions.reload)) {
             sendHelp(sender)
             return
         }
 
-        DreamDisplaysPlugin.config.reload()
+        Main.config.reload()
         msg(sender, "configReloaded")
     }
 
     private fun handleList(sender: CommandSender) {
-        if (!sender.hasPermission(DreamDisplaysPlugin.config.permissions.list)) {
+        if (!sender.hasPermission(Main.config.permissions.list)) {
             sendHelp(sender)
             return
         }
 
-        val displays = DisplayManager.getDisplays()
+        val displays = Display.getDisplays()
         if (displays.isEmpty()) {
             msg(sender, "noDisplaysFound")
             return
@@ -123,7 +123,7 @@ class DisplayCommand : AbstractCommand(DreamDisplaysPlugin.getInstance().name, "
 
         msg(sender, "displayListHeader")
 
-        val entry = DreamDisplaysPlugin.config.messages["displayListEntry"] as String?
+        val entry = Main.config.messages["displayListEntry"] as String?
 
         displays.forEach { d ->
             val owner = Bukkit.getOfflinePlayer(d.ownerId).name ?: "Unknown"
@@ -136,23 +136,23 @@ class DisplayCommand : AbstractCommand(DreamDisplaysPlugin.getInstance().name, "
                 d.pos1.blockZ.toString(),
                 d.url
             )
-            MessageUtil.sendColoredMessage(sender, formatted)
+            Message.sendColoredMessage(sender, formatted)
         }
     }
 
     private fun msg(sender: CommandSender?, key: String) {
-        MessageUtil.sendMessage(sender, key)
+        Message.sendMessage(sender, key)
     }
 
     private fun sendHelp(sender: CommandSender?) {
-        MessageUtil.sendColoredMessages(sender, MessageUtil.getMessages("displayCommandHelp"))
+        Message.sendColoredMessages(sender, Message.getMessages("displayCommandHelp"))
     }
 
     override fun complete(sender: CommandSender, args: Array<String?>): MutableList<String?> {
         if (args.size != 1) return mutableListOf()
 
         val list = mutableListOf<String?>("create", "video")
-        val perms = DreamDisplaysPlugin.config.permissions
+        val perms = Main.config.permissions
 
         if (sender.hasPermission(perms.delete)) list += "delete"
         if (sender.hasPermission(perms.list))   list += "list"
