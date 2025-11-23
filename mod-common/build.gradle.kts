@@ -6,9 +6,9 @@ dependencies {
     api(libs.gst1)
 	api(libs.utils)
 	api(libs.javatube)
-    compileOnly(libs.jna)
-    compileOnly(libs.jnaPlatform)
-	compileOnly(libs.lwjgl)
+    implementation(libs.jna)
+    implementation(libs.jnaPlatform)
+	implementation(libs.lwjgl)
 }
 
 neoForge {

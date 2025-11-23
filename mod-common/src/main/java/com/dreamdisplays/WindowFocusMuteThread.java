@@ -17,9 +17,6 @@ public class WindowFocusMuteThread extends Thread {
     public void run() {
         while (true) {
             Minecraft client = Minecraft.getInstance();
-            if (client == null) {
-                break;
-            }
 
             boolean focused = client.isWindowActive();
 

@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 
 public class Utils {
 
+    // Detects the current operating system platform
     public static String detectPlatform() {
         String os = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
         if (os.contains("win")) {
@@ -76,6 +77,33 @@ public class Utils {
             }
             return sb.toString();
         }
+    }
+
+    // Reads the mod version from the appropriate metadata file
+    public static String getModVersion() {
+        // Fabric
+        try {
+            String fabricJson = readResource("/fabric.mod.json");
+            Pattern pattern = Pattern.compile("\"version\"\\s*:\\s*\"([^\"]+)\"");
+            Matcher matcher = pattern.matcher(fabricJson);
+            if (matcher.find()) {
+                return matcher.group(1).trim();
+            }
+        } catch (IOException ignored) {
+        }
+
+        // NeoForge/Forge
+        try {
+            String neoforgeToml = readResource("/META-INF/neoforge.mods.toml");
+            Pattern pattern = Pattern.compile("version\\s*=\\s*\"([^\"]+)\"");
+            Matcher matcher = pattern.matcher(neoforgeToml);
+            if (matcher.find()) {
+                return matcher.group(1).trim();
+            }
+        } catch (IOException ignored) {
+        }
+
+        return "unknown";
     }
 
     // Check if a certificate is already installed in the CurrentUser\Root store

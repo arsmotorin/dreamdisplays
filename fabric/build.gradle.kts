@@ -30,9 +30,6 @@ tasks.processResources {
     filesMatching("quilt.mod.json") {
         expand(mapOf("version" to projectVersion))
     }
-    filesMatching("version") {
-        expand(mapOf("version" to projectVersion))
-    }
 }
 
 java {

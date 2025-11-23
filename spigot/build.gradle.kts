@@ -55,7 +55,7 @@ tasks.shadowJar {
     archiveVersion.set(rootProject.version.toString())
     manifest {
         attributes(
-            "paperweight-mappings-namespace" to "mojang", // avoid remap on startup
+            "paperweight-mappings-namespace" to "mojang",
         )
     }
 }

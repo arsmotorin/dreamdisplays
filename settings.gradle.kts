@@ -14,6 +14,7 @@ plugins {
 
 rootProject.name = "displays"
 include(":mod-common")
-include(":neoforge")
 include(":fabric")
+include(":neoforge")
+include(":forge")
 include(":spigot")
