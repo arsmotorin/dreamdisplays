@@ -4,18 +4,16 @@ import com.dreamdisplays.Main
 import com.dreamdisplays.datatypes.Display
 import com.dreamdisplays.datatypes.Selection
 import com.dreamdisplays.utils.Message
+import com.dreamdisplays.utils.Region
 import com.dreamdisplays.utils.Reporter
 import com.dreamdisplays.utils.Scheduler
 import com.dreamdisplays.utils.net.Utils
-import me.inotsleep.utils.logging.LoggingManager
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.entity.Player
 import org.bukkit.util.BoundingBox
 import java.util.*
 import java.util.function.Consumer
-import kotlin.math.max
-import kotlin.math.min
 
 object Display {
     private val displays: MutableMap<UUID, Display> = mutableMapOf()
@@ -64,7 +62,7 @@ object Display {
         val displayData = displays[id] ?: return
 
         if (displayData.ownerId != player.uniqueId) {
-            LoggingManager.warn("Player ${player.name} sent delete packet while not owner!")
+            Main.getInstance().logger.warning("Player ${player.name} sent delete packet while not owner!")
             return
         }
 
@@ -96,7 +94,7 @@ object Display {
                 )
                 Message.sendMessage(player, "reportSent")
             } catch (e: Exception) {
-                LoggingManager.error("Unable to send webhook message", e)
+                Main.getInstance().logger.severe("Unable to send webhook message: ${e.message}")
             }
         }
     }
@@ -106,20 +104,14 @@ object Display {
         val pos2 = data.pos2 ?: return false
         val selWorld = pos1.world
 
-        val minX = min(pos1.blockX, pos2.blockX)
-        val minY = min(pos1.blockY, pos2.blockY)
-        val minZ = min(pos1.blockZ, pos2.blockZ)
-        val maxX = max(pos1.blockX, pos2.blockX) + 1
-        val maxY = max(pos1.blockY, pos2.blockY) + 1
-        val maxZ = max(pos1.blockZ, pos2.blockZ) + 1
-
+        val region = Region.calculateRegion(pos1, pos2)
         val box = BoundingBox(
-            minX.toDouble(),
-            minY.toDouble(),
-            minZ.toDouble(),
-            maxX.toDouble(),
-            maxY.toDouble(),
-            maxZ.toDouble()
+            region.minX.toDouble(),
+            region.minY.toDouble(),
+            region.minZ.toDouble(),
+            (region.maxX + 1).toDouble(),
+            (region.maxY + 1).toDouble(),
+            (region.maxZ + 1).toDouble()
         )
 
         return displays.values.any { display ->

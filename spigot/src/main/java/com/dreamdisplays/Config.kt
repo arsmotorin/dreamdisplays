@@ -169,10 +169,10 @@ class Config(private val plugin: Main) {
                     return try {
                         hex.substring(1).toInt(16)
                     } catch (_: NumberFormatException) {
-                        0x00FF00
+                        0x00FFFF
                     }
                 }
-                return 0x00FF00
+                return 0x00FFFF
             }
 
         private fun readMinWidth(): Int {

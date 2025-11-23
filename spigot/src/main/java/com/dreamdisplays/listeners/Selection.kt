@@ -34,6 +34,14 @@ class Selection(plugin: Main) : Listener {
             object : BukkitRunnable() {
                 override fun run() {
                     selectionPoints.values.forEach { it.drawBox() }
+
+                    // Update display outlines for all players with active selections
+                    selectionPoints.forEach { (playerId, selection) ->
+                        val player = org.bukkit.Bukkit.getPlayer(playerId) ?: return@forEach
+                        if (selection.isReady && selection.pos1 != null && selection.pos2 != null) {
+                            com.dreamdisplays.utils.Outliner.showOutline(player, selection.pos1!!, selection.pos2!!)
+                        }
+                    }
                 }
             }.runTaskTimer(plugin, 0L, Main.config.settings.particleRenderDelay.toLong())
         }
@@ -50,6 +58,7 @@ class Selection(plugin: Main) : Listener {
         // Clear selection if sneaking and right-clicking
         if (player.isSneaking && event.action.isRightClick) {
             if (selectionPoints.remove(player.uniqueId) != null) {
+                com.dreamdisplays.utils.Outliner.hideOutline(player)
                 Message.sendMessage(player, "selectionClear")
             }
             return

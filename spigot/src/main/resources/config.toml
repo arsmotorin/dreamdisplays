@@ -21,7 +21,7 @@ max_height = 24
 # Particle effects for selection visualization
 # Note that it doesn't work on Folia
 particles = true
-particles_color = "#00FF00"
+particles_color = "#00FFFF"
 
 # Update notifications
 updates = true
@@ -31,7 +31,7 @@ updates = true
 # webhook_url is a discord webhook URL for sending reports
 # cooldown is in seconds
 webhook_url = ""
-cooldown = 15
+cooldown = 30
 
 [storage]
 # Storage type: SQLITE or MYSQL
