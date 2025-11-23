@@ -3,8 +3,10 @@ package com.dreamdisplays.utils
 import com.dreamdisplays.Main
 import com.github.zafarkhaja.semver.Version
 import me.inotsleep.utils.logging.LoggingManager
+import org.jspecify.annotations.NullMarked
 import java.util.regex.Pattern
 
+@NullMarked
 object Updater {
 
     private val tailPattern = Pattern.compile("\\d[\\s\\S]*")

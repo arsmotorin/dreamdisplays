@@ -11,7 +11,9 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public final class RenderUtil {
 
     // Prevent rotation issues

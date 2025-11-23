@@ -6,8 +6,10 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.BlockFace
 import org.bukkit.entity.Player
+import org.jspecify.annotations.NullMarked
 import java.util.*
 
+@NullMarked
 class Selection(player: Player) {
     @JvmField
     var pos1: Location? = null

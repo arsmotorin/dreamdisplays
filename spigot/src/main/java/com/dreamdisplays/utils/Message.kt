@@ -3,7 +3,9 @@ package com.dreamdisplays.utils
 import com.dreamdisplays.Main
 import org.bukkit.ChatColor
 import org.bukkit.command.CommandSender
+import org.jspecify.annotations.NullMarked
 
+@NullMarked
 object Message {
     fun sendColoredMessage(player: CommandSender?, message: String?) {
         if (player == null || message == null) return

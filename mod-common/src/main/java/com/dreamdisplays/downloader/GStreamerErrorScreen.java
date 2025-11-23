@@ -4,7 +4,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public class GStreamerErrorScreen extends Screen {
     private final Screen parent;
     private final String errorMessage;
@@ -23,9 +25,7 @@ public class GStreamerErrorScreen extends Screen {
 
         this.addRenderableWidget(
                 Button.builder(Component.nullToEmpty("Continue"), button -> {
-                            if (minecraft != null) {
-                                minecraft.setScreen(parent);
-                            }
+                            minecraft.setScreen(parent);
                         })
                         .bounds(this.width / 2 - 50, this.height / 2 + 40, 100, 20)
                         .build()
@@ -55,7 +55,6 @@ public class GStreamerErrorScreen extends Screen {
     // Disable closing on ESC key
     @Override
     public boolean shouldCloseOnEsc() {
-
         return false;
     }
 }

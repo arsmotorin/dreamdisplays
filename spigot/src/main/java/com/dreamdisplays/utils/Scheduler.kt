@@ -2,8 +2,10 @@ package com.dreamdisplays.utils
 
 import com.dreamdisplays.Main
 import org.bukkit.scheduler.BukkitRunnable
+import org.jspecify.annotations.NullMarked
 import java.lang.reflect.Proxy
 
+@NullMarked
 object Scheduler {
 
     // Runs a task asynchronously, compatible with both Bukkit and Folia

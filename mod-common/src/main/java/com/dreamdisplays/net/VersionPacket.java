@@ -6,8 +6,10 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import com.dreamdisplays.PlatformlessInitializer;
+import org.jspecify.annotations.NullMarked;
 
 // Packet for sending mod version information
+@NullMarked
 public record VersionPacket(String version) implements CustomPacketPayload {
     public static final Type<VersionPacket> PACKET_ID =
             new Type<>(Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "version"));

@@ -10,7 +10,9 @@ import com.dreamdisplays.utils.Updater
 import me.inotsleep.utils.AbstractPlugin
 import org.bukkit.Bukkit
 import com.github.zafarkhaja.semver.Version
+import org.jspecify.annotations.NullMarked
 
+@NullMarked
 class Main : AbstractPlugin<Main>() {
 
     lateinit var storage: Storage

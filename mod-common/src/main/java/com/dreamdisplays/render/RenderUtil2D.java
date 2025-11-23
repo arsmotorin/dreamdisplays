@@ -8,8 +8,10 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import org.joml.Matrix3x2fStack;
+import org.jspecify.annotations.NullMarked;
 
 // Utility class for rendering 2D textured quads
+@NullMarked
 public class RenderUtil2D {
     public static void drawTexturedQuad(Matrix3x2fStack matrices, GpuTextureView gpuView, float x, float y, float width, float height, RenderType renderType) {
         //RenderSystem.setShaderLights(0, gpuView); // FIXME: make this work or perhaps we dont need this at all, theres no more shaderTexture only lights

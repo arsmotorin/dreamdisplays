@@ -4,10 +4,14 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 // Utility class for ray-casting operations
+@NullMarked
 public class RCUtil {
 
+    @Nullable
     public static BlockHitResult rCBlock(double maxDistance) {
         Minecraft client = Minecraft.getInstance();
 

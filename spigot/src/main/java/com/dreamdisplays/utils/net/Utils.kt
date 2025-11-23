@@ -6,6 +6,7 @@ import me.inotsleep.utils.logging.LoggingManager
 import org.bukkit.block.BlockFace
 import org.bukkit.entity.Player
 import org.bukkit.util.Vector
+import org.jspecify.annotations.NullMarked
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
@@ -14,6 +15,7 @@ import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.function.Consumer
 
+@NullMarked
 object Utils {
     fun sendDisplayInfoPacket(
         players: MutableList<Player?>,

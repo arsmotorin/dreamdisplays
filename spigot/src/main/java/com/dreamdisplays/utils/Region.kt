@@ -1,10 +1,12 @@
 package com.dreamdisplays.utils
 
 import org.bukkit.Location
+import org.jspecify.annotations.NullMarked
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
+@NullMarked
 object Region {
 
     // Data class to hold all region information

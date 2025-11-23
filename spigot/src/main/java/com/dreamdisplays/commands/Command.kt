@@ -9,7 +9,9 @@ import me.inotsleep.utils.AbstractCommand
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
+import org.jspecify.annotations.NullMarked
 
+@NullMarked
 class Command : AbstractCommand(Main.getInstance().name, "display") {
 
     override fun toExecute(sender: CommandSender, s: String?, args: Array<String?>) {

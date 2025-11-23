@@ -1,8 +1,10 @@
 package com.dreamdisplays.scheduler
 
 import org.bukkit.plugin.Plugin
+import org.jspecify.annotations.NullMarked
 import java.lang.reflect.Proxy
 
+@NullMarked
 object Folia : Adapter {
 
     private val asyncScheduler = Class.forName("org.bukkit.Bukkit")

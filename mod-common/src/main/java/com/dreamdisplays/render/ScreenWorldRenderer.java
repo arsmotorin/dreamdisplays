@@ -7,14 +7,15 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 import com.dreamdisplays.screen.Screen;
 import com.dreamdisplays.screen.ScreenManager;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public class ScreenWorldRenderer {
 
     // Renders all screens in the world relative to the camera position
     public static void render(PoseStack matrices, Camera camera) {
         Vec3 cameraPos = camera.position();
         for (Screen screen : ScreenManager.getScreens()) {
-            if (screen == null) continue;
             if (screen.texture == null) screen.createTexture();
 
             matrices.pushPose();

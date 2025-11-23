@@ -4,11 +4,13 @@ import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.google.gson.reflect.TypeToken
 import me.inotsleep.utils.logging.LoggingManager
+import org.jspecify.annotations.NullMarked
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
+@NullMarked
 object Fetcher {
     private val gson = Gson()
     private val client: HttpClient = HttpClient.newHttpClient()

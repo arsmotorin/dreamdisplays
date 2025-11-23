@@ -1,8 +1,10 @@
 package com.dreamdisplays.datatypes
 
 import com.dreamdisplays.managers.Display
+import org.jspecify.annotations.NullMarked
 import java.util.*
 
+@NullMarked
 class State(private val id: UUID?) {
     private var paused = false
     private var lastReportedTime: Long = 0

@@ -1,6 +1,8 @@
 package com.dreamdisplays.util;
 
 import me.inotsleep.utils.logging.LoggingManager;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.*;
 import java.net.URI;
@@ -14,6 +16,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@NullMarked
 public class Utils {
 
     // Detects the current operating system platform
@@ -30,6 +33,7 @@ public class Utils {
     }
 
     // Extracts video ID from various YouTube URL formats
+    @Nullable
     public static String extractVideoId(String youtubeUrl) {
         try {
             URI uri = new URI(youtubeUrl);

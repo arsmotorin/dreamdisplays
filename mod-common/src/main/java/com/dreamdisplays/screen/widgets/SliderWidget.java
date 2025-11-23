@@ -1,33 +1,29 @@
 package com.dreamdisplays.screen.widgets;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.minecraft.client.InputType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public abstract class SliderWidget extends AbstractWidget {
-    private static final @NonNull Identifier TEXTURE = Identifier.withDefaultNamespace("widget/slider");
-    private static final @NonNull Identifier HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_highlighted");
-    private static final @NonNull Identifier HANDLE_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle");
-    private static final @NonNull Identifier HANDLE_HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle_highlighted");
+    private static final Identifier TEXTURE = Identifier.withDefaultNamespace("widget/slider");
+    private static final Identifier HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_highlighted");
+    private static final Identifier HANDLE_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle");
+    private static final Identifier HANDLE_HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle_highlighted");
     public double value;
     private boolean sliderFocused;
 
-    public SliderWidget(int x, int y, int width, int height, @NonNull Component text, double value) {
+    public SliderWidget(int x, int y, int width, int height, Component text, double value) {
         super(x, y, width, height, text);
         this.value = value;
     }
@@ -40,7 +36,7 @@ public abstract class SliderWidget extends AbstractWidget {
         return !this.isHovered && !this.sliderFocused ? HANDLE_TEXTURE : HANDLE_HIGHLIGHTED_TEXTURE;
     }
 
-    protected @NonNull MutableComponent createNarrationMessage() {
+    protected MutableComponent createNarrationMessage() {
         return Component.translatable("gui.narrate.slider", this.getMessage());
     }
 
@@ -101,7 +97,7 @@ public abstract class SliderWidget extends AbstractWidget {
     }
 
     @Override
-    public void playDownSound(@NonNull SoundManager soundManager) {
+    public void playDownSound(SoundManager soundManager) {
     }
 
     protected abstract void updateMessage();

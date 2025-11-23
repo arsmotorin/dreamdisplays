@@ -6,10 +6,12 @@ import com.moandjiezana.toml.Toml
 import me.inotsleep.utils.logging.LoggingManager
 import me.inotsleep.utils.storage.StorageSettings
 import org.bukkit.Material
+import org.jspecify.annotations.NullMarked
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
+@NullMarked
 class Config(private val plugin: Main) {
     private val configFile = File(plugin.dataFolder, "config.toml")
     private var toml = Toml()

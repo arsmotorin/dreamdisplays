@@ -22,6 +22,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
+@NullMarked
 @Mod(value = DreamDisplaysMod.MOD_ID, dist = Dist.CLIENT)
 public class DreamDisplaysMod {
 

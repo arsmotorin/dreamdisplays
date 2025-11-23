@@ -12,9 +12,11 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.entity.Player
 import org.bukkit.util.BoundingBox
+import org.jspecify.annotations.NullMarked
 import java.util.*
 import java.util.function.Consumer
 
+@NullMarked
 object Display {
     private val displays: MutableMap<UUID, Display> = mutableMapOf()
     private val reportTime: MutableMap<UUID, Long> = mutableMapOf()

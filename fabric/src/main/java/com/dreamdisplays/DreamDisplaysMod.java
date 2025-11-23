@@ -16,7 +16,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import com.dreamdisplays.net.*;
 import com.dreamdisplays.render.ScreenWorldRenderer;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public class DreamDisplaysMod implements ClientModInitializer, Mod {
     @Override
     public void onInitializeClient() {

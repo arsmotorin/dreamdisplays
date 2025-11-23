@@ -4,8 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import me.inotsleep.utils.logging.LoggingManager;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -13,12 +12,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+@NullMarked
 public class ClientDisplaySettings {
 
     // TODO: move to adequate path
-    private static final @NonNull File SETTINGS_FILE = new File("./config/dreamdisplays/client-display-settings.json");
-    private static final @NonNull Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final @NonNull Map<UUID, DisplaySettings> displaySettings = new HashMap<>();
+    private static final File SETTINGS_FILE = new File("./config/dreamdisplays/client-display-settings.json");
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Map<UUID, DisplaySettings> displaySettings = new HashMap<>();
 
     public static class DisplaySettings {
         public float volume = 0.5f;
@@ -38,7 +38,7 @@ public class ClientDisplaySettings {
     public static void load() {
 
         // Ensure directory exists
-        @Nullable File dir = SETTINGS_FILE.getParentFile();
+        File dir = SETTINGS_FILE.getParentFile();
         if (dir != null && !dir.exists() && !dir.mkdirs()) {
             LoggingManager.error("Failed to create settings directory.");
             return;
@@ -67,7 +67,7 @@ public class ClientDisplaySettings {
     // Save settings to disk
     public static void save() {
         try {
-            @Nullable File dir = SETTINGS_FILE.getParentFile();
+            File dir = SETTINGS_FILE.getParentFile();
             if (dir != null && !dir.exists() && !dir.mkdirs()) {
                 LoggingManager.error("Failed to create settings directory.");
                 return;
@@ -87,12 +87,12 @@ public class ClientDisplaySettings {
     }
 
     // Get settings for a display
-    public static @NonNull DisplaySettings getSettings(@NonNull UUID displayId) {
+    public static DisplaySettings getSettings(UUID displayId) {
         return displaySettings.computeIfAbsent(displayId, k -> new DisplaySettings());
     }
 
     // Update settings for a display
-    public static void updateSettings(@NonNull UUID displayId, float volume, @NonNull String quality, boolean muted) {
+    public static void updateSettings(UUID displayId, float volume, String quality, boolean muted) {
         DisplaySettings settings = getSettings(displayId);
         settings.volume = volume;
         settings.quality = quality;

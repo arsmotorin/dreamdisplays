@@ -8,8 +8,10 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import org.jspecify.annotations.NullMarked;
 
 // Packet for reporting a display
+@NullMarked
 public record ReportPacket(UUID id) implements CustomPacketPayload {
     public static final Type<ReportPacket> PACKET_ID =
             new Type<>(Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "report"));

@@ -3,6 +3,7 @@ package com.dreamdisplays.downloader;
 import me.inotsleep.utils.logging.LoggingManager;
 import org.apache.commons.io.FileUtils;
 import com.dreamdisplays.util.Utils;
+import org.jspecify.annotations.NullMarked;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -12,6 +13,7 @@ import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+@NullMarked
 public class GStreamerDownloader {
 
     // URLs for downloading GStreamer builds and checksums

@@ -2,6 +2,8 @@ package com.dreamdisplays.downloader;
 
 import me.inotsleep.utils.logging.LoggingManager;
 import org.freedesktop.gstreamer.Gst;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +12,7 @@ import java.util.regex.Pattern;
 
 import static com.dreamdisplays.util.Utils.detectPlatform;
 
+@NullMarked
 public class GStreamerDownloadInit {
 
     // Sets up the library path for GStreamer and loads the libraries
@@ -85,7 +88,7 @@ public class GStreamerDownloadInit {
             Pattern.compile(".*\\.(dylib|jnilib)$", Pattern.CASE_INSENSITIVE);
 
     // Checks if a file name corresponds to a library file
-    private static boolean isLib(String name) {
+    private static boolean isLib(@Nullable String name) {
         if (name == null) return false;
         String lower = name.toLowerCase();
         // Windows

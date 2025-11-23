@@ -8,7 +8,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.phys.BlockHitResult;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
@@ -28,18 +28,18 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+@NullMarked
 public class PlatformlessInitializer {
 
-    public static @NonNull Config config;
+    public static final String MOD_ID = "dreamdisplays";
+    public static Config config = new Config(new File("./config/" + MOD_ID));
 
     public static Thread timerThread = new Thread(() -> {
         int lastDistance = 64;
         boolean isErrored = false;
         while (!isErrored) {
             ScreenManager.getScreens().forEach(Screen::reloadQuality);
-            if (
-                    config.defaultDistance != lastDistance
-            ) {
+            if (config.defaultDistance != lastDistance) {
                 config.defaultDistance = lastDistance;
                 config.save();
             }
@@ -60,18 +60,14 @@ public class PlatformlessInitializer {
         return config;
     }
 
-    public static final String MOD_ID = "dreamdisplays";
-
     private static @Nullable Screen hoveredScreen = null;
 
-    private static @NonNull Mod mod;
+    private static Mod mod;
 
     public static void onModInit(Mod DreamDisplaysMod) {
         mod = DreamDisplaysMod;
         LoggingManager.setLogger(LoggerFactory.getLogger(MOD_ID));
         LoggingManager.info("Starting Dream Displays");
-
-        config = new Config(new File("./config/" + MOD_ID));
         config.reload();
 
         // Load client display settings
@@ -95,7 +91,7 @@ public class PlatformlessInitializer {
         createScreen(packet.id(), packet.ownerId(), packet.pos(), packet.facing(), packet.width(), packet.height(), packet.url(), packet.lang(), packet.isSync());
     }
 
-    public static void createScreen(@NonNull UUID id, @NonNull UUID ownerId, @NonNull Vector3i pos, @NonNull Facing facing, int width, int height, @NonNull String code, @NonNull String lang, boolean isSync) {
+    public static void createScreen(UUID id, UUID ownerId, Vector3i pos, Facing facing, int width, int height, String code, String lang, boolean isSync) {
         Screen screen = new Screen(id, ownerId, pos.x(), pos.y(), pos.z(), facing.toString(), width, height, isSync);
         assert Minecraft.getInstance().player != null;
         if (screen.getDistanceToScreen(Minecraft.getInstance().player.blockPosition()) > PlatformlessInitializer.config.defaultDistance) return;
@@ -103,9 +99,9 @@ public class PlatformlessInitializer {
         if (!Objects.equals(code, "")) screen.loadVideo(code, lang);
     }
 
-    public static void onSyncPacket(@NonNull SyncPacket packet) {
+    public static void onSyncPacket(SyncPacket packet) {
         if (!ScreenManager.screens.containsKey(packet.id())) return;
-        @Nullable Screen screen = ScreenManager.screens.get(packet.id());
+        Screen screen = ScreenManager.screens.get(packet.id());
         if (screen != null) {
             screen.updateData(packet);
         }
@@ -125,7 +121,7 @@ public class PlatformlessInitializer {
         }
     }
 
-    public static void onEndTick(@NonNull Minecraft minecraft) {
+    public static void onEndTick(Minecraft minecraft) {
         if (minecraft.level != null && minecraft.getCurrentServer() != null) {
             if (lastLevel.get() == null) {
                 lastLevel.set(minecraft.level);
@@ -155,7 +151,7 @@ public class PlatformlessInitializer {
 
         if (minecraft.player == null) return;
 
-        @Nullable BlockHitResult result = RCUtil.rCBlock(64);
+        BlockHitResult result = RCUtil.rCBlock(64);
         hoveredScreen = null;
         PlatformlessInitializer.isOnScreen = false;
 

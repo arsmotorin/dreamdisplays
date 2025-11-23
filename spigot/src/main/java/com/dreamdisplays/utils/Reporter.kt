@@ -4,6 +4,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import org.bukkit.Location
 import org.bukkit.entity.Player
+import org.jspecify.annotations.NullMarked
 import java.io.IOException
 import java.net.URI
 import java.net.http.HttpClient
@@ -13,6 +14,7 @@ import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
+@NullMarked
 object Reporter {
     private val client: HttpClient = HttpClient.newHttpClient()
 

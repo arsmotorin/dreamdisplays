@@ -2,9 +2,11 @@ package com.dreamdisplays;
 
 import me.inotsleep.utils.config.AbstractConfig;
 import me.inotsleep.utils.config.Path;
+import org.jspecify.annotations.NullMarked;
 
 import java.io.File;
 
+@NullMarked
 public class Config extends AbstractConfig {
 
     static {

@@ -20,11 +20,13 @@ import org.bukkit.event.entity.EntityExplodeEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.scheduler.BukkitRunnable
+import org.jspecify.annotations.NullMarked
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
+@NullMarked
 class Selection(plugin: Main) : Listener {
 
     init {

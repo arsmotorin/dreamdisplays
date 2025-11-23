@@ -1,9 +1,12 @@
 package com.dreamdisplays.screen;
 
+import org.jspecify.annotations.NullMarked;
+
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+@NullMarked
 public class ScreenManager {
 
     public static final ConcurrentHashMap<UUID, Screen> screens = new ConcurrentHashMap<>();

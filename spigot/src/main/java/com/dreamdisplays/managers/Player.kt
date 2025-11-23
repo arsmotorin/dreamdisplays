@@ -2,8 +2,10 @@ package com.dreamdisplays.managers
 
 import com.github.zafarkhaja.semver.Version
 import org.bukkit.entity.Player
+import org.jspecify.annotations.NullMarked
 import java.util.*
 
+@NullMarked
 object Player {
     private val versions: MutableMap<UUID?, Version?> = HashMap<UUID?, Version?>()
     private val modUpdateNotified: MutableMap<UUID?, Boolean?> = HashMap<UUID?, Boolean?>()

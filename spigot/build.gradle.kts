@@ -4,12 +4,9 @@ plugins {
     kotlin("jvm")
 }
 
-group = "dreamdisplays"
-
 dependencies {
     compileOnly("org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT")
-    compileOnly("org.jetbrains:annotations:26.0.2")
-
+    compileOnly(libs.jspecify)
     implementation("me.inotsleep:utils:1.3.4")
     implementation("com.github.zafarkhaja:java-semver:0.10.2")
     implementation("com.moandjiezana.toml:toml4j:0.7.2") {
@@ -35,8 +32,7 @@ tasks.processResources {
     val projectVersion = version.toString()
     val props = mapOf("version" to projectVersion)
     inputs.properties(props)
-    filteringCharset = "UTF-8"
-
+    filteringCharset = Charsets.UTF_8.name()
     filesMatching("plugin.yml") {
         expand(props)
     }
@@ -60,7 +56,4 @@ tasks.shadowJar {
             "paperweight-mappings-namespace" to "mojang",
         )
     }
-}
-repositories {
-    mavenCentral()
 }

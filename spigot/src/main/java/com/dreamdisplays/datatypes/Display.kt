@@ -7,10 +7,12 @@ import org.bukkit.Location
 import org.bukkit.block.BlockFace
 import org.bukkit.entity.Player
 import org.bukkit.util.BoundingBox
+import org.jspecify.annotations.NullMarked
 import java.util.*
 import kotlin.math.max
 import kotlin.math.min
 
+@NullMarked
 class Display(
     val id: UUID,
     val ownerId: UUID,

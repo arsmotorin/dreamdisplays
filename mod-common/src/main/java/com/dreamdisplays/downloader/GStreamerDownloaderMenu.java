@@ -5,7 +5,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public class GStreamerDownloaderMenu extends Screen {
     public final Screen menu;
 

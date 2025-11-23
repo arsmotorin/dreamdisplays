@@ -13,6 +13,7 @@ import org.freedesktop.gstreamer.*;
 import org.freedesktop.gstreamer.elements.AppSink;
 import org.freedesktop.gstreamer.event.SeekFlags;
 import com.dreamdisplays.PlatformlessInitializer;
+import org.jspecify.annotations.NullMarked;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -27,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+@NullMarked
 public class MediaPlayer {
 
     private final String lang;

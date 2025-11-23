@@ -6,8 +6,10 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import com.dreamdisplays.PlatformlessInitializer;
+import org.jspecify.annotations.NullMarked;
 
 // Packet for indicating premium status
+@NullMarked
 public record PremiumPacket(boolean premium) implements CustomPacketPayload {
     public static final Type<PremiumPacket> PACKET_ID =
             new Type<>(Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "premium"));

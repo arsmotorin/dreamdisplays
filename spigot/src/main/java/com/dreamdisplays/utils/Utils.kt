@@ -1,9 +1,11 @@
 package com.dreamdisplays.utils
 
+import org.jspecify.annotations.NullMarked
 import java.net.URI
 import java.net.URISyntaxException
 import java.util.regex.Pattern
 
+@NullMarked
 object Utils {
     fun extractVideo(youtubeUrl: String): String? {
         try {

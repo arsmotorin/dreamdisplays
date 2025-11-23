@@ -6,8 +6,10 @@ import com.dreamdisplays.managers.Display.getDisplayData
 import com.dreamdisplays.utils.net.Utils
 import me.inotsleep.utils.logging.LoggingManager
 import org.bukkit.entity.Player
+import org.jspecify.annotations.NullMarked
 import java.util.*
 
+@NullMarked
 object State {
     private val playStates: MutableMap<UUID?, State> = HashMap<UUID?, State>()
 

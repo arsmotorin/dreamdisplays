@@ -9,10 +9,13 @@ import me.inotsleep.utils.storage.connection.BaseConnection
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.BlockFace
+import org.jspecify.annotations.NullMarked
+import org.jspecify.annotations.Nullable
 import java.nio.ByteBuffer
 import java.sql.SQLException
 import java.util.*
 
+@NullMarked
 class Storage(var plugin: Main) {
     var connection: BaseConnection? = null
     var tablePrefix: String? = null

@@ -18,11 +18,13 @@ import me.inotsleep.utils.logging.LoggingManager
 import org.bukkit.ChatColor
 import org.bukkit.entity.Player
 import org.bukkit.plugin.messaging.PluginMessageListener
+import org.jspecify.annotations.NullMarked
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.io.IOException
 import java.util.*
 
+@NullMarked
 class Receiver(var plugin: Main?) : PluginMessageListener {
     override fun onPluginMessageReceived(channel: String, player: Player, message: ByteArray) {
         when (channel) {

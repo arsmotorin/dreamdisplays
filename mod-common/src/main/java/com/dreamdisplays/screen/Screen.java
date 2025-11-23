@@ -15,7 +15,7 @@ import com.dreamdisplays.net.RequestSyncPacket;
 import com.dreamdisplays.net.SyncPacket;
 import com.dreamdisplays.util.ImageUtil;
 import com.dreamdisplays.util.Utils;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+@NullMarked
 public class Screen {
     public boolean owner;
 
@@ -35,11 +36,11 @@ public class Screen {
     private String facing;
     private int width;
     private int height;
-    private final @NonNull UUID id;
+    private final UUID id;
     private float volume;
     private boolean videoStarted;
     private boolean paused;
-    private @NonNull String quality = "720";
+    private String quality = "720";
     public boolean isSync;
     public boolean muted;
 
@@ -109,8 +110,10 @@ public class Screen {
                         previewTexture = nativeImageBackedTexture;
                         previewTextureId = Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "screen-preview-"+id+"-"+UUID.randomUUID());
 
-                        Minecraft.getInstance().getTextureManager().register(previewTextureId, previewTexture);
-                        previewRenderType = createRenderType(previewTextureId);
+                        if (previewTexture != null) {
+                            Minecraft.getInstance().getTextureManager().register(previewTextureId, previewTexture);
+                            previewRenderType = createRenderType(previewTextureId);
+                        }
                     });
         });
 
@@ -234,7 +237,7 @@ public class Screen {
 
     // Updates the texture to fit the current video frame
     public void fitTexture() {
-        if (mediaPlayer != null) {
+        if (mediaPlayer != null && texture != null) {
             mediaPlayer.updateFrame(texture.getTexture());
         }
     }
@@ -367,6 +370,7 @@ public class Screen {
         }
     }
 
+    @Nullable
     public DynamicTexture getPreviewTexture() {
         return previewTexture;
     }
@@ -413,14 +417,16 @@ public class Screen {
     }
 
     public void sendSync() {
-        PlatformlessInitializer.sendPacket(new SyncPacket(id, isSync, paused, mediaPlayer.getCurrentTime(), mediaPlayer.getDuration()));
+        if (mediaPlayer != null) {
+            PlatformlessInitializer.sendPacket(new SyncPacket(id, isSync, paused, mediaPlayer.getCurrentTime(), mediaPlayer.getDuration()));
+        }
     }
 
     public void waitForMFInit(Runnable action) {
         new Thread(() -> {
             while (mediaPlayer == null || !mediaPlayer.isInitialized()) {
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(100); // TODO: this is ugly
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }

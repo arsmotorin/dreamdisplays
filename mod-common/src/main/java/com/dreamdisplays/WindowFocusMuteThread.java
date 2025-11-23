@@ -3,9 +3,11 @@ package com.dreamdisplays;
 import net.minecraft.client.Minecraft;
 import com.dreamdisplays.screen.Screen;
 import com.dreamdisplays.screen.ScreenManager;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public class WindowFocusMuteThread extends Thread {
-    public static WindowFocusMuteThread instance;
+    public static WindowFocusMuteThread instance = new WindowFocusMuteThread();
 
     public WindowFocusMuteThread() {
         setDaemon(true);

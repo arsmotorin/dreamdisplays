@@ -3,8 +3,10 @@ package com.dreamdisplays.utils
 import org.bukkit.Location
 import org.bukkit.entity.Player
 import org.bukkit.util.BoundingBox
+import org.jspecify.annotations.NullMarked
 import java.util.*
 
+@NullMarked
 object Outliner {
 
     private val activeOutlines: MutableMap<UUID, OutlineData> = mutableMapOf()
