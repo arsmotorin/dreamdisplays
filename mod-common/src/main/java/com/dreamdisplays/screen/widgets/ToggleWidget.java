@@ -12,18 +12,19 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public abstract class ToggleWidget extends AbstractWidget {
-	private static final Identifier TEXTURE = Identifier.withDefaultNamespace("widget/slider");
-	private static final Identifier HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_highlighted");
-	private static final Identifier HANDLE_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle");
-	private static final Identifier HANDLE_HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle_highlighted");
+	private static final @NonNull Identifier TEXTURE = Identifier.withDefaultNamespace("widget/slider");
+	private static final @NonNull Identifier HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_highlighted");
+	private static final @NonNull Identifier HANDLE_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle");
+	private static final @NonNull Identifier HANDLE_HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle_highlighted");
 	private double dValue;
 	public boolean value;
 	private boolean sliderFocused;
 
-	public ToggleWidget(int x, int y, int width, int height, Component text, boolean value) {
+	public ToggleWidget(int x, int y, int width, int height, @NonNull Component text, boolean value) {
 		super(x, y, width, height, text);
 		this.dValue = value ? 1 : 0;
 		this.value = value;
@@ -38,7 +39,7 @@ public abstract class ToggleWidget extends AbstractWidget {
 	}
 
 	@Override
-	protected @NotNull MutableComponent createNarrationMessage() {
+	protected @NonNull MutableComponent createNarrationMessage() {
 		return Component.translatable("gui.narrate.slider", this.getMessage());
 	}
 
@@ -74,25 +75,15 @@ public abstract class ToggleWidget extends AbstractWidget {
 		dValue = value ? 1 : 0;
 	}
 
-	// Test 1
 	public void onClick(double mouseX, double mouseY) {
-		System.out.println(">>> ToggleWidget.onClick called!");
-		this.setValueFromMouse();
-		this.updateMessage();
-		this.applyValue();
-	}
-
-    // Test 2
-	public void onRelease(double mouseX, double mouseY) {
-		System.out.println(">>> ToggleWidget.onRelease called!");
-		super.playDownSound(net.minecraft.client.Minecraft.getInstance().getSoundManager());
+		this.playDownSound(Minecraft.getInstance().getSoundManager());
 		this.setValueFromMouse();
 		this.updateMessage();
 		this.applyValue();
 	}
 
 	@Override
-	public void playDownSound(SoundManager soundManager) {
+	public void playDownSound(@NonNull SoundManager soundManager) {
 	}
 
 	protected abstract void updateMessage();

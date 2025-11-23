@@ -15,6 +15,8 @@ import com.dreamdisplays.net.RequestSyncPacket;
 import com.dreamdisplays.net.SyncPacket;
 import com.dreamdisplays.util.ImageUtil;
 import com.dreamdisplays.util.Utils;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,33 +35,33 @@ public class Screen {
     private String facing;
     private int width;
     private int height;
-    private final UUID id;
+    private final @NonNull UUID id;
     private float volume;
     private boolean videoStarted;
     private boolean paused;
-    private String quality = "720";
+    private @NonNull String quality = "720";
     public boolean isSync;
     public boolean muted;
 
     // Use a combined MediaPlayer instead of the separate VideoDecoder and AudioPlayer.
-    private MediaPlayer mediaPlayer;
+    private @Nullable MediaPlayer mediaPlayer;
 
-    private String videoUrl;
+    private @Nullable String videoUrl;
 
-    public DynamicTexture texture = null;
-    public Identifier textureId = null;
-    public RenderType renderType = null;
+    public @Nullable DynamicTexture texture = null;
+    public @Nullable Identifier textureId = null;
+    public @Nullable RenderType renderType = null;
 
     public int textureWidth = 0;
     public int textureHeight = 0;
 
     // Cache (good for performance)
-    private transient BlockPos blockPos;
+    private transient @Nullable BlockPos blockPos;
 
-    private DynamicTexture previewTexture = null;
-    public Identifier previewTextureId = null;
-    public RenderType previewRenderType = null;
-    private String lang;
+    private @Nullable DynamicTexture previewTexture = null;
+    public @Nullable Identifier previewTextureId = null;
+    public @Nullable RenderType previewRenderType = null;
+    private @Nullable String lang;
 
     // Constructor for the Screen class
     public Screen(UUID id, UUID ownerId, int x, int y, int z, String facing, int width, int height, boolean isSync) {

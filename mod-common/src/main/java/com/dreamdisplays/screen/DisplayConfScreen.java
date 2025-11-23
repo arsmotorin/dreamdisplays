@@ -7,6 +7,8 @@ import com.dreamdisplays.render.RenderUtil2D;
 import com.dreamdisplays.screen.widgets.IconButtonWidget;
 import com.dreamdisplays.screen.widgets.SliderWidget;
 import com.dreamdisplays.screen.widgets.ToggleWidget;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -24,23 +26,23 @@ import net.minecraft.resources.Identifier;
 // Configuration screen for Dream Displays with volume, render distance, quality, and sync settings
 public class DisplayConfScreen extends Screen {
 
-    SliderWidget volume = null;
-    SliderWidget renderD = null;
-    SliderWidget quality = null;
-    ToggleWidget sync = null;
+    @Nullable SliderWidget volume = null;
+    @Nullable SliderWidget renderD = null;
+    @Nullable SliderWidget quality = null;
+    @Nullable ToggleWidget sync = null;
 
-    IconButtonWidget backButton = null;
-    IconButtonWidget forwardButton = null;
-    IconButtonWidget pauseButton = null;
+    @Nullable IconButtonWidget backButton = null;
+    @Nullable IconButtonWidget forwardButton = null;
+    @Nullable IconButtonWidget pauseButton = null;
 
-    IconButtonWidget renderDReset = null;
-    IconButtonWidget qualityReset = null;
-    IconButtonWidget syncReset = null;
+    @Nullable IconButtonWidget renderDReset = null;
+    @Nullable IconButtonWidget qualityReset = null;
+    @Nullable IconButtonWidget syncReset = null;
 
-    IconButtonWidget deleteButton = null;
-    IconButtonWidget reportButton = null;
+    @Nullable IconButtonWidget deleteButton = null;
+    @Nullable IconButtonWidget reportButton = null;
 
-    public com.dreamdisplays.screen.Screen screen;
+    public com.dreamdisplays.screen.@NonNull Screen screen;
 
     protected DisplayConfScreen() {
         super(Component.translatable("dreamdisplays.ui.title"));
@@ -85,7 +87,7 @@ public class DisplayConfScreen extends Screen {
 
         pauseButton.setIconTexture(screen.getPaused() ? Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "bupi") : Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "bpi"));
 
-        renderD = new SliderWidget(0, 0, 0, 0, Component.nullToEmpty(String.valueOf(PlatformlessInitializer.config.defaultDistance)), (PlatformlessInitializer.config.defaultDistance-24)/(96-24)) {
+        renderD = new SliderWidget(0, 0, 0, 0, Component.nullToEmpty(String.valueOf(PlatformlessInitializer.config.defaultDistance)), (PlatformlessInitializer.config.defaultDistance-24)/(double)(96-24)) {
             @Override
             protected void updateMessage() {
                 setMessage(Component.nullToEmpty(String.valueOf((int) (value*(96-24)) + 24)));
@@ -460,7 +462,7 @@ public class DisplayConfScreen extends Screen {
     }
 
     // Sets the screen for the display config screen
-    private void setScreen(com.dreamdisplays.screen.Screen screen) {
+    private void setScreen(com.dreamdisplays.screen.@NonNull Screen screen) {
         this.screen = screen;
     }
 }

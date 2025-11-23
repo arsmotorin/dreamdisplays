@@ -8,25 +8,27 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public abstract class IconButtonWidget extends AbstractWidget {
 	private final int iw;
     private final int ih;
 	private final int margin;
 
-	private Identifier iconTexture;
+	private @NonNull Identifier iconTexture;
 
-	public void setIconTexture(Identifier iconTexture) {
+	public void setIconTexture(@NonNull Identifier iconTexture) {
 		this.iconTexture = iconTexture;
 	}
 
-	private static final WidgetSprites TEXTURES = new WidgetSprites(
+	private static final @NonNull WidgetSprites TEXTURES = new WidgetSprites(
 		Identifier.withDefaultNamespace("widget/button"), Identifier.withDefaultNamespace("widget/button_disabled"), Identifier.withDefaultNamespace("widget/button_highlighted")
 	);
 	
-	private WidgetSprites settedTextures = null;
+	private @Nullable WidgetSprites settedTextures = null;
 
-	public IconButtonWidget(int i, int j, int k, int l, int iw, int ih, Identifier iconTexture, int margin) {
+	public IconButtonWidget(int i, int j, int k, int l, int iw, int ih, @NonNull Identifier iconTexture, int margin) {
 		super(i, j, k, l, Component.empty());
 
 		this.iw = iw;
@@ -35,20 +37,14 @@ public abstract class IconButtonWidget extends AbstractWidget {
 		this.margin = margin;
 	}
 
-	public void setTextures(WidgetSprites settedTextures) {
+	public void setTextures(@NonNull WidgetSprites settedTextures) {
 		this.settedTextures = settedTextures;
 	}
 
 	public abstract void onPress();
 
-    // Test 1
 	public void onClick(double mouseX, double mouseY) {
-		this.onPress();
-	}
-
-    // Test 2
-	public void onRelease(double mouseX, double mouseY) {
-		super.playDownSound(net.minecraft.client.Minecraft.getInstance().getSoundManager());
+		this.playDownSound(net.minecraft.client.Minecraft.getInstance().getSoundManager());
 		this.onPress();
 	}
 

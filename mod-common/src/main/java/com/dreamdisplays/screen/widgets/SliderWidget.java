@@ -16,17 +16,18 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public abstract class SliderWidget extends AbstractWidget {
-    private static final Identifier TEXTURE = Identifier.withDefaultNamespace("widget/slider");
-    private static final Identifier HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_highlighted");
-    private static final Identifier HANDLE_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle");
-    private static final Identifier HANDLE_HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle_highlighted");
+    private static final @NonNull Identifier TEXTURE = Identifier.withDefaultNamespace("widget/slider");
+    private static final @NonNull Identifier HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_highlighted");
+    private static final @NonNull Identifier HANDLE_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle");
+    private static final @NonNull Identifier HANDLE_HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle_highlighted");
     public double value;
     private boolean sliderFocused;
 
-    public SliderWidget(int x, int y, int width, int height, Component text, double value) {
+    public SliderWidget(int x, int y, int width, int height, @NonNull Component text, double value) {
         super(x, y, width, height, text);
         this.value = value;
     }
@@ -39,7 +40,7 @@ public abstract class SliderWidget extends AbstractWidget {
         return !this.isHovered && !this.sliderFocused ? HANDLE_TEXTURE : HANDLE_HIGHLIGHTED_TEXTURE;
     }
 
-    protected @NotNull MutableComponent createNarrationMessage() {
+    protected @NonNull MutableComponent createNarrationMessage() {
         return Component.translatable("gui.narrate.slider", this.getMessage());
     }
 
@@ -64,7 +65,11 @@ public abstract class SliderWidget extends AbstractWidget {
         this.renderScrollingStringOverContents(graphics.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.TOOLTIP_ONLY), message, 2); // , i | Mth.ceil(this.alpha * 255.0F) << 24
     }
 
-    public void onClick(double mouseX, double mouseY) {
+	public void onClick(double mouseX, double mouseY) {
+        this.setValueFromMouse(mouseX);
+    }
+
+    protected void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
         this.setValueFromMouse(mouseX);
     }
 
@@ -96,15 +101,7 @@ public abstract class SliderWidget extends AbstractWidget {
     }
 
     @Override
-    public void onDrag(MouseButtonEvent event, double mouseX, double mouseY) {
-        super.onDrag(event, mouseX, mouseY);
-    }
-
-    public void playDownSound(SoundManager soundManager) {
-    }
-
-    public void onRelease(double mouseX, double mouseY) {
-        super.playDownSound(Minecraft.getInstance().getSoundManager());
+    public void playDownSound(@NonNull SoundManager soundManager) {
     }
 
     protected abstract void updateMessage();

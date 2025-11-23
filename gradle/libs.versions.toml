@@ -9,10 +9,11 @@ lwjgl = "3.3.3"
 utils = "1.3.1"
 gst1 = "1.4.0"
 jna = "5.9.0"
+jspecify = "1.0.0"
 
 neoforge = "21.11.0-alpha.1.21.11-pre2.20251122.134508"
 
-# plugin versions
+# Plugin versions
 loom = "1.13.4"
 moddev = "2.0.119"
 shadow = "9.2.2"
@@ -29,3 +30,4 @@ utils = { module = "me.inotsleep:utils", version.ref = "utils" }
 gst1 = { module = "org.freedesktop.gstreamer:gst1-java-core", version.ref = "gst1" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 jnaPlatform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
+jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
