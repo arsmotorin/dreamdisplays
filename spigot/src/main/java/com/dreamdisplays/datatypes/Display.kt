@@ -1,7 +1,7 @@
 package com.dreamdisplays.datatypes
 
 import com.dreamdisplays.Main
-import com.dreamdisplays.utils.Utils
+import com.dreamdisplays.utils.Region
 import com.dreamdisplays.utils.net.Utils as Net
 import org.bukkit.Location
 import org.bukkit.block.BlockFace
@@ -57,6 +57,6 @@ class Display(
 
     val receivers: List<Player>
         get() = pos1.world?.players
-            ?.filter { Utils.getDistanceToScreen(it.location, this) < Main.config.settings.maxRenderDistance }
+            ?.filter { Region.getDistance(it.location, pos1, pos2) < Main.config.settings.maxRenderDistance }
             ?: emptyList()
 }

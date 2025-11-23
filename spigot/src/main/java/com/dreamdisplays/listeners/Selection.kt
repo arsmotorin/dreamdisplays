@@ -4,7 +4,7 @@ import com.dreamdisplays.Main
 import com.dreamdisplays.datatypes.Selection
 import com.dreamdisplays.managers.Display
 import com.dreamdisplays.utils.Message
-import com.dreamdisplays.utils.Utils
+import com.dreamdisplays.utils.Region
 import org.bukkit.Location
 import org.bukkit.block.Block
 import org.bukkit.block.BlockFace
@@ -79,60 +79,24 @@ class Selection(plugin: Main) : Listener {
             blockFace = player.facing.oppositeFace
         }
 
-        when {
-            event.action == Action.LEFT_CLICK_BLOCK -> {
-                // Get or create selection
-                val selection = selectionPoints.getOrPut(player.uniqueId) { Selection(player) }
+        if (event.action == Action.LEFT_CLICK_BLOCK) {
+            // Get or create selection
+            val selection = selectionPoints.getOrPut(player.uniqueId) { Selection(player) }
 
-                // Reset if world changed
-                if (selection.pos1?.world != location.world || selection.pos2?.world != location.world) {
-                    selection.pos1 = null
-                    selection.pos2 = null
-                }
-
-                selection.pos1 = location.clone()
-                selection.setFace(blockFace)
-                selection.isReady = false
-
-                Message.sendMessage(player, "firstPointSelected")
-
-                // Validate if pos2 already exists
-                if (selection.pos2 != null) {
-                    val code = isValidDisplay(selection)
-                    if (code == VALID_DISPLAY) {
-                        selection.isReady = true
-                        Message.sendMessage(player, "createDisplayCommand")
-                    } else {
-                        sendErrorMessage(player, code)
-                    }
-                }
+            // Reset if world changed
+            if (selection.pos1?.world != location.world || selection.pos2?.world != location.world) {
+                selection.pos1 = null
+                selection.pos2 = null
             }
 
-            event.action == Action.RIGHT_CLICK_BLOCK -> {
-                // Check if pos1 exists BEFORE getting/creating selection
-                val existingSelection = selectionPoints[player.uniqueId]
-                if (existingSelection == null || existingSelection.pos1 == null) {
-                    Message.sendMessage(player, "noDisplayTerritories")
-                    return
-                }
+            selection.pos1 = location.clone()
+            selection.setFace(blockFace)
+            selection.isReady = false
 
-                // Now we can safely update pos2
-                val selection = existingSelection
+            Message.sendMessage(player, "firstPointSelected")
 
-                // Reset if world changed
-                if (selection.pos1?.world != location.world) {
-                    selection.pos1 = null
-                    selection.pos2 = null
-                    Message.sendMessage(player, "noDisplayTerritories")
-                    return
-                }
-
-                selection.pos2 = location.clone()
-                selection.isReady = false
-
-                Message.sendMessage(player, "secondPointSelected")
-
-                // Validate the full selection
+            // Validate if pos2 already exists
+            if (selection.pos2 != null) {
                 val code = isValidDisplay(selection)
                 if (code == VALID_DISPLAY) {
                     selection.isReady = true
@@ -140,6 +104,39 @@ class Selection(plugin: Main) : Listener {
                 } else {
                     sendErrorMessage(player, code)
                 }
+            }
+        }
+        else if (event.action == Action.RIGHT_CLICK_BLOCK) {
+            // Check if pos1 exists BEFORE getting/creating selection
+            val existingSelection = selectionPoints[player.uniqueId]
+            if (existingSelection == null || existingSelection.pos1 == null) {
+                Message.sendMessage(player, "noDisplayTerritories")
+                return
+            }
+
+            // Now we can safely update pos2
+            val selection = existingSelection
+
+            // Reset if world changed
+            if (selection.pos1?.world != location.world) {
+                selection.pos1 = null
+                selection.pos2 = null
+                Message.sendMessage(player, "noDisplayTerritories")
+                return
+            }
+
+            selection.pos2 = location.clone()
+            selection.isReady = false
+
+            Message.sendMessage(player, "secondPointSelected")
+
+            // Validate the full selection
+            val code = isValidDisplay(selection)
+            if (code == VALID_DISPLAY) {
+                selection.isReady = true
+                Message.sendMessage(player, "createDisplayCommand")
+            } else {
+                sendErrorMessage(player, code)
             }
         }
     }
@@ -188,7 +185,7 @@ class Selection(plugin: Main) : Listener {
 
         return selectionPoints.values
             .filter { it.isReady && it.pos1 != null && it.pos2 != null }
-            .any { Utils.isInBoundaries(it.pos1!!, it.pos2!!, loc) }
+            .any { Region.isInBoundaries(it.pos1!!, it.pos2!!, loc) }
     }
 
     // Cancel event if location is protected

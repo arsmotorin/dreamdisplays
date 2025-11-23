@@ -36,7 +36,7 @@ class Command : AbstractCommand(Main.getInstance().name, "display") {
             return
         }
 
-        val code = Utils.extractVideoId(args[1] ?: "")
+        val code = Utils.extractVideo(args[1] ?: "")
         if (code == null) {
             msg(player, "invalidURL")
             return

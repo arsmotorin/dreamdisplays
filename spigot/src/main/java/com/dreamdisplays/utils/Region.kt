@@ -54,4 +54,40 @@ object Region {
             deltaX, deltaZ
         )
     }
+
+    // Check if a location is within the boundaries defined by two positions
+    fun isInBoundaries(pos1: Location, pos2: Location, location: Location): Boolean {
+        if (location.world != pos1.world) return false
+
+        val minX = min(pos1.blockX, pos2.blockX)
+        val minY = min(pos1.blockY, pos2.blockY)
+        val minZ = min(pos1.blockZ, pos2.blockZ)
+
+        val maxX = max(pos1.blockX, pos2.blockX)
+        val maxY = max(pos1.blockY, pos2.blockY)
+        val maxZ = max(pos1.blockZ, pos2.blockZ)
+
+        if (location.blockX !in minX..maxX) return false
+        if (location.blockY !in minY..maxY) return false
+        return location.blockZ in minZ..maxZ
+    }
+
+    // Calculate the shortest distance from a location to the region defined by two positions
+    fun getDistance(location: Location, pos1: Location, pos2: Location): Double {
+        val minX = min(pos1.blockX, pos2.blockX)
+        val minY = min(pos1.blockY, pos2.blockY)
+        val minZ = min(pos1.blockZ, pos2.blockZ)
+
+        val maxX = max(pos1.blockX, pos2.blockX)
+        val maxY = max(pos1.blockY, pos2.blockY)
+        val maxZ = max(pos1.blockZ, pos2.blockZ)
+
+        val clampedX = min(max(location.blockX, minX), maxX)
+        val clampedY = min(max(location.blockY, minY), maxY)
+        val clampedZ = min(max(location.blockZ, minZ), maxZ)
+
+        val closestPoint = Location(location.world, clampedX.toDouble(), clampedY.toDouble(), clampedZ.toDouble())
+
+        return closestPoint.distance(location)
+    }
 }
