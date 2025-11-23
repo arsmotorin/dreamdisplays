@@ -50,8 +50,18 @@ public abstract class GStreamInitMixin {
                 }
                 else if (GStreamerDownloadListener.INSTANCE.isFailed()) {
                     dreamdisplays$downloaded = true;
-                    LoggingManager.error("GStreamer failed to initialize");
-                    setScreen(new GStreamerErrorScreen(screen, Utils.detectPlatform().equals("windows") ? "Dream Displays failed to download libraries": "Dream Displays failed to initialize GStreamer. You need to download GStreamer libraries manually and place them in the ./libs/gstreamer directory"));
+                    if (Utils.detectPlatform().equals("windows")) {
+                        LoggingManager.error("GStreamer failed to initialize on Windows");
+                        setScreen(new GStreamerErrorScreen(screen, "Dream Displays failed to download libraries"));
+                    } else {
+                        LoggingManager.info("GStreamer downloader not needed on " + Utils.detectPlatform() + " - using system installation");
+                        try {
+                            Gst.init("MediaPlayer");
+                        } catch (Exception e) {
+                            LoggingManager.error("Failed to initialize system GStreamer", e);
+                            setScreen(new GStreamerErrorScreen(screen, "Dream Displays failed to initialize GStreamer. Please install GStreamer via your package manager."));
+                        }
+                    }
                 }
             }
             dreamdisplays$recursionDetector.set(recursionValue);

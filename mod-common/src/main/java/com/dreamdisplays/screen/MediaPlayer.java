@@ -127,7 +127,17 @@ public class MediaPlayer {
         if (w != preparedW || h != preparedH) return;
 
         CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
-        preparedBuffer.position(0);
+
+        // Rewind buffer to beginning.
+        // Position was set to end of data after prepareBuffer()
+        preparedBuffer.rewind();
+
+        // Validate buffer has enough data
+        int expectedSize = w * h * 4; // RGBA = 4 bytes per pixel
+        if (preparedBuffer.remaining() < expectedSize) {
+            LoggingManager.error("Buffer underrun: expected " + expectedSize + " bytes, but only " + preparedBuffer.remaining() + " remaining");
+            return;
+        }
 
         if (w != lastTexW || h != lastTexH) {
             lastTexW = w; lastTexH = h;
@@ -332,11 +342,15 @@ public class MediaPlayer {
     private static ByteBuffer imageToDirect(BufferedImage img) {
         byte[] abgr = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
         ByteBuffer buf = ByteBuffer.allocateDirect(abgr.length).order(ByteOrder.nativeOrder());
-        for (int i = 0; i < abgr.length; i += 4) {
-            byte a = abgr[i], b = abgr[i + 1], g = abgr[i + 2], r = abgr[i + 3];
-            buf.put(r).put(g).put(b).put(a);
-        }
-        buf.flip();
+
+        // Native ByteBuffer conversion
+        NativeImageConverter.abgrToRgbaDirect(abgr, buf, abgr.length);
+
+        // Set position to end of written data before flip()
+        // Native code writes directly to buffer memory, so position stays at 0
+        buf.position(abgr.length);
+        buf.flip(); // Now flip will set limit=abgr.length, position=0
+
         return buf;
     }
 
