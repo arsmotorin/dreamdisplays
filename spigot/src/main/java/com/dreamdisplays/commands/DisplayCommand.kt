@@ -134,22 +134,18 @@ class DisplayCommand : AbstractCommand(DreamDisplaysPlugin.getInstance().name, "
                 d.pos1.blockX.toString(),
                 d.pos1.blockY.toString(),
                 d.pos1.blockZ.toString(),
-                d.url ?: "None"
+                d.url
             )
             MessageUtil.sendColoredMessage(sender, formatted)
         }
     }
 
     private fun msg(sender: CommandSender?, key: String) {
-        MessageUtil.sendColoredMessage(sender, DreamDisplaysPlugin.config.messages[key] as String?)
+        MessageUtil.sendMessage(sender, key)
     }
 
     private fun sendHelp(sender: CommandSender?) {
-        @Suppress("UNCHECKED_CAST")
-        MessageUtil.sendColoredMessages(
-            sender,
-            DreamDisplaysPlugin.config.messages["displayCommandHelp"] as MutableList<String?>?
-        )
+        MessageUtil.sendColoredMessages(sender, MessageUtil.getMessages("displayCommandHelp"))
     }
 
     override fun complete(sender: CommandSender, args: Array<String?>): MutableList<String?> {

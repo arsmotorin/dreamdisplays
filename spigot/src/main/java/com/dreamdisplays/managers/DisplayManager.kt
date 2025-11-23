@@ -5,14 +5,13 @@ import com.dreamdisplays.datatypes.DisplayData
 import com.dreamdisplays.datatypes.SelectionData
 import com.dreamdisplays.utils.MessageUtil
 import com.dreamdisplays.utils.ReportSender
+import com.dreamdisplays.utils.SchedulerUtil
 import com.dreamdisplays.utils.net.PacketUtils
 import me.inotsleep.utils.logging.LoggingManager
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.entity.Player
-import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.BoundingBox
-import java.lang.reflect.Proxy
 import java.util.*
 import java.util.function.Consumer
 import kotlin.math.max
@@ -51,33 +50,11 @@ object DisplayManager {
     }
 
     fun delete(displayData: DisplayData) {
-        val deleteTask = Runnable {
+        SchedulerUtil.runAsync {
             DreamDisplaysPlugin.getInstance().storage.deleteDisplay(displayData)
         }
 
-        if (DreamDisplaysPlugin.getIsFolia()) {
-            try {
-                val bukkitClass = Class.forName("org.bukkit.Bukkit")
-                val asyncScheduler = bukkitClass.getMethod("getAsyncScheduler").invoke(null)
-                val consumerClass = Class.forName("java.util.function.Consumer")
-                val task = Proxy.newProxyInstance(
-                    consumerClass.classLoader,
-                    arrayOf(consumerClass)
-                ) { _, _, _ ->
-                    deleteTask.run()
-                    null
-                }
-                asyncScheduler.javaClass.getMethod("runNow", Any::class.java, consumerClass)
-                    .invoke(asyncScheduler, DreamDisplaysPlugin.getInstance(), task)
-            } catch (_: Exception) {
-                deleteTask.run()
-            }
-        } else {
-            object : BukkitRunnable() {
-                override fun run() = deleteTask.run()
-            }.runTaskAsynchronously(DreamDisplaysPlugin.getInstance())
-        }
-
+        @Suppress("UNCHECKED_CAST")
         PacketUtils.sendDeletePacket(displayData.receivers as MutableList<Player?>, displayData.id)
         displays.remove(displayData.id)
     }
@@ -100,18 +77,15 @@ object DisplayManager {
         val lastReport = reportTime.getOrPut(id) { 0L }
 
         if (System.currentTimeMillis() - lastReport < DreamDisplaysPlugin.config.settings.reportCooldown) {
-            MessageUtil.sendColoredMessage(
-                player,
-                DreamDisplaysPlugin.config.messages["reportTooQuickly"] as String?
-            )
+            MessageUtil.sendMessage(player, "reportTooQuickly")
             return
         }
 
         reportTime[id] = System.currentTimeMillis()
 
-        val reportTask = Runnable {
+        SchedulerUtil.runAsync {
             try {
-                if (DreamDisplaysPlugin.config.settings.webhookUrl.isEmpty()) return@Runnable
+                if (DreamDisplaysPlugin.config.settings.webhookUrl.isEmpty()) return@runAsync
                 ReportSender.sendReport(
                     displayData.pos1,
                     displayData.url,
@@ -120,36 +94,10 @@ object DisplayManager {
                     DreamDisplaysPlugin.config.settings.webhookUrl,
                     Bukkit.getOfflinePlayer(displayData.ownerId).name
                 )
-                MessageUtil.sendColoredMessage(
-                    player,
-                    DreamDisplaysPlugin.config.messages["reportSent"] as String?
-                )
+                MessageUtil.sendMessage(player, "reportSent")
             } catch (e: Exception) {
                 LoggingManager.error("Unable to send webhook message", e)
             }
-        }
-
-        if (DreamDisplaysPlugin.getIsFolia()) {
-            try {
-                val bukkitClass = Class.forName("org.bukkit.Bukkit")
-                val asyncScheduler = bukkitClass.getMethod("getAsyncScheduler").invoke(null)
-                val consumerClass = Class.forName("java.util.function.Consumer")
-                val task = Proxy.newProxyInstance(
-                    consumerClass.classLoader,
-                    arrayOf(consumerClass)
-                ) { _, _, _ ->
-                    reportTask.run()
-                    null
-                }
-                asyncScheduler.javaClass.getMethod("runNow", Any::class.java, consumerClass)
-                    .invoke(asyncScheduler, DreamDisplaysPlugin.getInstance(), task)
-            } catch (_: Exception) {
-                reportTask.run()
-            }
-        } else {
-            object : BukkitRunnable() {
-                override fun run() = reportTask.run()
-            }.runTaskAsynchronously(DreamDisplaysPlugin.getInstance())
         }
     }
 

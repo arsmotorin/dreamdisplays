@@ -2,15 +2,13 @@ package com.dreamdisplays.storage
 
 import com.dreamdisplays.DreamDisplaysPlugin
 import com.dreamdisplays.datatypes.DisplayData
-import com.dreamdisplays.managers.DisplayManager.register
-import com.dreamdisplays.managers.DisplayManager.save
+import com.dreamdisplays.managers.DisplayManager
+import com.dreamdisplays.utils.SchedulerUtil
 import me.inotsleep.utils.logging.LoggingManager
 import me.inotsleep.utils.storage.connection.BaseConnection
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.BlockFace
-import org.bukkit.scheduler.BukkitRunnable
-import java.lang.reflect.Proxy
 import java.nio.ByteBuffer
 import java.sql.SQLException
 import java.util.*
@@ -35,31 +33,7 @@ class Storage(var plugin: DreamDisplaysPlugin) {
             }
         }
 
-        if (DreamDisplaysPlugin.getIsFolia()) {
-            try {
-                val bukkitClass = Class.forName("org.bukkit.Bukkit")
-                val asyncScheduler = bukkitClass.getMethod("getAsyncScheduler").invoke(null)
-                val consumerClass = Class.forName("java.util.function.Consumer")
-                val task = Proxy.newProxyInstance(
-                    consumerClass.classLoader,
-                    arrayOf(consumerClass)
-                ) { _, _, _ ->
-                    connectTask.run()
-                    null
-                }
-                asyncScheduler.javaClass.getMethod("runNow", Any::class.java, consumerClass)
-                    .invoke(asyncScheduler, plugin, task)
-            } catch (_: Exception) {
-                // Fallback to sync if reflection fails
-                connectTask.run()
-            }
-        } else {
-            object : BukkitRunnable() {
-                override fun run() {
-                    connectTask.run()
-                }
-            }.runTaskAsynchronously(plugin)
-        }
+        SchedulerUtil.runAsync(connectTask)
     }
 
     @Throws(SQLException::class)
@@ -88,14 +62,14 @@ class Storage(var plugin: DreamDisplaysPlugin) {
                 )
             }
         }
-        register(this.allDisplays.filterNotNull())
+        DisplayManager.register(this.allDisplays.filterNotNull())
     }
 
     fun onDisable() {
         if (connection == null) return
 
         try {
-            save { data -> this.saveDisplay(data) }
+            DisplayManager.save { data: DisplayData -> this.saveDisplay(data) }
 
             connection!!.disconnect()
         } catch (e: SQLException) {
@@ -135,12 +109,12 @@ class Storage(var plugin: DreamDisplaysPlugin) {
                     data.pos1.blockZ
                 ),
                 packBlockPos(
-                    data.pos2!!.blockX,
+                    data.pos2.blockX,
                     data.pos2.blockY,
                     data.pos2.blockZ
                 ),
                 pack(data.width, data.height),
-                data.facing!!.ordinal.toByte(),
+                data.facing?.ordinal?.toByte(),
                 data.isSync,  // If duration is null, it will be saved as NULL in the database automatically.
 
                 data.duration,
