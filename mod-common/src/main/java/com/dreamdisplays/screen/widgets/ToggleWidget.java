@@ -74,6 +74,23 @@ public abstract class ToggleWidget extends AbstractWidget {
 		dValue = value ? 1 : 0;
 	}
 
+	// Test 1
+	public void onClick(double mouseX, double mouseY) {
+		System.out.println(">>> ToggleWidget.onClick called!");
+		this.setValueFromMouse();
+		this.updateMessage();
+		this.applyValue();
+	}
+
+    // Test 2
+	public void onRelease(double mouseX, double mouseY) {
+		System.out.println(">>> ToggleWidget.onRelease called!");
+		super.playDownSound(net.minecraft.client.Minecraft.getInstance().getSoundManager());
+		this.setValueFromMouse();
+		this.updateMessage();
+		this.applyValue();
+	}
+
 	@Override
 	public void playDownSound(SoundManager soundManager) {
 	}

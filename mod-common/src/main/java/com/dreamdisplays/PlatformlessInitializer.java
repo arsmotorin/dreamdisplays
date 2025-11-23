@@ -12,6 +12,7 @@ import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.LoggerFactory;
 import com.dreamdisplays.downloader.GStreamerDownloadInit;
+import com.dreamdisplays.screen.ClientDisplaySettings;
 import com.dreamdisplays.screen.DisplayConfScreen;
 import com.dreamdisplays.screen.Screen;
 import com.dreamdisplays.screen.ScreenManager;
@@ -70,6 +71,9 @@ public class PlatformlessInitializer {
 
         config = new Config(new File("./config/" + MOD_ID));
         config.reload();
+
+        // Load client display settings
+        ClientDisplaySettings.load();
 
         GStreamerDownloadInit.init();
         new WindowFocusMuteThread().start();

@@ -41,6 +41,17 @@ public abstract class IconButtonWidget extends AbstractWidget {
 
 	public abstract void onPress();
 
+    // Test 1
+	public void onClick(double mouseX, double mouseY) {
+		this.onPress();
+	}
+
+    // Test 2
+	public void onRelease(double mouseX, double mouseY) {
+		super.playDownSound(net.minecraft.client.Minecraft.getInstance().getSoundManager());
+		this.onPress();
+	}
+
 	@Override
 	protected void updateWidgetNarration(NarrationElementOutput builder) {}
 

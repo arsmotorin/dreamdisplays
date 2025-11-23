@@ -72,6 +72,12 @@ public class Screen {
         this.height = height;
         owner = Minecraft.getInstance().player != null && (ownerId + "").equals(Minecraft.getInstance().player.getUUID() + "");
 
+        // Load saved settings for this display
+        ClientDisplaySettings.DisplaySettings savedSettings = ClientDisplaySettings.getSettings(id);
+        this.volume = savedSettings.volume;
+        this.quality = savedSettings.quality;
+        this.muted = savedSettings.muted;
+
         if (isSync) {
             sendRequestSyncPacket();
         }
@@ -258,6 +264,8 @@ public class Screen {
     public void setVolume(float volume) {
         this.volume = volume;
         setVideoVolume(volume);
+        // Save settings
+        ClientDisplaySettings.updateSettings(id, volume, quality, muted);
     }
 
     // Sets video volume
@@ -281,6 +289,8 @@ public class Screen {
     // Sets video quality (e.g., "480", "720", "1080", "2160")
     public void setQuality(String quality) {
         this.quality = quality;
+        // Save settings
+        ClientDisplaySettings.updateSettings(id, volume, quality, muted);
     }
 
     // Starts video playback
@@ -372,6 +382,8 @@ public class Screen {
         muted = status;
 
         setVideoVolume(!status ? volume : 0);
+        // Save settings
+        ClientDisplaySettings.updateSettings(id, volume, quality, muted);
     }
 
     public double getVolume() {
