@@ -23,8 +23,8 @@ object State {
 
         if (data == null) return
 
-        if ((data.ownerId.toString() + "") != player.getUniqueId().toString() + "") {
-            LoggingManager.warn("Player " + player.getName() + " sent sync packet while he not owner! ")
+        if ((data.ownerId.toString() + "") != player.uniqueId.toString() + "") {
+            LoggingManager.warn("Player " + player.name + " sent sync packet while he not owner! ")
             return
         }
 
@@ -33,16 +33,16 @@ object State {
         data.duration = packet.limitTime
         val receivers = data.receivers
 
-        Utils.sendSyncPacket(receivers.stream().filter { p: Player? -> p!!.getUniqueId() != player.getUniqueId() }
+        Utils.sendSyncPacket(receivers.stream().filter { p: Player? -> p!!.uniqueId != player.uniqueId }
             .toList(), packet)
     }
 
     @JvmStatic
     fun sendSyncPacket(id: UUID?, player: Player?) {
         if (!playStates.containsKey(id)) return
-        val state: State = playStates.get(id)!!
+        val state: State = playStates[id]!!
 
         val packet = state.createPacket()
-        Utils.sendSyncPacket(mutableListOf<Player?>(player), packet)
+        Utils.sendSyncPacket(mutableListOf(player), packet)
     }
 }

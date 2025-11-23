@@ -7,12 +7,12 @@ import me.inotsleep.utils.logging.LoggingManager
 import me.inotsleep.utils.storage.StorageSettings
 import org.bukkit.Material
 import java.io.File
-import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 class Config(private val plugin: Main) {
-    private val configFile: File = File(plugin.dataFolder, "config.toml")
-    private var toml: Toml = Toml()
+    private val configFile = File(plugin.dataFolder, "config.toml")
+    private var toml = Toml()
 
     lateinit var language: LanguageSection
         private set
@@ -22,266 +22,205 @@ class Config(private val plugin: Main) {
         private set
     lateinit var permissions: PermissionsSection
         private set
-    val messages: MutableMap<String, Any> = mutableMapOf()
+    val messages = mutableMapOf<String, Any>()
 
     init {
-        if (!configFile.exists()) {
-            plugin.dataFolder.mkdirs()
-            plugin.getResource("config.toml")?.use { input ->
-                Files.copy(input, configFile.toPath())
-            } ?: plugin.logger.severe("Could not create default config.toml")
-        }
-
+        createDefaultConfig()
         extractLangFiles(true)
         load()
-        initializeSections()
-
-        LoggingManager.log("Loading messages for language: ${language.messageLanguage}")
-        setMessages(language.messageLanguage)
+        loadMessages()
     }
 
-    private fun initializeSections() {
-        language = LanguageSection(toml)
-        settings = SettingsSection(toml).apply { cache() }
-        storage = StorageSection(toml).apply { cache() }
-        permissions = PermissionsSection(toml).apply { cache() }
+    private fun createDefaultConfig() {
+        if (!configFile.exists()) {
+            plugin.dataFolder.mkdirs()
+            plugin.getResource("config.toml")?.use {
+                Files.copy(it, configFile.toPath())
+            } ?: plugin.logger.severe("Could not create default config.toml")
+        }
     }
 
     // Load configuration
     private fun load() {
-        try {
-            toml = Toml().read(configFile)
-        } catch (_: Exception) {
-            toml = Toml() // Empty TOML with defaults
+        toml = try {
+            Toml().read(configFile)
+        } catch (e: Exception) {
+            LoggingManager.error("Failed to parse config.toml", e)
+            Toml()
         }
+
+        language = toml.to(LanguageSection::class.java) ?: LanguageSection()
+        settings = toml.to(SettingsSection::class.java)?.apply { initMaterials() } ?: SettingsSection()
+        storage = toml.to(StorageSection::class.java) ?: StorageSection()
+        permissions = toml.to(PermissionsSection::class.java) ?: PermissionsSection()
     }
 
+    // Reload configuration
     fun reload() {
         load()
-        initializeSections()
         extractLangFiles(false)
-        setMessages(language.messageLanguage)
+        loadMessages()
     }
 
+    // Extract language files
     private fun extractLangFiles(overwrite: Boolean) {
-        val langFolder = File(plugin.dataFolder, "lang")
-        if (!langFolder.exists() && !langFolder.mkdirs()) {
-            plugin.logger.warning("Could not create lang folder")
-            return
+        val langFolder = File(plugin.dataFolder, "lang").apply {
+            if (!exists() && !mkdirs()) {
+                plugin.logger.warning("Could not create lang folder")
+                return
+            }
         }
 
-        listOf("en.json", "pl.json", "ru.json", "uk.json").forEach { fileName ->
-            try {
+        LANGUAGE_FILES.forEach { fileName ->
+            runCatching {
                 plugin.getResource("assets/dreamdisplays/lang/$fileName")?.use { input ->
-                    val targetFile = File(langFolder, fileName)
-                    if (overwrite || !targetFile.exists()) {
-                        Files.copy(input, targetFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                    val target = File(langFolder, fileName)
+                    if (overwrite || !target.exists()) {
+                        Files.copy(input, target.toPath(), StandardCopyOption.REPLACE_EXISTING)
                     }
                 }
-            } catch (e: Exception) {
-                plugin.logger.warning("Could not extract language file $fileName: ${e.message}")
+            }.onFailure {
+                plugin.logger.warning("Could not extract $fileName: ${it.message}")
             }
         }
     }
 
-    private fun setMessages(lang: String) {
-        val langFile = File(configFile.parentFile, "lang/$lang.json").let {
-            if (it.exists()) it else {
-                LoggingManager.warn("Language file not found: ${it.path}, falling back to en.json")
-                File(configFile.parentFile, "lang/en.json")
+    // Load messages from language file
+    private fun loadMessages() {
+        val langFile = File(plugin.dataFolder, "lang/${language.messageLanguage}.json").takeIf { it.exists() }
+            ?: File(plugin.dataFolder, "lang/en.json").also {
+                LoggingManager.warn("Language file not found, using en.json")
             }
-        }
 
         if (!langFile.exists()) {
-            LoggingManager.error("Could not load any language file for: $lang")
+            LoggingManager.error("Could not load any language file")
             return
         }
 
-        try {
-            val json = langFile.readText(StandardCharsets.UTF_8)
-            val msgs = gson.fromJson<Map<String, Any>>(
-                json,
+        runCatching {
+            val msgs = GSON.fromJson<Map<String, Any>>(
+                langFile.readText(),
                 object : TypeToken<Map<String, Any>>() {}.type
             )
-
-            if (msgs.isNotEmpty()) {
-                messages.clear()
-                messages.putAll(msgs)
-            } else {
-                LoggingManager.warn("No messages found in language file: $lang")
-            }
-        } catch (e: Exception) {
-            LoggingManager.error("Error loading language file: $lang", e)
+            messages.clear()
+            messages.putAll(msgs)
+            LoggingManager.log("Loaded ${msgs.size} messages for: ${language.messageLanguage}")
+        }.onFailure {
+            LoggingManager.error("Error loading language file: ${language.messageLanguage}", it)
         }
     }
 
-    class LanguageSection(private val toml: Toml) {
-        val messageLanguage: String
-            get() = toml.getString("language.message_language") ?: "en"
+    // Configuration sections
+    data class LanguageSection(
+        val message_language: String = "en"
+    ) {
+        val messageLanguage get() = message_language
     }
 
-    // Settings section
-    class SettingsSection(private val toml: Toml) {
-        private fun readWebhookUrl(): String {
-            val url = toml.getString("reports.webhook_url")
-            return url ?: ""
-        }
+    data class SettingsSection(
+        val reports: ReportsConfig = ReportsConfig(),
+        val updates: UpdatesConfig = UpdatesConfig(),
+        val display: DisplayConfig = DisplayConfig(),
+        val particles: Boolean = true,
+        val particles_color: String = "#00FFFF"
+    ) {
+        // Reports
+        val webhookUrl get() = reports.webhook_url
+        val reportCooldown get() = reports.cooldown * 1000
 
-        private fun readReportCooldown(): Int {
-            val cooldown = toml.getLong("reports.cooldown")
-            return if (cooldown != null) Math.toIntExact(cooldown) * 1000 else 15000
-        }
+        // Updates
+        val repoName get() = updates.repo_name
+        val repoOwner get() = updates.repo_owner
+        val updatesEnabled get() = updates.enabled
 
-        private fun readRepoName(): String = toml.getString("updates.repo_name") ?: "dreamdisplays"
-
-        private fun readRepoOwner(): String = toml.getString("updates.repo_owner") ?: "arsmotorin"
-
-        private fun readUpdatesEnabled(): Boolean {
-            val enabled = toml.getBoolean("updates")
-            return enabled ?: true
-        }
-
-        private fun readSelectionMaterial(): Material {
-            val mat = toml.getString("display.selection_material") ?: return Material.DIAMOND_AXE
-            val m = Material.matchMaterial(mat)
-            return m ?: Material.DIAMOND_AXE
-        }
-
-        private fun readBaseMaterial(): Material {
-            val mat = toml.getString("display.base_material") ?: return Material.BLACK_CONCRETE
-            val m = Material.matchMaterial(mat)
-            return m ?: Material.BLACK_CONCRETE
-        }
-
-        private fun readParticlesEnabled(): Boolean {
-            val enabled = toml.getBoolean("particles")
-            return enabled ?: true
-        }
-
-        val cUIParticleRenderDelay: Int
-            get() = 2
-        val cUIParticlesPerBlock: Int
-            get() = 3
-        val cUIParticlesColor: Int
-            get() {
-                val hex = toml.getString("particles_color")
-                if (hex != null && hex.startsWith("#")) {
-                    return try {
-                        hex.substring(1).toInt(16)
-                    } catch (_: NumberFormatException) {
-                        0x00FFFF
-                    }
-                }
-                return 0x00FFFF
-            }
-
-        private fun readMinWidth(): Int {
-            val width = toml.getLong("display.min_width")
-            return if (width != null) Math.toIntExact(width) else 1
-        }
-
-        private fun readMinHeight(): Int {
-            val height = toml.getLong("display.min_height")
-            return if (height != null) Math.toIntExact(height) else 1
-        }
-
-        private fun readMaxWidth(): Int {
-            val width = toml.getLong("display.max_width")
-            return if (width != null) Math.toIntExact(width) else 32
-        }
-
-        private fun readMaxHeight(): Int {
-            val height = toml.getLong("display.max_height")
-            return if (height != null) Math.toIntExact(height) else 24
-        }
-
-        private fun readMaxRenderDistance(): Double {
-            try {
-                val distance = toml.getDouble("display.max_render_distance")
-                if (distance != null) {
-                    return distance
-                }
-            } catch (_: ClassCastException) {
-                val distanceLong = toml.getLong("display.max_render_distance")
-                if (distanceLong != null) {
-                    return distanceLong.toDouble()
-                }
-            }
-            return 96.0
-        }
-
-        // Cached properties
-        lateinit var webhookUrl: String
-        var reportCooldown: Int = 0
-        lateinit var repoName: String
-        lateinit var repoOwner: String
-        var updatesEnabled: Boolean = false
+        // Materials
         lateinit var selectionMaterial: Material
         lateinit var baseMaterial: Material
-        var particlesEnabled: Boolean = false
-        var particleRenderDelay: Int = 0
-        var particlesPerBlock: Int = 0
-        var particlesColor: Int = 0
-        var minWidth: Int = 0
-        var minHeight: Int = 0
-        var maxWidth: Int = 0
-        var maxHeight: Int = 0
-        var maxRenderDistance: Double = 0.0
 
-        internal fun cache() {
-            webhookUrl = readWebhookUrl()
-            reportCooldown = readReportCooldown()
-            repoName = readRepoName()
-            repoOwner = readRepoOwner()
-            updatesEnabled = readUpdatesEnabled()
-            selectionMaterial = readSelectionMaterial()
-            baseMaterial = readBaseMaterial()
-            particlesEnabled = readParticlesEnabled()
-            particleRenderDelay = cUIParticleRenderDelay
-            particlesPerBlock = cUIParticlesPerBlock
-            particlesColor = cUIParticlesColor
-            minWidth = readMinWidth()
-            minHeight = readMinHeight()
-            maxWidth = readMaxWidth()
-            maxHeight = readMaxHeight()
-            maxRenderDistance = readMaxRenderDistance()
+        // Particles
+        val particlesEnabled get() = particles
+        val particleRenderDelay = 2
+
+        // Display
+        val minWidth get() = display.min_width
+        val minHeight get() = display.min_height
+        val maxWidth get() = display.max_width
+        val maxHeight get() = display.max_height
+        val maxRenderDistance get() = display.max_render_distance
+
+        internal fun initMaterials() {
+            selectionMaterial = Material.matchMaterial(display.selection_material) ?: Material.DIAMOND_AXE
+            baseMaterial = Material.matchMaterial(display.base_material) ?: Material.BLACK_CONCRETE
         }
+
+        data class ReportsConfig(
+            val webhook_url: String = "",
+            val cooldown: Int = 15
+        )
+
+        data class UpdatesConfig(
+            val enabled: Boolean = true,
+            val repo_name: String = "dreamdisplays",
+            val repo_owner: String = "arsmotorin"
+        )
+
+        data class DisplayConfig(
+            val selection_material: String = "DIAMOND_AXE",
+            val base_material: String = "BLACK_CONCRETE",
+            val min_width: Int = 1,
+            val min_height: Int = 1,
+            val max_width: Int = 32,
+            val max_height: Int = 24,
+            val max_render_distance: Double = 96.0
+        )
     }
 
-    class StorageSection(private val toml: Toml) : StorageSettings() {
-        private lateinit var _storageType: String
-        private lateinit var _sqliteFile: String
-
-        internal fun cache() {
-            _storageType = toml.getString("storage.type") ?: "SQLITE"
-            _sqliteFile = "database.db"
-            host = toml.getString("storage.host") ?: "localhost"
-            port = toml.getString("storage.port") ?: "3306"
-            database = toml.getString("storage.database") ?: "my_database"
-            password = toml.getString("storage.password") ?: "veryStrongPassword"
-            username = toml.getString("storage.username") ?: "username"
-            options = "autoReconnect=true&useSSL=false;"
-            tablePrefix = toml.getString("storage.table_prefix") ?: ""
+    // Storage configuration
+    data class StorageSection(
+        val storage: StorageConfig = StorageConfig()
+    ) : StorageSettings() {
+        init {
+            this.host = storage.host
+            this.port = storage.port
+            this.database = storage.database
+            this.password = storage.password
+            this.username = storage.username
+            this.options = "autoReconnect=true&useSSL=false;"
+            this.tablePrefix = storage.table_prefix
         }
+
+        data class StorageConfig(
+            val type: String = "SQLITE",
+            val host: String = "localhost",
+            val port: String = "3306",
+            val database: String = "my_database",
+            val password: String = "veryStrongPassword",
+            val username: String = "username",
+            val table_prefix: String = ""
+        )
     }
 
-    class PermissionsSection(private val toml: Toml) {
-        lateinit var premium: String
-        lateinit var delete: String
-        lateinit var list: String
-        lateinit var reload: String
-        lateinit var updates: String
+    // Permissions configuration
+    data class PermissionsSection(
+        val permissions: PermissionsConfig = PermissionsConfig()
+    ) {
+        val premium get() = permissions.premium
+        val delete get() = permissions.delete
+        val list get() = permissions.list
+        val reload get() = permissions.reload
+        val updates get() = permissions.updates
 
-        internal fun cache() {
-            premium = toml.getString("permissions.premium") ?: "group.premium"
-            delete = toml.getString("permissions.delete") ?: "dreamdisplays.delete"
-            list = toml.getString("permissions.list") ?: "dreamdisplays.list"
-            reload = toml.getString("permissions.reload") ?: "dreamdisplays.reload"
-            updates = toml.getString("permissions.updates") ?: "dreamdisplays.updates"
-        }
+        data class PermissionsConfig(
+            val premium: String = "group.premium",
+            val delete: String = "dreamdisplays.delete",
+            val list: String = "dreamdisplays.list",
+            val reload: String = "dreamdisplays.reload",
+            val updates: String = "dreamdisplays.updates"
+        )
     }
 
     companion object {
-        private val gson = Gson()
+        private val GSON = Gson()
+        private val LANGUAGE_FILES = listOf("en.json", "pl.json", "ru.json", "uk.json")
     }
 }
