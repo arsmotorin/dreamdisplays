@@ -18,13 +18,10 @@ class Selection(player: Player) {
     @JvmField
     var pos2: Location? = null
     private var face: BlockFace? = null
-    private val playerId: UUID
+    private val playerId: UUID = player.uniqueId
+
     @JvmField
     var isReady: Boolean = false
-
-    init {
-        this.playerId = player.getUniqueId()
-    }
 
     fun setFace(blockFace: BlockFace) {
         this.face = blockFace

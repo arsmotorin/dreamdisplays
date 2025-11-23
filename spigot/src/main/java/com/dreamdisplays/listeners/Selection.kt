@@ -5,9 +5,7 @@ import com.dreamdisplays.datatypes.Selection
 import com.dreamdisplays.managers.Display
 import com.dreamdisplays.utils.Message
 import com.dreamdisplays.utils.Utils
-import org.bukkit.Bukkit
 import org.bukkit.Location
-import org.bukkit.Material
 import org.bukkit.block.Block
 import org.bukkit.block.BlockFace
 import org.bukkit.entity.Player
@@ -28,274 +26,223 @@ import kotlin.math.max
 import kotlin.math.min
 
 class Selection(plugin: Main) : Listener {
-    init {
-        if (!Main.getIsFolia() && Main.config.settings.particlesEnabled) {
-            val runnable: BukkitRunnable = object : BukkitRunnable() {
-                override fun run() {
-                    selectionPoints.forEach { (key: UUID?, value: Selection?) -> value!!.drawBox() }
-                }
-            }
 
-            runnable.runTaskTimer(plugin, 0, Main.config.settings.particleRenderDelay.toLong())
+    init {
+        // Particles for Spigot/Paper servers
+        // Folia is not supported yet due to differences in scheduling
+        if (!Main.getIsFolia() && Main.config.settings.particlesEnabled) {
+            object : BukkitRunnable() {
+                override fun run() {
+                    selectionPoints.values.forEach { it.drawBox() }
+                }
+            }.runTaskTimer(plugin, 0L, Main.config.settings.particleRenderDelay.toLong())
         }
     }
 
+    // Player interaction for selection points
     @EventHandler
-    fun onClick(event: PlayerInteractEvent) {
-        if (event.getHand() != EquipmentSlot.HAND) return
+    fun onPlayerInteract(event: PlayerInteractEvent) {
+        if (event.hand != EquipmentSlot.HAND) return
 
-        val player = event.getPlayer()
+        val player = event.player
+        val heldItem = player.inventory.itemInMainHand.type
 
-        if (player.getInventory().getItemInMainHand()
-                .getType() != Main.config.settings.selectionMaterial
-        ) return
-
-        if (player.isSneaking() && (event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_AIR) && selectionPoints.containsKey(
-                player.getUniqueId()
-            )
-        ) {
-            selectionPoints.remove(player.getUniqueId())
-            Message.sendColoredMessage(
-                player,
-                Main.config.messages.get("selectionClear") as String?
-            )
+        // Clear selection if sneaking and right-clicking
+        if (player.isSneaking && event.action.isRightClick) {
+            if (selectionPoints.remove(player.uniqueId) != null) {
+                Message.sendMessage(player, "selectionClear")
+            }
             return
         }
 
-        if (event.getClickedBlock() == null) return
-        if (event.getClickedBlock()!!.getType() != Main.config.settings.baseMaterial) return
+        // Only proceed if holding the selection material
+        if (heldItem != Main.config.settings.selectionMaterial) return
+        val clickedBlock = event.clickedBlock ?: return
+        if (clickedBlock.type != Main.config.settings.baseMaterial) return
 
-        event.setCancelled(true)
+        event.isCancelled = true
 
-        val location = event.getClickedBlock()!!.getLocation()
-        val data = selectionPoints.getOrDefault(player.getUniqueId(), Selection(player))
+        val location = clickedBlock.location
+        var blockFace = event.blockFace
 
-        if (data.pos1 != null && data.pos1!!.getWorld() !== location.getWorld() ||
-            data.pos2 != null && data.pos2!!.getWorld() !== location.getWorld()
-        ) {
-            data.pos1 = null
-            data.pos2 = null
+        // Adjust for vertical faces
+        if (blockFace == BlockFace.UP || blockFace == BlockFace.DOWN) {
+            blockFace = player.facing.oppositeFace
         }
 
-        data.isReady = false
+        when {
+            event.action == Action.LEFT_CLICK_BLOCK -> {
+                // Get or create selection
+                val selection = selectionPoints.getOrPut(player.uniqueId) { Selection(player) }
 
-        var face = event.getBlockFace()
-
-        if (face == BlockFace.UP || face == BlockFace.DOWN) face = player.getFacing().getOppositeFace()
-
-        if (event.getAction() == Action.LEFT_CLICK_BLOCK || event.getAction() == Action.LEFT_CLICK_AIR) {
-            data.pos1 = location.clone()
-            data.setFace(face)
-            Message.sendColoredMessage(
-                player,
-                Main.config.messages.get("firstPointSelected") as String?
-            )
-
-            val validationCode: Int = isValidDisplay(data)
-            if (validationCode == 6) data.isReady = true
-        } else if (event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_AIR) {
-            if (data.pos1 == null) {
-                Message.sendColoredMessage(
-                    player,
-                    Main.config.messages.get("noDisplayTerritories") as String?
-                )
-                return
-            }
-            data.pos2 = location.clone()
-            Message.sendColoredMessage(
-                player,
-                Main.config.messages.get("secondPointSelected") as String?
-            )
-
-            val validationCode: Int = isValidDisplay(data)
-            if (validationCode != 6) {
-                data.isReady = false
-                selectionPoints.put(player.getUniqueId(), data)
-
-                sendErrorMessage(player, validationCode)
-
-                return
-            }
-
-            data.isReady = true
-            Message.sendColoredMessage(
-                player,
-                Main.config.messages.get("createDisplayCommand") as String?
-            )
-        }
-
-        selectionPoints.put(player.getUniqueId(), data)
-    }
-
-    @EventHandler
-    fun onBlockBreak(event: BlockBreakEvent) {
-        handleBlockDestroy(event.getBlock().getType(), event.getBlock().getLocation(), event)
-    }
-
-    @EventHandler
-    fun onExplodeEvent(event: EntityExplodeEvent) {
-        val toRemove: MutableList<Block?> = ArrayList<Block?>()
-        val dataList: MutableList<Selection> =
-            selectionPoints.values.stream().filter(Selection::isReady).toList()
-
-        event.blockList().stream()
-            .filter { block: Block? -> block!!.getType() == Main.config.settings.baseMaterial }
-            .forEach { block: Block? ->
-                if (block!!.getType() != Main.config.settings.baseMaterial) return@forEach
-                val location = block.getLocation()
-
-                if (Display.isContains(location) != null) {
-                    toRemove.add(block)
-                    return@forEach
+                // Reset if world changed
+                if (selection.pos1?.world != location.world || selection.pos2?.world != location.world) {
+                    selection.pos1 = null
+                    selection.pos2 = null
                 }
-                for (data in dataList) {
-                    val p1 = data.pos1 ?: continue
-                    val p2 = data.pos2 ?: continue
-                    if (Utils.isInBoundaries(p1, p2, location)) {
-                        toRemove.add(block)
-                        break
+
+                selection.pos1 = location.clone()
+                selection.setFace(blockFace)
+                selection.isReady = false
+
+                Message.sendMessage(player, "firstPointSelected")
+
+                // Validate if pos2 already exists
+                if (selection.pos2 != null) {
+                    val code = isValidDisplay(selection)
+                    if (code == VALID_DISPLAY) {
+                        selection.isReady = true
+                        Message.sendMessage(player, "createDisplayCommand")
+                    } else {
+                        sendErrorMessage(player, code)
                     }
                 }
             }
 
-        event.blockList().removeAll(toRemove)
+            event.action == Action.RIGHT_CLICK_BLOCK -> {
+                // Check if pos1 exists BEFORE getting/creating selection
+                val existingSelection = selectionPoints[player.uniqueId]
+                if (existingSelection == null || existingSelection.pos1 == null) {
+                    Message.sendMessage(player, "noDisplayTerritories")
+                    return
+                }
+
+                // Now we can safely update pos2
+                val selection = existingSelection
+
+                // Reset if world changed
+                if (selection.pos1?.world != location.world) {
+                    selection.pos1 = null
+                    selection.pos2 = null
+                    Message.sendMessage(player, "noDisplayTerritories")
+                    return
+                }
+
+                selection.pos2 = location.clone()
+                selection.isReady = false
+
+                Message.sendMessage(player, "secondPointSelected")
+
+                // Validate the full selection
+                val code = isValidDisplay(selection)
+                if (code == VALID_DISPLAY) {
+                    selection.isReady = true
+                    Message.sendMessage(player, "createDisplayCommand")
+                } else {
+                    sendErrorMessage(player, code)
+                }
+            }
+        }
     }
 
-    private fun handleBlockDestroy(material: Material?, location: Location, event: Cancellable) {
-        if (material != Main.config.settings.baseMaterial) return
-        if (Display.isContains(location) != null) event.setCancelled(true)
+    // Block break protection for base material
+    @EventHandler
+    fun onBlockBreak(event: BlockBreakEvent) {
+        if (event.block.type == Main.config.settings.baseMaterial) {
+            cancelIfProtected(event.block.location, event)
+        }
+    }
 
-        for (eData in selectionPoints.entries) {
-            val uuid: UUID = eData.key!!
-            val data = eData.value
+    // Explosion protection for base material
+    @EventHandler
+    fun onExplosion(event: EntityExplodeEvent) {
+        val baseMaterial = Main.config.settings.baseMaterial
+        val toRemove = event.blockList().filter { block ->
+            block.type == baseMaterial && isLocationProtected(block.location)
+        }
+        event.blockList().removeAll(toRemove.toSet())
+    }
 
-            if (!data.isReady || Bukkit.getPlayer(uuid) != null) continue
+    // Piston movement protection for base material
+    @EventHandler
+    fun onPistonExtend(event: BlockPistonExtendEvent) = handlePiston(event.blocks, event)
 
-            val p1 = data.pos1 ?: continue
-            val p2 = data.pos2 ?: continue
-            if (Utils.isInBoundaries(p1, p2, location)) {
+    @EventHandler
+    fun onPistonRetract(event: BlockPistonRetractEvent) = handlePiston(event.blocks, event)
+
+    private fun handlePiston(blocks: List<Block>, event: Cancellable) {
+        if (event.isCancelled) return
+
+        val baseMaterial = Main.config.settings.baseMaterial
+        for (block in blocks) {
+            if (block.type == baseMaterial && isLocationProtected(block.location)) {
                 event.isCancelled = true
                 break
             }
         }
     }
 
-    @EventHandler
-    fun onBlockPush(event: BlockPistonExtendEvent) {
-        handlePistonEvent(event.getBlocks(), event)
+
+    // Check if a location is protected by existing displays or selections
+    private fun isLocationProtected(loc: Location): Boolean {
+        if (Display.isContains(loc) != null) return true
+
+        return selectionPoints.values
+            .filter { it.isReady && it.pos1 != null && it.pos2 != null }
+            .any { Utils.isInBoundaries(it.pos1!!, it.pos2!!, loc) }
     }
 
-    @EventHandler
-    fun onBlockPull(event: BlockPistonRetractEvent) {
-        handlePistonEvent(event.getBlocks(), event)
+    // Cancel event if location is protected
+    private fun cancelIfProtected(loc: Location, event: Cancellable) {
+        if (isLocationProtected(loc)) event.isCancelled = true
     }
 
-    private fun handlePistonEvent(blocks: MutableList<Block?>, event: Cancellable) {
-        val dataList: MutableList<Selection> =
-            selectionPoints.values.stream().filter(Selection::isReady).toList()
 
-        blocks.stream()
-            .filter { block: Block? -> block!!.getType() == Main.config.settings.baseMaterial }
-            .forEach { block: Block? ->
-                if (event.isCancelled()) return@forEach
-                if (block!!.getType() != Main.config.settings.baseMaterial) return@forEach
+    private val Action.isRightClick get() = this == Action.RIGHT_CLICK_AIR || this == Action.RIGHT_CLICK_BLOCK
 
-                val location = block.getLocation()
-
-                if (Display.isContains(location) != null) {
-                    true.also { event.isCancelled = true }
-                    return@forEach
-                }
-                for (data in dataList) {
-                    val p1 = data.pos1 ?: continue
-                    val p2 = data.pos2 ?: continue
-                    if (Utils.isInBoundaries(p1, p2, location)) {
-                        true.also { event.isCancelled = true }
-                        break
-                    }
-                }
-            }
-    }
-
+    // Object for managing selections
     companion object {
-        var selectionPoints: MutableMap<UUID?, Selection> = HashMap<UUID?, Selection>()
+        val selectionPoints = mutableMapOf<UUID, Selection>()
 
-        fun sendErrorMessage(player: Player, validationCode: Int) {
-            when (validationCode) {
-                0 -> Message.sendColoredMessage(
-                    player,
-                    Main.config.messages.get("secondPointNotSelected") as String?
-                )
+        private const val VALID_DISPLAY = 6
 
-                1 -> Message.sendColoredMessage(
-                    player,
-                    Main.config.messages.get("displayOverlap") as String?
-                )
-
-                2 -> Message.sendColoredMessage(
-                    player,
-                    Main.config.messages.get("structureWrongDepth") as String?
-                )
-
-                3 -> Message.sendColoredMessage(
-                    player,
-                    Main.config.messages.get("structureTooSmall") as String?
-                )
-
-                4 -> Message.sendColoredMessage(
-                    player,
-                    Main.config.messages.get("structureTooLarge") as String?
-                )
-
-                5 -> Message.sendColoredMessage(
-                    player,
-                    Main.config.messages.get("wrongStructure") as String?
-                )
+        fun sendErrorMessage(player: Player, code: Int) {
+            val key = when (code) {
+                0 -> "secondPointNotSelected"
+                1 -> "displayOverlap"
+                2 -> "structureWrongDepth"
+                3 -> "structureTooSmall"
+                4 -> "structureTooLarge"
+                5 -> "wrongStructure"
+                else -> return
             }
+            Message.sendColoredMessage(player, Main.config.messages[key] as String?)
         }
 
+        // Validate the selection for display creation
         fun isValidDisplay(data: Selection): Int {
-            val pos1 = data.pos1
-            val pos2 = data.pos2
+            val pos1 = data.pos1 ?: return 0
+            val pos2 = data.pos2 ?: return 0
+            if (pos1.world != pos2.world) return 1
 
-            if (pos1 == null || pos2 == null || data.getFace() == null) return 0
+            val (minX, maxX) = min(pos1.blockX, pos2.blockX) to max(pos1.blockX, pos2.blockX)
+            val (minY, maxY) = min(pos1.blockY, pos2.blockY) to max(pos1.blockY, pos2.blockY)
+            val (minZ, maxZ) = min(pos1.blockZ, pos2.blockZ) to max(pos1.blockZ, pos2.blockZ)
 
-            if (pos1.getWorld() !== pos2.getWorld()) return 1
+            val deltaX = maxX - minX + 1
+            val deltaZ = maxZ - minZ + 1
+            val face = data.getFace()
 
-            val minX = min(pos1.getBlockX(), pos2.getBlockX())
-            val minY = min(pos1.getBlockY(), pos2.getBlockY())
-            val minZ = min(pos1.getBlockZ(), pos2.getBlockZ())
+            // Check if the structure depth matches the facing direction
+            if (deltaX != abs(face.modX) && deltaZ != abs(face.modZ)) return 2
 
-            val maxX = max(pos1.getBlockX(), pos2.getBlockX())
-            val maxY = max(pos1.getBlockY(), pos2.getBlockY())
-            val maxZ = max(pos1.getBlockZ(), pos2.getBlockZ())
-
-            val deltaX = abs(pos1.getBlockX() - pos2.getBlockX()) + 1
-            val deltaZ = abs(pos1.getBlockZ() - pos2.getBlockZ()) + 1
-
-            if (deltaX != abs(data.getFace().getModX()) && deltaZ != abs(data.getFace().getModZ())) return 2
-
-            val width = max(deltaX, deltaZ)
-            val height = abs(pos1.getBlockY() - pos2.getBlockY()) + 1
+            val width = maxOf(deltaX, deltaZ)
+            val height = maxY - minY + 1
 
             if (height < Main.config.settings.minHeight || width < Main.config.settings.minWidth) return 3
             if (height > Main.config.settings.maxHeight || width > Main.config.settings.maxWidth) return 4
 
-            val requiredMaterial = Main.config.settings.baseMaterial
+            val required = Main.config.settings.baseMaterial
+            val world = pos1.world!!
 
-            val world = pos1.getWorld()
             for (x in minX..maxX) {
                 for (y in minY..maxY) {
                     for (z in minZ..maxZ) {
-                        val block = world!!.getBlockAt(x, y, z)
-                        if (block.getType() != requiredMaterial) {
-                            return 5
-                        }
+                        if (world.getBlockAt(x, y, z).type != required) return 5
                     }
                 }
             }
-
-            return 6
+            return VALID_DISPLAY
         }
     }
 }
