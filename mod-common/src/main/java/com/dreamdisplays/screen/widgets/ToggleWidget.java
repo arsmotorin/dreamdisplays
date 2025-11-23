@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
@@ -22,8 +23,8 @@ public abstract class ToggleWidget extends AbstractWidget {
 	public boolean value;
 	private boolean sliderFocused;
 
-	public ToggleWidget(int x, int y, int width, int height, Component text, boolean value) {
-		super(x, y, width, height, text);
+	public ToggleWidget(int x, int y, int width, int height, Component message, boolean value) {
+		super(x, y, width, height, message);
 		this.dValue = value ? 1 : 0;
 		this.value = value;
 	}
@@ -52,7 +53,7 @@ public abstract class ToggleWidget extends AbstractWidget {
         graphics.blitSprite(RenderPipelines.GUI_TEXTURED, this.getHandleTexture(), this.getX() + (int)(this.dValue * (double)(this.width - 8)), this.getY(), 8, this.getHeight());
         int i = this.active ? 16777215 : 10526880;
         MutableComponent message = this.getMessage().copy().withStyle((style) -> style.withColor(i));
-        this.renderScrollingStringOverContents(graphics.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.TOOLTIP_ONLY), message, 2); // , i | Mth.ceil(this.alpha * 255.0F) << 24
+        this.renderScrollingStringOverContents(graphics.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.TOOLTIP_AND_CURSOR), message, 2); // , i | Mth.ceil(this.alpha * 255.0F) << 24
     }
 
 	@Override
@@ -73,18 +74,28 @@ public abstract class ToggleWidget extends AbstractWidget {
 		dValue = value ? 1 : 0;
 	}
 
-	public void onClick(double mouseX, double mouseY) {
-		this.playDownSound(Minecraft.getInstance().getSoundManager());
-		this.setValueFromMouse();
-		this.updateMessage();
-		this.applyValue();
-	}
+    @Override
+    public void onClick(MouseButtonEvent event, boolean doubleClick) {
+        this.setValueFromMouse();
+        this.updateMessage();
+        this.applyValue();
+    }
 
-	@Override
-	public void playDownSound(SoundManager soundManager) {
-	}
+    @Override
+    public void onRelease(MouseButtonEvent event) {
+        super.playDownSound(Minecraft.getInstance().getSoundManager());
+    }
 
 	protected abstract void updateMessage();
 
-	protected abstract void applyValue();
+	public abstract void applyValue();
+
+    public void setValue(boolean newValue) {
+        if (this.value != newValue) {
+            this.value = newValue;
+            this.dValue = newValue ? 1 : 0;
+            updateMessage();
+            applyValue();
+        }
+    }
 }

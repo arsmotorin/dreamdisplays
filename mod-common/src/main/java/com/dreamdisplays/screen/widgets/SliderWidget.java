@@ -6,6 +6,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
@@ -23,8 +24,8 @@ public abstract class SliderWidget extends AbstractWidget {
     public double value;
     private boolean sliderFocused;
 
-    public SliderWidget(int x, int y, int width, int height, Component text, double value) {
-        super(x, y, width, height, text);
+    public SliderWidget(int x, int y, int width, int height, Component message, double value) {
+        super(x, y, width, height, message);
         this.value = value;
     }
 
@@ -58,15 +59,24 @@ public abstract class SliderWidget extends AbstractWidget {
         graphics.blitSprite(RenderPipelines.GUI_TEXTURED, this.getHandleTexture(), this.getX() + (int)(this.value * (double)(this.width - 8)), this.getY(), 8, this.getHeight());
         int i = this.active ? 16777215 : 10526880;
         MutableComponent message = this.getMessage().copy().withStyle((style) -> style.withColor(i));
-        this.renderScrollingStringOverContents(graphics.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.TOOLTIP_ONLY), message, 2); // , i | Mth.ceil(this.alpha * 255.0F) << 24
+        this.renderScrollingStringOverContents(graphics.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.TOOLTIP_AND_CURSOR), message, 2); // , i | Mth.ceil(this.alpha * 255.0F) << 24
     }
 
-	public void onClick(double mouseX, double mouseY) {
-        this.setValueFromMouse(mouseX);
+    @Override
+    public void onClick(MouseButtonEvent event, boolean doubleClick) {
+        super.onClick(event, doubleClick);
+        this.setValueFromMouse(event.x());
     }
 
-    protected void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
-        this.setValueFromMouse(mouseX);
+    @Override
+    public void onRelease(MouseButtonEvent event) {
+        super.playDownSound(Minecraft.getInstance().getSoundManager());
+    }
+
+    @Override
+    protected void onDrag(MouseButtonEvent event, double dragX, double dragY) {
+        super.onDrag(event, dragX, dragY);
+        this.setValueFromMouse(event.x());
     }
 
     public void setFocused(boolean focused) {
@@ -83,23 +93,17 @@ public abstract class SliderWidget extends AbstractWidget {
     }
 
     private void setValueFromMouse(double mouseX) {
-        this.setValue((mouseX - (double)(this.getX() + 4)) / (double)(this.width - 8));
+        this.setFractionalValue((mouseX - (double)(this.getX() + 4)) / (double)(this.width - 8));
     }
 
-    private void setValue(double value) {
-        double d = this.value;
-        this.value = Mth.clamp(value, 0.0, 1.0);
-        if (d != this.value) {
+    private void setFractionalValue(double fractionalValue) {
+        double oldValue = this.value;
+        this.value = Mth.clamp(fractionalValue, 0.0, 1.0);
+        if (!Mth.equal(oldValue, this.value)) {
             this.applyValue();
         }
-
         this.updateMessage();
     }
-
-    @Override
-    public void playDownSound(SoundManager soundManager) {
-    }
-
     protected abstract void updateMessage();
 
     protected abstract void applyValue();

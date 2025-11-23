@@ -14,6 +14,7 @@ import org.freedesktop.gstreamer.elements.AppSink;
 import org.freedesktop.gstreamer.event.SeekFlags;
 import com.dreamdisplays.PlatformlessInitializer;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -49,17 +50,17 @@ public class MediaPlayer {
     public static boolean captureSamples = true;
 
     // === GST OBJECTS =====================================================================
-    private volatile Pipeline videoPipeline;
-    private volatile Pipeline audioPipeline;
+    private volatile @Nullable Pipeline videoPipeline;
+    private volatile @Nullable Pipeline audioPipeline;
 
-    private volatile java.util.List<Stream> availableVideoStreams;
-    private volatile Stream currentVideoStream;
+    private volatile java.util.@Nullable List<Stream> availableVideoStreams;
+    private volatile @Nullable Stream currentVideoStream;
     private volatile boolean initialized;
     private int lastQuality;
 
     // === FRAME BUFFERS ===================================================================
-    private BufferedImage currentFrame;
-    private volatile ByteBuffer   preparedBuffer;
+    private @Nullable BufferedImage currentFrame;
+    private volatile @Nullable ByteBuffer   preparedBuffer;
 
     private volatile int lastTexW = 0, lastTexH = 0;
     private volatile int preparedW = 0, preparedH = 0;
@@ -72,7 +73,7 @@ public class MediaPlayer {
     private final ExecutorService frameExecutor = Executors.newSingleThreadExecutor(r -> new Thread(r, "MediaPlayer-frame"));
     private final AtomicBoolean   terminated    = new AtomicBoolean(false);
 
-    private BufferedImage textureImage;
+    private @Nullable BufferedImage textureImage;
     private final Screen screen;
 
     // === CONSTRUCTOR =====================================================================
@@ -111,14 +112,14 @@ public class MediaPlayer {
         });
     }
 
-    public void setVolume(double v) {
-        userVolume = Math.max(0, Math.min(1, v));
+    public void setVolume(double volume) {
+        userVolume = Math.max(0, Math.min(1, volume));
         currentVolume = userVolume * lastAttenuation;
         safeExecute(this::applyVolume);
     }
 
     public boolean textureFilled() {
-        return screen != null && screen.textureWidth > 0 && screen.textureHeight > 0;
+        return preparedBuffer != null && preparedBuffer.remaining() > 0;
     }
 
     public void updateFrame(GpuTexture texture) {
@@ -286,7 +287,7 @@ public class MediaPlayer {
     }
 
     // === FRAME PROCESSING ================================================================
-    private static BufferedImage sampleToImage(Sample sample, BufferedImage img) {
+    private static BufferedImage sampleToImage(Sample sample, @Nullable BufferedImage img) {
         Structure st = sample.getCaps().getStructure(0);
         int w = st.getInteger("width"), h = st.getInteger("height");
         Buffer buf = sample.getBuffer();
@@ -469,7 +470,7 @@ public class MediaPlayer {
         }
     }
 
-    private static void safeStopAndDispose(Element e) {
+    private static void safeStopAndDispose(@Nullable Element e) {
         if (e == null) return;
         try { e.setState(State.NULL); } catch (Exception ignore) {}
         try { e.dispose(); }           catch (Exception ignore) {}

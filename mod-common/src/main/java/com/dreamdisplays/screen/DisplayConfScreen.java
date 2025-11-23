@@ -101,6 +101,8 @@ public class DisplayConfScreen extends Screen {
             @Override
             protected void applyValue() {
                 PlatformlessInitializer.config.defaultDistance = (int) (value * (96-24) + 24);
+                PlatformlessInitializer.config.save();
+                PlatformlessInitializer.config.reload();
             }
         };
 
@@ -120,7 +122,9 @@ public class DisplayConfScreen extends Screen {
             @Override
             public void onPress() {
                 PlatformlessInitializer.config.defaultDistance = 64;
-                renderD.value = 64;
+                PlatformlessInitializer.config.save();
+                PlatformlessInitializer.config.reload();
+                renderD.value = (64 - 24) / (double)(96 - 24);
                 renderD.setMessage(Component.nullToEmpty("64"));
             }
         };
@@ -128,23 +132,24 @@ public class DisplayConfScreen extends Screen {
         qualityReset = new IconButtonWidget(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "bri"), 2) {
             @Override
             public void onPress() {
-                screen.setQuality(toQuality(fromQuality("720")).replace("p", ""));
-                quality.value = (double) 2 /screen.getQualityList().size();
-                quality.setMessage(Component.nullToEmpty(toQuality(2) + "p"));
+                int targetIndex = fromQuality("720");
+                screen.setQuality(toQuality(targetIndex).replace("p", ""));
+                quality.value = (double) targetIndex / screen.getQualityList().size();
+                quality.setMessage(Component.nullToEmpty(toQuality(targetIndex) + "p"));
             }
         };
 
         sync = new ToggleWidget(0, 0, 0, 0, Component.translatable(screen.isSync ? "dreamdisplays.button.enabled" : "dreamdisplays.button.disabled"), screen.isSync) {
             @Override
             protected void updateMessage() {
-                setMessage(Component.translatable(screen.isSync ? "dreamdisplays.button.enabled" : "dreamdisplays.button.disabled"));
+                setMessage(Component.translatable(value ? "dreamdisplays.button.enabled" : "dreamdisplays.button.disabled"));
             }
 
             @Override
-            protected void applyValue() {
+            public void applyValue() {
                 if (screen.owner && syncReset != null) {
                     screen.isSync = value;
-                    syncReset.active = value;
+                    syncReset.active = !value;
                     screen.waitForMFInit(() -> screen.sendSync());
                 }
             }
@@ -154,7 +159,7 @@ public class DisplayConfScreen extends Screen {
             @Override
             public void onPress() {
                 if (screen.owner) {
-                    sync.value = false;
+                    sync.setValue(false);
                     screen.waitForMFInit(() -> screen.sendSync());
                 }
             }
@@ -293,8 +298,9 @@ public class DisplayConfScreen extends Screen {
             if (syncReset != null) {
                 syncReset.active = screen.owner && screen.isSync;
             }
-            if (renderDReset != null) {
-                renderDReset.active = PlatformlessInitializer.config.defaultDistance != 64;
+            if (renderDReset != null && renderD != null) {
+                int currentDistance = (int) (renderD.value * (96 - 24) + 24);
+                renderDReset.active = currentDistance != 64;
             }
             if (qualityReset != null) {
                 qualityReset.active = !Objects.equals(screen.getQuality(), "720");
@@ -386,7 +392,7 @@ public class DisplayConfScreen extends Screen {
                 Component.translatable("dreamdisplays.button.render-distance.tooltip.5").withStyle(style -> style.withColor(ChatFormatting.DARK_GRAY)),
                 Component.translatable("dreamdisplays.button.render-distance.tooltip.6").withStyle(style -> style.withColor(ChatFormatting.DARK_GRAY)),
                 Component.translatable("dreamdisplays.button.render-distance.tooltip.7"),
-                Component.translatable("dreamdisplays.button.render-distance.tooltip.8", PlatformlessInitializer.config.defaultDistance).withStyle(style -> style.withColor(ChatFormatting.GOLD))
+                Component.translatable("dreamdisplays.button.render-distance.tooltip.8", (int)(renderD.value*(96-24)+24)).withStyle(style -> style.withColor(ChatFormatting.GOLD))
         );
 
         cY += 5 + vCH;
@@ -403,12 +409,15 @@ public class DisplayConfScreen extends Screen {
         guiGraphics.drawString(font, qualityText, qualityTextX, qualityTextY, 0xFFFFFF, true);
 
         // Tooltip
-        List<Component> qualityTooltip = new ArrayList<>(List.of(
-                Component.translatable("dreamdisplays.button.quality.tooltip.1").withStyle(style -> style.withColor(ChatFormatting.WHITE).withBold(true)),
-                Component.translatable("dreamdisplays.button.quality.tooltip.2").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
-                Component.translatable("dreamdisplays.button.quality.tooltip.3"),
-                Component.translatable("dreamdisplays.button.quality.tooltip.4", screen.getQuality()).withStyle(style -> style.withColor(ChatFormatting.GOLD))
-        ));
+        List<Component> qualityTooltip = null;
+        if (quality != null) {
+            qualityTooltip = new ArrayList<>(List.of(
+                    Component.translatable("dreamdisplays.button.quality.tooltip.1").withStyle(style -> style.withColor(ChatFormatting.WHITE).withBold(true)),
+                    Component.translatable("dreamdisplays.button.quality.tooltip.2").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
+                    Component.translatable("dreamdisplays.button.quality.tooltip.3"),
+                    Component.translatable("dreamdisplays.button.quality.tooltip.4", toQuality((int)(quality.value * screen.getQualityList().size()))).withStyle(style -> style.withColor(ChatFormatting.GOLD))
+            ));
+        }
 
         // Add warning if quality is 1080p or higher
         if (Integer.parseInt(screen.getQuality()) >= 1080) {
@@ -515,16 +524,24 @@ public class DisplayConfScreen extends Screen {
 
     // Converts quality string to resolution index
     private int fromQuality(String quality) {
-        List<Integer> list = List.of();
-        if (screen != null) {
-            list = screen.getQualityList();
-        }
+        if (screen == null) return 0;
 
+        List<Integer> list = screen.getQualityList();
         if (list.isEmpty()) return 0;
+
         int cQ = Integer.parseInt(quality.replace("p", ""));
 
-        int res = list.stream().filter(q -> q==cQ).findAny().orElse(Math.max(Math.min(list.getLast(), cQ), list.getFirst()));
-        return list.indexOf(list.contains(res) ? res: list.getFirst());
+        int closest = list.getFirst();
+        int minDiff = Math.abs(cQ - closest);
+        for (int q : list) {
+            int diff = Math.abs(q - cQ);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closest = q;
+            }
+        }
+
+        return list.indexOf(closest);
     }
 
     // Sets the screen for the display config screen
