@@ -6,6 +6,9 @@ pluginManagement {
         maven("https://maven.neoforged.net/releases")
         maven("https://maven.fabricmc.net/")
     }
+    plugins {
+        kotlin("jvm") version "2.2.0"
+    }
 }
 
 plugins {

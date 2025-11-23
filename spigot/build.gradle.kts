@@ -1,6 +1,7 @@
 plugins {
     java
     id("com.gradleup.shadow") version libs.versions.shadow
+    kotlin("jvm")
 }
 
 group = "dreamdisplays"
@@ -15,6 +16,7 @@ dependencies {
         exclude(group = "com.google.code.gson", module = "gson")
     }
     compileOnly("com.google.code.gson:gson:2.13.2")
+    implementation(kotlin("stdlib-jdk8:2.2.21"))
 }
 
 val targetJavaVersion = 21
@@ -58,4 +60,7 @@ tasks.shadowJar {
             "paperweight-mappings-namespace" to "mojang",
         )
     }
+}
+repositories {
+    mavenCentral()
 }
