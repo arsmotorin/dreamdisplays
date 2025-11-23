@@ -1,16 +1,20 @@
-package com.dreamdisplays.utils;
+package com.dreamdisplays.utils
 
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
+import org.bukkit.ChatColor
+import org.bukkit.command.CommandSender
 
-import java.util.List;
-
-public class MessageUtil {
-    public static void sendColoredMessage(CommandSender player, String message) {
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
+object MessageUtil {
+    fun sendColoredMessage(player: CommandSender?, message: String?) {
+        if (player == null || message == null) return
+        player.sendMessage(ChatColor.translateAlternateColorCodes('&', message))
     }
 
-    public static void sendColoredMessages(CommandSender player, List<String> messages) {
-        messages.forEach(s -> sendColoredMessage(player, s));
+    fun sendColoredMessages(player: CommandSender?, messages: MutableList<String?>?) {
+        if (player == null || messages == null) return
+        messages.forEach { message ->
+            if (message != null) {
+                sendColoredMessage(player, message)
+            }
+        }
     }
 }

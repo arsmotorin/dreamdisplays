@@ -1,84 +1,254 @@
-package com.dreamdisplays.utils;
+package com.dreamdisplays.utils
 
-import me.inotsleep.utils.particle.Util;
-import org.bukkit.Color;
-import org.bukkit.Location;
-import org.bukkit.Particle;
-import org.bukkit.World;
-import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Player;
+import me.inotsleep.utils.particle.Util
+import org.bukkit.Color
+import org.bukkit.Location
+import org.bukkit.Particle
+import org.bukkit.block.BlockFace
+import org.bukkit.entity.Player
+import kotlin.math.max
+import kotlin.math.min
 
-public class ParticleUtil {
-    public static void drawLine(Player player, Location from, Location to, int particlesPerBlock, Color color) {
-        double distance = from.distance(to);
-        int particles = (int) (distance * particlesPerBlock);
-        World world = from.getWorld();
+object ParticleUtil {
+    fun drawLine(player: Player, from: Location, to: Location, particlesPerBlock: Int, color: Color) {
+        val distance = from.distance(to)
+        val particles = (distance * particlesPerBlock).toInt()
+        val world = from.getWorld()
 
-        for (int i = 0; i <= particles; i++) {
-            double t = i / (double) particles;
-            double x = from.getX() + (to.getX() - from.getX()) * t;
-            double y = from.getY() + (to.getY() - from.getY()) * t;
-            double z = from.getZ() + (to.getZ() - from.getZ()) * t;
+        for (i in 0..particles) {
+            val t = i / particles.toDouble()
+            val x = from.x + (to.x - from.x) * t
+            val y = from.y + (to.y - from.y) * t
+            val z = from.z + (to.z - from.z) * t
 
-            Location particleLocation = new Location(world, x, y, z);
-            Util.drawParticle(player, particleLocation.getX(), particleLocation.getY(), particleLocation.getZ(), 0, 0, 0, Particle.DUST, null, color.getRed(), color.getGreen(), color.getBlue());
+            val particleLocation = Location(world, x, y, z)
+            Util.drawParticle(
+                player,
+                particleLocation.x,
+                particleLocation.y,
+                particleLocation.z,
+                0.0,
+                0.0,
+                0.0,
+                Particle.DUST,
+                null,
+                color.red,
+                color.green,
+                color.blue
+            )
         }
     }
 
-    public static void drawRectangleOnFace(Player player, Location corner1, Location corner2, BlockFace face, int particlesPerBlock, Color color) {
-        int minX = Math.min(corner1.getBlockX(), corner2.getBlockX());
-        int minY = Math.min(corner1.getBlockY(), corner2.getBlockY());
-        int minZ = Math.min(corner1.getBlockZ(), corner2.getBlockZ());
-        int maxX = Math.max(corner1.getBlockX(), corner2.getBlockX()) + 1;
-        int maxY = Math.max(corner1.getBlockY(), corner2.getBlockY()) + 1;
-        int maxZ = Math.max(corner1.getBlockZ(), corner2.getBlockZ()) + 1;
-        World world = corner1.getWorld();
+    fun drawRectangleOnFace(
+        player: Player,
+        corner1: Location,
+        corner2: Location,
+        face: BlockFace,
+        particlesPerBlock: Int,
+        color: Color
+    ) {
+        val minX = min(corner1.blockX, corner2.blockX)
+        val minY = min(corner1.blockY, corner2.blockY)
+        val minZ = min(corner1.blockZ, corner2.blockZ)
+        val maxX = max(corner1.blockX, corner2.blockX) + 1
+        val maxY = max(corner1.blockY, corner2.blockY) + 1
+        val maxZ = max(corner1.blockZ, corner2.blockZ) + 1
+        val world = corner1.getWorld()
 
-        switch (face) {
-            case UP:
+        when (face) {
+            BlockFace.UP -> {
                 // Up face: fixed Y = maxY, XZ plane
-                drawLine(player, new Location(world, minX, maxY, minZ), new Location(world, maxX, maxY, minZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, maxX, maxY, minZ), new Location(world, maxX, maxY, maxZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, maxX, maxY, maxZ), new Location(world, minX, maxY, maxZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, minX, maxY, maxZ), new Location(world, minX, maxY, minZ), particlesPerBlock, color);
-                break;
-            case DOWN:
+                drawLine(
+                    player,
+                    Location(world, minX.toDouble(), maxY.toDouble(), minZ.toDouble()),
+                    Location(world, maxX.toDouble(), maxY.toDouble(), minZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, maxX.toDouble(), maxY.toDouble(), minZ.toDouble()),
+                    Location(world, maxX.toDouble(), maxY.toDouble(), maxZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, maxX.toDouble(), maxY.toDouble(), maxZ.toDouble()),
+                    Location(world, minX.toDouble(), maxY.toDouble(), maxZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, minX.toDouble(), maxY.toDouble(), maxZ.toDouble()),
+                    Location(world, minX.toDouble(), maxY.toDouble(), minZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+            }
+
+            BlockFace.DOWN -> {
                 // Down face: fixed Y = minY, XZ plane
-                drawLine(player, new Location(world, minX, minY, minZ), new Location(world, maxX, minY, minZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, maxX, minY, minZ), new Location(world, maxX, minY, maxZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, maxX, minY, maxZ), new Location(world, minX, minY, maxZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, minX, minY, maxZ), new Location(world, minX, minY, minZ), particlesPerBlock, color);
-                break;
-            case NORTH:
+                drawLine(
+                    player,
+                    Location(world, minX.toDouble(), minY.toDouble(), minZ.toDouble()),
+                    Location(world, maxX.toDouble(), minY.toDouble(), minZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, maxX.toDouble(), minY.toDouble(), minZ.toDouble()),
+                    Location(world, maxX.toDouble(), minY.toDouble(), maxZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, maxX.toDouble(), minY.toDouble(), maxZ.toDouble()),
+                    Location(world, minX.toDouble(), minY.toDouble(), maxZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, minX.toDouble(), minY.toDouble(), maxZ.toDouble()),
+                    Location(world, minX.toDouble(), minY.toDouble(), minZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+            }
+
+            BlockFace.NORTH -> {
                 // North face: fixed Z = minZ, XY plane
-                drawLine(player, new Location(world, minX, minY, minZ), new Location(world, maxX, minY, minZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, maxX, minY, minZ), new Location(world, maxX, maxY, minZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, maxX, maxY, minZ), new Location(world, minX, maxY, minZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, minX, maxY, minZ), new Location(world, minX, minY, minZ), particlesPerBlock, color);
-                break;
-            case SOUTH:
+                drawLine(
+                    player,
+                    Location(world, minX.toDouble(), minY.toDouble(), minZ.toDouble()),
+                    Location(world, maxX.toDouble(), minY.toDouble(), minZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, maxX.toDouble(), minY.toDouble(), minZ.toDouble()),
+                    Location(world, maxX.toDouble(), maxY.toDouble(), minZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, maxX.toDouble(), maxY.toDouble(), minZ.toDouble()),
+                    Location(world, minX.toDouble(), maxY.toDouble(), minZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, minX.toDouble(), maxY.toDouble(), minZ.toDouble()),
+                    Location(world, minX.toDouble(), minY.toDouble(), minZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+            }
+
+            BlockFace.SOUTH -> {
                 // South face: fixed Z = maxZ, XY plane
-                drawLine(player, new Location(world, minX, minY, maxZ), new Location(world, maxX, minY, maxZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, maxX, minY, maxZ), new Location(world, maxX, maxY, maxZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, maxX, maxY, maxZ), new Location(world, minX, maxY, maxZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, minX, maxY, maxZ), new Location(world, minX, minY, maxZ), particlesPerBlock, color);
-                break;
-            case EAST:
+                drawLine(
+                    player,
+                    Location(world, minX.toDouble(), minY.toDouble(), maxZ.toDouble()),
+                    Location(world, maxX.toDouble(), minY.toDouble(), maxZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, maxX.toDouble(), minY.toDouble(), maxZ.toDouble()),
+                    Location(world, maxX.toDouble(), maxY.toDouble(), maxZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, maxX.toDouble(), maxY.toDouble(), maxZ.toDouble()),
+                    Location(world, minX.toDouble(), maxY.toDouble(), maxZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, minX.toDouble(), maxY.toDouble(), maxZ.toDouble()),
+                    Location(world, minX.toDouble(), minY.toDouble(), maxZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+            }
+
+            BlockFace.EAST -> {
                 // East face: fixed X = maxX, YZ plane
-                drawLine(player, new Location(world, maxX, minY, minZ), new Location(world, maxX, maxY, minZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, maxX, maxY, minZ), new Location(world, maxX, maxY, maxZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, maxX, maxY, maxZ), new Location(world, maxX, minY, maxZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, maxX, minY, maxZ), new Location(world, maxX, minY, minZ), particlesPerBlock, color);
-                break;
-            case WEST:
+                drawLine(
+                    player,
+                    Location(world, maxX.toDouble(), minY.toDouble(), minZ.toDouble()),
+                    Location(world, maxX.toDouble(), maxY.toDouble(), minZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, maxX.toDouble(), maxY.toDouble(), minZ.toDouble()),
+                    Location(world, maxX.toDouble(), maxY.toDouble(), maxZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, maxX.toDouble(), maxY.toDouble(), maxZ.toDouble()),
+                    Location(world, maxX.toDouble(), minY.toDouble(), maxZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, maxX.toDouble(), minY.toDouble(), maxZ.toDouble()),
+                    Location(world, maxX.toDouble(), minY.toDouble(), minZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+            }
+
+            BlockFace.WEST -> {
                 // West face: fixed X = minX, YZ plane
-                drawLine(player, new Location(world, minX, minY, minZ), new Location(world, minX, maxY, minZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, minX, maxY, minZ), new Location(world, minX, maxY, maxZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, minX, maxY, maxZ), new Location(world, minX, minY, maxZ), particlesPerBlock, color);
-                drawLine(player, new Location(world, minX, minY, maxZ), new Location(world, minX, minY, minZ), particlesPerBlock, color);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported BlockFace for a flat rectangle: " + face);
+                drawLine(
+                    player,
+                    Location(world, minX.toDouble(), minY.toDouble(), minZ.toDouble()),
+                    Location(world, minX.toDouble(), maxY.toDouble(), minZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, minX.toDouble(), maxY.toDouble(), minZ.toDouble()),
+                    Location(world, minX.toDouble(), maxY.toDouble(), maxZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, minX.toDouble(), maxY.toDouble(), maxZ.toDouble()),
+                    Location(world, minX.toDouble(), minY.toDouble(), maxZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+                drawLine(
+                    player,
+                    Location(world, minX.toDouble(), minY.toDouble(), maxZ.toDouble()),
+                    Location(world, minX.toDouble(), minY.toDouble(), minZ.toDouble()),
+                    particlesPerBlock,
+                    color
+                )
+            }
+
+            else -> throw IllegalArgumentException("Unsupported BlockFace for a flat rectangle: $face")
         }
     }
 }

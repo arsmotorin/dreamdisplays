@@ -1,6 +1,12 @@
-package com.dreamdisplays.datatypes;
+package com.dreamdisplays.datatypes
 
-import java.util.UUID;
+import java.util.*
 
-public record SyncPacket(UUID id, boolean isSync, boolean currentState, long currentTime, long limitTime) {
-}
+@JvmRecord
+data class SyncPacket(
+    @JvmField val id: UUID?,
+    @JvmField val isSync: Boolean,
+    @JvmField val currentState: Boolean,
+    @JvmField val currentTime: Long,
+    @JvmField val limitTime: Long
+)

@@ -1,49 +1,50 @@
-package com.dreamdisplays.managers;
+package com.dreamdisplays.managers
 
-import com.github.zafarkhaja.semver.Version;
-import org.bukkit.entity.Player;
+import com.github.zafarkhaja.semver.Version
+import org.bukkit.entity.Player
+import java.util.*
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+object PlayerManager {
+    private val versions: MutableMap<UUID?, Version?> = HashMap<UUID?, Version?>()
+    private val modUpdateNotified: MutableMap<UUID?, Boolean?> = HashMap<UUID?, Boolean?>()
+    private val pluginUpdateNotified: MutableMap<UUID?, Boolean?> = HashMap<UUID?, Boolean?>()
 
-public class PlayerManager {
-    private static final Map<UUID, Version> versions = new HashMap<>();
-    private static final Map<UUID, Boolean> modUpdateNotified = new HashMap<>();
-    private static final Map<UUID, Boolean> pluginUpdateNotified = new HashMap<>();
-
-    public static Version getVersion(final Player player) {
-        return versions.get(player.getUniqueId());
+    fun getVersion(player: Player): Version? {
+        return versions.get(player.getUniqueId())
     }
 
-    public static void setVersion(final Player player, final Version version) {
-        versions.put(player.getUniqueId(), version);
+    @JvmStatic
+    fun setVersion(player: Player, version: Version?) {
+        versions.put(player.getUniqueId(), version)
     }
 
-    public static void removeVersion(final Player player) {
-        versions.remove(player.getUniqueId());
-        modUpdateNotified.remove(player.getUniqueId());
-        pluginUpdateNotified.remove(player.getUniqueId());
+    fun removeVersion(player: Player) {
+        versions.remove(player.getUniqueId())
+        modUpdateNotified.remove(player.getUniqueId())
+        pluginUpdateNotified.remove(player.getUniqueId())
     }
 
-    public static Collection<Version> getVersions() {
-        return versions.values();
+    fun getVersions(): MutableCollection<Version?> {
+        return versions.values
     }
 
-    public static boolean hasBeenNotifiedAboutModUpdate(final Player player) {
-        return modUpdateNotified.getOrDefault(player.getUniqueId(), false);
+    @JvmStatic
+    fun hasBeenNotifiedAboutModUpdate(player: Player): Boolean {
+        return modUpdateNotified.getOrDefault(player.getUniqueId(), false)!!
     }
 
-    public static void setModUpdateNotified(final Player player, boolean notified) {
-        modUpdateNotified.put(player.getUniqueId(), notified);
+    @JvmStatic
+    fun setModUpdateNotified(player: Player, notified: Boolean) {
+        modUpdateNotified.put(player.getUniqueId(), notified)
     }
 
-    public static boolean hasBeenNotifiedAboutPluginUpdate(final Player player) {
-        return pluginUpdateNotified.getOrDefault(player.getUniqueId(), false);
+    @JvmStatic
+    fun hasBeenNotifiedAboutPluginUpdate(player: Player): Boolean {
+        return pluginUpdateNotified.getOrDefault(player.getUniqueId(), false)!!
     }
 
-    public static void setPluginUpdateNotified(final Player player, boolean notified) {
-        pluginUpdateNotified.put(player.getUniqueId(), notified);
+    @JvmStatic
+    fun setPluginUpdateNotified(player: Player, notified: Boolean) {
+        pluginUpdateNotified.put(player.getUniqueId(), notified)
     }
 }

@@ -1,42 +1,43 @@
-package com.dreamdisplays.utils;
+package com.dreamdisplays.utils
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
-import com.google.gson.reflect.TypeToken;
-import me.inotsleep.utils.logging.LoggingManager;
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
+import com.google.gson.reflect.TypeToken
+import me.inotsleep.utils.logging.LoggingManager
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.List;
+object GithubReleaseFetcher {
+    private val gson = Gson()
+    private val client: HttpClient = HttpClient.newHttpClient()
 
-public class GithubReleaseFetcher {
+    @Throws(Exception::class)
+    fun fetchReleases(owner: String, repo: String): List<Release> {
+        val request = HttpRequest.newBuilder()
+            .uri(URI.create("https://api.github.com/repos/$owner/$repo/releases"))
+            .header("Accept", "application/vnd.github.v3+json")
+            .header("User-Agent", "Updater")
+            .build()
 
-    public record Release(
-            @SerializedName("tag_name") String tagName,
-            @SerializedName("name") String name,
-            @SerializedName("html_url") String htmlUrl,
-            @SerializedName("published_at") String publishedAt
-    ) {}
-
-    private static final Gson gson = new Gson();
-    private static final HttpClient client = HttpClient.newHttpClient();
-
-    public static List<Release> fetchReleases(String owner, String repo) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.github.com/repos/%s/%s/releases".formatted(owner, repo)))
-                .header("Accept", "application/vnd.github.v3+json")
-                .header("User-Agent", "Updater")
-                .build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
 
         if (response.statusCode() != 200) {
-            LoggingManager.error("GitHub API error %d: %s".formatted(response.statusCode(), response.body()));
-            return List.of();
+            LoggingManager.error("GitHub API error ${response.statusCode()}: ${response.body()}")
+            return emptyList()
         }
 
-        return gson.fromJson(response.body(), new TypeToken<List<Release>>() {}.getType());
+        return gson.fromJson(
+            response.body(),
+            object : TypeToken<List<Release>>() {}.type
+        ) ?: emptyList()
     }
+
+    data class Release(
+        @field:SerializedName("tag_name") val tagName: String,
+        @field:SerializedName("name") val name: String,
+        @field:SerializedName("html_url") val htmlUrl: String,
+        @field:SerializedName("published_at") val publishedAt: String
+    )
 }

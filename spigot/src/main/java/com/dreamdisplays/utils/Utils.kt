@@ -1,86 +1,86 @@
-package com.dreamdisplays.utils;
+package com.dreamdisplays.utils
 
-import com.dreamdisplays.datatypes.DisplayData;
-import org.bukkit.Location;
+import com.dreamdisplays.datatypes.DisplayData
+import org.bukkit.Location
+import java.net.URI
+import java.net.URISyntaxException
+import java.util.regex.Pattern
+import kotlin.math.max
+import kotlin.math.min
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+object Utils {
+    fun isInBoundaries(pos1: Location, pos2: Location, location: Location): Boolean {
+        if (location.world != pos1.world) return false
 
-public class Utils {
-    public static boolean isInBoundaries(Location pos1, Location pos2, Location location) {
-        if (location.getWorld() != pos1.getWorld()) return false;
+        val minX = min(pos1.getBlockX(), pos2.getBlockX())
+        val minY = min(pos1.getBlockY(), pos2.getBlockY())
+        val minZ = min(pos1.getBlockZ(), pos2.getBlockZ())
 
-        int minX = Math.min(pos1.getBlockX(), pos2.getBlockX());
-        int minY = Math.min(pos1.getBlockY(), pos2.getBlockY());
-        int minZ = Math.min(pos1.getBlockZ(), pos2.getBlockZ());
+        val maxX = max(pos1.getBlockX(), pos2.getBlockX())
+        val maxY = max(pos1.getBlockY(), pos2.getBlockY())
+        val maxZ = max(pos1.getBlockZ(), pos2.getBlockZ())
 
-        int maxX = Math.max(pos1.getBlockX(), pos2.getBlockX());
-        int maxY = Math.max(pos1.getBlockY(), pos2.getBlockY());
-        int maxZ = Math.max(pos1.getBlockZ(), pos2.getBlockZ());
-
-        if (minX > location.getBlockX() || location.getBlockX() > maxX) return false;
-        if (minY > location.getBlockY() || location.getBlockY() > maxY) return false;
-        return minZ <= location.getBlockZ() && location.getBlockZ() <= maxZ;
+        if (minX > location.getBlockX() || location.getBlockX() > maxX) return false
+        if (minY > location.getBlockY() || location.getBlockY() > maxY) return false
+        return minZ <= location.getBlockZ() && location.getBlockZ() <= maxZ
     }
 
-    public static double getDistanceToScreen(Location location, DisplayData displayData) {
-        int minX = Math.min(displayData.getPos1().getBlockX(), displayData.getPos2().getBlockX());
-        int minY = Math.min(displayData.getPos1().getBlockY(), displayData.getPos2().getBlockY());
-        int minZ = Math.min(displayData.getPos1().getBlockZ(), displayData.getPos2().getBlockZ());
+    fun getDistanceToScreen(location: Location, displayData: DisplayData): Double {
+        val minX = min(displayData.pos1.getBlockX(), displayData.pos2!!.getBlockX())
+        val minY = min(displayData.pos1.getBlockY(), displayData.pos2.getBlockY())
+        val minZ = min(displayData.pos1.getBlockZ(), displayData.pos2.getBlockZ())
 
-        int maxX = Math.max(displayData.getPos1().getBlockX(), displayData.getPos2().getBlockX());
-        int maxY = Math.max(displayData.getPos1().getBlockY(), displayData.getPos2().getBlockY());
-        int maxZ = Math.max(displayData.getPos1().getBlockZ(), displayData.getPos2().getBlockZ());
+        val maxX = max(displayData.pos1.getBlockX(), displayData.pos2.getBlockX())
+        val maxY = max(displayData.pos1.getBlockY(), displayData.pos2.getBlockY())
+        val maxZ = max(displayData.pos1.getBlockZ(), displayData.pos2.getBlockZ())
 
-        int clampedX = Math.min(Math.max(location.getBlockX(), minX), maxX);
-        int clampedY = Math.min(Math.max(location.getBlockY(), minY), maxY);
-        int clampedZ = Math.min(Math.max(location.getBlockZ(), minZ), maxZ);
+        val clampedX = min(max(location.getBlockX(), minX), maxX)
+        val clampedY = min(max(location.getBlockY(), minY), maxY)
+        val clampedZ = min(max(location.getBlockZ(), minZ), maxZ)
 
-        Location closestPoint = new Location(location.getWorld(), clampedX, clampedY, clampedZ);
+        val closestPoint = Location(location.getWorld(), clampedX.toDouble(), clampedY.toDouble(), clampedZ.toDouble())
 
-        return closestPoint.distance(location);
+        return closestPoint.distance(location)
     }
 
-    public static String extractVideoId(String youtubeUrl) {
+    fun extractVideoId(youtubeUrl: String): String? {
         try {
-            URI uri = new URI(youtubeUrl);
-            String query = uri.getQuery(); // Takes part after "?"
+            val uri = URI(youtubeUrl)
+            val query = uri.query // Takes part after "?"
             if (query != null) {
-                for (String param : query.split("&")) {
-                    String[] pair = param.split("=", 2);
-                    if (pair.length == 2 && pair[0].equals("v")) {
-                        return pair[1];
+                for (param in query.split("&")) {
+                    val pair = param.split("=", limit = 2)
+                    if (pair.size == 2 && pair[0] == "v") {
+                        return pair[1]
                     }
                 }
             }
             // If youtu.be/ID
-            String host = uri.getHost();
+            val host = uri.host
             if (host != null && host.contains("youtu.be")) {
-                String path = uri.getPath();
-                if (path != null && path.length() > 1) {
-                    return path.substring(1);
+                val path = uri.path
+                if (path != null && path.length > 1) {
+                    return path.substring(1)
                 }
             } else if (host != null && host.contains("youtube.com")) {
-                String path = uri.getPath();
+                val path = uri.path
                 if (path != null && path.contains("shorts")) {
-                    return List.of(path.split("/")).getLast();
+                    return path.split("/").lastOrNull { it.isNotEmpty() }
                 }
             }
-        } catch (URISyntaxException ignored) {
+        } catch (_: URISyntaxException) {
+            // Invalid URL, fall back to regex parsing
         }
 
-        String regex = "(?<=([?&]v=))[^#&?]*";
-        Matcher m = Pattern.compile(regex).matcher(youtubeUrl);
-        return m.find() ? m.group() : null;
+        val regex = "(?<=([?&]v=))[^#&?]*"
+        val m = Pattern.compile(regex).matcher(youtubeUrl)
+        return if (m.find()) m.group() else null
     }
 
-    public static String sanitize(String raw) {
+    fun sanitize(raw: String?): String? {
         if (raw == null) {
-            return null;
+            return null
         }
-        return raw.trim().replaceAll("[^0-9A-Za-z+.-]", "");
+        return raw.trim { it <= ' ' }.replace("[^0-9A-Za-z+.-]".toRegex(), "")
     }
 }

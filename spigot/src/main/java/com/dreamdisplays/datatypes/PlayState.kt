@@ -1,48 +1,41 @@
-package com.dreamdisplays.datatypes;
+package com.dreamdisplays.datatypes
 
-import com.dreamdisplays.managers.DisplayManager;
+import com.dreamdisplays.managers.DisplayManager
+import java.util.*
 
-import java.util.UUID;
+class PlayState(private val id: UUID?) {
+    private var paused = false
+    private var lastReportedTime: Long = 0
+    private var lastReportedTimeTimestamp: Long = 0
+    private var limitTime: Long = 0
+    var displayData: DisplayData = DisplayManager.getDisplayData(id)!!
 
-public class PlayState {
-    private final UUID id;
-    private boolean paused = false;
-    private long lastReportedTime = 0;
-    private long lastReportedTimeTimestamp = 0;
-    private long limitTime = 0;
-    public DisplayData displayData;
-
-    public PlayState (UUID id) {
-        this.id = id;
-        displayData = DisplayManager.getDisplayData(id);
+    fun update(packet: SyncPacket) {
+        this.paused = packet.currentState
+        this.lastReportedTime = packet.currentTime
+        this.lastReportedTimeTimestamp = System.nanoTime()
+        limitTime = packet.limitTime
     }
 
-    public void update(SyncPacket packet) {
-        this.paused = packet.currentState();
-        this.lastReportedTime = packet.currentTime();
-        this.lastReportedTimeTimestamp = System.nanoTime();
-        limitTime = packet.limitTime();
-    }
-
-    public SyncPacket createPacket() {
-        long nanos = System.nanoTime();
-        long currentTime;
+    fun createPacket(): SyncPacket {
+        val nanos = System.nanoTime()
+        var currentTime: Long
 
         if (paused) {
-            currentTime = lastReportedTime;
+            currentTime = lastReportedTime
         } else {
-            long elapsed = nanos - lastReportedTimeTimestamp;
-            currentTime = lastReportedTime + elapsed;
+            val elapsed = nanos - lastReportedTimeTimestamp
+            currentTime = lastReportedTime + elapsed
         }
 
-        if (limitTime == 0 && displayData.getDuration() != null) {
-            limitTime = displayData.getDuration();
+        if (limitTime == 0L && displayData.duration != null) {
+            limitTime = displayData.duration!!
         }
 
         if (limitTime > 0) {
-            currentTime %= limitTime;
+            currentTime %= limitTime
         }
 
-        return new SyncPacket(id, true, paused, currentTime, limitTime);
+        return SyncPacket(id, true, paused, currentTime, limitTime)
     }
 }

@@ -1,185 +1,202 @@
-package com.dreamdisplays.utils.net;
+package com.dreamdisplays.utils.net
 
-import com.dreamdisplays.DreamDisplaysPlugin;
-import com.dreamdisplays.datatypes.SyncPacket;
-import me.inotsleep.utils.logging.LoggingManager;
-import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
+import com.dreamdisplays.DreamDisplaysPlugin
+import com.dreamdisplays.datatypes.SyncPacket
+import me.inotsleep.utils.logging.LoggingManager
+import org.bukkit.block.BlockFace
+import org.bukkit.entity.Player
+import org.bukkit.util.Vector
+import java.io.ByteArrayOutputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
+import java.io.IOException
+import java.nio.charset.StandardCharsets
+import java.util.*
+import java.util.function.Consumer
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.UUID;
-
-public class PacketUtils {
-    public static void sendDisplayInfoPacket(List<Player> players, UUID id, UUID ownerId, Vector pos, int width, int height, String url, String lang, BlockFace face, boolean isSync) {
+object PacketUtils {
+    fun sendDisplayInfoPacket(
+        players: MutableList<Player?>,
+        id: UUID,
+        ownerId: UUID,
+        pos: Vector,
+        width: Int,
+        height: Int,
+        url: String,
+        lang: String,
+        face: BlockFace,
+        isSync: Boolean
+    ) {
         try {
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            DataOutputStream out = new DataOutputStream(byteStream);
+            val byteStream = ByteArrayOutputStream()
+            val out = DataOutputStream(byteStream)
 
-            out.writeLong(id.getMostSignificantBits());
-            out.writeLong(id.getLeastSignificantBits());
+            out.writeLong(id.mostSignificantBits)
+            out.writeLong(id.leastSignificantBits)
 
-            out.writeLong(ownerId.getMostSignificantBits());
-            out.writeLong(ownerId.getLeastSignificantBits());
+            out.writeLong(ownerId.mostSignificantBits)
+            out.writeLong(ownerId.leastSignificantBits)
 
-            writeVarInt(out, (int) pos.getX());
-            writeVarInt(out, (int) pos.getY());
-            writeVarInt(out, (int) pos.getZ());
+            writeVarInt(out, pos.getX().toInt())
+            writeVarInt(out, pos.getY().toInt())
+            writeVarInt(out, pos.getZ().toInt())
 
-            writeVarInt(out, width);
-            writeVarInt(out, height);
+            writeVarInt(out, width)
+            writeVarInt(out, height)
 
-            writeString(out, url);
+            writeString(out, url)
 
-            out.writeByte(toFacingPacketByte(face));
-            out.writeBoolean(isSync);
+            out.writeByte(toFacingPacketByte(face).toInt())
+            out.writeBoolean(isSync)
 
-            writeString(out, lang);
-            byte[] arr = byteStream.toByteArray();
+            writeString(out, lang)
+            val arr = byteStream.toByteArray()
 
-            players.forEach(player -> {
-                player.sendPluginMessage(DreamDisplaysPlugin.getInstance(), "dreamdisplays:display_info", arr);
-            });
-
-        } catch (IOException exception) {
-            LoggingManager.warn("Unable to send packet", exception);
+            players.forEach(Consumer { player: Player? ->
+                player!!.sendPluginMessage(DreamDisplaysPlugin.getInstance(), "dreamdisplays:display_info", arr)
+            })
+        } catch (exception: IOException) {
+            LoggingManager.warn("Unable to send packet", exception)
         }
     }
 
-    public static void sendSyncPacket(List<Player> players, SyncPacket packet) {
+    fun sendSyncPacket(players: MutableList<Player?>, packet: SyncPacket) {
         try {
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            DataOutputStream out = new DataOutputStream(byteStream);
+            val byteStream = ByteArrayOutputStream()
+            val out = DataOutputStream(byteStream)
 
-            out.writeLong(packet.id().getMostSignificantBits());
-            out.writeLong(packet.id().getLeastSignificantBits());
+            out.writeLong(packet.id!!.mostSignificantBits)
+            out.writeLong(packet.id.leastSignificantBits)
 
-            out.writeBoolean(packet.isSync());
-            out.writeBoolean(packet.currentState());
+            out.writeBoolean(packet.isSync)
+            out.writeBoolean(packet.currentState)
 
-            writeVarLong(out, packet.currentTime());
-            writeVarLong(out, packet.limitTime());
+            writeVarLong(out, packet.currentTime)
+            writeVarLong(out, packet.limitTime)
 
-            byte[] arr = byteStream.toByteArray();
+            val arr = byteStream.toByteArray()
 
-            players.forEach(player -> {
-                player.sendPluginMessage(DreamDisplaysPlugin.getInstance(), "dreamdisplays:sync", arr);
-            });
-        } catch (IOException exception) {
-            LoggingManager.warn("Unable to send packet", exception);
+            players.forEach(Consumer { player: Player? ->
+                player!!.sendPluginMessage(DreamDisplaysPlugin.getInstance(), "dreamdisplays:sync", arr)
+            })
+        } catch (exception: IOException) {
+            LoggingManager.warn("Unable to send packet", exception)
         }
     }
 
-    public static void sendDeletePacket(List<Player> players, UUID id) {
+    fun sendDeletePacket(players: MutableList<Player?>, id: UUID) {
         try {
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            DataOutputStream out = new DataOutputStream(byteStream);
+            val byteStream = ByteArrayOutputStream()
+            val out = DataOutputStream(byteStream)
 
-            out.writeLong(id.getMostSignificantBits());
-            out.writeLong(id.getLeastSignificantBits());
+            out.writeLong(id.mostSignificantBits)
+            out.writeLong(id.leastSignificantBits)
 
-            byte[] arr = byteStream.toByteArray();
+            val arr = byteStream.toByteArray()
 
-            players.forEach(player -> {
-                player.sendPluginMessage(DreamDisplaysPlugin.getInstance(), "dreamdisplays:delete", arr);
-            });
-        } catch (IOException exception) {
-            LoggingManager.warn( "Unable to send packet", exception);
+            players.forEach(Consumer { player: Player? ->
+                player!!.sendPluginMessage(DreamDisplaysPlugin.getInstance(), "dreamdisplays:delete", arr)
+            })
+        } catch (exception: IOException) {
+            LoggingManager.warn("Unable to send packet", exception)
         }
     }
 
-    public static void sendPremiumPacket(Player player, boolean premium) {
+    fun sendPremiumPacket(player: Player, premium: Boolean) {
         try {
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            DataOutputStream out = new DataOutputStream(byteStream);
+            val byteStream = ByteArrayOutputStream()
+            val out = DataOutputStream(byteStream)
 
-            out.writeBoolean(premium);
+            out.writeBoolean(premium)
 
-            byte[] arr = byteStream.toByteArray();
+            val arr = byteStream.toByteArray()
 
-            player.sendPluginMessage(DreamDisplaysPlugin.getInstance(), "dreamdisplays:premium", arr);
-        } catch (IOException exception) {
-            LoggingManager.warn( "Unable to send packet", exception);
+            player.sendPluginMessage(DreamDisplaysPlugin.getInstance(), "dreamdisplays:premium", arr)
+        } catch (exception: IOException) {
+            LoggingManager.warn("Unable to send packet", exception)
         }
     }
 
-    public static void writeVarInt(DataOutputStream out, int value) throws IOException {
-        while ((value & 0xFFFFFF80) != 0L) {
-            out.writeByte((value & 0x7F) | 0x80);
-            value >>>= 7;
+    @Throws(IOException::class)
+    fun writeVarInt(out: DataOutputStream, value: Int) {
+        var value = value
+        while ((value and -0x80).toLong() != 0L) {
+            out.writeByte((value and 0x7F) or 0x80)
+            value = value ushr 7
         }
-        out.writeByte(value & 0x7F);
+        out.writeByte(value and 0x7F)
     }
 
-    public static void writeString(DataOutputStream out, String str) throws IOException {
-        byte[] utf8 = str.getBytes(StandardCharsets.UTF_8);
-        writeVarInt(out, utf8.length);
-        out.write(utf8);
+    @Throws(IOException::class)
+    fun writeString(out: DataOutputStream, str: String) {
+        val utf8 = str.toByteArray(StandardCharsets.UTF_8)
+        writeVarInt(out, utf8.size)
+        out.write(utf8)
     }
 
-    public static byte toFacingPacketByte(BlockFace face) {
-        return switch (face) {
-            case NORTH -> 0;
-            case EAST  -> 1;
-            case SOUTH -> 2;
-            case WEST  -> 3;
-            default -> 0; // Fallback to NORTH
-        };
+    fun toFacingPacketByte(face: BlockFace): Byte {
+        return when (face) {
+            BlockFace.NORTH -> 0
+            BlockFace.EAST -> 1
+            BlockFace.SOUTH -> 2
+            BlockFace.WEST -> 3
+            else -> 0
+        }
     }
 
-    public static long readVarLong(DataInputStream buf) throws IOException {
-        long value = 0L;
-        int  position = 0;
-        byte currentByte;
+    @Throws(IOException::class)
+    fun readVarLong(buf: DataInputStream): Long {
+        var value = 0L
+        var position = 0
+        var currentByte: Byte
         do {
             if (position >= 10) {
-                throw new RuntimeException("VarLong too big");
+                throw RuntimeException("VarLong too big")
             }
-            currentByte = buf.readByte();
-            value |= (long)(currentByte & 0x7F) << (position * 7);
-            position++;
-        } while ((currentByte & 0x80) != 0);
-        return value;
+            currentByte = buf.readByte()
+            value = value or ((currentByte.toInt() and 0x7F).toLong() shl (position * 7))
+            position++
+        } while ((currentByte.toInt() and 0x80) != 0)
+        return value
     }
 
-    public static void writeVarLong(DataOutputStream buf, long value) throws IOException {
+    @Throws(IOException::class)
+    fun writeVarLong(buf: DataOutputStream, value: Long) {
+        var value = value
         while (true) {
-            if ((value & ~0x7FL) == 0) {
-                buf.writeByte((int) value);
-                return;
+            if ((value and 0x7FL.inv()) == 0L) {
+                buf.writeByte(value.toInt())
+                return
             } else {
-                buf.writeByte(((int) value & 0x7F) | 0x80);
-                value >>>= 7;
+                buf.writeByte((value.toInt() and 0x7F) or 0x80)
+                value = value ushr 7
             }
         }
     }
 
-    public static UUID readUUID(DataInputStream in) throws IOException {
-        return new UUID(in.readLong(), in.readLong());
+    @Throws(IOException::class)
+    fun readUUID(`in`: DataInputStream): UUID {
+        return UUID(`in`.readLong(), `in`.readLong())
     }
 
-    public static int readVarInt(DataInputStream in) throws IOException {
-        int numRead = 0;
-        int result = 0;
-        int read;
+    @Throws(IOException::class)
+    fun readVarInt(`in`: DataInputStream): Int {
+        var numRead = 0
+        var result = 0
+        var read: Int
         do {
             // Read the byte as unsigned
-            read = in.readUnsignedByte();
+            read = `in`.readUnsignedByte()
             // 7 bytes for other information
-            int value = (read & 0x7F);
-            result |= (value << (7 * numRead));
+            val value = (read and 0x7F)
+            result = result or (value shl (7 * numRead))
 
-            numRead++;
+            numRead++
             if (numRead > 5) {
-                throw new IOException("VarInt too big");
+                throw IOException("VarInt too big")
             }
-        } while ((read & 0x80) != 0);
+        } while ((read and 0x80) != 0)
 
-        return result;
+        return result
     }
 }

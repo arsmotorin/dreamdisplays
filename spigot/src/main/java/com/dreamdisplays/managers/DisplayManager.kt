@@ -1,192 +1,197 @@
-package com.dreamdisplays.managers;
+package com.dreamdisplays.managers
 
-import com.dreamdisplays.DreamDisplaysPlugin;
-import com.dreamdisplays.datatypes.DisplayData;
-import com.dreamdisplays.datatypes.SelectionData;
-import com.dreamdisplays.utils.MessageUtil;
-import com.dreamdisplays.utils.ReportSender;
-import com.dreamdisplays.utils.net.PacketUtils;
-import me.inotsleep.utils.logging.LoggingManager;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.entity.Player;
-import org.bukkit.util.BoundingBox;
+import com.dreamdisplays.DreamDisplaysPlugin
+import com.dreamdisplays.datatypes.DisplayData
+import com.dreamdisplays.datatypes.SelectionData
+import com.dreamdisplays.utils.MessageUtil
+import com.dreamdisplays.utils.ReportSender
+import com.dreamdisplays.utils.net.PacketUtils
+import me.inotsleep.utils.logging.LoggingManager
+import org.bukkit.Bukkit
+import org.bukkit.Location
+import org.bukkit.entity.Player
+import org.bukkit.scheduler.BukkitRunnable
+import org.bukkit.util.BoundingBox
+import java.lang.reflect.Proxy
+import java.util.*
+import java.util.function.Consumer
+import kotlin.math.max
+import kotlin.math.min
 
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+object DisplayManager {
+    private val displays: MutableMap<UUID, DisplayData> = mutableMapOf()
+    private val reportTime: MutableMap<UUID, Long> = mutableMapOf()
 
-public class DisplayManager {
-    private static final Map<UUID, DisplayData> displays = new HashMap<>();
-    private static final Map<UUID, Long> reportTime = new HashMap<>();
+    @JvmStatic
+    fun getDisplayData(id: UUID?): DisplayData? = displays[id]
 
-    public static DisplayData getDisplayData(UUID id) {
-        return displays.get(id);
+    fun getDisplays(): List<DisplayData> = displays.values.toList()
+
+    fun register(displayData: DisplayData) {
+        displays[displayData.id] = displayData
+        displayData.sendUpdatePacket(displayData.receivers)
     }
 
-    public static List<DisplayData> getDisplays() {
-        return new ArrayList<>(displays.values());
-    }
+    fun updateAllDisplays() {
+        val playersByWorld = displays.values
+            .mapNotNull { it.pos1.world }
+            .distinct()
+            .associateWith { it.players.toMutableList() }
 
-    public static void register(DisplayData displayData) {
-        displays.put(displayData.getId(), displayData);
+        displays.values.forEach { display ->
+            val world = display.pos1.world ?: return@forEach
+            val worldPlayers = playersByWorld[world] ?: mutableListOf()
 
-        List<Player> receivers = displayData.getReceivers();
+            val receivers = worldPlayers.filter { player ->
+                display.isInRange(player.location)
+            }.toMutableList()
 
-        displayData.sendUpdatePacket(receivers);
-    }
-
-    public static void updateAllDisplays() {
-        Map<World, List<Player>> playersByWorld = displays.values().stream()
-                .map(DisplayData::getPos1)
-                .map(Location::getWorld)
-                .distinct()
-                .collect(Collectors.toMap(
-                        Function.identity(),
-                        World::getPlayers,
-                        (list1, list2) -> list1
-                ));
-
-        for (DisplayData display : displays.values()) {
-            World world = display.getPos1().getWorld();
-            List<Player> worldPlayers = playersByWorld.computeIfAbsent(world, k -> Collections.emptyList());
-
-            List<Player> receivers = worldPlayers.stream()
-                    .filter(player -> display.isInRange(player.getLocation()))
-                    .toList();
-
-            display.sendUpdatePacket(receivers);
+            display.sendUpdatePacket(receivers)
         }
     }
 
-    public static void delete(DisplayData displayData) {
-        if (displayData == null) return;
+    fun delete(displayData: DisplayData) {
+        val deleteTask = Runnable {
+            DreamDisplaysPlugin.getInstance().storage.deleteDisplay(displayData)
+        }
 
-        Runnable deleteTask = () -> DreamDisplaysPlugin.getInstance().storage.deleteDisplay(displayData);
-
-        if (DreamDisplaysPlugin.isFolia()) {
+        if (DreamDisplaysPlugin.getIsFolia()) {
             try {
-                Class<?> bukkitClass = Class.forName("org.bukkit.Bukkit");
-                Object asyncScheduler = bukkitClass.getMethod("getAsyncScheduler").invoke(null);
-                Class<?> consumerClass = Class.forName("java.util.function.Consumer");
-                Object task = java.lang.reflect.Proxy.newProxyInstance(consumerClass.getClassLoader(), new Class<?>[]{consumerClass}, (proxy, method, args) -> {
-                    deleteTask.run();
-                    return null;
-                });
-                asyncScheduler.getClass().getMethod("runNow", Object.class, consumerClass).invoke(asyncScheduler, DreamDisplaysPlugin.getInstance(), task);
-            } catch (Exception e) {
-                deleteTask.run();
+                val bukkitClass = Class.forName("org.bukkit.Bukkit")
+                val asyncScheduler = bukkitClass.getMethod("getAsyncScheduler").invoke(null)
+                val consumerClass = Class.forName("java.util.function.Consumer")
+                val task = Proxy.newProxyInstance(
+                    consumerClass.classLoader,
+                    arrayOf(consumerClass)
+                ) { _, _, _ ->
+                    deleteTask.run()
+                    null
+                }
+                asyncScheduler.javaClass.getMethod("runNow", Any::class.java, consumerClass)
+                    .invoke(asyncScheduler, DreamDisplaysPlugin.getInstance(), task)
+            } catch (_: Exception) {
+                deleteTask.run()
             }
         } else {
-            new org.bukkit.scheduler.BukkitRunnable() {
-                public void run() {
-                    deleteTask.run();
-                }
-            }.runTaskAsynchronously(DreamDisplaysPlugin.getInstance());
+            object : BukkitRunnable() {
+                override fun run() = deleteTask.run()
+            }.runTaskAsynchronously(DreamDisplaysPlugin.getInstance())
         }
 
-        PacketUtils.sendDeletePacket(displayData.getReceivers(), displayData.getId());
-        displays.remove(displayData.getId());
+        PacketUtils.sendDeletePacket(displayData.receivers as MutableList<Player?>, displayData.id)
+        displays.remove(displayData.id)
     }
 
-    public static void delete(UUID id, Player player) {
-        DisplayData displayData = displays.get(id);
+    @JvmStatic
+    fun delete(id: UUID, player: Player) {
+        val displayData = displays[id] ?: return
 
-        if (displayData == null) return;
-
-        if (!(displayData.getOwnerId() + "").equals(player.getUniqueId() + "")) {
-            LoggingManager.warn("Player " + player.getName() + " sent delete packet while he not owner! ");
-            return;
+        if (displayData.ownerId != player.uniqueId) {
+            LoggingManager.warn("Player ${player.name} sent delete packet while not owner!")
+            return
         }
 
-        delete(displayData);
+        delete(displayData)
     }
 
-    public static void report(UUID id, Player player) {
-        DisplayData displayData = displays.get(id);
-        if (displayData == null) return;
-
-        long lastReport = reportTime.computeIfAbsent(id, (k) -> 0L);
+    @JvmStatic
+    fun report(id: UUID, player: Player) {
+        val displayData = displays[id] ?: return
+        val lastReport = reportTime.getOrPut(id) { 0L }
 
         if (System.currentTimeMillis() - lastReport < DreamDisplaysPlugin.config.settings.reportCooldown) {
-            MessageUtil.sendColoredMessage(player, (String) DreamDisplaysPlugin.config.messages.get("reportTooQuickly"));
-            return;
+            MessageUtil.sendColoredMessage(
+                player,
+                DreamDisplaysPlugin.config.messages["reportTooQuickly"] as String?
+            )
+            return
         }
 
-        reportTime.put(id, System.currentTimeMillis());
+        reportTime[id] = System.currentTimeMillis()
 
-        Runnable reportTask = () -> {
+        val reportTask = Runnable {
             try {
-                if (Objects.equals(DreamDisplaysPlugin.config.settings.webhookUrl, "")) return;
-                ReportSender.sendReport(displayData.getPos1(), displayData.getUrl(), displayData.getId(), player,  DreamDisplaysPlugin.config.settings.webhookUrl, Bukkit.getOfflinePlayer(displayData.getOwnerId()).getName());
-                MessageUtil.sendColoredMessage(player, (String) DreamDisplaysPlugin.config.messages.get("reportSent"));
-            } catch (Exception e) {
-                LoggingManager.error("Unable to send webhook message", e);
+                if (DreamDisplaysPlugin.config.settings.webhookUrl.isEmpty()) return@Runnable
+                ReportSender.sendReport(
+                    displayData.pos1,
+                    displayData.url,
+                    displayData.id,
+                    player,
+                    DreamDisplaysPlugin.config.settings.webhookUrl,
+                    Bukkit.getOfflinePlayer(displayData.ownerId).name
+                )
+                MessageUtil.sendColoredMessage(
+                    player,
+                    DreamDisplaysPlugin.config.messages["reportSent"] as String?
+                )
+            } catch (e: Exception) {
+                LoggingManager.error("Unable to send webhook message", e)
             }
-        };
+        }
 
-        if (DreamDisplaysPlugin.isFolia()) {
+        if (DreamDisplaysPlugin.getIsFolia()) {
             try {
-                Class<?> bukkitClass = Class.forName("org.bukkit.Bukkit");
-                Object asyncScheduler = bukkitClass.getMethod("getAsyncScheduler").invoke(null);
-                Class<?> consumerClass = Class.forName("java.util.function.Consumer");
-                Object task = java.lang.reflect.Proxy.newProxyInstance(consumerClass.getClassLoader(), new Class<?>[]{consumerClass}, (proxy, method, args) -> {
-                    reportTask.run();
-                    return null;
-                });
-                asyncScheduler.getClass().getMethod("runNow", Object.class, consumerClass).invoke(asyncScheduler, DreamDisplaysPlugin.getInstance(), task);
-            } catch (Exception e) {
-                reportTask.run();
+                val bukkitClass = Class.forName("org.bukkit.Bukkit")
+                val asyncScheduler = bukkitClass.getMethod("getAsyncScheduler").invoke(null)
+                val consumerClass = Class.forName("java.util.function.Consumer")
+                val task = Proxy.newProxyInstance(
+                    consumerClass.classLoader,
+                    arrayOf(consumerClass)
+                ) { _, _, _ ->
+                    reportTask.run()
+                    null
+                }
+                asyncScheduler.javaClass.getMethod("runNow", Any::class.java, consumerClass)
+                    .invoke(asyncScheduler, DreamDisplaysPlugin.getInstance(), task)
+            } catch (_: Exception) {
+                reportTask.run()
             }
         } else {
-            new org.bukkit.scheduler.BukkitRunnable() {
-                public void run() {
-                    reportTask.run();
-                }
-            }.runTaskAsynchronously(DreamDisplaysPlugin.getInstance());
+            object : BukkitRunnable() {
+                override fun run() = reportTask.run()
+            }.runTaskAsynchronously(DreamDisplaysPlugin.getInstance())
         }
     }
 
-    public static boolean isOverlaps(SelectionData data) {
-        World selWorld = data.getPos1().getWorld();
+    fun isOverlaps(data: SelectionData): Boolean {
+        val pos1 = data.pos1 ?: return false
+        val pos2 = data.pos2 ?: return false
+        val selWorld = pos1.world
 
-        // Vectors from positions
-        int minX = Math.min(data.getPos1().getBlockX(), data.getPos2().getBlockX());
-        int minY = Math.min(data.getPos1().getBlockY(), data.getPos2().getBlockY());
-        int minZ = Math.min(data.getPos1().getBlockZ(), data.getPos2().getBlockZ());
-        int maxX = Math.max(data.getPos1().getBlockX(), data.getPos2().getBlockX()) + 1;
-        int maxY = Math.max(data.getPos1().getBlockY(), data.getPos2().getBlockY()) + 1;
-        int maxZ = Math.max(data.getPos1().getBlockZ(), data.getPos2().getBlockZ()) + 1;
+        val minX = min(pos1.blockX, pos2.blockX)
+        val minY = min(pos1.blockY, pos2.blockY)
+        val minZ = min(pos1.blockZ, pos2.blockZ)
+        val maxX = max(pos1.blockX, pos2.blockX) + 1
+        val maxY = max(pos1.blockY, pos2.blockY) + 1
+        val maxZ = max(pos1.blockZ, pos2.blockZ) + 1
 
-        BoundingBox box = new BoundingBox(minX, minY, minZ, maxX, maxY, maxZ);
+        val box = BoundingBox(
+            minX.toDouble(),
+            minY.toDouble(),
+            minZ.toDouble(),
+            maxX.toDouble(),
+            maxY.toDouble(),
+            maxZ.toDouble()
+        )
 
-        for (DisplayData display : displays.values()) {
-            if (!display.getPos1().getWorld().equals(selWorld)) continue;
-
-            if (box.overlaps(display.box)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static DisplayData isContains(Location location) {
-        for (DisplayData display : displays.values()) {
-            if (display.getPos1().getWorld() == location.getWorld() && display.box.contains(location.toVector())) return display;
-        }
-
-        return null;
-    }
-
-    public static void register(List<DisplayData> list) {
-        for (DisplayData display : list) {
-            displays.put(display.getId(), display);
+        return displays.values.any { display ->
+            display.pos1.world == selWorld && box.overlaps(display.box)
         }
     }
 
-    public static void save(Consumer<DisplayData> saveDisplay) {
-        displays.values().forEach(saveDisplay);
+    fun isContains(location: Location): DisplayData? {
+        return displays.values.firstOrNull { display ->
+            display.pos1.world == location.world && display.box.contains(location.toVector())
+        }
+    }
+
+    fun register(list: List<DisplayData>) {
+        list.forEach { display ->
+            displays[display.id] = display
+        }
+    }
+
+    fun save(saveDisplay: Consumer<DisplayData>) {
+        displays.values.forEach(saveDisplay)
     }
 }

@@ -1,46 +1,48 @@
-package com.dreamdisplays.managers;
+package com.dreamdisplays.managers
 
-import com.dreamdisplays.datatypes.DisplayData;
-import com.dreamdisplays.datatypes.PlayState;
-import com.dreamdisplays.datatypes.SyncPacket;
-import com.dreamdisplays.utils.net.PacketUtils;
-import me.inotsleep.utils.logging.LoggingManager;
-import org.bukkit.entity.Player;
+import com.dreamdisplays.datatypes.PlayState
+import com.dreamdisplays.datatypes.SyncPacket
+import com.dreamdisplays.managers.DisplayManager.getDisplayData
+import com.dreamdisplays.utils.net.PacketUtils
+import me.inotsleep.utils.logging.LoggingManager
+import org.bukkit.entity.Player
+import java.util.*
 
-import java.util.*;
+object PlayStateManager {
+    private val playStates: MutableMap<UUID?, PlayState> = HashMap<UUID?, PlayState>()
 
-public class PlayStateManager {
-    private static final Map<UUID, PlayState> playStates = new HashMap<>();
+    @JvmStatic
+    fun processSyncPacket(packet: SyncPacket, player: Player) {
+        val data = getDisplayData(packet.id)
+        if (data != null) data.isSync = packet.isSync
 
-    public static void processSyncPacket(SyncPacket packet, Player player) {
-        DisplayData data = DisplayManager.getDisplayData(packet.id());
-        if (data != null) data.setSync(packet.isSync());
-
-        if (!packet.isSync()) {
-            playStates.remove(packet.id());
-            return;
+        if (!packet.isSync) {
+            playStates.remove(packet.id)
+            return
         }
 
-        if (data == null) return;
+        if (data == null) return
 
-        if (!(data.getOwnerId() + "").equals(player.getUniqueId() + "")) {
-            LoggingManager.warn("Player " + player.getName() + " sent sync packet while he not owner! ");
-            return;
+        if ((data.ownerId.toString() + "") != player.getUniqueId().toString() + "") {
+            LoggingManager.warn("Player " + player.getName() + " sent sync packet while he not owner! ")
+            return
         }
 
-        PlayState state = playStates.computeIfAbsent(packet.id(), PlayState::new);
-        state.update(packet);
-        data.setDuration(packet.limitTime());
-        List<Player> receivers = data.getReceivers();
+        val state = playStates.computeIfAbsent(packet.id) { id: UUID? -> PlayState(id) }
+        state.update(packet)
+        data.duration = packet.limitTime
+        val receivers = data.receivers
 
-        PacketUtils.sendSyncPacket(receivers.stream().filter(p -> !p.getUniqueId().equals(player.getUniqueId())).toList(), packet);
+        PacketUtils.sendSyncPacket(receivers.stream().filter { p: Player? -> p!!.getUniqueId() != player.getUniqueId() }
+            .toList(), packet)
     }
 
-    public static void sendSyncPacket(UUID id, Player player) {
-        if (!playStates.containsKey(id)) return;
-        PlayState state = playStates.get(id);
+    @JvmStatic
+    fun sendSyncPacket(id: UUID?, player: Player?) {
+        if (!playStates.containsKey(id)) return
+        val state: PlayState = playStates.get(id)!!
 
-        SyncPacket packet = state.createPacket();
-        PacketUtils.sendSyncPacket(Collections.singletonList(player), packet);
+        val packet = state.createPacket()
+        PacketUtils.sendSyncPacket(mutableListOf<Player?>(player), packet)
     }
 }

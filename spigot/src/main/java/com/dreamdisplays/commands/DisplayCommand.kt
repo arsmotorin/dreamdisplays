@@ -105,7 +105,7 @@ class DisplayCommand : AbstractCommand(DreamDisplaysPlugin.getInstance().name, "
             return
         }
 
-        DreamDisplaysPlugin.config.reload(DreamDisplaysPlugin.getInstance())
+        DreamDisplaysPlugin.config.reload()
         msg(sender, "configReloaded")
     }
 
@@ -125,7 +125,7 @@ class DisplayCommand : AbstractCommand(DreamDisplaysPlugin.getInstance().name, "
 
         val entry = DreamDisplaysPlugin.config.messages["displayListEntry"] as String?
 
-        for (d in displays) {
+        displays.forEach { d ->
             val owner = Bukkit.getOfflinePlayer(d.ownerId).name ?: "Unknown"
             val formatted = me.inotsleep.utils.MessageUtil.parsePlaceholders(
                 entry,
@@ -145,6 +145,7 @@ class DisplayCommand : AbstractCommand(DreamDisplaysPlugin.getInstance().name, "
     }
 
     private fun sendHelp(sender: CommandSender?) {
+        @Suppress("UNCHECKED_CAST")
         MessageUtil.sendColoredMessages(
             sender,
             DreamDisplaysPlugin.config.messages["displayCommandHelp"] as MutableList<String?>?
