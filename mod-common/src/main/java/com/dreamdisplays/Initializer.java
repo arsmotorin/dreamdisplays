@@ -1,7 +1,7 @@
 package com.dreamdisplays;
 
 import com.dreamdisplays.net.*;
-import com.dreamdisplays.screen.Configuration;
+import com.dreamdisplays.screen.Menu;
 import com.dreamdisplays.screen.Manager;
 import com.dreamdisplays.screen.Screen;
 import com.dreamdisplays.screen.Settings;
@@ -210,7 +210,7 @@ public class Initializer {
 
     private static void checkAndOpenScreen() {
         if (hoveredScreen == null) return;
-        Configuration.open(hoveredScreen);
+        Menu.open(hoveredScreen);
     }
 
     public static void sendPacket(CustomPacketPayload packet) {

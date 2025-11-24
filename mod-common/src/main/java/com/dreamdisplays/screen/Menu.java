@@ -24,10 +24,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-// Configuration screen for Dream Displays with volume, render distance, quality, and sync settings
-@NullMarked
-public class Configuration extends Screen {
+// TODO: rewrite Menu class because it's really messy
+// Maybe we need a separate classes for error screen, normal config screen, etc.
 
+// Menu for configuring of displays
+@NullMarked
+public class Menu extends Screen {
+
+    // UI components
     @Nullable Slider volume = null;
     @Nullable Slider renderD = null;
     @Nullable Slider quality = null;
@@ -44,15 +48,16 @@ public class Configuration extends Screen {
     @Nullable Button deleteButton = null;
     @Nullable Button reportButton = null;
 
+    // Duplication of original video screen
     com.dreamdisplays.screen.@Nullable Screen screen = null;
 
-    protected Configuration() {
+    protected Menu() {
         super(Component.translatable("dreamdisplays.ui.title"));
     }
 
     // Opens the display configuration screen
     public static void open(com.dreamdisplays.screen.Screen screen) {
-        Configuration displayConfScreen = new Configuration();
+        Menu displayConfScreen = new Menu();
         displayConfScreen.setScreen(screen);
         Minecraft.getInstance().setScreen(displayConfScreen);
     }
@@ -160,6 +165,7 @@ public class Configuration extends Screen {
             }
         };
 
+        // TODO: fix sync reset button not updating correctly (stays active)
         syncReset = new Button(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bri"), 2) {
             @Override
             public void onPress() {
@@ -242,9 +248,8 @@ public class Configuration extends Screen {
             reportButton.setWidth(vCH);
         }
 
-
+        // TODO: move this logic to a separate ErrorMenu class
         if (screen != null && screen.errored) {
-            // ugliness, this class really needs to be rewritten
             if (volume != null) {
                 volume.active = false;
             }
@@ -301,6 +306,7 @@ public class Configuration extends Screen {
             return;
         }
 
+        // TODO: ??????????????????????
         if (screen != null) {
             if (syncReset != null) {
                 syncReset.active = screen.owner && screen.isSync;
@@ -314,6 +320,7 @@ public class Configuration extends Screen {
             }
         }
 
+        // TODO: this will not work in general
         int headerTextWidth = font.width(headerText);
         int headerTextX = (this.width - headerTextWidth) / 2;
         int headerTextY = 15;
@@ -330,7 +337,7 @@ public class Configuration extends Screen {
 
         guiGraphics.fill(this.width / 2 - maxSW / 2, cY, this.width / 2 + maxSW / 2, cY + sH, 0xff000000);
         guiGraphics.pose().pushMatrix();
-        guiGraphics.pose().translate(0, 0); // see if the 10 offset is necessary, pls let it not be
+        guiGraphics.pose().translate(0, 0); // TODO: see if the 10 offset is necessary, pls let it not be
         renderScreen(guiGraphics, sX, cY, sW, sH);
         guiGraphics.pose().popMatrix();
 
@@ -499,6 +506,7 @@ public class Configuration extends Screen {
     }
 
     // Renders display screen preview
+    // TODO: it doesn't work
     private void renderScreen(GuiGraphics graphics, int x, int y, int w, int h) {
         if (screen != null && screen.isVideoStarted() && screen.texture != null && screen.renderType != null) {
             Render2D.drawTexturedQuad(graphics.pose(), screen.texture.getTextureView(), x, y, w, h, screen.renderType);

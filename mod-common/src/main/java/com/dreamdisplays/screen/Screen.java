@@ -372,7 +372,7 @@ public class Screen {
         if (textureId != null) manager.release(textureId);
         if (previewTextureId != null) manager.release(previewTextureId);
 
-        if (Minecraft.getInstance().screen instanceof Configuration displayConfScreen) {
+        if (Minecraft.getInstance().screen instanceof Menu displayConfScreen) {
             if (displayConfScreen.screen == this) displayConfScreen.onClose();
         }
     }
