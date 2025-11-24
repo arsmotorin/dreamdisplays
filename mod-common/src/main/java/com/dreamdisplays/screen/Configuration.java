@@ -7,13 +7,6 @@ import com.dreamdisplays.render.Render2D;
 import com.dreamdisplays.screen.widgets.Button;
 import com.dreamdisplays.screen.widgets.Slider;
 import com.dreamdisplays.screen.widgets.Toggle;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -24,6 +17,12 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 // Configuration screen for Dream Displays with volume, render distance, quality, and sync settings
 @NullMarked
@@ -51,21 +50,28 @@ public class Configuration extends Screen {
         super(Component.translatable("dreamdisplays.ui.title"));
     }
 
+    // Opens the display configuration screen
+    public static void open(com.dreamdisplays.screen.Screen screen) {
+        Configuration displayConfScreen = new Configuration();
+        displayConfScreen.setScreen(screen);
+        Minecraft.getInstance().setScreen(displayConfScreen);
+    }
 
     @Override
     protected void init() {
 
-        if (screen != null ) volume = new Slider(0, 0, 0, 0, Component.literal((int) Math.floor(screen.getVolume() * 100) + "%"), screen.getVolume()) {
-            @Override
-            protected void updateMessage() {
-                setMessage(Component.literal((int) Math.floor(value * 100) + "%"));
-            }
+        if (screen != null)
+            volume = new Slider(0, 0, 0, 0, Component.literal((int) Math.floor(screen.getVolume() * 100) + "%"), screen.getVolume()) {
+                @Override
+                protected void updateMessage() {
+                    setMessage(Component.literal((int) Math.floor(value * 100) + "%"));
+                }
 
-            @Override
-            protected void applyValue() {
-                screen.setVolume((float) value);
-            }
-        };
+                @Override
+                protected void applyValue() {
+                    screen.setVolume((float) value);
+                }
+            };
 
         backButton = new Button(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bbi"), 2) {
             @Override
@@ -91,24 +97,24 @@ public class Configuration extends Screen {
 
         pauseButton.setIconTexture(screen.getPaused() ? Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bupi") : Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bpi"));
 
-        renderD = new Slider(0, 0, 0, 0, Component.nullToEmpty(String.valueOf(Initializer.config.defaultDistance)), (Initializer.config.defaultDistance-24)/(double)(96-24)) {
+        renderD = new Slider(0, 0, 0, 0, Component.nullToEmpty(String.valueOf(Initializer.config.defaultDistance)), (Initializer.config.defaultDistance - 24) / (double) (96 - 24)) {
             @Override
             protected void updateMessage() {
-                setMessage(Component.nullToEmpty(String.valueOf((int) (value*(96-24)) + 24)));
+                setMessage(Component.nullToEmpty(String.valueOf((int) (value * (96 - 24)) + 24)));
             }
 
             @Override
             protected void applyValue() {
-                Initializer.config.defaultDistance = (int) (value * (96-24) + 24);
+                Initializer.config.defaultDistance = (int) (value * (96 - 24) + 24);
                 Initializer.config.save();
                 Initializer.config.reload();
             }
         };
 
-        quality = new Slider(0, 0, 0, 0, Component.nullToEmpty(screen.getQuality()+"p"), ((double) fromQuality(screen.getQuality())) / screen.getQualityList().size()) {
+        quality = new Slider(0, 0, 0, 0, Component.nullToEmpty(screen.getQuality() + "p"), ((double) fromQuality(screen.getQuality())) / screen.getQualityList().size()) {
             @Override
             protected void updateMessage() {
-                setMessage(Component.nullToEmpty(toQuality((int) (value*screen.getQualityList().size()))+"p"));
+                setMessage(Component.nullToEmpty(toQuality((int) (value * screen.getQualityList().size())) + "p"));
             }
 
             @Override
@@ -123,7 +129,7 @@ public class Configuration extends Screen {
                 Initializer.config.defaultDistance = 64;
                 Initializer.config.save();
                 Initializer.config.reload();
-                renderD.value = (64 - 24) / (double)(96 - 24);
+                renderD.value = (64 - 24) / (double) (96 - 24);
                 renderD.setMessage(Component.nullToEmpty("64"));
             }
         };
@@ -391,7 +397,7 @@ public class Configuration extends Screen {
                 Component.translatable("dreamdisplays.button.render-distance.tooltip.5").withStyle(style -> style.withColor(ChatFormatting.DARK_GRAY)),
                 Component.translatable("dreamdisplays.button.render-distance.tooltip.6").withStyle(style -> style.withColor(ChatFormatting.DARK_GRAY)),
                 Component.translatable("dreamdisplays.button.render-distance.tooltip.7"),
-                Component.translatable("dreamdisplays.button.render-distance.tooltip.8", (int)(renderD.value*(96-24)+24)).withStyle(style -> style.withColor(ChatFormatting.GOLD))
+                Component.translatable("dreamdisplays.button.render-distance.tooltip.8", (int) (renderD.value * (96 - 24) + 24)).withStyle(style -> style.withColor(ChatFormatting.GOLD))
         );
 
         cY += 5 + vCH;
@@ -414,7 +420,7 @@ public class Configuration extends Screen {
                     Component.translatable("dreamdisplays.button.quality.tooltip.1").withStyle(style -> style.withColor(ChatFormatting.WHITE).withBold(true)),
                     Component.translatable("dreamdisplays.button.quality.tooltip.2").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
                     Component.translatable("dreamdisplays.button.quality.tooltip.3"),
-                    Component.translatable("dreamdisplays.button.quality.tooltip.4", toQuality((int)(quality.value * screen.getQualityList().size()))).withStyle(style -> style.withColor(ChatFormatting.GOLD))
+                    Component.translatable("dreamdisplays.button.quality.tooltip.4", toQuality((int) (quality.value * screen.getQualityList().size()))).withStyle(style -> style.withColor(ChatFormatting.GOLD))
             ));
         }
 
@@ -499,13 +505,6 @@ public class Configuration extends Screen {
         } else {
             graphics.fill(x, y, x + w, y + h, 0xFF000000);
         }
-    }
-
-    // Opens the display configuration screen
-    public static void open(com.dreamdisplays.screen.Screen screen) {
-        Configuration displayConfScreen = new Configuration();
-        displayConfScreen.setScreen(screen);
-        Minecraft.getInstance().setScreen(displayConfScreen);
     }
 
     // Converts resolution index to quality string

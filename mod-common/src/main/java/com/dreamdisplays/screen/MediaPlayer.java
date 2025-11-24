@@ -1,5 +1,6 @@
 package com.dreamdisplays.screen;
 
+import com.dreamdisplays.Initializer;
 import com.github.felipeucelli.javatube.Stream;
 import com.github.felipeucelli.javatube.Youtube;
 import com.mojang.blaze3d.platform.NativeImage;
@@ -7,9 +8,9 @@ import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
 import me.inotsleep.utils.logging.LoggingManager;
-import com.dreamdisplays.Initializer;
 import org.bytedeco.ffmpeg.global.avutil;
-import org.bytedeco.javacv.*;
+import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.Java2DFrameConverter;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -29,41 +30,20 @@ import java.util.stream.Collectors;
 @NullMarked
 public class MediaPlayer {
 
-    private final String lang;
-
     // Constants
     private static final String MIME_VIDEO = "video/webm";
     private static final String MIME_AUDIO = "audio/webm";
     private static final String USER_AGENT_V = "ANDROID_VR";
-
     private static final ExecutorService INIT_EXECUTOR =
             Executors.newSingleThreadExecutor(r -> new Thread(r, "MediaPlayer-init"));
-
+    public static boolean captureSamples = true;
+    private static volatile long conversionTimeTotal = 0;
+    private static volatile int conversionCount = 0;
+    private static volatile boolean loggedImageToDirect = false;
+    private static volatile boolean useNativeConversion = false; // Temporarily disabled
+    private final String lang;
     // Public fields
     private final String youtubeUrl;
-    private volatile double currentVolume;
-    public static boolean captureSamples = true;
-
-    // FFmpeg fields
-    private volatile @Nullable FFmpegFrameGrabber videoGrabber;
-    private volatile @Nullable FFmpegFrameGrabber audioGrabber;
-    private volatile @Nullable SourceDataLine audioLine;
-
-    private volatile java.util.@Nullable List<Stream> availableVideoStreams;
-    private volatile @Nullable Stream currentVideoStream;
-    private volatile boolean initialized;
-    private int lastQuality;
-
-    // Frame buffering
-    private org.bytedeco.javacv.@Nullable Frame currentVideoFrame;
-    private volatile @Nullable ByteBuffer preparedBuffer;
-
-    private volatile int lastTexW = 0, lastTexH = 0;
-    private volatile int preparedW = 0, preparedH = 0;
-
-    private volatile double userVolume = (Initializer.config.defaultDisplayVolume);
-    private volatile double lastAttenuation = 1.0;
-
     // Executors and state flags
     private final ExecutorService videoExecutor = Executors.newSingleThreadExecutor(r -> new Thread(r, "MediaPlayer-video"));
     private final ExecutorService audioExecutor = Executors.newSingleThreadExecutor(r -> new Thread(r, "MediaPlayer-audio"));
@@ -71,24 +51,39 @@ public class MediaPlayer {
     private final AtomicBoolean terminated = new AtomicBoolean(false);
     private final AtomicBoolean playing = new AtomicBoolean(false);
     private final AtomicBoolean paused = new AtomicBoolean(true);
-
-    private @Nullable BufferedImage textureImage;
     private final Screen screen;
-
+    private final Java2DFrameConverter converter = new Java2DFrameConverter();
+    private volatile double currentVolume;
+    // FFmpeg fields
+    private volatile @Nullable FFmpegFrameGrabber videoGrabber;
+    private volatile @Nullable FFmpegFrameGrabber audioGrabber;
+    private volatile @Nullable SourceDataLine audioLine;
+    private volatile java.util.@Nullable List<Stream> availableVideoStreams;
+    private volatile @Nullable Stream currentVideoStream;
+    private volatile boolean initialized;
+    private int lastQuality;
+    // Frame buffering
+    private org.bytedeco.javacv.@Nullable Frame currentVideoFrame;
+    private volatile @Nullable ByteBuffer preparedBuffer;
+    private volatile int lastTexW = 0, lastTexH = 0;
+    private volatile int preparedW = 0, preparedH = 0;
+    private volatile double userVolume = (Initializer.config.defaultDisplayVolume);
+    private volatile double lastAttenuation = 1.0;
+    private @Nullable BufferedImage textureImage;
     private volatile long videoTimestamp = 0;
     private volatile long audioTimestamp = 0;
     private volatile long startTime = 0;
     private volatile int cachedAudioChannels = 2; // Cached to avoid calling getAudioChannels() in loop
-
     // Diagnostics
     private volatile long videoFramesDecoded = 0;
     private volatile long audioFramesDecoded = 0;
     private volatile long framesRendered = 0;
     private volatile long lastDiagnosticTime = 0;
-    private static volatile long conversionTimeTotal = 0;
-    private static volatile int conversionCount = 0;
-
-    private final Java2DFrameConverter converter = new Java2DFrameConverter();
+    private volatile boolean loggedTextureFilled = false;
+    private volatile boolean loggedFirstFrame = false;
+    // Frame processing
+    private volatile boolean loggedFirstPrepare = false;
+    private volatile boolean loggedFirstBufferPrepare = false;
 
     // Constructor
     public MediaPlayer(String youtubeUrl, String lang, Screen screen) {
@@ -105,6 +100,80 @@ public class MediaPlayer {
         }
 
         INIT_EXECUTOR.submit(this::initialize);
+    }
+
+    private static ByteBuffer imageToDirect(BufferedImage img) {
+        if (!loggedImageToDirect) {
+            LoggingManager.info("imageToDirect: Extracting ABGR data from BufferedImage...");
+        }
+        byte[] abgr = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
+
+        if (!loggedImageToDirect) {
+            LoggingManager.info("imageToDirect: Allocating direct ByteBuffer (" + abgr.length + " bytes)...");
+        }
+        ByteBuffer buf = ByteBuffer.allocateDirect(abgr.length).order(ByteOrder.nativeOrder());
+
+        if (useNativeConversion) {
+            // Native conversion is temporarily disabled
+            if (!loggedImageToDirect) {
+                LoggingManager.info("imageToDirect: Using native ABGR→RGBA converter...");
+            }
+            try {
+                Converter.abgrToRgbaDirect(abgr, buf, abgr.length);
+            } catch (Exception e) {
+                LoggingManager.error("Native conversion failed, falling back to Java", e);
+                useNativeConversion = false;
+                convertABGRtoRGBAJava(abgr, buf);
+            }
+        } else {
+            // Java conversion
+            if (!loggedImageToDirect) {
+                LoggingManager.info("imageToDirect: Using Java ABGR -> RGBA converter...");
+            }
+            long startConv = System.nanoTime();
+            convertABGRtoRGBAJava(abgr, buf);
+            long endConv = System.nanoTime();
+
+            // Update diagnostics
+            conversionTimeTotal += (endConv - startConv);
+            conversionCount++;
+        }
+
+        if (!loggedImageToDirect) {
+            LoggingManager.info("imageToDirect: Conversion complete, flipping buffer...");
+            loggedImageToDirect = true;
+        }
+
+        buf.position(abgr.length);
+        buf.flip();
+
+        return buf;
+    }
+
+    private static void convertABGRtoRGBAJava(byte[] abgr, ByteBuffer rgba) {
+        final int chunkSize = 4096;
+        int length = abgr.length;
+        byte[] temp = new byte[chunkSize];
+
+        for (int base = 0; base < length; base += chunkSize) {
+            int size = Math.min(chunkSize, length - base);
+
+            System.arraycopy(abgr, base, temp, 0, size);
+
+            for (int i = 0; i < size; i += 4) {
+                byte a = temp[i];
+                byte b = temp[i + 1];
+                byte g = temp[i + 2];
+                byte r = temp[i + 3];
+
+                temp[i] = r;
+                temp[i + 1] = g;
+                temp[i + 2] = b;
+                temp[i + 3] = a;
+            }
+
+            rgba.put(temp, 0, size);
+        }
     }
 
     // Public API
@@ -160,7 +229,7 @@ public class MediaPlayer {
     public void seekRelative(double seconds) {
         if (!initialized) return;
         long currentNs = getCurrentTime();
-        long targetNs = Math.max(0, currentNs + (long)(seconds * 1e9));
+        long targetNs = Math.max(0, currentNs + (long) (seconds * 1e9));
         long durationNs = getDuration();
         seekTo(Math.min(targetNs, durationNs - 1000000), true);
     }
@@ -221,8 +290,6 @@ public class MediaPlayer {
         }
     }
 
-    private volatile boolean loggedTextureFilled = false;
-
     public boolean textureFilled() {
         boolean filled = preparedBuffer != null && preparedBuffer.capacity() > 0;
         if (!loggedTextureFilled && filled) {
@@ -231,8 +298,6 @@ public class MediaPlayer {
         }
         return filled;
     }
-
-    private volatile boolean loggedFirstFrame = false;
 
     public void updateFrame(GpuTexture texture) {
         if (preparedBuffer == null) return;
@@ -306,7 +371,7 @@ public class MediaPlayer {
             Optional<Stream> audioOpt = all.stream()
                     .filter(s -> MIME_AUDIO.equals(s.getMimeType()))
                     .filter(s -> (s.getAudioTrackId() != null && s.getAudioTrackId().contains(lang)) ||
-                               (s.getAudioTrackName() != null && s.getAudioTrackName().contains(lang)))
+                            (s.getAudioTrackName() != null && s.getAudioTrackName().contains(lang)))
                     .reduce((f, n) -> n);
 
             if (audioOpt.isEmpty()) {
@@ -358,7 +423,7 @@ public class MediaPlayer {
         LoggingManager.info("Video grabber started successfully!");
 
         LoggingManager.info("Video grabber info: " + videoGrabber.getImageWidth() + "x" + videoGrabber.getImageHeight() +
-                          " @ " + videoGrabber.getFrameRate() + " fps, format: " + videoGrabber.getFormat());
+                " @ " + videoGrabber.getFrameRate() + " fps, format: " + videoGrabber.getFormat());
     }
 
     private void initAudioGrabber(String url) {
@@ -565,9 +630,6 @@ public class MediaPlayer {
         }
     }
 
-    // Frame processing
-    private volatile boolean loggedFirstPrepare = false;
-
     private void prepareBufferAsync() {
         if (currentVideoFrame == null) {
             if (!loggedFirstPrepare) {
@@ -588,10 +650,9 @@ public class MediaPlayer {
         }
         try {
             frameExecutor.submit(this::prepareBuffer);
-        } catch (RejectedExecutionException ignored) {}
+        } catch (RejectedExecutionException ignored) {
+        }
     }
-
-    private volatile boolean loggedFirstBufferPrepare = false;
 
     private void prepareBuffer() {
         if (currentVideoFrame == null) return;
@@ -652,83 +713,6 @@ public class MediaPlayer {
             }
         } catch (Exception e) {
             LoggingManager.error("Error preparing buffer", e);
-        }
-    }
-
-    private static volatile boolean loggedImageToDirect = false;
-    private static volatile boolean useNativeConversion = false; // Temporarily disabled
-
-    private static ByteBuffer imageToDirect(BufferedImage img) {
-        if (!loggedImageToDirect) {
-            LoggingManager.info("imageToDirect: Extracting ABGR data from BufferedImage...");
-        }
-        byte[] abgr = ((DataBufferByte) img.getRaster().getDataBuffer()).getData();
-
-        if (!loggedImageToDirect) {
-            LoggingManager.info("imageToDirect: Allocating direct ByteBuffer (" + abgr.length + " bytes)...");
-        }
-        ByteBuffer buf = ByteBuffer.allocateDirect(abgr.length).order(ByteOrder.nativeOrder());
-
-        if (useNativeConversion) {
-            // Native conversion is temporarily disabled
-            if (!loggedImageToDirect) {
-                LoggingManager.info("imageToDirect: Using native ABGR→RGBA converter...");
-            }
-            try {
-                Converter.abgrToRgbaDirect(abgr, buf, abgr.length);
-            } catch (Exception e) {
-                LoggingManager.error("Native conversion failed, falling back to Java", e);
-                useNativeConversion = false;
-                convertABGRtoRGBAJava(abgr, buf);
-            }
-        } else {
-            // Java conversion
-            if (!loggedImageToDirect) {
-                LoggingManager.info("imageToDirect: Using Java ABGR -> RGBA converter...");
-            }
-            long startConv = System.nanoTime();
-            convertABGRtoRGBAJava(abgr, buf);
-            long endConv = System.nanoTime();
-
-            // Update diagnostics
-            conversionTimeTotal += (endConv - startConv);
-            conversionCount++;
-        }
-
-        if (!loggedImageToDirect) {
-            LoggingManager.info("imageToDirect: Conversion complete, flipping buffer...");
-            loggedImageToDirect = true;
-        }
-
-        buf.position(abgr.length);
-        buf.flip();
-
-        return buf;
-    }
-
-    private static void convertABGRtoRGBAJava(byte[] abgr, ByteBuffer rgba) {
-        final int chunkSize = 4096;
-        int length = abgr.length;
-        byte[] temp = new byte[chunkSize];
-
-        for (int base = 0; base < length; base += chunkSize) {
-            int size = Math.min(chunkSize, length - base);
-
-            System.arraycopy(abgr, base, temp, 0, size);
-
-            for (int i = 0; i < size; i += 4) {
-                byte a = temp[i];
-                byte b = temp[i + 1];
-                byte g = temp[i + 2];
-                byte r = temp[i + 3];
-
-                temp[i] = r;
-                temp[i + 1] = g;
-                temp[i + 2] = b;
-                temp[i + 3] = a;
-            }
-
-            rgba.put(temp, 0, size);
         }
     }
 

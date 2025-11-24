@@ -1,12 +1,12 @@
 package com.dreamdisplays.util;
 
+import com.mojang.blaze3d.platform.NativeImage;
 import me.inotsleep.utils.logging.LoggingManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import javax.imageio.ImageIO;
-import com.mojang.blaze3d.platform.NativeImage;
 import org.jspecify.annotations.NullMarked;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URI;
@@ -34,15 +34,15 @@ public class Image {
             CompletableFuture<DynamicTexture> texFuture = new CompletableFuture<>();
 
             Minecraft.getInstance().execute(() -> {
-                    try {
-                        DynamicTexture tex = new DynamicTexture(() -> url, nativeImage);
-                        texFuture.complete(tex);
-                        nativeImage.close();
-                    } catch (Throwable t) {
-                        texFuture.completeExceptionally(t);
-                        nativeImage.close();
-                    }
-                });
+                try {
+                    DynamicTexture tex = new DynamicTexture(() -> url, nativeImage);
+                    texFuture.complete(tex);
+                    nativeImage.close();
+                } catch (Throwable t) {
+                    texFuture.completeExceptionally(t);
+                    nativeImage.close();
+                }
+            });
             return texFuture;
         });
     }

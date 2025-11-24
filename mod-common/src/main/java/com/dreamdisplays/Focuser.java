@@ -1,8 +1,8 @@
 package com.dreamdisplays;
 
-import net.minecraft.client.Minecraft;
-import com.dreamdisplays.screen.Screen;
 import com.dreamdisplays.screen.Manager;
+import com.dreamdisplays.screen.Screen;
+import net.minecraft.client.Minecraft;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked

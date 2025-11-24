@@ -57,7 +57,7 @@ class Command : AbstractCommand(Main.getInstance().name, "display") {
             "create" -> handleCreate(sender)
             "delete" -> handleDelete(sender)
             "reload" -> handleReload(sender)
-            "list"   -> handleList(sender)
+            "list" -> handleList(sender)
         }
     }
 
@@ -157,7 +157,7 @@ class Command : AbstractCommand(Main.getInstance().name, "display") {
         val perms = Main.config.permissions
 
         if (sender.hasPermission(perms.delete)) list += "delete"
-        if (sender.hasPermission(perms.list))   list += "list"
+        if (sender.hasPermission(perms.list)) list += "list"
         if (sender.hasPermission(perms.reload)) list += "reload"
 
         return list

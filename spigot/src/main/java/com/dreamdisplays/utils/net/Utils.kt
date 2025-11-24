@@ -13,7 +13,6 @@ import java.io.DataOutputStream
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.util.*
-import java.util.function.Consumer
 
 @NullMarked
 object Utils {

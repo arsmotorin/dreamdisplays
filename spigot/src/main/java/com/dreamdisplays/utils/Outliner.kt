@@ -44,22 +44,82 @@ object Outliner {
         val color = org.bukkit.Color.fromRGB(0, 255, 255)
 
         // Bottom rectangle
-        drawLine(player, Location(world, box.minX, box.minY, box.minZ), Location(world, box.maxX, box.minY, box.minZ), color)
-        drawLine(player, Location(world, box.maxX, box.minY, box.minZ), Location(world, box.maxX, box.minY, box.maxZ), color)
-        drawLine(player, Location(world, box.maxX, box.minY, box.maxZ), Location(world, box.minX, box.minY, box.maxZ), color)
-        drawLine(player, Location(world, box.minX, box.minY, box.maxZ), Location(world, box.minX, box.minY, box.minZ), color)
+        drawLine(
+            player,
+            Location(world, box.minX, box.minY, box.minZ),
+            Location(world, box.maxX, box.minY, box.minZ),
+            color
+        )
+        drawLine(
+            player,
+            Location(world, box.maxX, box.minY, box.minZ),
+            Location(world, box.maxX, box.minY, box.maxZ),
+            color
+        )
+        drawLine(
+            player,
+            Location(world, box.maxX, box.minY, box.maxZ),
+            Location(world, box.minX, box.minY, box.maxZ),
+            color
+        )
+        drawLine(
+            player,
+            Location(world, box.minX, box.minY, box.maxZ),
+            Location(world, box.minX, box.minY, box.minZ),
+            color
+        )
 
         // Top rectangle
-        drawLine(player, Location(world, box.minX, box.maxY, box.minZ), Location(world, box.maxX, box.maxY, box.minZ), color)
-        drawLine(player, Location(world, box.maxX, box.maxY, box.minZ), Location(world, box.maxX, box.maxY, box.maxZ), color)
-        drawLine(player, Location(world, box.maxX, box.maxY, box.maxZ), Location(world, box.minX, box.maxY, box.maxZ), color)
-        drawLine(player, Location(world, box.minX, box.maxY, box.maxZ), Location(world, box.minX, box.maxY, box.minZ), color)
+        drawLine(
+            player,
+            Location(world, box.minX, box.maxY, box.minZ),
+            Location(world, box.maxX, box.maxY, box.minZ),
+            color
+        )
+        drawLine(
+            player,
+            Location(world, box.maxX, box.maxY, box.minZ),
+            Location(world, box.maxX, box.maxY, box.maxZ),
+            color
+        )
+        drawLine(
+            player,
+            Location(world, box.maxX, box.maxY, box.maxZ),
+            Location(world, box.minX, box.maxY, box.maxZ),
+            color
+        )
+        drawLine(
+            player,
+            Location(world, box.minX, box.maxY, box.maxZ),
+            Location(world, box.minX, box.maxY, box.minZ),
+            color
+        )
 
         // Vertical edges
-        drawLine(player, Location(world, box.minX, box.minY, box.minZ), Location(world, box.minX, box.maxY, box.minZ), color)
-        drawLine(player, Location(world, box.maxX, box.minY, box.minZ), Location(world, box.maxX, box.maxY, box.minZ), color)
-        drawLine(player, Location(world, box.maxX, box.minY, box.maxZ), Location(world, box.maxX, box.maxY, box.maxZ), color)
-        drawLine(player, Location(world, box.minX, box.minY, box.maxZ), Location(world, box.minX, box.maxY, box.maxZ), color)
+        drawLine(
+            player,
+            Location(world, box.minX, box.minY, box.minZ),
+            Location(world, box.minX, box.maxY, box.minZ),
+            color
+        )
+        drawLine(
+            player,
+            Location(world, box.maxX, box.minY, box.minZ),
+            Location(world, box.maxX, box.maxY, box.minZ),
+            color
+        )
+        drawLine(
+            player,
+            Location(world, box.maxX, box.minY, box.maxZ),
+            Location(world, box.maxX, box.maxY, box.maxZ),
+            color
+        )
+        drawLine(
+            player,
+            Location(world, box.minX, box.minY, box.maxZ),
+            Location(world, box.minX, box.maxY, box.maxZ),
+            color
+        )
     }
 
     // Draw a line of particles between two locations

@@ -14,64 +14,64 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public abstract class Toggle extends AbstractWidget {
-	private static final Identifier TEXTURE = Identifier.withDefaultNamespace("widget/slider");
-	private static final Identifier HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_highlighted");
-	private static final Identifier HANDLE_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle");
-	private static final Identifier HANDLE_HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle_highlighted");
-	private double dValue;
-	public boolean value;
-	private boolean sliderFocused;
+    private static final Identifier TEXTURE = Identifier.withDefaultNamespace("widget/slider");
+    private static final Identifier HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_highlighted");
+    private static final Identifier HANDLE_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle");
+    private static final Identifier HANDLE_HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle_highlighted");
+    public boolean value;
+    private double dValue;
+    private boolean sliderFocused;
 
-	public Toggle(int x, int y, int width, int height, Component message, boolean value) {
-		super(x, y, width, height, message);
-		this.dValue = value ? 1 : 0;
-		this.value = value;
-	}
+    public Toggle(int x, int y, int width, int height, Component message, boolean value) {
+        super(x, y, width, height, message);
+        this.dValue = value ? 1 : 0;
+        this.value = value;
+    }
 
-	private Identifier getTexture() {
-		return this.isFocused() && !this.sliderFocused ? HIGHLIGHTED_TEXTURE : TEXTURE;
-	}
+    private Identifier getTexture() {
+        return this.isFocused() && !this.sliderFocused ? HIGHLIGHTED_TEXTURE : TEXTURE;
+    }
 
-	private Identifier getHandleTexture() {
-		return !this.isHovered && !this.sliderFocused ? HANDLE_TEXTURE : HANDLE_HIGHLIGHTED_TEXTURE;
-	}
+    private Identifier getHandleTexture() {
+        return !this.isHovered && !this.sliderFocused ? HANDLE_TEXTURE : HANDLE_HIGHLIGHTED_TEXTURE;
+    }
 
-	@Override
-	protected MutableComponent createNarrationMessage() {
-		return Component.translatable("gui.narrate.slider", this.getMessage());
-	}
+    @Override
+    protected MutableComponent createNarrationMessage() {
+        return Component.translatable("gui.narrate.slider", this.getMessage());
+    }
 
-	@Override
-	public void updateWidgetNarration(NarrationElementOutput builder) {
+    @Override
+    public void updateWidgetNarration(NarrationElementOutput builder) {
 
-	}
+    }
 
-	@Override
+    @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         graphics.blitSprite(RenderPipelines.GUI_TEXTURED, this.getTexture(), this.getX(), this.getY(), this.getWidth(), this.getHeight());
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, this.getHandleTexture(), this.getX() + (int)(this.dValue * (double)(this.width - 8)), this.getY(), 8, this.getHeight());
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, this.getHandleTexture(), this.getX() + (int) (this.dValue * (double) (this.width - 8)), this.getY(), 8, this.getHeight());
         int i = this.active ? 16777215 : 10526880;
         MutableComponent message = this.getMessage().copy().withStyle((style) -> style.withColor(i));
         this.renderScrollingStringOverContents(graphics.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.TOOLTIP_AND_CURSOR), message, 2); // , i | Mth.ceil(this.alpha * 255.0F) << 24
     }
 
-	@Override
-	public void setFocused(boolean focused) {
-		super.setFocused(focused);
-		if (!focused) {
-			this.sliderFocused = false;
-		} else {
-			InputType guiNavigationType = Minecraft.getInstance().getLastInputType();
-			if (guiNavigationType == InputType.MOUSE || guiNavigationType == InputType.KEYBOARD_TAB) {
-				this.sliderFocused = true;
-			}
-		}
-	}
+    @Override
+    public void setFocused(boolean focused) {
+        super.setFocused(focused);
+        if (!focused) {
+            this.sliderFocused = false;
+        } else {
+            InputType guiNavigationType = Minecraft.getInstance().getLastInputType();
+            if (guiNavigationType == InputType.MOUSE || guiNavigationType == InputType.KEYBOARD_TAB) {
+                this.sliderFocused = true;
+            }
+        }
+    }
 
-	private void setValueFromMouse() {
-		value = !value;
-		dValue = value ? 1 : 0;
-	}
+    private void setValueFromMouse() {
+        value = !value;
+        dValue = value ? 1 : 0;
+    }
 
     @Override
     public void onClick(MouseButtonEvent event, boolean doubleClick) {
@@ -85,9 +85,9 @@ public abstract class Toggle extends AbstractWidget {
         super.playDownSound(Minecraft.getInstance().getSoundManager());
     }
 
-	protected abstract void updateMessage();
+    protected abstract void updateMessage();
 
-	public abstract void applyValue();
+    public abstract void applyValue();
 
     public void setValue(boolean newValue) {
         if (this.value != newValue) {

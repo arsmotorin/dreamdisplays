@@ -1,11 +1,11 @@
 package com.dreamdisplays.net;
 
+import com.dreamdisplays.Initializer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
-import com.dreamdisplays.Initializer;
 import org.jspecify.annotations.NullMarked;
 
 // Packet for indicating premium status

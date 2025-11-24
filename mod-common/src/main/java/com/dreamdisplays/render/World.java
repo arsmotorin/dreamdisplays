@@ -1,12 +1,12 @@
 package com.dreamdisplays.render;
 
+import com.dreamdisplays.screen.Manager;
+import com.dreamdisplays.screen.Screen;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import net.minecraft.client.Camera;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
-import com.dreamdisplays.screen.Screen;
-import com.dreamdisplays.screen.Manager;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked

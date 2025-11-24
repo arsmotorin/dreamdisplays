@@ -55,7 +55,7 @@ public abstract class Slider extends AbstractWidget {
     // from ExtendedSlider.class
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         graphics.blitSprite(RenderPipelines.GUI_TEXTURED, this.getTexture(), this.getX(), this.getY(), this.getWidth(), this.getHeight());
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, this.getHandleTexture(), this.getX() + (int)(this.value * (double)(this.width - 8)), this.getY(), 8, this.getHeight());
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, this.getHandleTexture(), this.getX() + (int) (this.value * (double) (this.width - 8)), this.getY(), 8, this.getHeight());
         int i = this.active ? 16777215 : 10526880;
         MutableComponent message = this.getMessage().copy().withStyle((style) -> style.withColor(i));
         this.renderScrollingStringOverContents(graphics.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.TOOLTIP_AND_CURSOR), message, 2); // , i | Mth.ceil(this.alpha * 255.0F) << 24
@@ -92,7 +92,7 @@ public abstract class Slider extends AbstractWidget {
     }
 
     private void setValueFromMouse(double mouseX) {
-        this.setFractionalValue((mouseX - (double)(this.getX() + 4)) / (double)(this.width - 8));
+        this.setFractionalValue((mouseX - (double) (this.getX() + 4)) / (double) (this.width - 8));
     }
 
     private void setFractionalValue(double fractionalValue) {
@@ -103,6 +103,7 @@ public abstract class Slider extends AbstractWidget {
         }
         this.updateMessage();
     }
+
     protected abstract void updateMessage();
 
     protected abstract void applyValue();

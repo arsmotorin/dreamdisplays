@@ -109,8 +109,7 @@ class Selection(plugin: Main) : Listener {
                     sendErrorMessage(player, code)
                 }
             }
-        }
-        else if (event.action == Action.RIGHT_CLICK_BLOCK) {
+        } else if (event.action == Action.RIGHT_CLICK_BLOCK) {
             // Check if pos1 exists BEFORE getting/creating selection
             val existingSelection = selectionPoints[player.uniqueId]
             if (existingSelection == null || existingSelection.pos1 == null) {

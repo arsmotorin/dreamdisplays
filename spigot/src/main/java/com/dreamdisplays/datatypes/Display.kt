@@ -2,7 +2,6 @@ package com.dreamdisplays.datatypes
 
 import com.dreamdisplays.Main
 import com.dreamdisplays.utils.Region
-import com.dreamdisplays.utils.net.Utils as Net
 import org.bukkit.Location
 import org.bukkit.block.BlockFace
 import org.bukkit.entity.Player
@@ -11,6 +10,7 @@ import org.jspecify.annotations.NullMarked
 import java.util.*
 import kotlin.math.max
 import kotlin.math.min
+import com.dreamdisplays.utils.net.Utils as Net
 
 @NullMarked
 class Display(

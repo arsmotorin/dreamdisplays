@@ -20,20 +20,6 @@ public class Settings {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Map<UUID, DisplaySettings> displaySettings = new HashMap<>();
 
-    public static class DisplaySettings {
-        public float volume = 0.5f;
-        public String quality = "720";
-        public boolean muted = false;
-
-        public DisplaySettings() {}
-
-        public DisplaySettings(float volume, String quality, boolean muted) {
-            this.volume = volume;
-            this.quality = quality;
-            this.muted = muted;
-        }
-    }
-
     // Load settings from disk
     public static void load() {
 
@@ -45,7 +31,8 @@ public class Settings {
         }
 
         try (Reader reader = new FileReader(SETTINGS_FILE)) {
-            Type type = new TypeToken<Map<String, DisplaySettings>>(){}.getType();
+            Type type = new TypeToken<Map<String, DisplaySettings>>() {
+            }.getType();
             Map<String, DisplaySettings> loadedSettings = GSON.fromJson(reader, type);
 
             if (loadedSettings != null) {
@@ -99,5 +86,20 @@ public class Settings {
         settings.muted = muted;
 
         save();
+    }
+
+    public static class DisplaySettings {
+        public float volume = 0.5f;
+        public String quality = "720";
+        public boolean muted = false;
+
+        public DisplaySettings() {
+        }
+
+        public DisplaySettings(float volume, String quality, boolean muted) {
+            this.volume = volume;
+            this.quality = quality;
+            this.muted = muted;
+        }
     }
 }

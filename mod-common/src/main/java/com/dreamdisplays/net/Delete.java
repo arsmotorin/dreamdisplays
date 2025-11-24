@@ -1,14 +1,14 @@
 package com.dreamdisplays.net;
 
 import com.dreamdisplays.Initializer;
-
-import java.util.UUID;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NullMarked;
+
+import java.util.UUID;
 
 // Packet for deleting a display
 @NullMarked

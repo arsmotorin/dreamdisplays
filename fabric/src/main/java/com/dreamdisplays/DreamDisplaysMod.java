@@ -1,8 +1,9 @@
 package com.dreamdisplays;
 
+import com.dreamdisplays.net.*;
+import com.dreamdisplays.render.World;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.dreamdisplays.net.*;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -14,7 +15,6 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import com.dreamdisplays.render.World;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked

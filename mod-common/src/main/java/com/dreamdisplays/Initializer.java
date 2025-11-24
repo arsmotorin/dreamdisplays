@@ -1,6 +1,13 @@
 package com.dreamdisplays;
 
 import com.dreamdisplays.net.*;
+import com.dreamdisplays.screen.Configuration;
+import com.dreamdisplays.screen.Manager;
+import com.dreamdisplays.screen.Screen;
+import com.dreamdisplays.screen.Settings;
+import com.dreamdisplays.util.Facing;
+import com.dreamdisplays.util.RayCasting;
+import com.dreamdisplays.util.Utils;
 import me.inotsleep.utils.logging.LoggingManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -8,18 +15,11 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.phys.BlockHitResult;
+import org.joml.Vector3i;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.LoggerFactory;
-import com.dreamdisplays.screen.Settings;
-import com.dreamdisplays.screen.Configuration;
-import com.dreamdisplays.screen.Screen;
-import com.dreamdisplays.screen.Manager;
-import com.dreamdisplays.util.Facing;
-import com.dreamdisplays.util.RayCasting;
-import com.dreamdisplays.util.Utils;
 
 import java.io.File;
 import java.util.Objects;
@@ -31,8 +31,11 @@ import java.util.concurrent.atomic.AtomicReference;
 public class Initializer {
 
     public static final String MOD_ID = "dreamdisplays";
+    private static final boolean[] wasPressed = {false};
+    private static final AtomicBoolean wasInMultiplayer = new AtomicBoolean(false);
+    private static final AtomicReference<@Nullable ClientLevel> lastLevel = new AtomicReference<>(null);
+    private static final AtomicBoolean wasFocused = new AtomicBoolean(false);
     public static Config config = new Config(new File("./config/" + MOD_ID));
-
     public static Thread timerThread = new Thread(() -> {
         int lastDistance = 64;
         boolean isErrored = false;
@@ -49,19 +52,16 @@ public class Initializer {
             }
         }
     });
-
     public static boolean isOnScreen = false;
     public static boolean focusMode = false;
-
     public static boolean displaysEnabled = true;
+    public static boolean isPremium = false;
+    private static @Nullable Screen hoveredScreen = null;
+    private static Mod mod;
 
     public static Config getConfig() {
         return config;
     }
-
-    private static @Nullable Screen hoveredScreen = null;
-
-    private static Mod mod;
 
     public static void onModInit(Mod DreamDisplaysMod) {
         mod = DreamDisplaysMod;
@@ -105,7 +105,8 @@ public class Initializer {
     public static void createScreen(UUID id, UUID ownerId, Vector3i pos, Facing facing, int width, int height, String code, String lang, boolean isSync) {
         Screen screen = new Screen(id, ownerId, pos.x(), pos.y(), pos.z(), facing.toString(), width, height, isSync);
         assert Minecraft.getInstance().player != null;
-        if (screen.getDistanceToScreen(Minecraft.getInstance().player.blockPosition()) > Initializer.config.defaultDistance) return;
+        if (screen.getDistanceToScreen(Minecraft.getInstance().player.blockPosition()) > Initializer.config.defaultDistance)
+            return;
         Manager.registerScreen(screen);
         if (!Objects.equals(code, "")) screen.loadVideo(code, lang);
     }
@@ -117,11 +118,6 @@ public class Initializer {
             screen.updateData(packet);
         }
     }
-
-    private static final boolean[] wasPressed = {false};
-    private static final AtomicBoolean wasInMultiplayer = new AtomicBoolean(false);
-    private static final AtomicReference<@Nullable ClientLevel> lastLevel = new AtomicReference<>(null);
-    private static final AtomicBoolean wasFocused = new AtomicBoolean(false);
 
     private static void checkVersionAndSendPacket() {
         try {
@@ -233,8 +229,6 @@ public class Initializer {
         Manager.unloadAll();
         Focuser.instance.interrupt();
     }
-
-    public static boolean isPremium = false;
 
     public static void onPremiumPacket(Premium packet) {
         isPremium = packet.premium();

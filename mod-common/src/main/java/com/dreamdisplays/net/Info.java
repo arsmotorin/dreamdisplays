@@ -1,21 +1,22 @@
 package com.dreamdisplays.net;
 
-import org.joml.Vector3i;
 import com.dreamdisplays.Initializer;
 import com.dreamdisplays.util.Facing;
-
-import java.util.UUID;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import org.joml.Vector3i;
 import org.jspecify.annotations.NullMarked;
+
+import java.util.UUID;
 
 // Packet for sending display information
 @NullMarked
-public record Info(UUID id, UUID ownerId, Vector3i pos, int width, int height, String url, Facing facing, boolean isSync, String lang) implements CustomPacketPayload {
+public record Info(UUID id, UUID ownerId, Vector3i pos, int width, int height, String url, Facing facing,
+                   boolean isSync, String lang) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<Info> PACKET_ID =
             new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "display_info"));
 

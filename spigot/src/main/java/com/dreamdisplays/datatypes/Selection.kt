@@ -13,6 +13,7 @@ import java.util.*
 class Selection(player: Player) {
     @JvmField
     var pos1: Location? = null
+
     @JvmField
     var pos2: Location? = null
     private var face: BlockFace? = null

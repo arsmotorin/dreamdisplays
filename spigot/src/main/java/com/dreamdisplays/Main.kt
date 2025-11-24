@@ -1,15 +1,15 @@
 package com.dreamdisplays
 
-import com.dreamdisplays.scheduler.Provider
-import com.dreamdisplays.storage.Storage
+import com.dreamdisplays.commands.Command
 import com.dreamdisplays.listeners.Player
 import com.dreamdisplays.listeners.Selection
-import com.dreamdisplays.commands.Command
 import com.dreamdisplays.managers.Display
+import com.dreamdisplays.scheduler.Provider
+import com.dreamdisplays.storage.Storage
 import com.dreamdisplays.utils.Updater
+import com.github.zafarkhaja.semver.Version
 import me.inotsleep.utils.AbstractPlugin
 import org.bukkit.Bukkit
-import com.github.zafarkhaja.semver.Version
 import org.jspecify.annotations.NullMarked
 
 @NullMarked
