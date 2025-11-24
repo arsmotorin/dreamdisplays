@@ -6,11 +6,6 @@ import com.dreamdisplays.net.RequestSync;
 import com.dreamdisplays.net.Sync;
 import com.dreamdisplays.util.Image;
 import com.dreamdisplays.util.Utils;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import me.inotsleep.utils.logging.LoggingManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -22,6 +17,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @NullMarked
 public class Screen {

@@ -1,12 +1,6 @@
 package com.dreamdisplays;
 
-import com.dreamdisplays.net.Delete;
-import com.dreamdisplays.net.Info;
-import com.dreamdisplays.net.Premium;
-import com.dreamdisplays.net.Report;
-import com.dreamdisplays.net.RequestSync;
-import com.dreamdisplays.net.Sync;
-import com.dreamdisplays.net.Version;
+import com.dreamdisplays.net.*;
 import com.dreamdisplays.render.World;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
