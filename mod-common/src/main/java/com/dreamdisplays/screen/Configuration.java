@@ -7,6 +7,9 @@ import com.dreamdisplays.render.Render2D;
 import com.dreamdisplays.screen.widgets.Button;
 import com.dreamdisplays.screen.widgets.Slider;
 import com.dreamdisplays.screen.widgets.Toggle;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -19,10 +22,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 // Configuration screen for Dream Displays with volume, render distance, quality, and sync settings
 @NullMarked
@@ -209,11 +208,13 @@ public class Configuration extends Screen {
         addRenderableWidget(reportButton);
     }
 
-    private void renderTooltipIfHovered(GuiGraphics guiGraphics, int mouseX, int mouseY,
-                                        int elementX, int elementY, int elementWidth, int elementHeight,
-                                        List<Component> tooltip) {
+    private void renderTooltipIfHovered(
+        GuiGraphics guiGraphics, int mouseX, int mouseY,
+        int elementX, int elementY, int elementWidth, int elementHeight,
+        List<Component> tooltip
+    ) {
         if (mouseX >= elementX && mouseX <= elementX + elementWidth &&
-                mouseY >= elementY && mouseY <= elementY + elementHeight) {
+            mouseY >= elementY && mouseY <= elementY + elementHeight) {
             guiGraphics.setComponentTooltipForNextFrame(Minecraft.getInstance().font, tooltip, mouseX, mouseY);
         }
     }
@@ -275,11 +276,11 @@ public class Configuration extends Screen {
             }
 
             List<Component> errorText = List.of(
-                    Component.translatable("dreamdisplays.error.loadingerror.1").withStyle(style -> style.withColor(0xff0000)),
-                    Component.translatable("dreamdisplays.error.loadingerror.2").withStyle(style -> style.withColor(0xff0000)),
-                    Component.translatable("dreamdisplays.error.loadingerror.3").withStyle(style -> style.withColor(0xff0000)),
-                    Component.translatable("dreamdisplays.error.loadingerror.4").withStyle(style -> style.withColor(0xff0000)),
-                    Component.translatable("dreamdisplays.error.loadingerror.5").withStyle(style -> style.withColor(0xff0000))
+                Component.translatable("dreamdisplays.error.loadingerror.1").withStyle(style -> style.withColor(0xff0000)),
+                Component.translatable("dreamdisplays.error.loadingerror.2").withStyle(style -> style.withColor(0xff0000)),
+                Component.translatable("dreamdisplays.error.loadingerror.3").withStyle(style -> style.withColor(0xff0000)),
+                Component.translatable("dreamdisplays.error.loadingerror.4").withStyle(style -> style.withColor(0xff0000)),
+                Component.translatable("dreamdisplays.error.loadingerror.5").withStyle(style -> style.withColor(0xff0000))
             );
 
             int yP = (int) ((double) this.height / 2 - ((double) (font.lineHeight + 2) * errorText.size()) / 2);
@@ -390,14 +391,14 @@ public class Configuration extends Screen {
 
         // Tooltip
         List<Component> renderDTooltip = List.of(
-                Component.translatable("dreamdisplays.button.render-distance.tooltip.1").withStyle(style -> style.withColor(ChatFormatting.WHITE).withBold(true)),
-                Component.translatable("dreamdisplays.button.render-distance.tooltip.2").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
-                Component.translatable("dreamdisplays.button.render-distance.tooltip.3").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
-                Component.translatable("dreamdisplays.button.render-distance.tooltip.4"),
-                Component.translatable("dreamdisplays.button.render-distance.tooltip.5").withStyle(style -> style.withColor(ChatFormatting.DARK_GRAY)),
-                Component.translatable("dreamdisplays.button.render-distance.tooltip.6").withStyle(style -> style.withColor(ChatFormatting.DARK_GRAY)),
-                Component.translatable("dreamdisplays.button.render-distance.tooltip.7"),
-                Component.translatable("dreamdisplays.button.render-distance.tooltip.8", (int) (renderD.value * (96 - 24) + 24)).withStyle(style -> style.withColor(ChatFormatting.GOLD))
+            Component.translatable("dreamdisplays.button.render-distance.tooltip.1").withStyle(style -> style.withColor(ChatFormatting.WHITE).withBold(true)),
+            Component.translatable("dreamdisplays.button.render-distance.tooltip.2").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
+            Component.translatable("dreamdisplays.button.render-distance.tooltip.3").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
+            Component.translatable("dreamdisplays.button.render-distance.tooltip.4"),
+            Component.translatable("dreamdisplays.button.render-distance.tooltip.5").withStyle(style -> style.withColor(ChatFormatting.DARK_GRAY)),
+            Component.translatable("dreamdisplays.button.render-distance.tooltip.6").withStyle(style -> style.withColor(ChatFormatting.DARK_GRAY)),
+            Component.translatable("dreamdisplays.button.render-distance.tooltip.7"),
+            Component.translatable("dreamdisplays.button.render-distance.tooltip.8", (int) (renderD.value * (96 - 24) + 24)).withStyle(style -> style.withColor(ChatFormatting.GOLD))
         );
 
         cY += 5 + vCH;
@@ -417,10 +418,10 @@ public class Configuration extends Screen {
         List<Component> qualityTooltip = null;
         if (quality != null) {
             qualityTooltip = new ArrayList<>(List.of(
-                    Component.translatable("dreamdisplays.button.quality.tooltip.1").withStyle(style -> style.withColor(ChatFormatting.WHITE).withBold(true)),
-                    Component.translatable("dreamdisplays.button.quality.tooltip.2").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
-                    Component.translatable("dreamdisplays.button.quality.tooltip.3"),
-                    Component.translatable("dreamdisplays.button.quality.tooltip.4", toQuality((int) (quality.value * screen.getQualityList().size()))).withStyle(style -> style.withColor(ChatFormatting.GOLD))
+                Component.translatable("dreamdisplays.button.quality.tooltip.1").withStyle(style -> style.withColor(ChatFormatting.WHITE).withBold(true)),
+                Component.translatable("dreamdisplays.button.quality.tooltip.2").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
+                Component.translatable("dreamdisplays.button.quality.tooltip.3"),
+                Component.translatable("dreamdisplays.button.quality.tooltip.4", toQuality((int) (quality.value * screen.getQualityList().size()))).withStyle(style -> style.withColor(ChatFormatting.GOLD))
             ));
         }
 
@@ -441,38 +442,38 @@ public class Configuration extends Screen {
         guiGraphics.drawString(font, syncText, syncTextX, syncTextY, 0xFFFFFF, true);
 
         List<Component> syncTooltip = List.of(
-                Component.translatable("dreamdisplays.button.synchronization.tooltip.1").withStyle(style -> style.withColor(ChatFormatting.WHITE).withBold(true)),
-                Component.translatable("dreamdisplays.button.synchronization.tooltip.2").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
-                Component.translatable("dreamdisplays.button.synchronization.tooltip.3").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
-                Component.translatable("dreamdisplays.button.synchronization.tooltip.4"),
-                Component.translatable("dreamdisplays.button.synchronization.tooltip.5", sync.value ? Component.translatable("dreamdisplays.button.enabled") : Component.translatable("dreamdisplays.button.disabled")).withStyle(style -> style.withColor(ChatFormatting.GOLD))
+            Component.translatable("dreamdisplays.button.synchronization.tooltip.1").withStyle(style -> style.withColor(ChatFormatting.WHITE).withBold(true)),
+            Component.translatable("dreamdisplays.button.synchronization.tooltip.2").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
+            Component.translatable("dreamdisplays.button.synchronization.tooltip.3").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
+            Component.translatable("dreamdisplays.button.synchronization.tooltip.4"),
+            Component.translatable("dreamdisplays.button.synchronization.tooltip.5", sync.value ? Component.translatable("dreamdisplays.button.enabled") : Component.translatable("dreamdisplays.button.disabled")).withStyle(style -> style.withColor(ChatFormatting.GOLD))
         );
 
         renderTooltipIfHovered(guiGraphics, mouseX, mouseY, renderDTextX, renderDTextY,
-                font.width(renderDText), font.lineHeight, renderDTooltip);
+            font.width(renderDText), font.lineHeight, renderDTooltip);
         renderTooltipIfHovered(guiGraphics, mouseX, mouseY, qualityTextX, qualityTextY,
-                font.width(qualityText), font.lineHeight, qualityTooltip);
+            font.width(qualityText), font.lineHeight, qualityTooltip);
         renderTooltipIfHovered(guiGraphics, mouseX, mouseY, syncTextX, syncTextY,
-                font.width(syncText), font.lineHeight, syncTooltip);
+            font.width(syncText), font.lineHeight, syncTooltip);
 
         // Tooltips for delete and report buttons
         List<Component> deleteTooltip = List.of(
-                Component.translatable("dreamdisplays.button.delete.tooltip.1").withStyle(style -> style.withColor(ChatFormatting.WHITE).withBold(true)),
-                Component.translatable("dreamdisplays.button.delete.tooltip.2").withStyle(style -> style.withColor(ChatFormatting.GRAY))
+            Component.translatable("dreamdisplays.button.delete.tooltip.1").withStyle(style -> style.withColor(ChatFormatting.WHITE).withBold(true)),
+            Component.translatable("dreamdisplays.button.delete.tooltip.2").withStyle(style -> style.withColor(ChatFormatting.GRAY))
         );
 
         List<Component> reportTooltip = List.of(
-                Component.translatable("dreamdisplays.button.report.tooltip.1").withStyle(style -> style.withColor(ChatFormatting.WHITE).withBold(true)),
-                Component.translatable("dreamdisplays.button.report.tooltip.2").withStyle(style -> style.withColor(ChatFormatting.GRAY))
+            Component.translatable("dreamdisplays.button.report.tooltip.1").withStyle(style -> style.withColor(ChatFormatting.WHITE).withBold(true)),
+            Component.translatable("dreamdisplays.button.report.tooltip.2").withStyle(style -> style.withColor(ChatFormatting.GRAY))
         );
 
         if (deleteButton != null) {
             renderTooltipIfHovered(guiGraphics, mouseX, mouseY, deleteButton.getX(), deleteButton.getY(),
-                    deleteButton.getWidth(), deleteButton.getHeight(), deleteTooltip);
+                deleteButton.getWidth(), deleteButton.getHeight(), deleteTooltip);
         }
         if (reportButton != null) {
             renderTooltipIfHovered(guiGraphics, mouseX, mouseY, reportButton.getX(), reportButton.getY(),
-                    reportButton.getWidth(), reportButton.getHeight(), reportTooltip);
+                reportButton.getWidth(), reportButton.getHeight(), reportTooltip);
         }
 
         // Render all child elements (buttons, sliders, etc.)

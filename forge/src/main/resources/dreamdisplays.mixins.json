@@ -1,13 +1,13 @@
 {
-  "required": true,
-  "minVersion": "0.8",
-  "package": "dreamdisplays.mixins",
-  "compatibilityLevel": "JAVA_21",
-  "client": [
-    "CrossHairMixin",
-    "GStreamInitMixin"
-  ],
-  "injectors": {
-    "defaultRequire": 1
-  }
+    "required": true,
+    "minVersion": "0.8",
+    "package": "dreamdisplays.mixins",
+    "compatibilityLevel": "JAVA_21",
+    "client": [
+        "CrossHairMixin",
+        "GStreamInitMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
 }

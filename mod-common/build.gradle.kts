@@ -16,12 +16,12 @@ dependencies {
     api("org.bytedeco:ffmpeg:$ffmpegVersion:windows-x86_64")
     api("org.bytedeco:ffmpeg:$ffmpegVersion:linux-x86_64")
 
-	api(libs.utils)
-	api(libs.javatube)
+    api(libs.utils)
+    api(libs.javatube)
     api(libs.jspecify)
     implementation(libs.jna)
     implementation(libs.jnaPlatform)
-	implementation(libs.lwjgl)
+    implementation(libs.lwjgl)
 }
 
 neoForge {
@@ -34,9 +34,9 @@ java {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-	options.encoding = Charsets.UTF_8.name()
+    options.encoding = Charsets.UTF_8.name()
 }
 
 tasks.jar {
-	from(rootProject.file("LICENSE"))
+    from(rootProject.file("LICENSE"))
 }

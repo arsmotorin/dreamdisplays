@@ -1,6 +1,12 @@
 package com.dreamdisplays;
 
-import com.dreamdisplays.net.*;
+import com.dreamdisplays.net.Delete;
+import com.dreamdisplays.net.Info;
+import com.dreamdisplays.net.Premium;
+import com.dreamdisplays.net.Report;
+import com.dreamdisplays.net.RequestSync;
+import com.dreamdisplays.net.Sync;
+import com.dreamdisplays.net.Version;
 import com.dreamdisplays.render.World;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -24,19 +30,19 @@ public class DreamDisplaysMod implements ClientModInitializer, Mod {
         Initializer.onModInit(this);
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> dispatcher.register(
-                LiteralArgumentBuilder.<FabricClientCommandSource>literal("displays")
-                        .then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("off")
-                                .executes((context) -> {
-                                    Initializer.displaysEnabled = false;
-                                    return 1;
-                                })
-                        )
-                        .then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("on")
-                                .executes((context) -> {
-                                    Initializer.displaysEnabled = true;
-                                    return 1;
-                                })
-                        )
+            LiteralArgumentBuilder.<FabricClientCommandSource>literal("displays")
+                .then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("off")
+                    .executes((context) -> {
+                        Initializer.displaysEnabled = false;
+                        return 1;
+                    })
+                )
+                .then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("on")
+                    .executes((context) -> {
+                        Initializer.displaysEnabled = true;
+                        return 1;
+                    })
+                )
         ));
 
         PayloadTypeRegistry.playS2C().register(Info.PACKET_ID, Info.PACKET_CODEC);

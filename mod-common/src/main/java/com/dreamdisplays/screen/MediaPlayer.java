@@ -7,25 +7,36 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
-import me.inotsleep.utils.logging.LoggingManager;
-import org.bytedeco.ffmpeg.global.avutil;
-import org.bytedeco.javacv.FFmpegFrameGrabber;
-import org.bytedeco.javacv.Java2DFrameConverter;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
-
-import javax.sound.sampled.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.FloatControl;
+import javax.sound.sampled.SourceDataLine;
+import me.inotsleep.utils.logging.LoggingManager;
+import org.bytedeco.ffmpeg.global.avutil;
+import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.Java2DFrameConverter;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public class MediaPlayer {
@@ -35,7 +46,7 @@ public class MediaPlayer {
     private static final String MIME_AUDIO = "audio/webm";
     private static final String USER_AGENT_V = "ANDROID_VR";
     private static final ExecutorService INIT_EXECUTOR =
-            Executors.newSingleThreadExecutor(r -> new Thread(r, "MediaPlayer-init"));
+        Executors.newSingleThreadExecutor(r -> new Thread(r, "MediaPlayer-init"));
     public static boolean captureSamples = true;
     private static volatile long conversionTimeTotal = 0;
     private static volatile int conversionCount = 0;
@@ -321,11 +332,11 @@ public class MediaPlayer {
 
         if (!texture.isClosed()) {
             encoder.writeToTexture(
-                    texture,
-                    preparedBuffer,
-                    NativeImage.Format.RGBA,
-                    0, 0, 0, 0,
-                    texture.getWidth(0), texture.getHeight(0)
+                texture,
+                preparedBuffer,
+                NativeImage.Format.RGBA,
+                0, 0, 0, 0,
+                texture.getWidth(0), texture.getHeight(0)
             );
 
             framesRendered++;
@@ -340,13 +351,13 @@ public class MediaPlayer {
     public List<Integer> getAvailableQualities() {
         if (!initialized || availableVideoStreams == null) return Collections.emptyList();
         return availableVideoStreams.stream()
-                .map(Stream::getResolution)
-                .filter(Objects::nonNull)
-                .map(r -> Integer.parseInt(r.replaceAll("\\D+", "")))
-                .distinct()
-                .filter(r -> r <= (Initializer.isPremium ? 2160 : 1080))
-                .sorted()
-                .collect(Collectors.toList());
+            .map(Stream::getResolution)
+            .filter(Objects::nonNull)
+            .map(r -> Integer.parseInt(r.replaceAll("\\D+", "")))
+            .distinct()
+            .filter(r -> r <= (Initializer.isPremium ? 2160 : 1080))
+            .sorted()
+            .collect(Collectors.toList());
     }
 
     public void setQuality(String q) {
@@ -361,26 +372,26 @@ public class MediaPlayer {
             List<Stream> all = yt.streams().getAll();
 
             availableVideoStreams = all.stream()
-                    .filter(s -> MIME_VIDEO.equals(s.getMimeType()))
-                    .toList();
+                .filter(s -> MIME_VIDEO.equals(s.getMimeType()))
+                .toList();
 
             Optional<Stream> videoOpt = pickVideo(Integer.parseInt(screen.getQuality().replace("p", "")))
-                    .or(() -> availableVideoStreams.stream().findFirst());
+                .or(() -> availableVideoStreams.stream().findFirst());
 
             // Get audio from the same client to maintain consistent tokens/cookies
             Optional<Stream> audioOpt = all.stream()
-                    .filter(s -> MIME_AUDIO.equals(s.getMimeType()))
-                    .filter(s -> (s.getAudioTrackId() != null && s.getAudioTrackId().contains(lang)) ||
-                            (s.getAudioTrackName() != null && s.getAudioTrackName().contains(lang)))
-                    .reduce((f, n) -> n);
+                .filter(s -> MIME_AUDIO.equals(s.getMimeType()))
+                .filter(s -> (s.getAudioTrackId() != null && s.getAudioTrackId().contains(lang)) ||
+                    (s.getAudioTrackName() != null && s.getAudioTrackName().contains(lang)))
+                .reduce((f, n) -> n);
 
             if (audioOpt.isEmpty()) {
                 LoggingManager.warn("No audio stream available with lang " + lang);
                 LoggingManager.warn("Choosing first available audio stream...");
 
                 audioOpt = all.stream()
-                        .filter(s -> MIME_AUDIO.equals(s.getMimeType()))
-                        .reduce((f, n) -> n);
+                    .filter(s -> MIME_AUDIO.equals(s.getMimeType()))
+                    .reduce((f, n) -> n);
             }
 
             if (videoOpt.isEmpty() || audioOpt.isEmpty()) {
@@ -423,7 +434,7 @@ public class MediaPlayer {
         LoggingManager.info("Video grabber started successfully!");
 
         LoggingManager.info("Video grabber info: " + videoGrabber.getImageWidth() + "x" + videoGrabber.getImageHeight() +
-                " @ " + videoGrabber.getFrameRate() + " fps, format: " + videoGrabber.getFormat());
+            " @ " + videoGrabber.getFrameRate() + " fps, format: " + videoGrabber.getFormat());
     }
 
     private void initAudioGrabber(String url) {
@@ -462,11 +473,11 @@ public class MediaPlayer {
             LoggingManager.info("Audio format: " + sampleRate + " Hz, " + channels + " channels");
 
             AudioFormat format = new AudioFormat(
-                    sampleRate,
-                    16,
-                    channels,
-                    true,
-                    false
+                sampleRate,
+                16,
+                channels,
+                true,
+                false
             );
 
             LoggingManager.info("Getting audio line from system...");
@@ -685,12 +696,12 @@ public class MediaPlayer {
             g.setComposite(AlphaComposite.SrcOver);
 
             double scale = Math.max((double) w / frameImage.getWidth(),
-                    (double) h / frameImage.getHeight());
+                (double) h / frameImage.getHeight());
             int sw = (int) Math.round(frameImage.getWidth() * scale);
             int sh = (int) Math.round(frameImage.getHeight() * scale);
             int x = (w - sw) / 2, y = (h - sh) / 2;
             g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                    RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                RenderingHints.VALUE_INTERPOLATION_BILINEAR);
             g.drawImage(frameImage, x, y, sw, sh, null);
             g.dispose();
 
@@ -759,16 +770,16 @@ public class MediaPlayer {
         if (availableVideoStreams == null) return Optional.empty();
 
         return availableVideoStreams.stream()
-                .filter(s -> {
-                    String res = s.getResolution();
-                    if (res == null) return false;
-                    int q = Integer.parseInt(res.replaceAll("\\D+", ""));
-                    return q <= targetQuality;
-                })
-                .max(Comparator.comparingInt(s -> {
-                    String res = s.getResolution();
-                    return res == null ? 0 : Integer.parseInt(res.replaceAll("\\D+", ""));
-                }));
+            .filter(s -> {
+                String res = s.getResolution();
+                if (res == null) return false;
+                int q = Integer.parseInt(res.replaceAll("\\D+", ""));
+                return q <= targetQuality;
+            })
+            .max(Comparator.comparingInt(s -> {
+                String res = s.getResolution();
+                return res == null ? 0 : Integer.parseInt(res.replaceAll("\\D+", ""));
+            }));
     }
 
     private int parseQuality(Stream stream) {

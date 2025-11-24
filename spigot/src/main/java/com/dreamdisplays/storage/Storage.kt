@@ -45,17 +45,17 @@ class Storage(var plugin: Main) {
 
         conn.executeUpdate(
             "CREATE TABLE IF NOT EXISTS " + tablePrefix + "displays (" +
-                    "id BINARY(16) PRIMARY KEY NOT NULL, " +
-                    "ownerId BINARY(16) NOT NULL, " +
-                    "videoCode CHAR(11) NULL, " +
-                    "world CHAR(255) NOT NULL, " +
-                    "pos1 BIGINT NOT NULL, " +
-                    "pos2 BIGINT NOT NULL, " +
-                    "size BIGINT NOT NULL, " +
-                    "facing TINYINT UNSIGNED NOT NULL, " +
-                    "isSync BOOLEAN NOT NULL," +
-                    "duration BIGINT NULL" +
-                    ");"
+                "id BINARY(16) PRIMARY KEY NOT NULL, " +
+                "ownerId BINARY(16) NOT NULL, " +
+                "videoCode CHAR(11) NULL, " +
+                "world CHAR(255) NOT NULL, " +
+                "pos1 BIGINT NOT NULL, " +
+                "pos2 BIGINT NOT NULL, " +
+                "size BIGINT NOT NULL, " +
+                "facing TINYINT UNSIGNED NOT NULL, " +
+                "isSync BOOLEAN NOT NULL," +
+                "duration BIGINT NULL" +
+                ");"
         )
 
         val meta = conn.metaData
@@ -63,7 +63,7 @@ class Storage(var plugin: Main) {
             if (!cols.next()) {
                 conn.executeUpdate(
                     "ALTER TABLE " + tablePrefix + "displays " +
-                            "ADD COLUMN lang VARCHAR(255) DEFAULT '' NOT NULL"
+                        "ADD COLUMN lang VARCHAR(255) DEFAULT '' NOT NULL"
                 )
             }
         }
@@ -107,8 +107,8 @@ class Storage(var plugin: Main) {
         }
 
         val sql = "REPLACE INTO " + tablePrefix + "displays " +
-                "(id, ownerId, videoCode, world, pos1, pos2, size, facing, isSync, duration, lang) " +
-                "VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+            "(id, ownerId, videoCode, world, pos1, pos2, size, facing, isSync, duration, lang) " +
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?)"
 
         try {
             conn.executeUpdate(
@@ -149,7 +149,7 @@ class Storage(var plugin: Main) {
 
             val sql =
                 "SELECT id, ownerId, videoCode, world, pos1, pos2, size, facing, isSync, duration, lang " +
-                        "FROM " + tablePrefix + "displays"
+                    "FROM " + tablePrefix + "displays"
             val list: MutableList<Display?> = ArrayList()
 
             try {

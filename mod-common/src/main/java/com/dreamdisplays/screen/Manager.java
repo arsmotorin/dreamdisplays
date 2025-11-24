@@ -1,10 +1,9 @@
 package com.dreamdisplays.screen;
 
-import org.jspecify.annotations.NullMarked;
-
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public class Manager {

@@ -6,6 +6,11 @@ import com.dreamdisplays.net.RequestSync;
 import com.dreamdisplays.net.Sync;
 import com.dreamdisplays.util.Image;
 import com.dreamdisplays.util.Utils;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import me.inotsleep.utils.logging.LoggingManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -17,12 +22,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 @NullMarked
 public class Screen {
@@ -56,6 +55,7 @@ public class Screen {
     private @Nullable DynamicTexture previewTexture = null;
     private @Nullable String lang;
     private volatile boolean loggedFitTexture = false;
+
     // Constructor for the Screen class
     public Screen(UUID id, UUID ownerId, int x, int y, int z, String facing, int width, int height, boolean isSync) {
         this.id = id;
@@ -81,13 +81,13 @@ public class Screen {
     // Creates a custom RenderType for rendering the screen texture
     private static RenderType createRenderType(Identifier id) {
         return RenderType.create(
-                "dream-displays",
-                RenderSetup.builder(RenderPipelines.SOLID_BLOCK)
-                        .withTexture("Sampler0", id)
-                        .bufferSize(RenderType.BIG_BUFFER_SIZE)
-                        .affectsCrumbling()
-                        .useLightmap()
-                        .createRenderSetup()
+            "dream-displays",
+            RenderSetup.builder(RenderPipelines.SOLID_BLOCK)
+                .withTexture("Sampler0", id)
+                .bufferSize(RenderType.BIG_BUFFER_SIZE)
+                .affectsCrumbling()
+                .useLightmap()
+                .createRenderSetup()
         );
     }
 
@@ -123,15 +123,15 @@ public class Screen {
 
             // TODO: note for INotSleep: we should delete video previews to avoid problems with videos
             Image.fetchImageTextureFromUrl("https://img.youtube.com/vi/" + Utils.extractVideoId(videoUrl) + "/maxresdefault.jpg")
-                    .thenAcceptAsync(nativeImageBackedTexture -> {
-                        previewTexture = nativeImageBackedTexture;
-                        previewTextureId = Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "screen-preview-" + id + "-" + UUID.randomUUID());
+                .thenAcceptAsync(nativeImageBackedTexture -> {
+                    previewTexture = nativeImageBackedTexture;
+                    previewTextureId = Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "screen-preview-" + id + "-" + UUID.randomUUID());
 
-                        if (previewTexture != null) {
-                            Minecraft.getInstance().getTextureManager().register(previewTextureId, previewTexture);
-                            previewRenderType = createRenderType(previewTextureId);
-                        }
-                    });
+                    if (previewTexture != null) {
+                        Minecraft.getInstance().getTextureManager().register(previewTextureId, previewTexture);
+                        previewRenderType = createRenderType(previewTextureId);
+                    }
+                });
         });
 
         waitForMFInit(this::startVideo);
@@ -211,8 +211,8 @@ public class Screen {
         }
 
         return x <= pos.getX() && maxX >= pos.getX() &&
-                y <= pos.getY() && maxY >= pos.getY() &&
-                z <= pos.getZ() && maxZ >= pos.getZ();
+            y <= pos.getY() && maxY >= pos.getY() &&
+            z <= pos.getZ() && maxZ >= pos.getZ();
     }
 
     // Checks if the video has started playing
@@ -420,8 +420,8 @@ public class Screen {
         if (texture != null) {
             texture.close();
             if (textureId != null) Minecraft.getInstance()
-                    .getTextureManager()
-                    .release(textureId);
+                .getTextureManager()
+                .release(textureId);
         }
         texture = new DynamicTexture(UUID.randomUUID().toString(), textureWidth, textureHeight, true);
         textureId = Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "screen-main-texture-" + id + "-" + UUID.randomUUID());

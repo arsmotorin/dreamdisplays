@@ -1,17 +1,16 @@
 package com.dreamdisplays.util;
 
 import com.mojang.blaze3d.platform.NativeImage;
-import me.inotsleep.utils.logging.LoggingManager;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.DynamicTexture;
-import org.jspecify.annotations.NullMarked;
-
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.concurrent.CompletableFuture;
+import javax.imageio.ImageIO;
+import me.inotsleep.utils.logging.LoggingManager;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public class Image {
