@@ -14,7 +14,7 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import com.dreamdisplays.render.ScreenWorldRenderer;
+import com.dreamdisplays.render.World;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -67,7 +67,7 @@ public class DreamDisplaysMod implements ClientModInitializer, Mod {
             }
             PoseStack matrices = context.matrices();
             Camera camera = context.gameRenderer().getMainCamera();
-            ScreenWorldRenderer.render(matrices, camera);
+            World.render(matrices, camera);
         });
 
 

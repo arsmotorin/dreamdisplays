@@ -13,7 +13,6 @@ import org.jspecify.annotations.Nullable;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.LoggerFactory;
-import com.dreamdisplays.downloader.Init;
 import com.dreamdisplays.screen.Settings;
 import com.dreamdisplays.screen.Configuration;
 import com.dreamdisplays.screen.Screen;
@@ -73,7 +72,19 @@ public class Initializer {
         // Load client display settings
         Settings.load();
 
-        Init.init();
+        // Initialize FFmpeg native libraries
+        try {
+            LoggingManager.info("Loading FFmpeg native libraries...");
+            org.bytedeco.javacpp.Loader.load(org.bytedeco.ffmpeg.global.avutil.class);
+            org.bytedeco.javacpp.Loader.load(org.bytedeco.ffmpeg.global.avcodec.class);
+            org.bytedeco.javacpp.Loader.load(org.bytedeco.ffmpeg.global.avformat.class);
+            org.bytedeco.javacpp.Loader.load(org.bytedeco.ffmpeg.global.swscale.class);
+            org.bytedeco.javacpp.Loader.load(org.bytedeco.ffmpeg.global.swresample.class);
+            LoggingManager.info("FFmpeg libraries loaded successfully!");
+        } catch (Exception e) {
+            LoggingManager.error("Failed to load FFmpeg libraries", e);
+        }
+
         new Focuser().start();
 
         timerThread.start();

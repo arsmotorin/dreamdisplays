@@ -37,6 +37,10 @@ public class Screen {
     private int width;
     private int height;
     private final UUID id;
+
+    public int getX() { return x; }
+    public int getY() { return y; }
+    public int getZ() { return z; }
     private float volume;
     private boolean videoStarted;
     private boolean paused;
@@ -235,8 +239,14 @@ public class Screen {
         return Math.sqrt(pos.distSqr(closestPoint));
     }
 
+    private volatile boolean loggedFitTexture = false;
+
     // Updates the texture to fit the current video frame
     public void fitTexture() {
+        if (!loggedFitTexture) {
+            LoggingManager.info("fitTexture() called - mediaPlayer: " + (mediaPlayer != null) + ", texture: " + (texture != null));
+            loggedFitTexture = true;
+        }
         if (mediaPlayer != null && texture != null) {
             mediaPlayer.updateFrame(texture.getTexture());
         }
@@ -300,10 +310,15 @@ public class Screen {
 
     // Starts video playback
     public void startVideo() {
+        LoggingManager.info("startVideo() called for screen " + id);
         if (mediaPlayer != null) {
+            LoggingManager.info("Calling mediaPlayer.play()...");
             mediaPlayer.play();
             videoStarted = true;
             paused = false;
+            LoggingManager.info("Video playback started - videoStarted: " + videoStarted + ", paused: " + paused);
+        } else {
+            LoggingManager.warn("Cannot start video - mediaPlayer is null!");
         }
     }
 

@@ -10,7 +10,7 @@ import com.dreamdisplays.screen.Manager;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class ScreenWorldRenderer {
+public class World {
 
     // Renders all screens in the world relative to the camera position
     public static void render(PoseStack matrices, Camera camera) {

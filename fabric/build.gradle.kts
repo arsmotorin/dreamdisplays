@@ -59,7 +59,23 @@ tasks.shadowJar {
     configurations = listOf(project.configurations.getByName("shadow"))
     dependencies {
         include(project(":mod-common"))
-        include(dependency("org.freedesktop.gstreamer:gst1-java-core"))
+
+        // JavaCV and FFmpeg
+        include(dependency("org.bytedeco:javacv"))
+        include(dependency("org.bytedeco:javacpp"))
+        include(dependency("org.bytedeco:ffmpeg"))
+
+        // Platform-specific natives
+        include(dependency("org.bytedeco:javacpp:.*:macosx-arm64"))
+        include(dependency("org.bytedeco:javacpp:.*:macosx-x86_64"))
+        include(dependency("org.bytedeco:javacpp:.*:windows-x86_64"))
+        include(dependency("org.bytedeco:javacpp:.*:linux-x86_64"))
+
+        include(dependency("org.bytedeco:ffmpeg:.*:macosx-arm64"))
+        include(dependency("org.bytedeco:ffmpeg:.*:macosx-x86_64"))
+        include(dependency("org.bytedeco:ffmpeg:.*:windows-x86_64"))
+        include(dependency("org.bytedeco:ffmpeg:.*:linux-x86_64"))
+
         include(dependency("com.github.felipeucelli:javatube"))
         include(dependency("org.json:json"))
         include(dependency("me.inotsleep:utils"))
