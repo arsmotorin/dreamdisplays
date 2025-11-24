@@ -12,7 +12,7 @@ import net.minecraft.core.BlockPos;
 import org.freedesktop.gstreamer.*;
 import org.freedesktop.gstreamer.elements.AppSink;
 import org.freedesktop.gstreamer.event.SeekFlags;
-import com.dreamdisplays.PlatformlessInitializer;
+import com.dreamdisplays.Initializer;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -65,7 +65,7 @@ public class MediaPlayer {
     private volatile int lastTexW = 0, lastTexH = 0;
     private volatile int preparedW = 0, preparedH = 0;
 
-    private volatile double userVolume = (PlatformlessInitializer.config.defaultDisplayVolume);
+    private volatile double userVolume = (Initializer.config.defaultDisplayVolume);
     private volatile double lastAttenuation = 1.0;
 
     // === EXECUTORS & CONCURRENCY =========================================================
@@ -162,7 +162,7 @@ public class MediaPlayer {
                 .filter(Objects::nonNull)
                 .map(r -> Integer.parseInt(r.replaceAll("\\D+", "")))
                 .distinct()
-                .filter(r -> r <= (PlatformlessInitializer.isPremium ? 2160 : 1080))
+                .filter(r -> r <= (Initializer.isPremium ? 2160 : 1080))
                 .sorted()
                 .collect(Collectors.toList());
     }
@@ -345,7 +345,7 @@ public class MediaPlayer {
         ByteBuffer buf = ByteBuffer.allocateDirect(abgr.length).order(ByteOrder.nativeOrder());
 
         // Native ByteBuffer conversion
-        NativeImageConverter.abgrToRgbaDirect(abgr, buf, abgr.length);
+        Converter.abgrToRgbaDirect(abgr, buf, abgr.length);
 
         // Set position to end of written data before flip()
         // Native code writes directly to buffer memory, so position stays at 0

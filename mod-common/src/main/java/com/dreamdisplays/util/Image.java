@@ -6,7 +6,6 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import javax.imageio.ImageIO;
 import com.mojang.blaze3d.platform.NativeImage;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -15,7 +14,7 @@ import java.net.URL;
 import java.util.concurrent.CompletableFuture;
 
 @NullMarked
-public class ImageUtil {
+public class Image {
 
     public static CompletableFuture<DynamicTexture> fetchImageTextureFromUrl(String url) {
         CompletableFuture<NativeImage> imageFuture = CompletableFuture.supplyAsync(() -> {

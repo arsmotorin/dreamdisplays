@@ -12,16 +12,16 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import com.dreamdisplays.downloader.GStreamerDownloadListener;
-import com.dreamdisplays.downloader.GStreamerDownloaderMenu;
-import com.dreamdisplays.downloader.GStreamerErrorScreen;
+import com.dreamdisplays.downloader.Listener;
+import com.dreamdisplays.downloader.Menu;
+import com.dreamdisplays.downloader.Error;
 import com.dreamdisplays.util.Utils;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @NullMarked
 @Mixin(Minecraft.class)
-public abstract class GStreamInitMixin {
+public abstract class GStreamer {
     @Shadow
     public abstract void setScreen(@Nullable Screen screen);
 
@@ -38,28 +38,28 @@ public abstract class GStreamInitMixin {
             boolean recursionValue = dreamdisplays$recursionDetector.get();
             dreamdisplays$recursionDetector.set(true);
 
-            if (!(screen instanceof GStreamerDownloaderMenu) && !(screen instanceof GStreamerErrorScreen)) {
-                if (GStreamerDownloadListener.INSTANCE.isDone() && !GStreamerDownloadListener.INSTANCE.isFailed()) {
+            if (!(screen instanceof Menu) && !(screen instanceof Error)) {
+                if (Listener.INSTANCE.isDone() && !Listener.INSTANCE.isFailed()) {
                     dreamdisplays$downloaded = true;
                     Gst.init("MediaPlayer");
                 }
-                else if (!GStreamerDownloadListener.INSTANCE.isDone() && !GStreamerDownloadListener.INSTANCE.isFailed()) {
+                else if (!Listener.INSTANCE.isDone() && !Listener.INSTANCE.isFailed()) {
                     LoggingManager.warn("GStreamer has not finished loading, displaying loading screen");
-                    setScreen(new GStreamerDownloaderMenu(screen));
+                    setScreen(new Menu(screen));
                     ci.cancel();
                 }
-                else if (GStreamerDownloadListener.INSTANCE.isFailed()) {
+                else if (Listener.INSTANCE.isFailed()) {
                     dreamdisplays$downloaded = true;
                     if (Utils.detectPlatform().equals("windows")) {
                         LoggingManager.error("GStreamer failed to initialize on Windows");
-                        setScreen(new GStreamerErrorScreen(screen, "Dream Displays failed to download libraries"));
+                        setScreen(new Error(screen, "Dream Displays failed to download libraries"));
                     } else {
                         LoggingManager.info("GStreamer downloader not needed on " + Utils.detectPlatform() + " - using system installation");
                         try {
                             Gst.init("MediaPlayer");
                         } catch (Exception e) {
                             LoggingManager.error("Failed to initialize system GStreamer", e);
-                            setScreen(new GStreamerErrorScreen(screen, "Dream Displays failed to initialize GStreamer. Please install GStreamer via your package manager."));
+                            setScreen(new Error(screen, "Dream Displays failed to initialize GStreamer. Please install GStreamer via your package manager."));
                         }
                     }
                 }

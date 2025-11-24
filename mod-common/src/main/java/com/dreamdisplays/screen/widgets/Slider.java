@@ -8,7 +8,6 @@ import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
@@ -16,7 +15,7 @@ import net.minecraft.util.Mth;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public abstract class SliderWidget extends AbstractWidget {
+public abstract class Slider extends AbstractWidget {
     private static final Identifier TEXTURE = Identifier.withDefaultNamespace("widget/slider");
     private static final Identifier HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_highlighted");
     private static final Identifier HANDLE_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle");
@@ -24,7 +23,7 @@ public abstract class SliderWidget extends AbstractWidget {
     public double value;
     private boolean sliderFocused;
 
-    public SliderWidget(int x, int y, int width, int height, Component message, double value) {
+    public Slider(int x, int y, int width, int height, Component message, double value) {
         super(x, y, width, height, message);
         this.value = value;
     }

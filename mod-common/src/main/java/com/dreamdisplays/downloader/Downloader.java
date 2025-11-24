@@ -14,13 +14,13 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 @NullMarked
-public class GStreamerDownloader {
+public class Downloader {
 
     // URLs for downloading GStreamer builds and checksums
     private static final String GSTREAMER_DOWNLOAD_URL = "https://github.com/arsmotorin/dreamdisplays/releases/download/gstreamer/gstreamer-${platform}.zip";
     private static final String GSTREAMER_CHECKSUM_DOWNLOAD_URL = GSTREAMER_DOWNLOAD_URL + ".sha256";
 
-    public GStreamerDownloader() {}
+    public Downloader() {}
 
     public String getGStreamerDownloadUrl() {
         return formatURL(GSTREAMER_DOWNLOAD_URL);
@@ -37,7 +37,7 @@ public class GStreamerDownloader {
 
     public void downloadGstreamerBuild() throws IOException {
         File gStreamerLibrariesPath = new File("./libs/gstreamer");
-        GStreamerDownloadListener.INSTANCE.setTask("Downloading GStreamer");
+        Listener.INSTANCE.setTask("Downloading GStreamer");
         downloadFile(getGStreamerDownloadUrl(), new File(gStreamerLibrariesPath,  "gstreamer.zip"));
     }
 
@@ -46,7 +46,7 @@ public class GStreamerDownloader {
         File gStreamerHashFileTemp = new File(gStreamerLibrariesPath, "gstreamer.zip.sha256.temp");
         File gStreamerHashFile = new File(gStreamerLibrariesPath, "gstreamer.zip.sha256");
 
-        GStreamerDownloadListener.INSTANCE.setTask("Downloading Checksum");
+        Listener.INSTANCE.setTask("Downloading Checksum");
         downloadFile(getGStreamerChecksumDownloadUrl(), gStreamerHashFileTemp);
 
         if (gStreamerHashFile.exists()) {
@@ -116,7 +116,7 @@ public class GStreamerDownloader {
                 totalRead += bytesRead;
                 if (fileSize > 0) {
                     float percent = (float) totalRead / fileSize;
-                    GStreamerDownloadListener.INSTANCE.setProgress(percent);
+                    Listener.INSTANCE.setProgress(percent);
                 }
             }
         } catch (MalformedURLException e) {
@@ -130,7 +130,7 @@ public class GStreamerDownloader {
 
     // Extracts a zip file to the specified output directory
     private static void extractZip(File zipFile, File outputDirectory) {
-        GStreamerDownloadListener.INSTANCE.setTask("Extracting");
+        Listener.INSTANCE.setTask("Extracting");
         if (!outputDirectory.getParentFile().exists() && !outputDirectory.getParentFile().mkdirs()) LoggingManager.warn("Unable to mk directory");
 
         long fileSize = zipFile.length();
@@ -159,7 +159,7 @@ public class GStreamerDownloader {
                         totalBytesRead += bytesRead;
 
                         float percentComplete = (float) totalBytesRead / fileSize;
-                        GStreamerDownloadListener.INSTANCE.setProgress(percentComplete);
+                        Listener.INSTANCE.setProgress(percentComplete);
                     }
                 }
             }
@@ -167,6 +167,6 @@ public class GStreamerDownloader {
             LoggingManager.error("Failed to extract zip file to " + outputDirectory, e);
         }
 
-        GStreamerDownloadListener.INSTANCE.setProgress(1.0f);
+        Listener.INSTANCE.setProgress(1.0f);
     }
 }

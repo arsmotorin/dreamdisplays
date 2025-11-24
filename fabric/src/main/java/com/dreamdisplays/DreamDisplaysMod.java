@@ -14,7 +14,6 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import com.dreamdisplays.net.*;
 import com.dreamdisplays.render.ScreenWorldRenderer;
 import org.jspecify.annotations.NullMarked;
 
@@ -22,44 +21,44 @@ import org.jspecify.annotations.NullMarked;
 public class DreamDisplaysMod implements ClientModInitializer, Mod {
     @Override
     public void onInitializeClient() {
-        PlatformlessInitializer.onModInit(this);
+        Initializer.onModInit(this);
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> dispatcher.register(
                 LiteralArgumentBuilder.<FabricClientCommandSource>literal("displays")
                         .then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("off")
                                 .executes((context) -> {
-                                    PlatformlessInitializer.displaysEnabled = false;
+                                    Initializer.displaysEnabled = false;
                                     return 1;
                                 })
                         )
                         .then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("on")
                                 .executes((context) -> {
-                                    PlatformlessInitializer.displaysEnabled = true;
+                                    Initializer.displaysEnabled = true;
                                     return 1;
                                 })
                         )
         ));
 
-        PayloadTypeRegistry.playS2C().register(DisplayInfoPacket.PACKET_ID, DisplayInfoPacket.PACKET_CODEC);
+        PayloadTypeRegistry.playS2C().register(Info.PACKET_ID, Info.PACKET_CODEC);
 
-        PayloadTypeRegistry.playS2C().register(SyncPacket.PACKET_ID, SyncPacket.PACKET_CODEC);
-        PayloadTypeRegistry.playC2S().register(SyncPacket.PACKET_ID, SyncPacket.PACKET_CODEC);
+        PayloadTypeRegistry.playS2C().register(Sync.PACKET_ID, Sync.PACKET_CODEC);
+        PayloadTypeRegistry.playC2S().register(Sync.PACKET_ID, Sync.PACKET_CODEC);
 
-        PayloadTypeRegistry.playC2S().register(RequestSyncPacket.PACKET_ID, RequestSyncPacket.PACKET_CODEC);
+        PayloadTypeRegistry.playC2S().register(RequestSync.PACKET_ID, RequestSync.PACKET_CODEC);
 
-        PayloadTypeRegistry.playC2S().register(DeletePacket.PACKET_ID, DeletePacket.PACKET_CODEC);
-        PayloadTypeRegistry.playC2S().register(ReportPacket.PACKET_ID, ReportPacket.PACKET_CODEC);
-        PayloadTypeRegistry.playC2S().register(VersionPacket.PACKET_ID, VersionPacket.PACKET_CODEC);
+        PayloadTypeRegistry.playC2S().register(Delete.PACKET_ID, Delete.PACKET_CODEC);
+        PayloadTypeRegistry.playC2S().register(Report.PACKET_ID, Report.PACKET_CODEC);
+        PayloadTypeRegistry.playC2S().register(Version.PACKET_ID, Version.PACKET_CODEC);
 
-        PayloadTypeRegistry.playS2C().register(DeletePacket.PACKET_ID, DeletePacket.PACKET_CODEC);
-        PayloadTypeRegistry.playS2C().register(PremiumPacket.PACKET_ID, PremiumPacket.PACKET_CODEC);
+        PayloadTypeRegistry.playS2C().register(Delete.PACKET_ID, Delete.PACKET_CODEC);
+        PayloadTypeRegistry.playS2C().register(Premium.PACKET_ID, Premium.PACKET_CODEC);
 
 
-        ClientPlayNetworking.registerGlobalReceiver(DisplayInfoPacket.PACKET_ID, (payload, unused) -> PlatformlessInitializer.onDisplayInfoPacket(payload));
-        ClientPlayNetworking.registerGlobalReceiver(PremiumPacket.PACKET_ID, (payload, unused) -> PlatformlessInitializer.onPremiumPacket(payload));
-        ClientPlayNetworking.registerGlobalReceiver(DeletePacket.PACKET_ID, (deletePacket, unused) -> PlatformlessInitializer.onDeletePacket(deletePacket));
+        ClientPlayNetworking.registerGlobalReceiver(Info.PACKET_ID, (payload, unused) -> Initializer.onDisplayInfoPacket(payload));
+        ClientPlayNetworking.registerGlobalReceiver(Premium.PACKET_ID, (payload, unused) -> Initializer.onPremiumPacket(payload));
+        ClientPlayNetworking.registerGlobalReceiver(Delete.PACKET_ID, (deletePacket, unused) -> Initializer.onDeletePacket(deletePacket));
 
-        ClientPlayNetworking.registerGlobalReceiver(SyncPacket.PACKET_ID, (payload, unused) -> PlatformlessInitializer.onSyncPacket(payload));
+        ClientPlayNetworking.registerGlobalReceiver(Sync.PACKET_ID, (payload, unused) -> Initializer.onSyncPacket(payload));
 
         WorldRenderEvents.AFTER_ENTITIES.register(context -> {
             Minecraft minecraft = Minecraft.getInstance();
@@ -72,9 +71,9 @@ public class DreamDisplaysMod implements ClientModInitializer, Mod {
         });
 
 
-        ClientTickEvents.END_CLIENT_TICK.register(PlatformlessInitializer::onEndTick);
+        ClientTickEvents.END_CLIENT_TICK.register(Initializer::onEndTick);
 
-        ClientLifecycleEvents.CLIENT_STOPPING.register(minecraftClient -> PlatformlessInitializer.onStop());
+        ClientLifecycleEvents.CLIENT_STOPPING.register(minecraftClient -> Initializer.onStop());
     }
 
     @Override

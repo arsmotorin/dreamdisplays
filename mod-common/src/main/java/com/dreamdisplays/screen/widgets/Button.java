@@ -14,7 +14,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-public abstract class IconButtonWidget extends AbstractWidget {
+public abstract class Button extends AbstractWidget {
 	private final int iconWidth;
     private final int iconHeight;
 	private final int margin;
@@ -31,7 +31,7 @@ public abstract class IconButtonWidget extends AbstractWidget {
 	
 	private @Nullable WidgetSprites settedTextures = null;
 
-	public IconButtonWidget(int x, int y, int width, int height, int iconWidth, int iconHeight, Identifier iconTexture, int margin) {
+	public Button(int x, int y, int width, int height, int iconWidth, int iconHeight, Identifier iconTexture, int margin) {
 		super(x, y, width, height, Component.empty());
 		this.iconWidth = iconWidth;
 		this.iconHeight = iconHeight;

@@ -1,6 +1,5 @@
 package com.dreamdisplays.render;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -12,7 +11,7 @@ import org.jspecify.annotations.NullMarked;
 
 // Utility class for rendering 2D textured quads
 @NullMarked
-public class RenderUtil2D {
+public class Render2D {
     public static void drawTexturedQuad(Matrix3x2fStack matrices, GpuTextureView gpuView, float x, float y, float width, float height, RenderType renderType) {
         //RenderSystem.setShaderLights(0, gpuView); // FIXME: make this work or perhaps we dont need this at all, theres no more shaderTexture only lights
 

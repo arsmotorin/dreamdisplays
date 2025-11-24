@@ -1,6 +1,5 @@
 package com.dreamdisplays.render;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -14,7 +13,7 @@ import org.joml.Quaternionf;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public final class RenderUtil {
+public final class Render {
 
     // Prevent rotation issues
     public static void fixRotation(PoseStack stack, String facing) {

@@ -7,12 +7,12 @@ import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class GStreamerErrorScreen extends Screen {
+public class Error extends Screen {
     private final Screen parent;
     private final String errorMessage;
 
     // Constructor for GStreamerErrorScreen
-    public GStreamerErrorScreen(Screen parent, String errorMessage) {
+    public Error(Screen parent, String errorMessage) {
         super(Component.nullToEmpty("Error while downloading GStreamer"));
         this.parent = parent;
         this.errorMessage = errorMessage;

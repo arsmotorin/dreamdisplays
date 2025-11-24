@@ -8,7 +8,7 @@ import java.nio.file.StandardCopyOption;
 
 // Native image format converter for high-performance pixel operations.
 // Converts RGBA/ABGR formats using native code
-public class NativeImageConverter {
+public class Converter {
 
     private static boolean nativeAvailable = false;
 
@@ -35,7 +35,7 @@ public class NativeImageConverter {
             String resourcePath = "/natives/" + fullLibName;
 
             // Load the library from resources
-            InputStream libStream = NativeImageConverter.class.getResourceAsStream(resourcePath);
+            InputStream libStream = Converter.class.getResourceAsStream(resourcePath);
 
             if (libStream != null) {
                 File tempLib = File.createTempFile("dreamdisplays_native_", libExtension);

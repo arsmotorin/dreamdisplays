@@ -1,7 +1,7 @@
 package com.dreamdisplays.net;
 
 import org.joml.Vector3i;
-import com.dreamdisplays.PlatformlessInitializer;
+import com.dreamdisplays.Initializer;
 import com.dreamdisplays.util.Facing;
 
 import java.util.UUID;
@@ -15,11 +15,11 @@ import org.jspecify.annotations.NullMarked;
 
 // Packet for sending display information
 @NullMarked
-public record DisplayInfoPacket(UUID id, UUID ownerId, Vector3i pos, int width, int height, String url, Facing facing, boolean isSync, String lang) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<DisplayInfoPacket> PACKET_ID =
-            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "display_info"));
+public record Info(UUID id, UUID ownerId, Vector3i pos, int width, int height, String url, Facing facing, boolean isSync, String lang) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<Info> PACKET_ID =
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "display_info"));
 
-    public static final StreamCodec<FriendlyByteBuf, DisplayInfoPacket> PACKET_CODEC =
+    public static final StreamCodec<FriendlyByteBuf, Info> PACKET_CODEC =
             StreamCodec.of(
                     (buf, packet) -> {
                         UUIDUtil.STREAM_CODEC.encode(buf, packet.id());
@@ -59,7 +59,7 @@ public record DisplayInfoPacket(UUID id, UUID ownerId, Vector3i pos, int width, 
                         boolean isSync = ByteBufCodecs.BOOL.decode(buf);
                         String lang = ByteBufCodecs.STRING_UTF8.decode(buf);
 
-                        return new DisplayInfoPacket(id, ownerId, pos, width, height, url, facing, isSync, lang);
+                        return new Info(id, ownerId, pos, width, height, url, facing, isSync, lang);
                     }
             );
 

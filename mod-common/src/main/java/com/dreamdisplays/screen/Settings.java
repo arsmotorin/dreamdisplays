@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @NullMarked
-public class ClientDisplaySettings {
+public class Settings {
 
     // TODO: move to adequate path
     private static final File SETTINGS_FILE = new File("./config/dreamdisplays/client-display-settings.json");

@@ -9,11 +9,11 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
-import com.dreamdisplays.PlatformlessInitializer;
-import com.dreamdisplays.net.DisplayInfoPacket;
-import com.dreamdisplays.net.RequestSyncPacket;
-import com.dreamdisplays.net.SyncPacket;
-import com.dreamdisplays.util.ImageUtil;
+import com.dreamdisplays.Initializer;
+import com.dreamdisplays.net.Info;
+import com.dreamdisplays.net.RequestSync;
+import com.dreamdisplays.net.Sync;
+import com.dreamdisplays.util.Image;
 import com.dreamdisplays.util.Utils;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -76,7 +76,7 @@ public class Screen {
         owner = Minecraft.getInstance().player != null && (ownerId + "").equals(Minecraft.getInstance().player.getUUID() + "");
 
         // Load saved settings for this display
-        ClientDisplaySettings.DisplaySettings savedSettings = ClientDisplaySettings.getSettings(id);
+        Settings.DisplaySettings savedSettings = Settings.getSettings(id);
         this.volume = savedSettings.volume;
         this.quality = savedSettings.quality;
         this.muted = savedSettings.muted;
@@ -105,10 +105,10 @@ public class Screen {
             textureHeight = qualityInt;
 
             // TODO: note for INotSleep: we should delete video previews to avoid problems with videos
-            ImageUtil.fetchImageTextureFromUrl("https://img.youtube.com/vi/" + Utils.extractVideoId(videoUrl) + "/maxresdefault.jpg")
+            Image.fetchImageTextureFromUrl("https://img.youtube.com/vi/" + Utils.extractVideoId(videoUrl) + "/maxresdefault.jpg")
                     .thenAcceptAsync(nativeImageBackedTexture -> {
                         previewTexture = nativeImageBackedTexture;
-                        previewTextureId = Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "screen-preview-"+id+"-"+UUID.randomUUID());
+                        previewTextureId = Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "screen-preview-"+id+"-"+UUID.randomUUID());
 
                         if (previewTexture != null) {
                             Minecraft.getInstance().getTextureManager().register(previewTextureId, previewTexture);
@@ -135,7 +135,7 @@ public class Screen {
         );
     }
     // Updates the screen data based on a DisplayInfoPacket
-    public void updateData(DisplayInfoPacket packet) {
+    public void updateData(Info packet) {
         this.x = packet.pos().x;
         this.y = packet.pos().y;
         this.z = packet.pos().z;
@@ -158,11 +158,11 @@ public class Screen {
 
     // Sends a RequestSyncPacket to the server to request synchronization data
     private void sendRequestSyncPacket() {
-        PlatformlessInitializer.sendPacket(new RequestSyncPacket(id));
+        Initializer.sendPacket(new RequestSync(id));
     }
 
     // Updates the screen data based on a SyncPacket
-    public void updateData(SyncPacket packet) {
+    public void updateData(Sync packet) {
         isSync = packet.isSync();
         if (!isSync) return;
 
@@ -171,7 +171,7 @@ public class Screen {
         waitForMFInit(() -> {
             if (!videoStarted) {
                 startVideo();
-                setVolume((float) PlatformlessInitializer.config.syncDisplayVolume);
+                setVolume((float) Initializer.config.syncDisplayVolume);
             }
 
             if (paused) setPaused(false);
@@ -270,7 +270,7 @@ public class Screen {
         this.volume = volume;
         setVideoVolume(volume);
         // Save settings
-        ClientDisplaySettings.updateSettings(id, volume, quality, muted);
+        Settings.updateSettings(id, volume, quality, muted);
     }
 
     // Sets video volume
@@ -295,7 +295,7 @@ public class Screen {
     public void setQuality(String quality) {
         this.quality = quality;
         // Save settings
-        ClientDisplaySettings.updateSettings(id, volume, quality, muted);
+        Settings.updateSettings(id, volume, quality, muted);
     }
 
     // Starts video playback
@@ -318,7 +318,7 @@ public class Screen {
             this.paused = false;
             waitForMFInit(() -> {
                 startVideo();
-                setVolume((float) PlatformlessInitializer.config.defaultDisplayVolume);
+                setVolume((float) Initializer.config.defaultDisplayVolume);
             });
             return;
         }
@@ -365,7 +365,7 @@ public class Screen {
         if (textureId != null) manager.release(textureId);
         if (previewTextureId != null) manager.release(previewTextureId);
 
-        if (Minecraft.getInstance().screen instanceof DisplayConfScreen displayConfScreen) {
+        if (Minecraft.getInstance().screen instanceof Configuration displayConfScreen) {
             if (displayConfScreen.screen == this) displayConfScreen.onClose();
         }
     }
@@ -389,7 +389,7 @@ public class Screen {
 
         setVideoVolume(!status ? volume : 0);
         // Save settings
-        ClientDisplaySettings.updateSettings(id, volume, quality, muted);
+        Settings.updateSettings(id, volume, quality, muted);
     }
 
     public double getVolume() {
@@ -410,7 +410,7 @@ public class Screen {
                     .release(textureId);
         }
         texture = new DynamicTexture(UUID.randomUUID().toString(), textureWidth, textureHeight, true);
-        textureId = Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "screen-main-texture-" + id + "-" + UUID.randomUUID());
+        textureId = Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "screen-main-texture-" + id + "-" + UUID.randomUUID());
 
         Minecraft.getInstance().getTextureManager().register(textureId, texture);
         renderType = createRenderType(textureId);
@@ -418,7 +418,7 @@ public class Screen {
 
     public void sendSync() {
         if (mediaPlayer != null) {
-            PlatformlessInitializer.sendPacket(new SyncPacket(id, isSync, paused, mediaPlayer.getCurrentTime(), mediaPlayer.getDuration()));
+            Initializer.sendPacket(new Sync(id, isSync, paused, mediaPlayer.getCurrentTime(), mediaPlayer.getDuration()));
         }
     }
 
@@ -436,7 +436,7 @@ public class Screen {
     }
 
     public void tick(BlockPos pos) {
-        if (mediaPlayer != null) mediaPlayer.tick(pos, PlatformlessInitializer.config.defaultDistance);
+        if (mediaPlayer != null) mediaPlayer.tick(pos, Initializer.config.defaultDistance);
     }
 
     public void afterSeek() {

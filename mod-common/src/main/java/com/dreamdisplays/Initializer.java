@@ -13,13 +13,13 @@ import org.jspecify.annotations.Nullable;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.LoggerFactory;
-import com.dreamdisplays.downloader.GStreamerDownloadInit;
-import com.dreamdisplays.screen.ClientDisplaySettings;
-import com.dreamdisplays.screen.DisplayConfScreen;
+import com.dreamdisplays.downloader.Init;
+import com.dreamdisplays.screen.Settings;
+import com.dreamdisplays.screen.Configuration;
 import com.dreamdisplays.screen.Screen;
-import com.dreamdisplays.screen.ScreenManager;
+import com.dreamdisplays.screen.Manager;
 import com.dreamdisplays.util.Facing;
-import com.dreamdisplays.util.RCUtil;
+import com.dreamdisplays.util.RayCasting;
 import com.dreamdisplays.util.Utils;
 
 import java.io.File;
@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 @NullMarked
-public class PlatformlessInitializer {
+public class Initializer {
 
     public static final String MOD_ID = "dreamdisplays";
     public static Config config = new Config(new File("./config/" + MOD_ID));
@@ -38,7 +38,7 @@ public class PlatformlessInitializer {
         int lastDistance = 64;
         boolean isErrored = false;
         while (!isErrored) {
-            ScreenManager.getScreens().forEach(Screen::reloadQuality);
+            Manager.getScreens().forEach(Screen::reloadQuality);
             if (config.defaultDistance != lastDistance) {
                 config.defaultDistance = lastDistance;
                 config.save();
@@ -71,19 +71,19 @@ public class PlatformlessInitializer {
         config.reload();
 
         // Load client display settings
-        ClientDisplaySettings.load();
+        Settings.load();
 
-        GStreamerDownloadInit.init();
-        new WindowFocusMuteThread().start();
+        Init.init();
+        new Focuser().start();
 
         timerThread.start();
     }
 
-    public static void onDisplayInfoPacket(DisplayInfoPacket packet) {
-        if (!PlatformlessInitializer.displaysEnabled) return;
+    public static void onDisplayInfoPacket(Info packet) {
+        if (!Initializer.displaysEnabled) return;
 
-        if (ScreenManager.screens.containsKey(packet.id())) {
-            Screen screen = ScreenManager.screens.get(packet.id());
+        if (Manager.screens.containsKey(packet.id())) {
+            Screen screen = Manager.screens.get(packet.id());
             screen.updateData(packet);
             return;
         }
@@ -94,14 +94,14 @@ public class PlatformlessInitializer {
     public static void createScreen(UUID id, UUID ownerId, Vector3i pos, Facing facing, int width, int height, String code, String lang, boolean isSync) {
         Screen screen = new Screen(id, ownerId, pos.x(), pos.y(), pos.z(), facing.toString(), width, height, isSync);
         assert Minecraft.getInstance().player != null;
-        if (screen.getDistanceToScreen(Minecraft.getInstance().player.blockPosition()) > PlatformlessInitializer.config.defaultDistance) return;
-        ScreenManager.registerScreen(screen);
+        if (screen.getDistanceToScreen(Minecraft.getInstance().player.blockPosition()) > Initializer.config.defaultDistance) return;
+        Manager.registerScreen(screen);
         if (!Objects.equals(code, "")) screen.loadVideo(code, lang);
     }
 
-    public static void onSyncPacket(SyncPacket packet) {
-        if (!ScreenManager.screens.containsKey(packet.id())) return;
-        Screen screen = ScreenManager.screens.get(packet.id());
+    public static void onSyncPacket(Sync packet) {
+        if (!Manager.screens.containsKey(packet.id())) return;
+        Screen screen = Manager.screens.get(packet.id());
         if (screen != null) {
             screen.updateData(packet);
         }
@@ -115,7 +115,7 @@ public class PlatformlessInitializer {
     private static void checkVersionAndSendPacket() {
         try {
             String version = Utils.getModVersion();
-            sendPacket(new VersionPacket(version));
+            sendPacket(new Version(version));
         } catch (Exception e) {
             LoggingManager.error("Unable to get version", e);
         }
@@ -131,7 +131,7 @@ public class PlatformlessInitializer {
             if (minecraft.level != lastLevel.get()) {
                 lastLevel.set(minecraft.level);
 
-                ScreenManager.unloadAll();
+                Manager.unloadAll();
                 hoveredScreen = null;
 
                 checkVersionAndSendPacket();
@@ -142,7 +142,7 @@ public class PlatformlessInitializer {
         } else {
             if (wasInMultiplayer.get()) {
                 wasInMultiplayer.set(false);
-                ScreenManager.unloadAll();
+                Manager.unloadAll();
                 hoveredScreen = null;
                 lastLevel.set(null);
                 return;
@@ -151,21 +151,21 @@ public class PlatformlessInitializer {
 
         if (minecraft.player == null) return;
 
-        BlockHitResult result = RCUtil.rCBlock(64);
+        BlockHitResult result = RayCasting.rCBlock(64);
         hoveredScreen = null;
-        PlatformlessInitializer.isOnScreen = false;
+        Initializer.isOnScreen = false;
 
-        for (Screen screen : ScreenManager.getScreens()) {
-            if (PlatformlessInitializer.config.defaultDistance < screen.getDistanceToScreen(minecraft.player.blockPosition()) || !PlatformlessInitializer.displaysEnabled) {
-                ScreenManager.unregisterScreen(screen);
+        for (Screen screen : Manager.getScreens()) {
+            if (Initializer.config.defaultDistance < screen.getDistanceToScreen(minecraft.player.blockPosition()) || !Initializer.displaysEnabled) {
+                Manager.unregisterScreen(screen);
                 if (hoveredScreen == screen) {
                     hoveredScreen = null;
-                    PlatformlessInitializer.isOnScreen = false;
+                    Initializer.isOnScreen = false;
                 }
             } else {
                 if (result != null) if (screen.isInScreen(result.getBlockPos())) {
                     hoveredScreen = screen;
-                    PlatformlessInitializer.isOnScreen = true;
+                    Initializer.isOnScreen = true;
                 }
 
                 screen.tick(minecraft.player.blockPosition());
@@ -183,7 +183,7 @@ public class PlatformlessInitializer {
 
         wasPressed[0] = pressed;
 
-        if (PlatformlessInitializer.focusMode && minecraft.player != null && hoveredScreen != null) {
+        if (Initializer.focusMode && minecraft.player != null && hoveredScreen != null) {
             minecraft.player.addEffect(new MobEffectInstance(
                     MobEffects.BLINDNESS,
                     20 * 2,
@@ -195,7 +195,7 @@ public class PlatformlessInitializer {
 
             wasFocused.set(true);
 
-        } else if (!PlatformlessInitializer.focusMode && wasFocused.get() && minecraft.player != null) {
+        } else if (!Initializer.focusMode && wasFocused.get() && minecraft.player != null) {
             minecraft.player.removeEffect(MobEffects.BLINDNESS);
             wasFocused.set(false);
         }
@@ -203,29 +203,29 @@ public class PlatformlessInitializer {
 
     private static void checkAndOpenScreen() {
         if (hoveredScreen == null) return;
-        DisplayConfScreen.open(hoveredScreen);
+        Configuration.open(hoveredScreen);
     }
 
     public static void sendPacket(CustomPacketPayload packet) {
         mod.sendPacket(packet);
     }
 
-    public static void onDeletePacket(DeletePacket deletePacket) {
-        Screen screen = ScreenManager.screens.get(deletePacket.id());
+    public static void onDeletePacket(Delete deletePacket) {
+        Screen screen = Manager.screens.get(deletePacket.id());
         if (screen == null) return;
 
-        ScreenManager.unregisterScreen(screen);
+        Manager.unregisterScreen(screen);
     }
 
     public static void onStop() {
         timerThread.interrupt();
-        ScreenManager.unloadAll();
-        WindowFocusMuteThread.instance.interrupt();
+        Manager.unloadAll();
+        Focuser.instance.interrupt();
     }
 
     public static boolean isPremium = false;
 
-    public static void onPremiumPacket(PremiumPacket packet) {
+    public static void onPremiumPacket(Premium packet) {
         isPremium = packet.premium();
     }
 }

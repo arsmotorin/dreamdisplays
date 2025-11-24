@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 import static com.dreamdisplays.util.Utils.detectPlatform;
 
 @NullMarked
-public class GStreamerDownloadInit {
+public class Init {
 
     // Sets up the library path for GStreamer and loads the libraries
     private static void setupLibraryPath() throws IOException {
@@ -21,8 +21,8 @@ public class GStreamerDownloadInit {
 
         List<File> files = List.of(Objects.requireNonNull(new File(gStreamerLibrariesDir, "bin").listFiles()));
 
-        GStreamerDownloadListener.INSTANCE.setProgress(0f);
-        GStreamerDownloadListener.INSTANCE.setTask("Loading libraries for Dream Launcher 0/0");
+        Listener.INSTANCE.setProgress(0f);
+        Listener.INSTANCE.setTask("Loading libraries for Dream Launcher 0/0");
         loadLibraries(recursiveLoadLibs(files));
 
         System.setProperty(
@@ -44,7 +44,7 @@ public class GStreamerDownloadInit {
         int total = libraries.size();
         int loadedCount = 0;
 
-        GStreamerDownloadListener.INSTANCE.setTask(String.format("Loading libraries for Dream Displays %d/%d", loadedCount, total));
+        Listener.INSTANCE.setTask(String.format("Loading libraries for Dream Displays %d/%d", loadedCount, total));
         while (!toLoad.isEmpty()) {
             int passSize = toLoad.size();
             int loadedThisPass = 0;
@@ -58,10 +58,10 @@ public class GStreamerDownloadInit {
                     loadedThisPass++;
 
                     // Update progress and task message
-                    GStreamerDownloadListener.INSTANCE
+                    Listener.INSTANCE
                             .setProgress(((float) loadedCount) / total);
 
-                    GStreamerDownloadListener.INSTANCE.setTask(String.format("Loading libraries for Dream Displays %d/%d (%d/%d)", loadedCount, total, loadedThisPass, passSize));
+                    Listener.INSTANCE.setTask(String.format("Loading libraries for Dream Displays %d/%d (%d/%d)", loadedCount, total, loadedThisPass, passSize));
                 } catch (LinkageError e) {
                     toLoad.addLast(path);
                 }
@@ -71,12 +71,12 @@ public class GStreamerDownloadInit {
                 LoggingManager.error("Dream Displays can't load some libraries:");
                 toLoad.forEach(p -> LoggingManager.error("  " + p));
 
-                GStreamerDownloadListener.INSTANCE.setFailed(true);
+                Listener.INSTANCE.setFailed(true);
                 return;
             }
         }
 
-        GStreamerDownloadListener.INSTANCE.setDone(true);
+        Listener.INSTANCE.setDone(true);
     }
 
     // Pattern to match Linux/Unix shared object files
@@ -117,7 +117,7 @@ public class GStreamerDownloadInit {
     public static void init() {
         String platform = detectPlatform();
         if (!platform.equals("windows")) {
-            GStreamerDownloadListener.INSTANCE.setFailed(true);
+            Listener.INSTANCE.setFailed(true);
             return;
         }
 
@@ -126,14 +126,14 @@ public class GStreamerDownloadInit {
         if (!gStreamerLibrariesDir.exists() && gStreamerLibrariesDir.mkdirs()) LoggingManager.error("Unable to mk directory");
 
         Thread downloadThread = new Thread(() -> {
-            GStreamerDownloader downloader = new GStreamerDownloader();
+            Downloader downloader = new Downloader();
             boolean downloadGStreamer;
 
             try {
                 downloadGStreamer = !downloader.downloadGstreamerChecksum();
             } catch (IOException e) {
                 LoggingManager.error("Failed to download GStreamer checksum.", e);
-                GStreamerDownloadListener.INSTANCE.setFailed(true);
+                Listener.INSTANCE.setFailed(true);
                 return;
             }
 
@@ -145,7 +145,7 @@ public class GStreamerDownloadInit {
                     downloader.downloadGstreamerBuild();
                 } catch (IOException e) {
                     LoggingManager.error("Failed to download GStreamer.", e);
-                    GStreamerDownloadListener.INSTANCE.setFailed(true);
+                    Listener.INSTANCE.setFailed(true);
                     return;
                 }
 

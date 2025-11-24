@@ -8,11 +8,11 @@ import org.joml.Matrix3x2fStack;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class GStreamerDownloaderMenu extends Screen {
+public class Menu extends Screen {
     public final Screen menu;
 
     // Constructor for the GStreamer download menu
-    public GStreamerDownloaderMenu(Screen menu) {
+    public Menu(Screen menu) {
         super(Component.nullToEmpty("Dream Displays downloads GStreamer for display support"));
         this.menu = menu;
     }
@@ -49,15 +49,15 @@ public class GStreamerDownloaderMenu extends Screen {
         );
         graphics.fill(
                 4, 4,
-                (int) ((progressBarWidth - 4) * GStreamerDownloadListener.INSTANCE.getProgress()),
+                (int) ((progressBarWidth - 4) * Listener.INSTANCE.getProgress()),
                 (int) progressBarHeight - 4,
                 -1
         );
         matrix.popMatrix();
 
         String[] text = new String[]{
-                GStreamerDownloadListener.INSTANCE.getTask(),
-                (Math.round(GStreamerDownloadListener.INSTANCE.getProgress() * 100)%100) + "%",
+                Listener.INSTANCE.getTask(),
+                (Math.round(Listener.INSTANCE.getProgress() * 100)%100) + "%",
         };
 
         int oSet = ((font.lineHeight / 2) + ((font.lineHeight + 2) * (text.length + 2))) + 4;
@@ -97,7 +97,7 @@ public class GStreamerDownloaderMenu extends Screen {
     // Update method to check download status
     @Override
     public void tick() {
-        if (GStreamerDownloadListener.INSTANCE.isDone() || GStreamerDownloadListener.INSTANCE.isFailed()) {
+        if (Listener.INSTANCE.isDone() || Listener.INSTANCE.isFailed()) {
             Minecraft.getInstance().setScreen(menu);
         }
     }

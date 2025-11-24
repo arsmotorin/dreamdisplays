@@ -7,11 +7,11 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @NullMarked
-public class ScreenManager {
+public class Manager {
 
     public static final ConcurrentHashMap<UUID, Screen> screens = new ConcurrentHashMap<>();
 
-    public ScreenManager() {
+    public Manager() {
     }
 
     public static Collection<Screen> getScreens() {

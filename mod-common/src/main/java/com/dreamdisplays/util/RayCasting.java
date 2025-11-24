@@ -9,7 +9,7 @@ import org.jspecify.annotations.Nullable;
 
 // Utility class for ray-casting operations
 @NullMarked
-public class RCUtil {
+public class RayCasting {
 
     @Nullable
     public static BlockHitResult rCBlock(double maxDistance) {

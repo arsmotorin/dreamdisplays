@@ -1,6 +1,6 @@
 package com.dreamdisplays.net;
 
-import com.dreamdisplays.PlatformlessInitializer;
+import com.dreamdisplays.Initializer;
 
 import java.util.UUID;
 import net.minecraft.core.UUIDUtil;
@@ -13,11 +13,11 @@ import org.jspecify.annotations.NullMarked;
 
 // Packet for synchronizing the playback state of a display
 @NullMarked
-public record SyncPacket(UUID id, boolean isSync, boolean currentState, long currentTime, long limitTime) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<SyncPacket> PACKET_ID =
-            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "sync"));
+public record Sync(UUID id, boolean isSync, boolean currentState, long currentTime, long limitTime) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<Sync> PACKET_ID =
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "sync"));
 
-    public static final StreamCodec<FriendlyByteBuf, SyncPacket> PACKET_CODEC =
+    public static final StreamCodec<FriendlyByteBuf, Sync> PACKET_CODEC =
             StreamCodec.of(
                     (buf, packet) -> {
                         UUIDUtil.STREAM_CODEC.encode(buf, packet.id());
@@ -34,7 +34,7 @@ public record SyncPacket(UUID id, boolean isSync, boolean currentState, long cur
                         long currentTime = ByteBufCodecs.VAR_LONG.decode(buf);
                         long limitTime = ByteBufCodecs.VAR_LONG.decode(buf);
 
-                        return new SyncPacket(id, isSync, currentState, currentTime, limitTime);
+                        return new Sync(id, isSync, currentState, currentTime, limitTime);
                     });
 
     @Override

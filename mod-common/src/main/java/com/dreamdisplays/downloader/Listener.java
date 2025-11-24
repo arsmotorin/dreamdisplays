@@ -1,16 +1,15 @@
 package com.dreamdisplays.downloader;
 
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Unique;
 
 @NullMarked
-public class GStreamerDownloadListener {
+public class Listener {
 
     // TODO: I kinda would like to keep other mods from accessing this, but mixin complicates stuff
 
     @Unique
-    public static final GStreamerDownloadListener INSTANCE = new GStreamerDownloadListener();
+    public static final Listener INSTANCE = new Listener();
 
     private String task = "";
     private float percent;

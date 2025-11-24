@@ -7,14 +7,13 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public abstract class ToggleWidget extends AbstractWidget {
+public abstract class Toggle extends AbstractWidget {
 	private static final Identifier TEXTURE = Identifier.withDefaultNamespace("widget/slider");
 	private static final Identifier HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_highlighted");
 	private static final Identifier HANDLE_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle");
@@ -23,7 +22,7 @@ public abstract class ToggleWidget extends AbstractWidget {
 	public boolean value;
 	private boolean sliderFocused;
 
-	public ToggleWidget(int x, int y, int width, int height, Component message, boolean value) {
+	public Toggle(int x, int y, int width, int height, Component message, boolean value) {
 		super(x, y, width, height, message);
 		this.dValue = value ? 1 : 0;
 		this.value = value;

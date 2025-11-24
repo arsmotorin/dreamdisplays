@@ -2,14 +2,14 @@ package com.dreamdisplays;
 
 import net.minecraft.client.Minecraft;
 import com.dreamdisplays.screen.Screen;
-import com.dreamdisplays.screen.ScreenManager;
+import com.dreamdisplays.screen.Manager;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class WindowFocusMuteThread extends Thread {
-    public static WindowFocusMuteThread instance = new WindowFocusMuteThread();
+public class Focuser extends Thread {
+    public static Focuser instance = new Focuser();
 
-    public WindowFocusMuteThread() {
+    public Focuser() {
         setDaemon(true);
         instance = this;
         setName("window-focus-mute-thread");
@@ -22,7 +22,7 @@ public class WindowFocusMuteThread extends Thread {
 
             boolean focused = client.isWindowActive();
 
-            if (PlatformlessInitializer.getConfig().muteOnAltTab) for (Screen screen : ScreenManager.getScreens()) {
+            if (Initializer.getConfig().muteOnAltTab) for (Screen screen : Manager.getScreens()) {
                 screen.mute(!focused);
             }
 

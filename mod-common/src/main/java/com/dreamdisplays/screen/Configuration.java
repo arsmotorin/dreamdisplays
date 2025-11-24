@@ -1,19 +1,18 @@
 package com.dreamdisplays.screen;
 
-import com.dreamdisplays.PlatformlessInitializer;
-import com.dreamdisplays.net.DeletePacket;
-import com.dreamdisplays.net.ReportPacket;
-import com.dreamdisplays.render.RenderUtil2D;
-import com.dreamdisplays.screen.widgets.IconButtonWidget;
-import com.dreamdisplays.screen.widgets.SliderWidget;
-import com.dreamdisplays.screen.widgets.ToggleWidget;
+import com.dreamdisplays.Initializer;
+import com.dreamdisplays.net.Delete;
+import com.dreamdisplays.net.Report;
+import com.dreamdisplays.render.Render2D;
+import com.dreamdisplays.screen.widgets.Button;
+import com.dreamdisplays.screen.widgets.Slider;
+import com.dreamdisplays.screen.widgets.Toggle;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -28,27 +27,27 @@ import net.minecraft.resources.Identifier;
 
 // Configuration screen for Dream Displays with volume, render distance, quality, and sync settings
 @NullMarked
-public class DisplayConfScreen extends Screen {
+public class Configuration extends Screen {
 
-    @Nullable SliderWidget volume = null;
-    @Nullable SliderWidget renderD = null;
-    @Nullable SliderWidget quality = null;
-    @Nullable ToggleWidget sync = null;
+    @Nullable Slider volume = null;
+    @Nullable Slider renderD = null;
+    @Nullable Slider quality = null;
+    @Nullable Toggle sync = null;
 
-    @Nullable IconButtonWidget backButton = null;
-    @Nullable IconButtonWidget forwardButton = null;
-    @Nullable IconButtonWidget pauseButton = null;
+    @Nullable Button backButton = null;
+    @Nullable Button forwardButton = null;
+    @Nullable Button pauseButton = null;
 
-    @Nullable IconButtonWidget renderDReset = null;
-    @Nullable IconButtonWidget qualityReset = null;
-    @Nullable IconButtonWidget syncReset = null;
+    @Nullable Button renderDReset = null;
+    @Nullable Button qualityReset = null;
+    @Nullable Button syncReset = null;
 
-    @Nullable IconButtonWidget deleteButton = null;
-    @Nullable IconButtonWidget reportButton = null;
+    @Nullable Button deleteButton = null;
+    @Nullable Button reportButton = null;
 
     com.dreamdisplays.screen.@Nullable Screen screen = null;
 
-    protected DisplayConfScreen() {
+    protected Configuration() {
         super(Component.translatable("dreamdisplays.ui.title"));
     }
 
@@ -56,7 +55,7 @@ public class DisplayConfScreen extends Screen {
     @Override
     protected void init() {
 
-        if (screen != null ) volume = new SliderWidget(0, 0, 0, 0, Component.literal((int) Math.floor(screen.getVolume() * 100) + "%"), screen.getVolume()) {
+        if (screen != null ) volume = new Slider(0, 0, 0, 0, Component.literal((int) Math.floor(screen.getVolume() * 100) + "%"), screen.getVolume()) {
             @Override
             protected void updateMessage() {
                 setMessage(Component.literal((int) Math.floor(value * 100) + "%"));
@@ -68,31 +67,31 @@ public class DisplayConfScreen extends Screen {
             }
         };
 
-        backButton = new IconButtonWidget(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "bbi"), 2) {
+        backButton = new Button(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bbi"), 2) {
             @Override
             public void onPress() {
                 screen.seekBackward();
             }
         };
 
-        forwardButton = new IconButtonWidget(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "bfi"), 2) {
+        forwardButton = new Button(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bfi"), 2) {
             @Override
             public void onPress() {
                 screen.seekForward();
             }
         };
 
-        pauseButton = new IconButtonWidget(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "bpi"), 2) {
+        pauseButton = new Button(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bpi"), 2) {
             @Override
             public void onPress() {
                 screen.setPaused(!screen.getPaused());
-                setIconTexture(screen.getPaused() ? Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "bupi") : Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "bpi"));
+                setIconTexture(screen.getPaused() ? Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bupi") : Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bpi"));
             }
         };
 
-        pauseButton.setIconTexture(screen.getPaused() ? Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "bupi") : Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "bpi"));
+        pauseButton.setIconTexture(screen.getPaused() ? Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bupi") : Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bpi"));
 
-        renderD = new SliderWidget(0, 0, 0, 0, Component.nullToEmpty(String.valueOf(PlatformlessInitializer.config.defaultDistance)), (PlatformlessInitializer.config.defaultDistance-24)/(double)(96-24)) {
+        renderD = new Slider(0, 0, 0, 0, Component.nullToEmpty(String.valueOf(Initializer.config.defaultDistance)), (Initializer.config.defaultDistance-24)/(double)(96-24)) {
             @Override
             protected void updateMessage() {
                 setMessage(Component.nullToEmpty(String.valueOf((int) (value*(96-24)) + 24)));
@@ -100,13 +99,13 @@ public class DisplayConfScreen extends Screen {
 
             @Override
             protected void applyValue() {
-                PlatformlessInitializer.config.defaultDistance = (int) (value * (96-24) + 24);
-                PlatformlessInitializer.config.save();
-                PlatformlessInitializer.config.reload();
+                Initializer.config.defaultDistance = (int) (value * (96-24) + 24);
+                Initializer.config.save();
+                Initializer.config.reload();
             }
         };
 
-        quality = new SliderWidget(0, 0, 0, 0, Component.nullToEmpty(screen.getQuality()+"p"), ((double) fromQuality(screen.getQuality())) / screen.getQualityList().size()) {
+        quality = new Slider(0, 0, 0, 0, Component.nullToEmpty(screen.getQuality()+"p"), ((double) fromQuality(screen.getQuality())) / screen.getQualityList().size()) {
             @Override
             protected void updateMessage() {
                 setMessage(Component.nullToEmpty(toQuality((int) (value*screen.getQualityList().size()))+"p"));
@@ -118,18 +117,18 @@ public class DisplayConfScreen extends Screen {
             }
         };
 
-        renderDReset = new IconButtonWidget(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "bri"), 2) {
+        renderDReset = new Button(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bri"), 2) {
             @Override
             public void onPress() {
-                PlatformlessInitializer.config.defaultDistance = 64;
-                PlatformlessInitializer.config.save();
-                PlatformlessInitializer.config.reload();
+                Initializer.config.defaultDistance = 64;
+                Initializer.config.save();
+                Initializer.config.reload();
                 renderD.value = (64 - 24) / (double)(96 - 24);
                 renderD.setMessage(Component.nullToEmpty("64"));
             }
         };
 
-        qualityReset = new IconButtonWidget(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "bri"), 2) {
+        qualityReset = new Button(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bri"), 2) {
             @Override
             public void onPress() {
                 int targetIndex = fromQuality("720");
@@ -139,7 +138,7 @@ public class DisplayConfScreen extends Screen {
             }
         };
 
-        sync = new ToggleWidget(0, 0, 0, 0, Component.translatable(screen.isSync ? "dreamdisplays.button.enabled" : "dreamdisplays.button.disabled"), screen.isSync) {
+        sync = new Toggle(0, 0, 0, 0, Component.translatable(screen.isSync ? "dreamdisplays.button.enabled" : "dreamdisplays.button.disabled"), screen.isSync) {
             @Override
             protected void updateMessage() {
                 setMessage(Component.translatable(value ? "dreamdisplays.button.enabled" : "dreamdisplays.button.disabled"));
@@ -155,7 +154,7 @@ public class DisplayConfScreen extends Screen {
             }
         };
 
-        syncReset = new IconButtonWidget(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "bri"), 2) {
+        syncReset = new Button(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bri"), 2) {
             @Override
             public void onPress() {
                 if (screen.owner) {
@@ -167,25 +166,25 @@ public class DisplayConfScreen extends Screen {
 
         sync.active = screen.owner;
 
-        deleteButton = new IconButtonWidget(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "delete"), 2) {
+        deleteButton = new Button(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "delete"), 2) {
             @Override
             public void onPress() {
-                PlatformlessInitializer.sendPacket(new DeletePacket(screen.getID()));
+                Initializer.sendPacket(new Delete(screen.getID()));
                 onClose();
             }
         };
 
         deleteButton.active = screen.owner;
 
-        reportButton = new IconButtonWidget(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "report"), 2) {
+        reportButton = new Button(0, 0, 0, 0, 64, 64, Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "report"), 2) {
             @Override
             public void onPress() {
-                PlatformlessInitializer.sendPacket(new ReportPacket(screen.getID()));
+                Initializer.sendPacket(new Report(screen.getID()));
                 onClose();
             }
         };
 
-        WidgetSprites textures = new WidgetSprites(Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "widgets/red_button"), Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "widgets/red_button_disabled"), Identifier.fromNamespaceAndPath(PlatformlessInitializer.MOD_ID, "widgets/red_button_highlighted"));
+        WidgetSprites textures = new WidgetSprites(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "widgets/red_button"), Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "widgets/red_button_disabled"), Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "widgets/red_button_highlighted"));
 
         deleteButton.setTextures(textures);
         reportButton.setTextures(textures);
@@ -479,7 +478,7 @@ public class DisplayConfScreen extends Screen {
     }
 
     // Places button and its reset button at specified coordinates
-    private void placeButton(int vCH, int maxSW, int cY, AbstractWidget renderD, IconButtonWidget renderDReset) {
+    private void placeButton(int vCH, int maxSW, int cY, AbstractWidget renderD, Button renderDReset) {
         renderD.setX(this.width / 2 + maxSW / 2 - 80 - vCH - 5);
         renderD.setY(cY);
         renderD.setHeight(vCH);
@@ -494,9 +493,9 @@ public class DisplayConfScreen extends Screen {
     // Renders display screen preview
     private void renderScreen(GuiGraphics graphics, int x, int y, int w, int h) {
         if (screen != null && screen.isVideoStarted() && screen.texture != null && screen.renderType != null) {
-            RenderUtil2D.drawTexturedQuad(graphics.pose(), screen.texture.getTextureView(), x, y, w, h, screen.renderType);
+            Render2D.drawTexturedQuad(graphics.pose(), screen.texture.getTextureView(), x, y, w, h, screen.renderType);
         } else if (screen != null && screen.hasPreviewTexture() && screen.getPreviewTexture() != null && screen.previewRenderType != null) {
-            RenderUtil2D.drawTexturedQuad(graphics.pose(), screen.getPreviewTexture().getTextureView(), x, y, w, h, screen.previewRenderType);
+            Render2D.drawTexturedQuad(graphics.pose(), screen.getPreviewTexture().getTextureView(), x, y, w, h, screen.previewRenderType);
         } else {
             graphics.fill(x, y, x + w, y + h, 0xFF000000);
         }
@@ -504,7 +503,7 @@ public class DisplayConfScreen extends Screen {
 
     // Opens the display configuration screen
     public static void open(com.dreamdisplays.screen.Screen screen) {
-        DisplayConfScreen displayConfScreen = new DisplayConfScreen();
+        Configuration displayConfScreen = new Configuration();
         displayConfScreen.setScreen(screen);
         Minecraft.getInstance().setScreen(displayConfScreen);
     }
