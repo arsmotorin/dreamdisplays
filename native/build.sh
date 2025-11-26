@@ -13,5 +13,5 @@ cmake ..
 make
 make install
 
-ls -lh ../../mod-common/src/main/resources/natives/ 2>/dev/null || echo "Files not found"
+ls -lh ../../common/src/main/resources/natives/ 2>/dev/null || echo "Files not found"
 echo "Next: ./gradlew :fabric:build"

@@ -8,7 +8,7 @@ plugins {
 }
 
 loom {
-    accessWidenerPath.set(project(":mod-common").file("src/main/resources/dreamdisplays.accesswidener"))
+    accessWidenerPath.set(project(":common").file("src/main/resources/dreamdisplays.accesswidener"))
 }
 
 dependencies {
@@ -21,7 +21,7 @@ dependencies {
     modImplementation(libs.fabricApi)
     modImplementation(libs.fabricLanguageKotlin)
     include(libs.fabricLanguageKotlin)
-    shadow(project(":mod-common"))
+    shadow(project(":common"))
 
     implementation(kotlin("stdlib-jdk8"))
 }
@@ -63,7 +63,7 @@ tasks.withType<RemapJarTask>().configureEach {
 tasks.shadowJar {
     configurations = listOf(project.configurations.getByName("shadow"))
     dependencies {
-        include(project(":mod-common"))
+        include(project(":common"))
 
         // Kotlin stdlib is provided by Fabric Language Kotlin mod, don't include it here
 

@@ -60,6 +60,6 @@ endif()
 
 # Install to resources
 install(TARGETS dreamdisplays_native
-    LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/../mod-common/src/main/resources/natives
-    RUNTIME DESTINATION ${CMAKE_SOURCE_DIR}/../mod-common/src/main/resources/natives
+    LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/../common/src/main/resources/natives
+    RUNTIME DESTINATION ${CMAKE_SOURCE_DIR}/../common/src/main/resources/natives
 )

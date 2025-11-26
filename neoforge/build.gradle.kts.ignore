@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-    shadow(project(":mod-common"))
+    shadow(project(":common"))
 }
 
 neoForge {
@@ -46,7 +46,7 @@ tasks.shadowJar {
     archiveClassifier = ""
     destinationDirectory.set(rootProject.layout.buildDirectory.dir("libs"))
     dependencies {
-        include(project(":mod-common"))
+        include(project(":common"))
         include(dependency("org.freedesktop.gstreamer:gst1-java-core"))
         include(dependency("com.github.felipeucelli:javatube"))
         include(dependency("org.json:json"))
