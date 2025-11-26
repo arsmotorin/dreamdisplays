@@ -19,6 +19,8 @@
     "invalidURL": "&7D |&f Your URL is invalid! Please use a valid YouTube link",
     "reportTooQuickly": "&7D |&f You are sending reports too quickly! Please wait before sending another report",
     "reportSent": "&7D |&f Report has been sent!",
+    "displayDeleted": "&7D |&f Display has been deleted!",
+    "reportNotConfigured": "&7D |&f If you have issues regarding this video, please contact the server administrator",
     "newVersion": "&7D |&f New version of Dream Displays (%s) is available! Please update your mod!",
     "newPluginVersion": "&7D |&f New version of Dream Displays plugin (%s) is available! Please update the server plugin!",
     "usageHeader": [

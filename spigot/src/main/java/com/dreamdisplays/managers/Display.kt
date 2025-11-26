@@ -85,7 +85,10 @@ object Display {
 
         Scheduler.runAsync {
             try {
-                if (Main.config.settings.webhookUrl.isEmpty()) return@runAsync
+                if (Main.config.settings.webhookUrl.isEmpty()) {
+                    Message.sendMessage(player, "reportNotConfigured")
+                    return@runAsync
+                }
                 Reporter.sendReport(
                     displayData.pos1,
                     displayData.url,

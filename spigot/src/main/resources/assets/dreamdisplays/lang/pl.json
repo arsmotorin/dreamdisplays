@@ -19,6 +19,8 @@
     "invalidURL": "&7D |&f Twój link jest nieprawidłowy! Proszę użyć prawidłowego linku YouTube",
     "reportTooQuickly": "&7D |&f Wysyłasz raporty zbyt szybko! Poczekaj przed wysłaniem innego raportu",
     "reportSent": "&7D |&f Raport wysłany!",
+    "displayDeleted": "&7D |&f Wyświetlacz został usunięty!",
+    "reportNotConfigured": "&7D |&f Jeżeli masz problemy dotyczące tego wideo, skontaktuj się z administratorem serwera.",
     "newVersion": "&7D |&f Nowa wersja Dream Displays (%s)! Proszę zaktualizować!",
     "newPluginVersion": "&7D |&f Nowa wersja pluginu Dream Displays (%s)! Proszę zaktualizować go na serwerze!",
     "usageHeader": [

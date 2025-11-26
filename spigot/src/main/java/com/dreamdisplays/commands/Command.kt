@@ -99,6 +99,7 @@ class Command : AbstractCommand(Main.getInstance().name, "display") {
             ?: return msg(player, "noDisplay")
 
         Display.delete(data)
+        msg(player, "displayDeleted")
     }
 
     private fun handleReload(sender: CommandSender) {

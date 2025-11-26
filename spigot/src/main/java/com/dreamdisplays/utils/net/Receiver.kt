@@ -11,6 +11,7 @@ import com.dreamdisplays.managers.Player.setPluginUpdateNotified
 import com.dreamdisplays.managers.Player.setVersion
 import com.dreamdisplays.managers.State.processSyncPacket
 import com.dreamdisplays.managers.State.sendSyncPacket
+import com.dreamdisplays.utils.Message
 import com.dreamdisplays.utils.Utils
 import com.github.zafarkhaja.semver.Version
 import me.inotsleep.utils.logging.LoggingManager
@@ -41,12 +42,8 @@ class Receiver(var plugin: Main?) : PluginMessageListener {
                     }
 
                     "delete" -> {
-                        run {
-                            delete(id, player)
-                        }
-                        run {
-                            report(id, player)
-                        }
+                        delete(id, player)
+                        Message.sendMessage(player, "displayDeleted")
                     }
 
                     "report" -> {
