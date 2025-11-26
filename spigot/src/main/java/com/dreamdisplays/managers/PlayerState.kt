@@ -2,17 +2,21 @@ package com.dreamdisplays.managers
 
 import com.dreamdisplays.datatypes.State
 import com.dreamdisplays.datatypes.Sync
-import com.dreamdisplays.managers.Display.getDisplayData
+import com.dreamdisplays.managers.DisplayManager.getDisplayData
 import com.dreamdisplays.utils.net.Utils
 import me.inotsleep.utils.logging.LoggingManager
 import org.bukkit.entity.Player
 import org.jspecify.annotations.NullMarked
 import java.util.*
 
+/**
+ * Manager for player states related to display synchronization.
+ */
 @NullMarked
-object State {
+object PlayerState {
     private val playStates: MutableMap<UUID?, State> = HashMap<UUID?, State>()
 
+    // Process synchronization packet from player
     @JvmStatic
     fun processSyncPacket(packet: Sync, player: Player) {
         val data = getDisplayData(packet.id)
@@ -23,6 +27,7 @@ object State {
             return
         }
 
+        // Validate ownership before processing
         if (data == null) return
 
         if ((data.ownerId.toString() + "") != player.uniqueId.toString() + "") {
@@ -38,6 +43,7 @@ object State {
         Utils.sendSyncPacket(receivers.filter { it.uniqueId != player.uniqueId }.toMutableList(), packet)
     }
 
+    // Send synchronization packet to a specific player
     @JvmStatic
     fun sendSyncPacket(id: UUID?, player: Player?) {
         val state = playStates[id] ?: return

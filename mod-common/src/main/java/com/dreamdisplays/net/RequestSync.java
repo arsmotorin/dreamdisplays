@@ -14,15 +14,15 @@ import java.util.UUID;
 @NullMarked
 public record RequestSync(UUID id) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<RequestSync> PACKET_ID =
-        new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "req_sync"));
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "req_sync"));
 
     public static final StreamCodec<FriendlyByteBuf, RequestSync> PACKET_CODEC =
-        StreamCodec.of(
-            (buf, packet) -> UUIDUtil.STREAM_CODEC.encode(buf, packet.id()),
-            (buf) -> {
-                UUID id = UUIDUtil.STREAM_CODEC.decode(buf);
-                return new RequestSync(id);
-            });
+            StreamCodec.of(
+                    (buf, packet) -> UUIDUtil.STREAM_CODEC.encode(buf, packet.id()),
+                    (buf) -> {
+                        UUID id = UUIDUtil.STREAM_CODEC.decode(buf);
+                        return new RequestSync(id);
+                    });
 
     @Override
     public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {

@@ -10,11 +10,15 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
+/**
+ * GitHub release fetcher.
+ */
 @NullMarked
 object Fetcher {
     private val gson = Gson()
     private val client: HttpClient = HttpClient.newHttpClient()
 
+    // Fetch releases from a GitHub repository
     @Throws(Exception::class)
     fun fetchReleases(owner: String, repo: String): List<Release> {
         val request = HttpRequest.newBuilder()
@@ -36,6 +40,7 @@ object Fetcher {
         ) ?: emptyList()
     }
 
+    // GitHub release
     data class Release(
         @field:SerializedName("tag_name") val tagName: String,
         @field:SerializedName("name") val name: String,

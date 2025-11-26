@@ -4,8 +4,11 @@ import org.bukkit.plugin.Plugin
 import org.bukkit.scheduler.BukkitRunnable
 import org.jspecify.annotations.NullMarked
 
+/**
+ * Bukkit implementation of the Adapter interface for scheduling tasks.
+ */
 @NullMarked
-object Bukkit : Adapter {
+object BukkitScheduler : Adapter {
     override fun runRepeatingAsync(
         plugin: Plugin,
         delayTicks: Long,

@@ -6,6 +6,9 @@ import org.bukkit.util.BoundingBox
 import org.jspecify.annotations.NullMarked
 import java.util.*
 
+/**
+ * Shows an outline box between two positions for a player using particles.
+ */
 @NullMarked
 object Outliner {
 

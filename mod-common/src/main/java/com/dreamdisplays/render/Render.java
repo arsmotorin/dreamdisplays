@@ -77,37 +77,37 @@ public final class Render {
         Matrix4f mat = matrices.last().pose();
 
         BufferBuilder buf = tess.begin(
-            VertexFormat.Mode.QUADS,
-            DefaultVertexFormat.BLOCK
+                VertexFormat.Mode.QUADS,
+                DefaultVertexFormat.BLOCK
         );
 
         buf
-            .addVertex(mat, 0f, 0f, 0f)
-            .setColor(255, 255, 255, 255)
-            .setUv(0f, 1f)
-            .setLight(0xF000F0)
-            .setNormal(0f, 0f, 1f);
+                .addVertex(mat, 0f, 0f, 0f)
+                .setColor(255, 255, 255, 255)
+                .setUv(0f, 1f)
+                .setLight(0xF000F0)
+                .setNormal(0f, 0f, 1f);
 
         buf
-            .addVertex(mat, 1f, 0f, 0f)
-            .setColor(255, 255, 255, 255)
-            .setUv(1f, 1f)
-            .setLight(0xF000F0)
-            .setNormal(0f, 0f, 1f);
+                .addVertex(mat, 1f, 0f, 0f)
+                .setColor(255, 255, 255, 255)
+                .setUv(1f, 1f)
+                .setLight(0xF000F0)
+                .setNormal(0f, 0f, 1f);
 
         buf
-            .addVertex(mat, 1f, 1f, 0f)
-            .setColor(255, 255, 255, 255)
-            .setUv(1f, 0f)
-            .setLight(0xF000F0)
-            .setNormal(0f, 0f, 1f);
+                .addVertex(mat, 1f, 1f, 0f)
+                .setColor(255, 255, 255, 255)
+                .setUv(1f, 0f)
+                .setLight(0xF000F0)
+                .setNormal(0f, 0f, 1f);
 
         buf
-            .addVertex(mat, 0f, 1f, 0f)
-            .setColor(255, 255, 255, 255)
-            .setUv(0f, 0f)
-            .setLight(0xF000F0)
-            .setNormal(0f, 0f, 1f);
+                .addVertex(mat, 0f, 1f, 0f)
+                .setColor(255, 255, 255, 255)
+                .setUv(0f, 0f)
+                .setLight(0xF000F0)
+                .setNormal(0f, 0f, 1f);
 
         MeshData built = buf.buildOrThrow();
         type.draw(built);
@@ -118,37 +118,37 @@ public final class Render {
         Matrix4f mat = matrices.last().pose();
 
         BufferBuilder buf = tess.begin(
-            VertexFormat.Mode.QUADS,
-            DefaultVertexFormat.BLOCK
+                VertexFormat.Mode.QUADS,
+                DefaultVertexFormat.BLOCK
         );
 
         buf
-            .addVertex(mat, 0f, 0f, 0f)
-            .setColor(r, g, b, 255)
-            .setUv(0f, 1f)
-            .setLight(0xF000F0)
-            .setNormal(0f, 0f, 1f);
+                .addVertex(mat, 0f, 0f, 0f)
+                .setColor(r, g, b, 255)
+                .setUv(0f, 1f)
+                .setLight(0xF000F0)
+                .setNormal(0f, 0f, 1f);
 
         buf
-            .addVertex(mat, 1f, 0f, 0f)
-            .setColor(r, g, b, 255)
-            .setUv(1f, 1f)
-            .setLight(0xF000F0)
-            .setNormal(0f, 0f, 1f);
+                .addVertex(mat, 1f, 0f, 0f)
+                .setColor(r, g, b, 255)
+                .setUv(1f, 1f)
+                .setLight(0xF000F0)
+                .setNormal(0f, 0f, 1f);
 
         buf
-            .addVertex(mat, 1f, 1f, 0f)
-            .setColor(r, g, b, 255)
-            .setUv(1f, 0f)
-            .setLight(0xF000F0)
-            .setNormal(0f, 0f, 1f);
+                .addVertex(mat, 1f, 1f, 0f)
+                .setColor(r, g, b, 255)
+                .setUv(1f, 0f)
+                .setLight(0xF000F0)
+                .setNormal(0f, 0f, 1f);
 
         buf
-            .addVertex(mat, 0f, 1f, 0f)
-            .setColor(r, g, b, 255)
-            .setUv(0f, 0f)
-            .setLight(0xF000F0)
-            .setNormal(0f, 0f, 1f);
+                .addVertex(mat, 0f, 1f, 0f)
+                .setColor(r, g, b, 255)
+                .setUv(0f, 0f)
+                .setLight(0xF000F0)
+                .setNormal(0f, 0f, 1f);
 
         MeshData built = buf.buildOrThrow();
         type.draw(built);

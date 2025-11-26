@@ -11,62 +11,62 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
+/**
+ * Configuration manager for the Dream Displays plugin.
+ */
 @NullMarked
 class Config(private val plugin: Main) {
-    private val configFile = File(plugin.dataFolder, "config.toml")
+
+    private val folder = plugin.dataFolder
+    private val configFile = File(folder, "config.toml")
     private var toml = Toml()
 
-    lateinit var language: LanguageSection
-        private set
-    lateinit var settings: SettingsSection
-        private set
-    lateinit var storage: StorageSection
-        private set
-    lateinit var permissions: PermissionsSection
-        private set
+    lateinit var language: LanguageSection; private set
+    lateinit var settings: SettingsSection; private set
+    lateinit var storage: StorageSection; private set
+    lateinit var permissions: PermissionsSection; private set
+
     val messages = mutableMapOf<String, Any>()
 
     init {
         createDefaultConfig()
-        extractLangFiles(true)
-        load()
+        extractLangFiles(overwrite = true)
+        reload()
+    }
+
+    fun reload() {
+        loadToml()
+        parseSections()
+        extractLangFiles(overwrite = false)
         loadMessages()
     }
 
     private fun createDefaultConfig() {
         if (!configFile.exists()) {
-            plugin.dataFolder.mkdirs()
+            folder.mkdirs()
             plugin.getResource("config.toml")?.use {
                 Files.copy(it, configFile.toPath())
             } ?: plugin.logger.severe("Could not create default config.toml")
         }
     }
 
-    // Load configuration
-    private fun load() {
-        toml = try {
-            Toml().read(configFile)
-        } catch (e: Exception) {
-            LoggingManager.error("Failed to parse config.toml", e)
-            Toml()
-        }
+    private fun loadToml() {
+        toml = runCatching { Toml().read(configFile) }
+            .getOrElse {
+                LoggingManager.error("Failed to parse config.toml", it)
+                Toml()
+            }
+    }
 
+    private fun parseSections() {
         language = toml.to(LanguageSection::class.java) ?: LanguageSection()
         settings = toml.to(SettingsSection::class.java)?.apply { initMaterials() } ?: SettingsSection()
         storage = toml.to(StorageSection::class.java) ?: StorageSection()
         permissions = toml.to(PermissionsSection::class.java) ?: PermissionsSection()
     }
 
-    // Reload configuration
-    fun reload() {
-        load()
-        extractLangFiles(false)
-        loadMessages()
-    }
-
-    // Extract language files
     private fun extractLangFiles(overwrite: Boolean) {
-        val langFolder = File(plugin.dataFolder, "lang")
+        val langFolder = File(folder, "lang")
         if (!langFolder.exists() && !langFolder.mkdirs()) {
             plugin.logger.warning("Could not create lang folder")
             return
@@ -74,11 +74,10 @@ class Config(private val plugin: Main) {
 
         LANGUAGE_FILES.forEach { fileName ->
             runCatching {
-                plugin.getResource("assets/dreamdisplays/lang/$fileName")?.use { input ->
-                    val target = File(langFolder, fileName)
-                    if (overwrite || !target.exists()) {
-                        Files.copy(input, target.toPath(), StandardCopyOption.REPLACE_EXISTING)
-                    }
+                val input = plugin.getResource("assets/dreamdisplays/lang/$fileName") ?: return@runCatching
+                val target = File(langFolder, fileName)
+                if (overwrite || !target.exists()) {
+                    Files.copy(input, target.toPath(), StandardCopyOption.REPLACE_EXISTING)
                 }
             }.onFailure {
                 plugin.logger.warning("Could not extract $fileName: ${it.message}")
@@ -86,35 +85,28 @@ class Config(private val plugin: Main) {
         }
     }
 
-    // Load messages from language file
     private fun loadMessages() {
-        val langFile = File(plugin.dataFolder, "lang/${language.messageLanguage}.json").takeIf { it.exists() }
-            ?: File(plugin.dataFolder, "lang/en.json").also {
-                LoggingManager.warn("Language file not found, using en.json")
+        val lang = language.messageLanguage
+        val langFile = File(folder, "lang/$lang.json")
+            .takeIf { it.exists() }
+            ?: File(folder, "lang/en.json").also {
+                LoggingManager.warn("Language '$lang' not found, using 'en'")
             }
 
-        if (!langFile.exists()) {
-            LoggingManager.error("Could not load any language file")
-            return
-        }
-
         runCatching {
-            val msgs = GSON.fromJson<Map<String, Any>>(
-                langFile.readText(),
-                object : TypeToken<Map<String, Any>>() {}.type
-            )
+            val type = object : TypeToken<Map<String, Any>>() {}.type
+            val map = GSON.fromJson<Map<String, Any>>(langFile.readText(), type)
+
             messages.clear()
-            messages.putAll(msgs)
-            LoggingManager.log("Loaded ${msgs.size} messages for: ${language.messageLanguage}")
+            messages.putAll(map)
+
+            LoggingManager.log("Loaded ${map.size} messages ($lang)")
         }.onFailure {
-            LoggingManager.error("Error loading language file: ${language.messageLanguage}", it)
+            LoggingManager.error("Error loading language file: $lang", it)
         }
     }
 
-    // Configuration sections
-    data class LanguageSection(
-        val message_language: String = "en"
-    ) {
+    data class LanguageSection(val message_language: String = "en") {
         val messageLanguage get() = message_language
     }
 
@@ -125,40 +117,15 @@ class Config(private val plugin: Main) {
         val particles: Boolean = true,
         val particles_color: String = "#00FFFF"
     ) {
-        // Reports
-        val webhookUrl get() = reports.webhook_url
-        val reportCooldown get() = reports.cooldown * 1000
-
-        // Updates
-        val repoName get() = updates.repo_name
-        val repoOwner get() = updates.repo_owner
-        val updatesEnabled get() = updates.enabled
-
-        // Materials
         lateinit var selectionMaterial: Material
         lateinit var baseMaterial: Material
-
-        // Particles
-        val particlesEnabled get() = particles
-        val particleRenderDelay = 2
-
-        // Display
-        val minWidth get() = display.min_width
-        val minHeight get() = display.min_height
-        val maxWidth get() = display.max_width
-        val maxHeight get() = display.max_height
-        val maxRenderDistance get() = display.max_render_distance
 
         internal fun initMaterials() {
             selectionMaterial = Material.matchMaterial(display.selection_material) ?: Material.DIAMOND_AXE
             baseMaterial = Material.matchMaterial(display.base_material) ?: Material.BLACK_CONCRETE
         }
 
-        data class ReportsConfig(
-            val webhook_url: String = "",
-            val cooldown: Int = 15
-        )
-
+        data class ReportsConfig(val webhook_url: String = "", val cooldown: Int = 15)
         data class UpdatesConfig(
             val enabled: Boolean = true,
             val repo_name: String = "dreamdisplays",
@@ -176,18 +143,15 @@ class Config(private val plugin: Main) {
         )
     }
 
-    // Storage configuration
-    data class StorageSection(
-        val storage: StorageConfig = StorageConfig()
-    ) : StorageSettings() {
+    data class StorageSection(val storage: StorageConfig = StorageConfig()) : StorageSettings() {
         init {
-            this.host = storage.host
-            this.port = storage.port
-            this.database = storage.database
-            this.password = storage.password
-            this.username = storage.username
-            this.options = "autoReconnect=true&useSSL=false;"
-            this.tablePrefix = storage.table_prefix
+            host = storage.host
+            port = storage.port
+            database = storage.database
+            password = storage.password
+            username = storage.username
+            tablePrefix = storage.table_prefix
+            options = "autoReconnect=true&useSSL=false;"
         }
 
         data class StorageConfig(
@@ -201,10 +165,7 @@ class Config(private val plugin: Main) {
         )
     }
 
-    // Permissions configuration
-    data class PermissionsSection(
-        val permissions: PermissionsConfig = PermissionsConfig()
-    ) {
+    data class PermissionsSection(val permissions: PermissionsConfig = PermissionsConfig()) {
         val premium get() = permissions.premium
         val delete get() = permissions.delete
         val list get() = permissions.list

@@ -2,15 +2,15 @@ package com.dreamdisplays.utils.net
 
 import com.dreamdisplays.Main
 import com.dreamdisplays.datatypes.Sync
-import com.dreamdisplays.managers.Display.delete
-import com.dreamdisplays.managers.Display.report
-import com.dreamdisplays.managers.Player.hasBeenNotifiedAboutModUpdate
-import com.dreamdisplays.managers.Player.hasBeenNotifiedAboutPluginUpdate
-import com.dreamdisplays.managers.Player.setModUpdateNotified
-import com.dreamdisplays.managers.Player.setPluginUpdateNotified
-import com.dreamdisplays.managers.Player.setVersion
-import com.dreamdisplays.managers.State.processSyncPacket
-import com.dreamdisplays.managers.State.sendSyncPacket
+import com.dreamdisplays.managers.DisplayManager.delete
+import com.dreamdisplays.managers.DisplayManager.report
+import com.dreamdisplays.managers.PlayerManager.hasBeenNotifiedAboutModUpdate
+import com.dreamdisplays.managers.PlayerManager.hasBeenNotifiedAboutPluginUpdate
+import com.dreamdisplays.managers.PlayerManager.setModUpdateNotified
+import com.dreamdisplays.managers.PlayerManager.setPluginUpdateNotified
+import com.dreamdisplays.managers.PlayerManager.setVersion
+import com.dreamdisplays.managers.PlayerState.processSyncPacket
+import com.dreamdisplays.managers.PlayerState.sendSyncPacket
 import com.dreamdisplays.utils.Message
 import com.dreamdisplays.utils.Utils
 import com.github.zafarkhaja.semver.Version
@@ -25,8 +25,12 @@ import java.io.IOException
 import java.util.*
 import com.dreamdisplays.utils.net.Utils as Net
 
+/**
+ * Listener for plugin messages.
+ */
 @NullMarked
 class Receiver(var plugin: Main?) : PluginMessageListener {
+    // TODO: refactor this
     override fun onPluginMessageReceived(channel: String, player: Player, message: ByteArray) {
         when (channel) {
             "dreamdisplays:sync" -> {
@@ -99,7 +103,7 @@ class Receiver(var plugin: Main?) : PluginMessageListener {
             }
 
             // Check for plugin updates and notify admins only
-            if (Main.config.settings.updatesEnabled &&
+            if (Main.config.settings.updates.enabled &&
                 player.hasPermission(Main.config.permissions.updates) && !hasBeenNotifiedAboutPluginUpdate(
                     player
                 )

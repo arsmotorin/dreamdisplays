@@ -24,19 +24,19 @@ public class DreamDisplaysMod implements ClientModInitializer, Mod {
         Initializer.onModInit(this);
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> dispatcher.register(
-            LiteralArgumentBuilder.<FabricClientCommandSource>literal("displays")
-                .then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("off")
-                    .executes((context) -> {
-                        Initializer.displaysEnabled = false;
-                        return 1;
-                    })
-                )
-                .then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("on")
-                    .executes((context) -> {
-                        Initializer.displaysEnabled = true;
-                        return 1;
-                    })
-                )
+                LiteralArgumentBuilder.<FabricClientCommandSource>literal("displays")
+                        .then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("off")
+                                .executes((context) -> {
+                                    Initializer.displaysEnabled = false;
+                                    return 1;
+                                })
+                        )
+                        .then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("on")
+                                .executes((context) -> {
+                                    Initializer.displaysEnabled = true;
+                                    return 1;
+                                })
+                        )
         ));
 
         PayloadTypeRegistry.playS2C().register(Info.PACKET_ID, Info.PACKET_CODEC);

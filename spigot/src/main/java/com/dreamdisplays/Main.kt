@@ -3,7 +3,7 @@ package com.dreamdisplays
 import com.dreamdisplays.commands.Command
 import com.dreamdisplays.listeners.Player
 import com.dreamdisplays.listeners.Selection
-import com.dreamdisplays.managers.Display
+import com.dreamdisplays.managers.DisplayManager
 import com.dreamdisplays.scheduler.Provider
 import com.dreamdisplays.storage.Storage
 import com.dreamdisplays.utils.Updater
@@ -13,6 +13,9 @@ import org.bstats.bukkit.Metrics
 import org.bukkit.Bukkit
 import org.jspecify.annotations.NullMarked
 
+/**
+ * Main plugin class for plugin launch and management.
+ */
 @NullMarked
 class Main : AbstractPlugin<Main>() {
 
@@ -38,10 +41,10 @@ class Main : AbstractPlugin<Main>() {
         // Updating displays
         Provider.adapter.runRepeatingAsync(
             this, 50L, 1000L
-        ) { Display.updateAllDisplays() }
+        ) { DisplayManager.updateAllDisplays() }
 
         // GitHub update checks
-        if (Companion.config.settings.updatesEnabled) {
+        if (Companion.config.settings.updates.enabled) {
             Provider.adapter.runRepeatingAsync(
                 this, 20L, 20L * 3600L
             ) { Updater.checkForUpdates() }

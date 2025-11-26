@@ -6,18 +6,22 @@ import me.inotsleep.utils.logging.LoggingManager
 import org.jspecify.annotations.NullMarked
 import java.util.regex.Pattern
 
+/**
+ * Checks for updates from GitHub releases.
+ */
 @NullMarked
 object Updater {
 
     private val tailPattern = Pattern.compile("\\d[\\s\\S]*")
 
+    // Check for updates
     fun checkForUpdates() {
         try {
             val settings = Main.config.settings
 
             val releases = Fetcher.fetchReleases(
-                settings.repoOwner,
-                settings.repoName
+                settings.updates.repo_owner,
+                settings.updates.repo_name
             )
 
             if (releases.isEmpty()) return
@@ -41,11 +45,13 @@ object Updater {
         }
     }
 
+    // Version parsing
     private fun parseVersion(tag: String): Version? {
         val extracted = extractTail(tag).takeIf { it.isNotBlank() } ?: return null
         return runCatching { Version.parse(extracted) }.getOrNull()
     }
 
+    // Extract version tail
     private fun extractTail(input: String): String {
         val matcher = tailPattern.matcher(input)
         return if (matcher.find()) matcher.group() else ""

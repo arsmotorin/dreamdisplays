@@ -1,45 +1,45 @@
 {
-    "schemaVersion": 1,
-    "id": "dreamdisplays",
-    "name": "Dream Displays",
-    "version": "${version}",
-    "license": "LGPL-3.0",
-    "description": "Create in-game screens to stream videos on any Minecraft server.",
-    "authors": [
-        "arsmotorin, INotSleep, Toffikk"
-    ],
-    "entrypoints": {
-        "client": [
-            "com.dreamdisplays.DreamDisplaysMod"
-        ]
+  "schemaVersion": 1,
+  "id": "dreamdisplays",
+  "name": "Dream Displays",
+  "version": "${version}",
+  "license": "LGPL-3.0",
+  "description": "Create in-game screens to stream videos on any Minecraft server.",
+  "authors": [
+    "arsmotorin, INotSleep, Toffikk"
+  ],
+  "entrypoints": {
+    "client": [
+      "com.dreamdisplays.DreamDisplaysMod"
+    ]
+  },
+  "mixins": [
+    "dreamdisplays.mixins.json"
+  ],
+  "accessWidener": "dreamdisplays.accesswidener",
+  "depends": {
+    "fabricloader": ">=0.17",
+    "fabric": "*",
+    "fabric-language-kotlin": ">=1.13.0",
+    "minecraft": "1.21.11-beta.2",
+    "java": ">=21"
+  },
+  "custom": {
+    "modmenu": {
+      "badges": [
+        "library"
+      ]
     },
-    "mixins": [
-        "dreamdisplays.mixins.json"
-    ],
-    "accessWidener": "dreamdisplays.accesswidener",
-    "depends": {
-        "fabricloader": ">=0.17",
-        "fabric": "*",
-        "fabric-language-kotlin": ">=1.13.0",
-        "minecraft": "1.21.11-beta.2",
-        "java": ">=21"
-    },
-    "custom": {
-        "modmenu": {
-            "badges": [
-                "library"
-            ]
-        },
-        "quilt_loader": {
-            "id": "dreamdisplays",
-            "group": "dreamdisplays",
-            "provides": [
-                {
-                    "id": "dreamdisplays",
-                    "version": "${version}"
-                }
-            ]
+    "quilt_loader": {
+      "id": "dreamdisplays",
+      "group": "dreamdisplays",
+      "provides": [
+        {
+          "id": "dreamdisplays",
+          "version": "${version}"
         }
-    },
-    "icon": "assets/dreamdisplays/icon.png"
+      ]
+    }
+  },
+  "icon": "assets/dreamdisplays/icon.png"
 }

@@ -14,8 +14,12 @@ import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.util.*
 
+/**
+ * Set of utility functions for sending and receiving network packets.
+ */
 @NullMarked
 object Utils {
+    // Send display information packet to players
     fun sendDisplayInfoPacket(
         players: MutableList<Player?>,
         id: UUID,
@@ -61,6 +65,7 @@ object Utils {
         }
     }
 
+    // Send synchronization packet to players
     fun sendSyncPacket(players: MutableList<Player?>, packet: Sync) {
         val id = packet.id ?: return
 
@@ -87,6 +92,7 @@ object Utils {
         }
     }
 
+    // Send delete packet to players
     fun sendDeletePacket(players: MutableList<Player?>, id: UUID) {
         try {
             val byteStream = ByteArrayOutputStream()
@@ -105,6 +111,7 @@ object Utils {
         }
     }
 
+    // Send premium status packet to a player
     fun sendPremiumPacket(player: Player, premium: Boolean) {
         try {
             val byteStream = ByteArrayOutputStream()
@@ -120,6 +127,7 @@ object Utils {
         }
     }
 
+    // Write a variable-length integer to the output stream
     @Throws(IOException::class)
     fun writeVarInt(out: DataOutputStream, value: Int) {
         var value = value
@@ -130,6 +138,7 @@ object Utils {
         out.writeByte(value and 0x7F)
     }
 
+    // Write a UTF-8 string to the output stream
     @Throws(IOException::class)
     fun writeString(out: DataOutputStream, str: String) {
         val utf8 = str.toByteArray(StandardCharsets.UTF_8)
@@ -137,6 +146,7 @@ object Utils {
         out.write(utf8)
     }
 
+    // Convert BlockFace to packet byte representation
     fun toFacingPacketByte(face: BlockFace): Byte {
         return when (face) {
             BlockFace.NORTH -> 0
@@ -147,6 +157,7 @@ object Utils {
         }
     }
 
+    // Read a variable-length long from the input stream
     @Throws(IOException::class)
     fun readVarLong(buf: DataInputStream): Long {
         var value = 0L
@@ -163,6 +174,7 @@ object Utils {
         return value
     }
 
+    // Write a variable-length long to the output stream
     @Throws(IOException::class)
     fun writeVarLong(buf: DataOutputStream, value: Long) {
         var value = value
@@ -177,11 +189,13 @@ object Utils {
         }
     }
 
+    // Read a UUID from the input stream
     @Throws(IOException::class)
     fun readUUID(`in`: DataInputStream): UUID {
         return UUID(`in`.readLong(), `in`.readLong())
     }
 
+    // Read a variable-length integer from the input stream
     @Throws(IOException::class)
     fun readVarInt(`in`: DataInputStream): Int {
         var numRead = 0

@@ -16,27 +16,27 @@ import java.util.UUID;
 public record Sync(UUID id, boolean isSync, boolean currentState, long currentTime,
                    long limitTime) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<Sync> PACKET_ID =
-        new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "sync"));
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "sync"));
 
     public static final StreamCodec<FriendlyByteBuf, Sync> PACKET_CODEC =
-        StreamCodec.of(
-            (buf, packet) -> {
-                UUIDUtil.STREAM_CODEC.encode(buf, packet.id());
-                ByteBufCodecs.BOOL.encode(buf, packet.isSync());
-                ByteBufCodecs.BOOL.encode(buf, packet.currentState());
-                ByteBufCodecs.VAR_LONG.encode(buf, packet.currentTime());
-                ByteBufCodecs.VAR_LONG.encode(buf, packet.limitTime());
-            },
-            (buf) -> {
-                UUID id = UUIDUtil.STREAM_CODEC.decode(buf);
+            StreamCodec.of(
+                    (buf, packet) -> {
+                        UUIDUtil.STREAM_CODEC.encode(buf, packet.id());
+                        ByteBufCodecs.BOOL.encode(buf, packet.isSync());
+                        ByteBufCodecs.BOOL.encode(buf, packet.currentState());
+                        ByteBufCodecs.VAR_LONG.encode(buf, packet.currentTime());
+                        ByteBufCodecs.VAR_LONG.encode(buf, packet.limitTime());
+                    },
+                    (buf) -> {
+                        UUID id = UUIDUtil.STREAM_CODEC.decode(buf);
 
-                boolean isSync = ByteBufCodecs.BOOL.decode(buf);
-                boolean currentState = ByteBufCodecs.BOOL.decode(buf);
-                long currentTime = ByteBufCodecs.VAR_LONG.decode(buf);
-                long limitTime = ByteBufCodecs.VAR_LONG.decode(buf);
+                        boolean isSync = ByteBufCodecs.BOOL.decode(buf);
+                        boolean currentState = ByteBufCodecs.BOOL.decode(buf);
+                        long currentTime = ByteBufCodecs.VAR_LONG.decode(buf);
+                        long limitTime = ByteBufCodecs.VAR_LONG.decode(buf);
 
-                return new Sync(id, isSync, currentState, currentTime, limitTime);
-            });
+                        return new Sync(id, isSync, currentState, currentTime, limitTime);
+                    });
 
     @Override
     public Type<? extends CustomPacketPayload> type() {

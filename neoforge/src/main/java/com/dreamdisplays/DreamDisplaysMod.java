@@ -36,18 +36,18 @@ public class DreamDisplaysMod {
     public void registerPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(MOD_ID).optional().versioned("1");
         registrar.playBidirectional(DeletePacket.PACKET_ID, DeletePacket.PACKET_CODEC,
-            (serverPayload, ctx) -> {
-            },
-            (clientPayload, ctx) -> PlatformlessInitializer.onDeletePacket(clientPayload)
+                (serverPayload, ctx) -> {
+                },
+                (clientPayload, ctx) -> PlatformlessInitializer.onDeletePacket(clientPayload)
         );
         registrar.playToClient(DisplayInfoPacket.PACKET_ID, DisplayInfoPacket.PACKET_CODEC,
-            (payload, ctx) -> PlatformlessInitializer.onDisplayInfoPacket(payload));
+                (payload, ctx) -> PlatformlessInitializer.onDisplayInfoPacket(payload));
 
         registrar.playToClient(SyncPacket.PACKET_ID, SyncPacket.PACKET_CODEC,
-            (payload, ctx) -> PlatformlessInitializer.onSyncPacket(payload));
+                (payload, ctx) -> PlatformlessInitializer.onSyncPacket(payload));
 
         registrar.playToClient(PremiumPacket.PACKET_ID, PremiumPacket.PACKET_CODEC,
-            (payload, ctx) -> PlatformlessInitializer.onPremiumPacket(payload));
+                (payload, ctx) -> PlatformlessInitializer.onPremiumPacket(payload));
 
         registrar.playToServer(RequestSyncPacket.PACKET_ID, RequestSyncPacket.PACKET_CODEC, (p, c) -> {
         });
@@ -81,22 +81,22 @@ public class DreamDisplaysMod {
     @SubscribeEvent
     public void registerCommands(RegisterClientCommandsEvent event) {
         event.getDispatcher().register(
-            LiteralArgumentBuilder.<CommandSourceStack>literal("displays")
-                .then(LiteralArgumentBuilder.<CommandSourceStack>literal("off")
-                    .executes(ctx -> {
-                        PlatformlessInitializer.displaysEnabled = false;
-                        LocalPlayer p = Minecraft.getInstance().player;
-                        if (p != null)
-                            p.displayClientMessage(Component.literal("Displays disabled"), false);
-                        return 1;
-                    }))
-                .then(LiteralArgumentBuilder.<CommandSourceStack>literal("on")
-                    .executes(ctx -> {
-                        PlatformlessInitializer.displaysEnabled = true;
-                        LocalPlayer p = Minecraft.getInstance().player;
-                        if (p != null) p.displayClientMessage(Component.literal("Displays enabled"), false);
-                        return 1;
-                    }))
+                LiteralArgumentBuilder.<CommandSourceStack>literal("displays")
+                        .then(LiteralArgumentBuilder.<CommandSourceStack>literal("off")
+                                .executes(ctx -> {
+                                    PlatformlessInitializer.displaysEnabled = false;
+                                    LocalPlayer p = Minecraft.getInstance().player;
+                                    if (p != null)
+                                        p.displayClientMessage(Component.literal("Displays disabled"), false);
+                                    return 1;
+                                }))
+                        .then(LiteralArgumentBuilder.<CommandSourceStack>literal("on")
+                                .executes(ctx -> {
+                                    PlatformlessInitializer.displaysEnabled = true;
+                                    LocalPlayer p = Minecraft.getInstance().player;
+                                    if (p != null) p.displayClientMessage(Component.literal("Displays enabled"), false);
+                                    return 1;
+                                }))
         );
     }
 

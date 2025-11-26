@@ -2,9 +2,10 @@ package com.dreamdisplays.listeners
 
 import com.dreamdisplays.Main
 import com.dreamdisplays.datatypes.Selection
-import com.dreamdisplays.managers.Display
+import com.dreamdisplays.managers.DisplayManager
 import com.dreamdisplays.utils.Message
 import com.dreamdisplays.utils.Region
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.Block
 import org.bukkit.block.BlockFace
@@ -26,20 +27,29 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
+/**
+ * Listener for handling player selections of display areas
+ * and protecting those areas from modification.
+ */
 @NullMarked
 class Selection(plugin: Main) : Listener {
 
     init {
-        // Particles for Spigot/Paper servers
-        // Folia is not supported yet due to differences in scheduling
-        if (!Main.getIsFolia() && Main.config.settings.particlesEnabled) {
+        // Particles for Spigot/Paper servers (Folia unsupported)
+        val settings = Main.config.settings
+        if (!Main.getIsFolia() && settings.particles) {
             object : BukkitRunnable() {
                 override fun run() {
-                    selectionPoints.values.forEach { it.drawBox() }
-
-                    // Update display outlines for all players with active selections
+                    // Single pass: draw base outlines for selections and additionally
+                    // show the ready-outline for selections marked as ready.
                     selectionPoints.forEach { (playerId, selection) ->
-                        val player = org.bukkit.Bukkit.getPlayer(playerId) ?: return@forEach
+                        val player = Bukkit.getPlayer(playerId) ?: return@forEach
+
+                        // Draw selection box
+                        selection.drawBox()
+
+                        // If the selection is ready (complete and validated), show the
+                        // full 3D outline to the player (keeps previous behavior)
                         val pos1 = selection.pos1
                         val pos2 = selection.pos2
                         if (selection.isReady && pos1 != null && pos2 != null) {
@@ -47,7 +57,7 @@ class Selection(plugin: Main) : Listener {
                         }
                     }
                 }
-            }.runTaskTimer(plugin, 0L, Main.config.settings.particleRenderDelay.toLong())
+            }.runTaskTimer(plugin, 0L, Main.config.settings.particles_color.toLong())
         }
     }
 
@@ -57,9 +67,10 @@ class Selection(plugin: Main) : Listener {
         if (event.hand != EquipmentSlot.HAND) return
 
         val player = event.player
+        val settings = Main.config.settings
         val heldItem = player.inventory.itemInMainHand.type
 
-        // Clear selection if sneaking and right-clicking
+        // Sneak + right-click clears selection
         if (player.isSneaking && event.action.isRightClick) {
             if (selectionPoints.remove(player.uniqueId) != null) {
                 com.dreamdisplays.utils.Outliner.hideOutline(player)
@@ -68,80 +79,81 @@ class Selection(plugin: Main) : Listener {
             return
         }
 
-        // Only proceed if holding the selection material
-        if (heldItem != Main.config.settings.selectionMaterial) return
+        // Only act when holding the selection tool and clicking base material
+        if (heldItem != settings.selectionMaterial) return
         val clickedBlock = event.clickedBlock ?: return
-        if (clickedBlock.type != Main.config.settings.baseMaterial) return
+        if (clickedBlock.type != settings.baseMaterial) return
 
+        // Prevent normal interaction (place/break)
         event.isCancelled = true
 
         val location = clickedBlock.location
         var blockFace = event.blockFace
 
-        // Adjust for vertical faces
+        // Adjust vertical faces to player's facing
         if (blockFace == BlockFace.UP || blockFace == BlockFace.DOWN) {
             blockFace = player.facing.oppositeFace
         }
 
-        if (event.action == Action.LEFT_CLICK_BLOCK) {
-            // Get or create selection
-            val selection = selectionPoints.getOrPut(player.uniqueId) { Selection(player) }
+        when (event.action) {
+            Action.LEFT_CLICK_BLOCK -> handleLeftClick(player, location, blockFace)
+            Action.RIGHT_CLICK_BLOCK -> handleRightClick(player, location)
+            else -> return
+        }
+    }
 
-            // Reset if world changed
-            if (selection.pos1?.world != location.world || selection.pos2?.world != location.world) {
-                selection.pos1 = null
-                selection.pos2 = null
-            }
+    private fun handleLeftClick(player: Player, location: Location, face: BlockFace) {
+        // Get or create selection for player
+        val selection = selectionPoints.getOrPut(player.uniqueId) { Selection(player) }
+        // Reset if world changed
+        if (selection.pos1?.world != location.world || selection.pos2?.world != location.world) {
+            selection.pos1 = null
+            selection.pos2 = null
+        }
 
-            selection.pos1 = location.clone()
-            selection.setFace(blockFace)
-            selection.isReady = false
+        selection.pos1 = location.clone()
+        selection.setFace(face)
+        selection.isReady = false
 
-            Message.sendMessage(player, "firstPointSelected")
+        Message.sendMessage(player, "firstPointSelected")
 
-            // Validate if pos2 already exists
-            if (selection.pos2 != null) {
-                val code = isValidDisplay(selection)
-                if (code == VALID_DISPLAY) {
-                    selection.isReady = true
-                    Message.sendMessage(player, "createDisplayCommand")
-                } else {
-                    sendErrorMessage(player, code)
-                }
-            }
-        } else if (event.action == Action.RIGHT_CLICK_BLOCK) {
-            // Check if pos1 exists BEFORE getting/creating selection
-            val existingSelection = selectionPoints[player.uniqueId]
-            if (existingSelection == null || existingSelection.pos1 == null) {
-                Message.sendMessage(player, "noDisplayTerritories")
-                return
-            }
-
-            // Now we can safely update pos2
-            val selection = existingSelection
-
-            // Reset if world changed
-            if (selection.pos1?.world != location.world) {
-                selection.pos1 = null
-                selection.pos2 = null
-                Message.sendMessage(player, "noDisplayTerritories")
-                return
-            }
-
-            selection.pos2 = location.clone()
-            selection.isReady = false
-
-            Message.sendMessage(player, "secondPointSelected")
-
-            // Validate the full selection
+        // If second point already present, validate spot
+        val pos2 = selection.pos2
+        if (pos2 != null) {
             val code = isValidDisplay(selection)
             if (code == VALID_DISPLAY) {
                 selection.isReady = true
                 Message.sendMessage(player, "createDisplayCommand")
-            } else {
-                sendErrorMessage(player, code)
-            }
+            } else sendErrorMessage(player, code)
         }
+    }
+
+    private fun handleRightClick(player: Player, location: Location) {
+        // Ensure player has started selection
+        val existingSelection = selectionPoints[player.uniqueId]
+        if (existingSelection == null || existingSelection.pos1 == null) {
+            Message.sendMessage(player, "noDisplayTerritories")
+            return
+        }
+
+        // Reset if world changed
+        if (existingSelection.pos1?.world != location.world) {
+            existingSelection.pos1 = null
+            existingSelection.pos2 = null
+            Message.sendMessage(player, "noDisplayTerritories")
+            return
+        }
+
+        existingSelection.pos2 = location.clone()
+        existingSelection.isReady = false
+
+        Message.sendMessage(player, "secondPointSelected")
+
+        val code = isValidDisplay(existingSelection)
+        if (code == VALID_DISPLAY) {
+            existingSelection.isReady = true
+            Message.sendMessage(player, "createDisplayCommand")
+        } else sendErrorMessage(player, code)
     }
 
     // Block break protection for base material
@@ -156,10 +168,7 @@ class Selection(plugin: Main) : Listener {
     @EventHandler
     fun onExplosion(event: EntityExplodeEvent) {
         val baseMaterial = Main.config.settings.baseMaterial
-        val toRemove = event.blockList().filter { block ->
-            block.type == baseMaterial && isLocationProtected(block.location)
-        }
-        event.blockList().removeAll(toRemove.toSet())
+        event.blockList().removeIf { block -> block.type == baseMaterial && isLocationProtected(block.location) }
     }
 
     // Piston movement protection for base material
@@ -173,33 +182,27 @@ class Selection(plugin: Main) : Listener {
         if (event.isCancelled) return
 
         val baseMaterial = Main.config.settings.baseMaterial
-        for (block in blocks) {
-            if (block.type == baseMaterial && isLocationProtected(block.location)) {
-                event.isCancelled = true
-                break
-            }
+        if (blocks.any { it.type == baseMaterial && isLocationProtected(it.location) }) {
+            event.isCancelled = true
         }
     }
 
-
     // Check if a location is protected by existing displays or selections
     private fun isLocationProtected(loc: Location): Boolean {
-        if (Display.isContains(loc) != null) return true
+        if (DisplayManager.isContains(loc) != null) return true
 
-        return selectionPoints.values
-            .filter { it.isReady }
-            .any { selection ->
-                val pos1 = selection.pos1
-                val pos2 = selection.pos2
-                pos1 != null && pos2 != null && Region.isInBoundaries(pos1, pos2, loc)
-            }
+        return selectionPoints.values.any { sel ->
+            if (!sel.isReady) return@any false
+            val p1 = sel.pos1 ?: return@any false
+            val p2 = sel.pos2 ?: return@any false
+            Region.isInBoundaries(p1, p2, loc)
+        }
     }
 
     // Cancel event if location is protected
     private fun cancelIfProtected(loc: Location, event: Cancellable) {
         if (isLocationProtected(loc)) event.isCancelled = true
     }
-
 
     private val Action.isRightClick get() = this == Action.RIGHT_CLICK_AIR || this == Action.RIGHT_CLICK_BLOCK
 
@@ -242,8 +245,8 @@ class Selection(plugin: Main) : Listener {
             val width = maxOf(deltaX, deltaZ)
             val height = maxY - minY + 1
 
-            if (height < Main.config.settings.minHeight || width < Main.config.settings.minWidth) return 3
-            if (height > Main.config.settings.maxHeight || width > Main.config.settings.maxWidth) return 4
+            if (height < Main.config.settings.display.min_height || width < Main.config.settings.display.min_width) return 3
+            if (height > Main.config.settings.display.max_height || width > Main.config.settings.display.max_width) return 4
 
             val required = Main.config.settings.baseMaterial
             val world = pos1.world ?: return 1

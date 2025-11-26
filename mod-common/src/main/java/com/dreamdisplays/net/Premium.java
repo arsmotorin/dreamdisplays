@@ -12,15 +12,15 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public record Premium(boolean premium) implements CustomPacketPayload {
     public static final Type<Premium> PACKET_ID =
-        new Type<>(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "premium"));
+            new Type<>(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "premium"));
 
     public static final StreamCodec<FriendlyByteBuf, Premium> PACKET_CODEC =
-        StreamCodec.of(
-            (buf, packet) -> ByteBufCodecs.BOOL.encode(buf, packet.premium()),
-            (buf) -> {
-                boolean premium = ByteBufCodecs.BOOL.decode(buf);
-                return new Premium(premium);
-            });
+            StreamCodec.of(
+                    (buf, packet) -> ByteBufCodecs.BOOL.encode(buf, packet.premium()),
+                    (buf) -> {
+                        boolean premium = ByteBufCodecs.BOOL.decode(buf);
+                        return new Premium(premium);
+                    });
 
     @Override
     public Type<? extends CustomPacketPayload> type() {

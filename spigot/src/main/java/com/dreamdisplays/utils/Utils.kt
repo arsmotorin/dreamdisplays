@@ -1,50 +1,37 @@
 package com.dreamdisplays.utils
 
-import org.jspecify.annotations.NullMarked
-import java.net.URI
-import java.net.URISyntaxException
-import java.util.regex.Pattern
-
-@NullMarked
+/**
+ * YouTube URL extraction and string sanitization.
+ */
 object Utils {
-    fun extractVideo(youtubeUrl: String): String? {
-        try {
-            val uri = URI(youtubeUrl)
-            val query = uri.query // Takes part after "?"
-            if (query != null) {
-                for (param in query.split("&")) {
-                    val pair = param.split("=", limit = 2)
-                    if (pair.size == 2 && pair[0] == "v") {
-                        return pair[1]
-                    }
-                }
+
+    // List of regex patterns to match different YouTube URL formats
+    private val patterns = listOf(
+        // https://www.youtube.com/watch?v=ID
+        Regex("""[?&]v=([A-Za-z0-9_-]{6,})"""),
+
+        // https://youtu.be/ID
+        Regex("""youtu\.be/([A-Za-z0-9_-]{6,})"""),
+
+        // https://youtube.com/shorts/ID
+        Regex("""/shorts/([A-Za-z0-9_-]{6,})""")
+    )
+
+    // Extract YouTube video ID from a given URL
+    fun extractVideo(url: String): String? {
+        val u = url.trim()
+
+        for (pattern in patterns) {
+            val match = pattern.find(u)
+            if (match != null) {
+                return match.groupValues[1]
             }
-            // If youtu.be/ID
-            val host = uri.host
-            if (host != null && host.contains("youtu.be")) {
-                val path = uri.path
-                if (path != null && path.length > 1) {
-                    return path.substring(1)
-                }
-            } else if (host != null && host.contains("youtube.com")) {
-                val path = uri.path
-                if (path != null && path.contains("shorts")) {
-                    return path.split("/").lastOrNull { it.isNotEmpty() }
-                }
-            }
-        } catch (_: URISyntaxException) {
-            // Invalid URL, fall back to regex parsing
         }
 
-        val regex = "(?<=([?&]v=))[^#&?]*"
-        val m = Pattern.compile(regex).matcher(youtubeUrl)
-        return if (m.find()) m.group() else null
+        return null
     }
 
-    fun sanitize(raw: String?): String? {
-        if (raw == null) {
-            return null
-        }
-        return raw.trim { it <= ' ' }.replace("[^0-9A-Za-z+.-]".toRegex(), "")
-    }
+    // Sanitize a string by removing unwanted characters
+    fun sanitize(s: String?) =
+        s?.trim()?.replace(Regex("[^0-9A-Za-z+.-]"), "")
 }

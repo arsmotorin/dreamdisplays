@@ -14,15 +14,15 @@ import java.util.UUID;
 @NullMarked
 public record Report(UUID id) implements CustomPacketPayload {
     public static final Type<Report> PACKET_ID =
-        new Type<>(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "report"));
+            new Type<>(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "report"));
 
     public static final StreamCodec<FriendlyByteBuf, Report> PACKET_CODEC =
-        StreamCodec.of(
-            (buf, packet) -> UUIDUtil.STREAM_CODEC.encode(buf, packet.id()),
-            (buf) -> {
-                UUID id = UUIDUtil.STREAM_CODEC.decode(buf);
-                return new Report(id);
-            });
+            StreamCodec.of(
+                    (buf, packet) -> UUIDUtil.STREAM_CODEC.encode(buf, packet.id()),
+                    (buf) -> {
+                        UUID id = UUIDUtil.STREAM_CODEC.decode(buf);
+                        return new Report(id);
+                    });
 
     @Override
     public Type<? extends CustomPacketPayload> type() {

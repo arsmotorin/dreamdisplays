@@ -6,6 +6,9 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
+/**
+ * Calculates and manages 3D regions defined by two corner positions.
+ */
 @NullMarked
 object Region {
 

@@ -2,7 +2,7 @@ package com.dreamdisplays.commands
 
 import com.dreamdisplays.Main
 import com.dreamdisplays.listeners.Selection
-import com.dreamdisplays.managers.Display
+import com.dreamdisplays.managers.DisplayManager
 import com.dreamdisplays.utils.Message
 import com.dreamdisplays.utils.Utils
 import me.inotsleep.utils.AbstractCommand
@@ -11,20 +11,31 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.jspecify.annotations.NullMarked
 
+/**
+ * Main command class for handling display-related commands.
+ */
 @NullMarked
 class Command : AbstractCommand(Main.getInstance().name, "display") {
 
+    // Execute the command based on the provided arguments
     override fun toExecute(sender: CommandSender, s: String?, args: Array<String?>) {
         when (args.size) {
             0 -> sendHelp(sender)
-            1 -> handleSingle(sender, args[0])
-            2, 3 -> handleVideo(sender, args)
+            1 -> when (args[0]) {
+                "create" -> handleCreate(sender)
+                "delete" -> handleDelete(sender)
+                "reload" -> handleReload(sender)
+                "list" -> handleList(sender)
+                else -> sendHelp(sender)
+            }
+
+            2, 3 -> if (args[0] == "video") handleVideo(sender, args) else sendHelp(sender)
         }
     }
 
+    // Handle the /video command to set a YouTube video URL for a display
     private fun handleVideo(sender: CommandSender, args: Array<String?>) {
         val player = sender as? Player ?: return
-        if (args[0] != "video") return
 
         val block = player.getTargetBlock(null, 32)
         if (block.type != Main.config.settings.baseMaterial) {
@@ -32,7 +43,7 @@ class Command : AbstractCommand(Main.getInstance().name, "display") {
             return
         }
 
-        val data = Display.isContains(block.location)
+        val data = DisplayManager.isContains(block.location)
         if (data == null || data.ownerId != player.uniqueId) {
             msg(player, "noDisplay")
             return
@@ -52,15 +63,7 @@ class Command : AbstractCommand(Main.getInstance().name, "display") {
         msg(player, "settedURL")
     }
 
-    private fun handleSingle(sender: CommandSender, arg: String?) {
-        when (arg) {
-            "create" -> handleCreate(sender)
-            "delete" -> handleDelete(sender)
-            "reload" -> handleReload(sender)
-            "list" -> handleList(sender)
-        }
-    }
-
+    // Handle the /create command to create a new display
     private fun handleCreate(sender: CommandSender) {
         val player = sender as? Player ?: return
 
@@ -73,7 +76,7 @@ class Command : AbstractCommand(Main.getInstance().name, "display") {
             return
         }
 
-        if (Display.isOverlaps(sel)) {
+        if (DisplayManager.isOverlaps(sel)) {
             msg(player, "displayOverlap")
             return
         }
@@ -81,10 +84,11 @@ class Command : AbstractCommand(Main.getInstance().name, "display") {
         val displayData = sel.generateDisplayData()
         Selection.selectionPoints.remove(player.uniqueId)
 
-        Display.register(displayData)
+        DisplayManager.register(displayData)
         msg(player, "successfulCreation")
     }
 
+    // Handle the /delete command to delete an existing display
     private fun handleDelete(sender: CommandSender) {
         val player = sender as? Player ?: return
         if (!player.hasPermission(Main.config.permissions.delete)) return
@@ -95,13 +99,14 @@ class Command : AbstractCommand(Main.getInstance().name, "display") {
             return
         }
 
-        val data = Display.isContains(block.location)
+        val data = DisplayManager.isContains(block.location)
             ?: return msg(player, "noDisplay")
 
-        Display.delete(data)
+        DisplayManager.delete(data)
         msg(player, "displayDeleted")
     }
 
+    // Handle the /reload command to reload the plugin configuration
     private fun handleReload(sender: CommandSender) {
         if (!sender.hasPermission(Main.config.permissions.reload)) {
             sendHelp(sender)
@@ -112,13 +117,14 @@ class Command : AbstractCommand(Main.getInstance().name, "display") {
         msg(sender, "configReloaded")
     }
 
+    // Handle the /list command to list all existing displays
     private fun handleList(sender: CommandSender) {
         if (!sender.hasPermission(Main.config.permissions.list)) {
             sendHelp(sender)
             return
         }
 
-        val displays = Display.getDisplays()
+        val displays = DisplayManager.getDisplays()
         if (displays.isEmpty()) {
             msg(sender, "noDisplaysFound")
             return
@@ -143,14 +149,17 @@ class Command : AbstractCommand(Main.getInstance().name, "display") {
         }
     }
 
+    // Send a message to the command sender
     private fun msg(sender: CommandSender?, key: String) {
         Message.sendMessage(sender, key)
     }
 
+    // Send help messages to the command sender
     private fun sendHelp(sender: CommandSender?) {
         Message.sendColoredMessages(sender, Message.getMessages("displayCommandHelp"))
     }
 
+    // Provide tab completion for the command
     override fun complete(sender: CommandSender, args: Array<String?>): MutableList<String?> {
         if (args.size != 1) return mutableListOf()
 

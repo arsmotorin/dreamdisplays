@@ -14,10 +14,14 @@ import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
+/**
+ * Sends a report to a Discord webhook.
+ */
 @NullMarked
 object Reporter {
     private val client: HttpClient = HttpClient.newHttpClient()
 
+    // Send a report to the specified Discord webhook URL
     @Throws(IOException::class, InterruptedException::class)
     fun sendReport(
         loc: Location,
@@ -67,6 +71,7 @@ object Reporter {
         }
     }
 
+    // Create a field JSON object for the embed
     private fun field(name: String, value: String?, inline: Boolean): JsonObject {
         val f = JsonObject()
         f.addProperty("name", name)

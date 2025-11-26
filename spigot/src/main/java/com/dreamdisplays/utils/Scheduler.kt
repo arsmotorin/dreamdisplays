@@ -5,6 +5,9 @@ import org.bukkit.scheduler.BukkitRunnable
 import org.jspecify.annotations.NullMarked
 import java.lang.reflect.Proxy
 
+/**
+ * Scheduler utility to run tasks asynchronously, compatible with both Bukkit and Folia.
+ */
 @NullMarked
 object Scheduler {
 
@@ -43,4 +46,3 @@ object Scheduler {
         }
     }
 }
-

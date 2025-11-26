@@ -4,8 +4,11 @@ import org.bukkit.plugin.Plugin
 import org.jspecify.annotations.NullMarked
 import java.lang.reflect.Proxy
 
+/**
+ * Folia implementation of the Adapter interface for scheduling tasks.
+ */
 @NullMarked
-object Folia : Adapter {
+object FoliaScheduler : Adapter {
 
     private val asyncScheduler = Class.forName("org.bukkit.Bukkit")
         .getMethod("getAsyncScheduler").invoke(null)
@@ -15,6 +18,7 @@ object Folia : Adapter {
     private val timeUnitClass = Class.forName("java.util.concurrent.TimeUnit")
     private val milliseconds = timeUnitClass.getDeclaredField("MILLISECONDS").get(null)
 
+    // TODO: refactor this in the future
     override fun runRepeatingAsync(
         plugin: Plugin,
         delayTicks: Long,

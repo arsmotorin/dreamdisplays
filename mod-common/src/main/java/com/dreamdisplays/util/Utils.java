@@ -116,7 +116,7 @@ public class Utils {
         String subject;
         try (InputStream is = Files.newInputStream(certFile.toPath())) {
             X509Certificate cert = (X509Certificate)
-                CertificateFactory.getInstance("X.509").generateCertificate(is);
+                    CertificateFactory.getInstance("X.509").generateCertificate(is);
             subject = cert.getSubjectX500Principal().getName();
         }
 
@@ -131,7 +131,7 @@ public class Utils {
     public static void installToCurrentUserRoot(File certDir) throws Exception {
         if (!certDir.exists() || !certDir.isDirectory()) {
             throw new IllegalArgumentException("Error while installing certificates: " +
-                certDir.getAbsolutePath());
+                    certDir.getAbsolutePath());
         }
 
         File[] cerFiles = certDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".cer"));
@@ -149,11 +149,11 @@ public class Utils {
             }
 
             ProcessBuilder pb = new ProcessBuilder(
-                "certutil",
-                "-addstore",
-                "-user",
-                "Root",
-                cert.getAbsolutePath()
+                    "certutil",
+                    "-addstore",
+                    "-user",
+                    "Root",
+                    cert.getAbsolutePath()
             );
             pb.redirectErrorStream(true);
 
@@ -165,8 +165,8 @@ public class Utils {
             int code = proc.waitFor();
             if (code != 0) {
                 throw new RuntimeException(
-                    "Certificate error " +
-                        cert.getName() + ", error code: " + code
+                        "Certificate error " +
+                                cert.getName() + ", error code: " + code
                 );
             }
         }

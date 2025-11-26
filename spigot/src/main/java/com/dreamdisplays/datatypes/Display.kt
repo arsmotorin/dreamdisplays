@@ -12,6 +12,9 @@ import kotlin.math.max
 import kotlin.math.min
 import com.dreamdisplays.utils.net.Utils as Net
 
+/**
+ * Represents a display itself. Holds all relevant data about a display.
+ */
 @NullMarked
 class Display(
     val id: UUID,
@@ -20,7 +23,7 @@ class Display(
     val pos2: Location,
     val width: Int,
     val height: Int,
-    val facing: BlockFace? = BlockFace.NORTH
+    val facing: BlockFace = BlockFace.NORTH
 ) {
     var url: String = ""
     var duration: Long? = null
@@ -36,8 +39,9 @@ class Display(
         (max(pos1.blockZ, pos2.blockZ) + 1).toDouble()
     )
 
+    // Check if a location is within render distance of the display
     fun isInRange(loc: Location): Boolean {
-        val maxRender = Main.config.settings.maxRenderDistance
+        val maxRender = Main.config.settings.display.max_render_distance
         val clampedX = loc.blockX.coerceIn(box.minX.toInt(), box.maxX.toInt())
         val clampedY = loc.blockY.coerceIn(box.minY.toInt(), box.maxY.toInt())
         val clampedZ = loc.blockZ.coerceIn(box.minZ.toInt(), box.maxZ.toInt())
@@ -49,16 +53,18 @@ class Display(
         return dx * dx + dy * dy + dz * dz <= maxRender * maxRender
     }
 
+    // Send update packet to a list of players
     fun sendUpdatePacket(players: List<Player>) {
         @Suppress("UNCHECKED_CAST")
         Net.sendDisplayInfoPacket(
             players as MutableList<Player?>, id, ownerId, box.min, width, height,
-            url, lang, facing ?: BlockFace.NORTH, isSync
+            url, lang, facing, isSync
         )
     }
 
+    // Get a list of players who should receive updates about this display
     val receivers: List<Player>
         get() = pos1.world?.players
-            ?.filter { Region.getDistance(it.location, pos1, pos2) < Main.config.settings.maxRenderDistance }
+            ?.filter { Region.getDistance(it.location, pos1, pos2) < Main.config.settings.display.max_render_distance }
             ?: emptyList()
 }

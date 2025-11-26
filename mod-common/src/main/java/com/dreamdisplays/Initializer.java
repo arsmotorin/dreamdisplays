@@ -1,8 +1,8 @@
 package com.dreamdisplays;
 
 import com.dreamdisplays.net.*;
-import com.dreamdisplays.screen.Menu;
 import com.dreamdisplays.screen.Manager;
+import com.dreamdisplays.screen.Menu;
 import com.dreamdisplays.screen.Screen;
 import com.dreamdisplays.screen.Settings;
 import com.dreamdisplays.util.Facing;
@@ -192,12 +192,12 @@ public class Initializer {
 
         if (Initializer.focusMode && minecraft.player != null && hoveredScreen != null) {
             minecraft.player.addEffect(new MobEffectInstance(
-                MobEffects.BLINDNESS,
-                20 * 2,
-                1,
-                false,
-                false,
-                false
+                    MobEffects.BLINDNESS,
+                    20 * 2,
+                    1,
+                    false,
+                    false,
+                    false
             ));
 
             wasFocused.set(true);

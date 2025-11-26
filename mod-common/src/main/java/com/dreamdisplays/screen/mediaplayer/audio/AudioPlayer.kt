@@ -92,5 +92,7 @@ class AudioPlayer(
 
     // Controls
     fun setVolume(volume: Double) = volumeCtrl.setVolume(volume)
-    fun stop() { line.drain(); line.stop(); line.close(); decoder.release() }
+    fun stop() {
+        line.drain(); line.stop(); line.close(); decoder.release()
+    }
 }

@@ -21,34 +21,34 @@ public class Render2D {
         float y1 = matrices.m01() * (x + width) + matrices.m11() * (y + height) + matrices.m21();
 
         BufferBuilder buffer = Tesselator.getInstance().begin(
-            VertexFormat.Mode.QUADS,
-            DefaultVertexFormat.BLOCK
+                VertexFormat.Mode.QUADS,
+                DefaultVertexFormat.BLOCK
         );
 
         buffer
-            .addVertex(x0, y1, 0.0F)
-            .setColor(255, 255, 255, 255)
-            .setLight(0xF000F0)
-            .setNormal(0f, 0f, 1f)
-            .setUv(0.0f, 1.0f);
+                .addVertex(x0, y1, 0.0F)
+                .setColor(255, 255, 255, 255)
+                .setLight(0xF000F0)
+                .setNormal(0f, 0f, 1f)
+                .setUv(0.0f, 1.0f);
         buffer
-            .addVertex(x1, y1, 0.0F)
-            .setColor(255, 255, 255, 255)
-            .setLight(0xF000F0)
-            .setNormal(0f, 0f, 1f)
-            .setUv(1.0f, 1.0f);
+                .addVertex(x1, y1, 0.0F)
+                .setColor(255, 255, 255, 255)
+                .setLight(0xF000F0)
+                .setNormal(0f, 0f, 1f)
+                .setUv(1.0f, 1.0f);
         buffer
-            .addVertex(x1, y0, 0.0F)
-            .setColor(255, 255, 255, 255)
-            .setLight(0xF000F0)
-            .setNormal(0f, 0f, 1f)
-            .setUv(1.0f, 0.0f);
+                .addVertex(x1, y0, 0.0F)
+                .setColor(255, 255, 255, 255)
+                .setLight(0xF000F0)
+                .setNormal(0f, 0f, 1f)
+                .setUv(1.0f, 0.0f);
         buffer
-            .addVertex(x0, y0, 0.0F)
-            .setColor(255, 255, 255, 255)
-            .setLight(0xF000F0)
-            .setNormal(0f, 0f, 1f)
-            .setUv(0.0f, 0.0f);
+                .addVertex(x0, y0, 0.0F)
+                .setColor(255, 255, 255, 255)
+                .setLight(0xF000F0)
+                .setNormal(0f, 0f, 1f)
+                .setUv(0.0f, 0.0f);
 
         renderType.draw(buffer.buildOrThrow());
     }

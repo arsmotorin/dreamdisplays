@@ -12,15 +12,15 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public record Version(String version) implements CustomPacketPayload {
     public static final Type<Version> PACKET_ID =
-        new Type<>(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "version"));
+            new Type<>(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "version"));
 
     public static final StreamCodec<FriendlyByteBuf, Version> PACKET_CODEC =
-        StreamCodec.of(
-            (buf, packet) -> ByteBufCodecs.STRING_UTF8.encode(buf, packet.version()),
-            (buf) -> {
-                String version = ByteBufCodecs.STRING_UTF8.decode(buf);
-                return new Version(version);
-            });
+            StreamCodec.of(
+                    (buf, packet) -> ByteBufCodecs.STRING_UTF8.encode(buf, packet.version()),
+                    (buf) -> {
+                        String version = ByteBufCodecs.STRING_UTF8.decode(buf);
+                        return new Version(version);
+                    });
 
     @Override
     public Type<? extends CustomPacketPayload> type() {

@@ -12,13 +12,17 @@ import org.jspecify.annotations.NullMarked
 import java.nio.ByteBuffer
 import java.sql.SQLException
 import java.util.*
-import com.dreamdisplays.managers.Display as Manager
+import com.dreamdisplays.managers.DisplayManager as Manager
 
+/**
+ * Storage manager for handling database operations related to displays.
+ */
 @NullMarked
 class Storage(var plugin: Main) {
     var connection: BaseConnection? = null
     var tablePrefix: String? = null
 
+    // Initialize the storage and establish database connection
     init {
         val connectTask = Runnable {
             tablePrefix = Main.config.storage.tablePrefix
@@ -39,23 +43,24 @@ class Storage(var plugin: Main) {
         Scheduler.runAsync(connectTask)
     }
 
+    // Set up database tables and load existing displays
     @Throws(SQLException::class)
     private fun onConnect() {
         val conn = connection ?: throw SQLException("Connection is null")
 
         conn.executeUpdate(
             "CREATE TABLE IF NOT EXISTS " + tablePrefix + "displays (" +
-                "id BINARY(16) PRIMARY KEY NOT NULL, " +
-                "ownerId BINARY(16) NOT NULL, " +
-                "videoCode CHAR(11) NULL, " +
-                "world CHAR(255) NOT NULL, " +
-                "pos1 BIGINT NOT NULL, " +
-                "pos2 BIGINT NOT NULL, " +
-                "size BIGINT NOT NULL, " +
-                "facing TINYINT UNSIGNED NOT NULL, " +
-                "isSync BOOLEAN NOT NULL," +
-                "duration BIGINT NULL" +
-                ");"
+                    "id BINARY(16) PRIMARY KEY NOT NULL, " +
+                    "ownerId BINARY(16) NOT NULL, " +
+                    "videoCode CHAR(11) NULL, " +
+                    "world CHAR(255) NOT NULL, " +
+                    "pos1 BIGINT NOT NULL, " +
+                    "pos2 BIGINT NOT NULL, " +
+                    "size BIGINT NOT NULL, " +
+                    "facing TINYINT UNSIGNED NOT NULL, " +
+                    "isSync BOOLEAN NOT NULL," +
+                    "duration BIGINT NULL" +
+                    ");"
         )
 
         val meta = conn.metaData
@@ -63,13 +68,14 @@ class Storage(var plugin: Main) {
             if (!cols.next()) {
                 conn.executeUpdate(
                     "ALTER TABLE " + tablePrefix + "displays " +
-                        "ADD COLUMN lang VARCHAR(255) DEFAULT '' NOT NULL"
+                            "ADD COLUMN lang VARCHAR(255) DEFAULT '' NOT NULL"
                 )
             }
         }
         Manager.register(this.allDisplays.filterNotNull())
     }
 
+    // Save all displays and close the database connection
     fun onDisable() {
         val conn = connection ?: return
 
@@ -81,6 +87,7 @@ class Storage(var plugin: Main) {
         }
     }
 
+    // Convert UUID to byte array
     private fun uuidToBytes(uuid: UUID): ByteArray {
         val buf = ByteBuffer.allocate(16)
         buf.putLong(uuid.mostSignificantBits)
@@ -88,6 +95,7 @@ class Storage(var plugin: Main) {
         return buf.array()
     }
 
+    // Convert byte array to UUID
     private fun bytesToUuid(bytes: ByteArray): UUID {
         val buf = ByteBuffer.wrap(bytes)
         val msb = buf.getLong()
@@ -95,6 +103,7 @@ class Storage(var plugin: Main) {
         return UUID(msb, lsb)
     }
 
+    // Save a display to the database
     fun saveDisplay(data: Display) {
         val conn = connection ?: run {
             LoggingManager.error("Cannot save display: connection is null")
@@ -107,8 +116,8 @@ class Storage(var plugin: Main) {
         }
 
         val sql = "REPLACE INTO " + tablePrefix + "displays " +
-            "(id, ownerId, videoCode, world, pos1, pos2, size, facing, isSync, duration, lang) " +
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+                "(id, ownerId, videoCode, world, pos1, pos2, size, facing, isSync, duration, lang) " +
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?)"
 
         try {
             conn.executeUpdate(
@@ -128,7 +137,7 @@ class Storage(var plugin: Main) {
                     data.pos2.blockZ
                 ),
                 pack(data.width, data.height),
-                data.facing?.ordinal?.toByte() ?: 0,
+                data.facing.ordinal.toByte(),
                 data.isSync,
                 data.duration,
                 data.lang
@@ -139,8 +148,8 @@ class Storage(var plugin: Main) {
         }
     }
 
+    // Retrieve all displays from the database
     val allDisplays: MutableList<Display?>
-        // Fetch all displays from the database
         get() {
             val conn = connection ?: run {
                 LoggingManager.error("Cannot fetch displays: connection is null")
@@ -149,7 +158,7 @@ class Storage(var plugin: Main) {
 
             val sql =
                 "SELECT id, ownerId, videoCode, world, pos1, pos2, size, facing, isSync, duration, lang " +
-                    "FROM " + tablePrefix + "displays"
+                        "FROM " + tablePrefix + "displays"
             val list: MutableList<Display?> = ArrayList()
 
             try {
@@ -200,6 +209,7 @@ class Storage(var plugin: Main) {
             return list
         }
 
+    // Delete a display from the database
     fun deleteDisplay(data: Display) {
         val conn = connection ?: run {
             LoggingManager.error("Cannot delete display: connection is null")
@@ -215,6 +225,7 @@ class Storage(var plugin: Main) {
         }
     }
 
+    // Packing and unpacking utilities for block positions and sizes
     companion object {
         private fun packBlockPos(x: Int, y: Int, z: Int): Long {
             return ((x and 0x3FFFFFF).toLong() shl 38) or ((z and 0x3FFFFFF).toLong() shl 12) or (y and 0xFFF).toLong()

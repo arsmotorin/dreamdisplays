@@ -3,6 +3,9 @@ package com.dreamdisplays.datatypes
 import org.jspecify.annotations.NullMarked
 import java.util.*
 
+/**
+ * Sync information.
+ */
 @NullMarked
 @JvmRecord
 data class Sync(
