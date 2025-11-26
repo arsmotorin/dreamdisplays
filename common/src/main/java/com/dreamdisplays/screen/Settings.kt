@@ -1,105 +1,103 @@
-package com.dreamdisplays.screen;
+package com.dreamdisplays.screen
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-import me.inotsleep.utils.logging.LoggingManager;
-import org.jspecify.annotations.NullMarked;
-
-import java.io.*;
-import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
+import me.inotsleep.utils.logging.LoggingManager
+import org.jspecify.annotations.NullMarked
+import java.io.File
+import java.io.FileReader
+import java.io.FileWriter
+import java.io.IOException
+import java.util.*
 
 @NullMarked
-public class Settings {
-
+object Settings {
     // TODO: move to adequate path
-    private static final File SETTINGS_FILE = new File("./config/dreamdisplays/client-display-settings.json");
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Map<UUID, DisplaySettings> displaySettings = new HashMap<>();
+    private val SETTINGS_FILE = File("./config/dreamdisplays/client-display-settings.json")
+    private val GSON: Gson = GsonBuilder().setPrettyPrinting().create()
+    private val displaySettings: MutableMap<UUID, DisplaySettings> = HashMap<UUID, DisplaySettings>()
 
     // Load settings from disk
-    public static void load() {
-
+    fun load() {
         // Ensure directory exists
-        File dir = SETTINGS_FILE.getParentFile();
+
+        val dir = SETTINGS_FILE.getParentFile()
         if (dir != null && !dir.exists() && !dir.mkdirs()) {
-            LoggingManager.error("Failed to create settings directory.");
-            return;
+            LoggingManager.error("Failed to create settings directory.")
+            return
         }
 
-        try (Reader reader = new FileReader(SETTINGS_FILE)) {
-            Type type = new TypeToken<Map<String, DisplaySettings>>() {
-            }.getType();
-            Map<String, DisplaySettings> loadedSettings = GSON.fromJson(reader, type);
-
-            if (loadedSettings != null) {
-                displaySettings.clear();
-                for (Map.Entry<String, DisplaySettings> entry : loadedSettings.entrySet()) {
-                    try {
-                        UUID uuid = UUID.fromString(entry.getKey());
-                        displaySettings.put(uuid, entry.getValue());
-                    } catch (IllegalArgumentException e) {
-                        LoggingManager.error("Invalid UUID in client display settings: " + entry.getKey());
+        try {
+            FileReader(SETTINGS_FILE).use { reader ->
+                val type = object : TypeToken<MutableMap<String, DisplaySettings>>() {
+                }.type
+                val loadedSettings = GSON.fromJson<MutableMap<String, DisplaySettings>>(reader, type)
+                if (loadedSettings != null) {
+                    displaySettings.clear()
+                    for (entry in loadedSettings.entries) {
+                        try {
+                            val uuid = UUID.fromString(entry.key)
+                            displaySettings[uuid] = entry.value
+                        } catch (_: IllegalArgumentException) {
+                            LoggingManager.error("Invalid UUID in client display settings: " + entry.key)
+                        }
                     }
                 }
             }
-        } catch (IOException e) {
-            LoggingManager.error("Failed to load client display settings", e);
+        } catch (e: IOException) {
+            LoggingManager.error("Failed to load client display settings", e)
         }
     }
 
     // Save settings to disk
-    public static void save() {
+    fun save() {
         try {
-            File dir = SETTINGS_FILE.getParentFile();
+            val dir = SETTINGS_FILE.getParentFile()
             if (dir != null && !dir.exists() && !dir.mkdirs()) {
-                LoggingManager.error("Failed to create settings directory.");
-                return;
+                LoggingManager.error("Failed to create settings directory.")
+                return
             }
 
-            Map<String, DisplaySettings> toSave = new HashMap<>();
-            for (Map.Entry<UUID, DisplaySettings> entry : displaySettings.entrySet()) {
-                toSave.put(entry.getKey().toString(), entry.getValue());
+            val toSave: MutableMap<String, DisplaySettings> = HashMap<String, DisplaySettings>()
+            for (entry in displaySettings.entries) {
+                toSave[entry.key.toString()] = entry.value
             }
 
-            try (Writer writer = new FileWriter(SETTINGS_FILE)) {
-                GSON.toJson(toSave, writer);
+            FileWriter(SETTINGS_FILE).use { writer ->
+                GSON.toJson(toSave, writer)
             }
-        } catch (IOException e) {
-            LoggingManager.error("Failed to save client display settings", e);
+        } catch (e: IOException) {
+            LoggingManager.error("Failed to save client display settings", e)
         }
     }
 
     // Get settings for a display
-    public static DisplaySettings getSettings(UUID displayId) {
-        return displaySettings.computeIfAbsent(displayId, k -> new DisplaySettings());
+    @JvmStatic
+    fun getSettings(displayId: UUID): DisplaySettings {
+        return displaySettings.computeIfAbsent(displayId) { _: UUID? -> DisplaySettings() }
     }
 
     // Update settings for a display
-    public static void updateSettings(UUID displayId, float volume, String quality, boolean muted) {
-        DisplaySettings settings = getSettings(displayId);
-        settings.volume = volume;
-        settings.quality = quality;
-        settings.muted = muted;
+    @JvmStatic
+    fun updateSettings(displayId: UUID, volume: Float, quality: String, muted: Boolean) {
+        val settings = getSettings(displayId)
+        settings.volume = volume
+        settings.quality = quality
+        settings.muted = muted
 
-        save();
+        save()
     }
 
-    public static class DisplaySettings {
-        public float volume = 0.5f;
-        public String quality = "720";
-        public boolean muted = false;
+    class DisplaySettings {
+        @JvmField
+        var volume: Float = 0.5f
+        @JvmField
+        var quality: String = "720"
+        @JvmField
+        var muted: Boolean = false
 
-        public DisplaySettings() {
-        }
+        constructor()
 
-        public DisplaySettings(float volume, String quality, boolean muted) {
-            this.volume = volume;
-            this.quality = quality;
-            this.muted = muted;
-        }
     }
 }

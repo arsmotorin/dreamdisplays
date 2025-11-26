@@ -152,14 +152,14 @@ public class Menu extends Screen {
         sync = new Toggle(0, 0, 0, 0, Component.translatable(screen.isSync ? "dreamdisplays.button.enabled" : "dreamdisplays.button.disabled"), screen.isSync) {
             @Override
             protected void updateMessage() {
-                setMessage(Component.translatable(value ? "dreamdisplays.button.enabled" : "dreamdisplays.button.disabled"));
+                setMessage(Component.translatable(this.value ? "dreamdisplays.button.enabled" : "dreamdisplays.button.disabled"));
             }
 
             @Override
             public void applyValue() {
                 if (screen.owner && syncReset != null) {
-                    screen.isSync = value;
-                    syncReset.active = !value;
+                    screen.isSync = this.value;
+                    syncReset.active = !this.value;
                     screen.waitForMFInit(() -> screen.sendSync());
                 }
             }
@@ -431,11 +431,11 @@ public class Menu extends Screen {
                     Component.translatable("dreamdisplays.button.quality.tooltip.3"),
                     Component.translatable("dreamdisplays.button.quality.tooltip.4", toQuality((int) (quality.value * screen.getQualityList().size()))).withStyle(style -> style.withColor(ChatFormatting.GOLD))
             ));
-        }
 
-        // Add warning if quality is 1080p or higher
-        if (Integer.parseInt(screen.getQuality()) >= 1080) {
-            qualityTooltip.add(Component.translatable("dreamdisplays.button.quality.tooltip.5").withStyle(style -> style.withColor(ChatFormatting.YELLOW)));
+            // Add warning if quality is 1080p or higher
+            if (Integer.parseInt(screen.getQuality()) >= 1080) {
+                qualityTooltip.add(Component.translatable("dreamdisplays.button.quality.tooltip.5").withStyle(style -> style.withColor(ChatFormatting.YELLOW)));
+            }
         }
 
         cY += 15 + vCH;
@@ -449,20 +449,27 @@ public class Menu extends Screen {
         int syncTextY = cY + vCH / 2 - font.lineHeight / 2;
         guiGraphics.drawString(font, syncText, syncTextX, syncTextY, 0xFFFFFF, true);
 
-        List<Component> syncTooltip = List.of(
-                Component.translatable("dreamdisplays.button.synchronization.tooltip.1").withStyle(style -> style.withColor(ChatFormatting.WHITE).withBold(true)),
-                Component.translatable("dreamdisplays.button.synchronization.tooltip.2").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
-                Component.translatable("dreamdisplays.button.synchronization.tooltip.3").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
-                Component.translatable("dreamdisplays.button.synchronization.tooltip.4"),
-                Component.translatable("dreamdisplays.button.synchronization.tooltip.5", sync.value ? Component.translatable("dreamdisplays.button.enabled") : Component.translatable("dreamdisplays.button.disabled")).withStyle(style -> style.withColor(ChatFormatting.GOLD))
-        );
+        List<Component> syncTooltip = null;
+        if (sync != null) {
+            syncTooltip = List.of(
+                    Component.translatable("dreamdisplays.button.synchronization.tooltip.1").withStyle(style -> style.withColor(ChatFormatting.WHITE).withBold(true)),
+                    Component.translatable("dreamdisplays.button.synchronization.tooltip.2").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
+                    Component.translatable("dreamdisplays.button.synchronization.tooltip.3").withStyle(style -> style.withColor(ChatFormatting.GRAY)),
+                    Component.translatable("dreamdisplays.button.synchronization.tooltip.4"),
+                    Component.translatable("dreamdisplays.button.synchronization.tooltip.5", sync.value ? Component.translatable("dreamdisplays.button.enabled") : Component.translatable("dreamdisplays.button.disabled")).withStyle(style -> style.withColor(ChatFormatting.GOLD))
+            );
+        }
 
         renderTooltipIfHovered(guiGraphics, mouseX, mouseY, renderDTextX, renderDTextY,
                 font.width(renderDText), font.lineHeight, renderDTooltip);
-        renderTooltipIfHovered(guiGraphics, mouseX, mouseY, qualityTextX, qualityTextY,
-                font.width(qualityText), font.lineHeight, qualityTooltip);
-        renderTooltipIfHovered(guiGraphics, mouseX, mouseY, syncTextX, syncTextY,
-                font.width(syncText), font.lineHeight, syncTooltip);
+        if (qualityTooltip != null) {
+            renderTooltipIfHovered(guiGraphics, mouseX, mouseY, qualityTextX, qualityTextY,
+                    font.width(qualityText), font.lineHeight, qualityTooltip);
+        }
+        if (syncTooltip != null) {
+            renderTooltipIfHovered(guiGraphics, mouseX, mouseY, syncTextX, syncTextY,
+                    font.width(syncText), font.lineHeight, syncTooltip);
+        }
 
         // Tooltips for delete and report buttons
         List<Component> deleteTooltip = List.of(
@@ -509,9 +516,9 @@ public class Menu extends Screen {
     // TODO: it doesn't work
     private void renderScreen(GuiGraphics graphics, int x, int y, int w, int h) {
         if (screen != null && screen.isVideoStarted() && screen.texture != null && screen.renderType != null) {
-            Render2D.drawTexturedQuad(graphics.pose(), screen.texture.getTextureView(), x, y, w, h, screen.renderType);
+            Render2D.INSTANCE.drawTexturedQuad(graphics.pose(), screen.texture.getTextureView(), x, y, w, h, screen.renderType);
         } else if (screen != null && screen.hasPreviewTexture() && screen.getPreviewTexture() != null && screen.previewRenderType != null) {
-            Render2D.drawTexturedQuad(graphics.pose(), screen.getPreviewTexture().getTextureView(), x, y, w, h, screen.previewRenderType);
+            Render2D.INSTANCE.drawTexturedQuad(graphics.pose(), screen.getPreviewTexture().getTextureView(), x, y, w, h, screen.previewRenderType);
         } else {
             graphics.fill(x, y, x + w, y + h, 0xFF000000);
         }

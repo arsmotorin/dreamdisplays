@@ -1,100 +1,111 @@
-package com.dreamdisplays.screen.widgets;
+package com.dreamdisplays.screen.widgets
 
-import net.minecraft.client.InputType;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.Identifier;
-import org.jspecify.annotations.NullMarked;
+import net.minecraft.client.InputType
+import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.GuiGraphics
+import net.minecraft.client.gui.components.AbstractWidget
+import net.minecraft.client.gui.narration.NarrationElementOutput
+import net.minecraft.client.input.MouseButtonEvent
+import net.minecraft.client.renderer.RenderPipelines
+import net.minecraft.network.chat.Component
+import net.minecraft.network.chat.MutableComponent
+import net.minecraft.network.chat.Style
+import net.minecraft.resources.Identifier
+import org.jspecify.annotations.NullMarked
 
 @NullMarked
-public abstract class Toggle extends AbstractWidget {
-    private static final Identifier TEXTURE = Identifier.withDefaultNamespace("widget/slider");
-    private static final Identifier HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_highlighted");
-    private static final Identifier HANDLE_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle");
-    private static final Identifier HANDLE_HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle_highlighted");
-    public boolean value;
-    private double dValue;
-    private boolean sliderFocused;
+abstract class Toggle(x: Int, y: Int, width: Int, height: Int, message: Component, value: Boolean) :
+    AbstractWidget(x, y, width, height, message) {
+    @JvmField
+    @Suppress("CanBePrimaryConstructorProperty")
+    var value: Boolean = value
+    private var dValue: Double
+    private var sliderFocused = false
 
-    public Toggle(int x, int y, int width, int height, Component message, boolean value) {
-        super(x, y, width, height, message);
-        this.dValue = value ? 1 : 0;
-        this.value = value;
+    init {
+        this.dValue = (if (value) 1 else 0).toDouble()
     }
 
-    private Identifier getTexture() {
-        return this.isFocused() && !this.sliderFocused ? HIGHLIGHTED_TEXTURE : TEXTURE;
+    private val texture: Identifier
+        get() = if (this.isFocused && !this.sliderFocused) HIGHLIGHTED_TEXTURE else TEXTURE
+
+    private val handleTexture: Identifier
+        get() = if (!this.isHovered && !this.sliderFocused) HANDLE_TEXTURE else HANDLE_HIGHLIGHTED_TEXTURE
+
+    override fun createNarrationMessage(): MutableComponent {
+        return Component.translatable("gui.narrate.slider", this.getMessage())
     }
 
-    private Identifier getHandleTexture() {
-        return !this.isHovered && !this.sliderFocused ? HANDLE_TEXTURE : HANDLE_HIGHLIGHTED_TEXTURE;
+    public override fun updateWidgetNarration(builder: NarrationElementOutput) {
     }
 
-    @Override
-    protected MutableComponent createNarrationMessage() {
-        return Component.translatable("gui.narrate.slider", this.getMessage());
+    public override fun renderWidget(graphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
+        graphics.blitSprite(
+            RenderPipelines.GUI_TEXTURED,
+            this.texture, this.x, this.y, this.getWidth(), this.getHeight()
+        )
+        graphics.blitSprite(
+            RenderPipelines.GUI_TEXTURED,
+            this.handleTexture,
+            this.x + (this.dValue * (this.width - 8).toDouble()).toInt(),
+            this.y,
+            8,
+            this.getHeight()
+        )
+        val i = if (this.active) 16777215 else 10526880
+        val message = this.getMessage().copy().withStyle { style: Style? -> style!!.withColor(i) }
+        this.renderScrollingStringOverContents(
+            graphics.textRendererForWidget(
+                this,
+                GuiGraphics.HoveredTextEffects.TOOLTIP_AND_CURSOR
+            ), message, 2
+        ) // , i | Mth.ceil(this.alpha * 255.0F) << 24
     }
 
-    @Override
-    public void updateWidgetNarration(NarrationElementOutput builder) {
-
-    }
-
-    @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, this.getTexture(), this.getX(), this.getY(), this.getWidth(), this.getHeight());
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, this.getHandleTexture(), this.getX() + (int) (this.dValue * (double) (this.width - 8)), this.getY(), 8, this.getHeight());
-        int i = this.active ? 16777215 : 10526880;
-        MutableComponent message = this.getMessage().copy().withStyle((style) -> style.withColor(i));
-        this.renderScrollingStringOverContents(graphics.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.TOOLTIP_AND_CURSOR), message, 2); // , i | Mth.ceil(this.alpha * 255.0F) << 24
-    }
-
-    @Override
-    public void setFocused(boolean focused) {
-        super.setFocused(focused);
+    override fun setFocused(focused: Boolean) {
+        super.setFocused(focused)
         if (!focused) {
-            this.sliderFocused = false;
+            this.sliderFocused = false
         } else {
-            InputType guiNavigationType = Minecraft.getInstance().getLastInputType();
+            val guiNavigationType = Minecraft.getInstance().lastInputType
             if (guiNavigationType == InputType.MOUSE || guiNavigationType == InputType.KEYBOARD_TAB) {
-                this.sliderFocused = true;
+                this.sliderFocused = true
             }
         }
     }
 
-    private void setValueFromMouse() {
-        value = !value;
-        dValue = value ? 1 : 0;
+    private fun setValueFromMouse() {
+        value = !value
+        dValue = (if (value) 1 else 0).toDouble()
     }
 
-    @Override
-    public void onClick(MouseButtonEvent event, boolean doubleClick) {
-        this.setValueFromMouse();
-        this.updateMessage();
-        this.applyValue();
+    override fun onClick(event: MouseButtonEvent, doubleClick: Boolean) {
+        this.setValueFromMouse()
+        this.updateMessage()
+        this.applyValue()
     }
 
-    @Override
-    public void onRelease(MouseButtonEvent event) {
-        super.playDownSound(Minecraft.getInstance().getSoundManager());
+    override fun onRelease(event: MouseButtonEvent) {
+        super.playDownSound(Minecraft.getInstance().soundManager)
     }
 
-    protected abstract void updateMessage();
+    protected abstract fun updateMessage()
 
-    public abstract void applyValue();
+    abstract fun applyValue()
 
-    public void setValue(boolean newValue) {
+    fun setValue(newValue: Boolean) {
         if (this.value != newValue) {
-            this.value = newValue;
-            this.dValue = newValue ? 1 : 0;
-            updateMessage();
-            applyValue();
+            this.value = newValue
+            this.dValue = (if (newValue) 1 else 0).toDouble()
+            updateMessage()
+            applyValue()
         }
+    }
+
+    companion object {
+        private val TEXTURE = Identifier.withDefaultNamespace("widget/slider")
+        private val HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_highlighted")
+        private val HANDLE_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle")
+        private val HANDLE_HIGHLIGHTED_TEXTURE = Identifier.withDefaultNamespace("widget/slider_handle_highlighted")
     }
 }

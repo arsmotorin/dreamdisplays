@@ -1,73 +1,79 @@
-package com.dreamdisplays.render;
+package com.dreamdisplays.render
 
-import com.dreamdisplays.screen.Manager;
-import com.dreamdisplays.screen.Screen;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import net.minecraft.client.Camera;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.phys.Vec3;
-import org.jspecify.annotations.NullMarked;
+import com.dreamdisplays.screen.Manager
+import com.dreamdisplays.screen.Screen
+import com.mojang.blaze3d.vertex.PoseStack
+import com.mojang.blaze3d.vertex.Tesselator
+import net.minecraft.client.Camera
+import net.minecraft.world.phys.Vec3
+import org.jspecify.annotations.NullMarked
 
 @NullMarked
-public class World {
-
+object World {
     // Renders all screens in the world relative to the camera position
-    public static void render(PoseStack matrices, Camera camera) {
-        Vec3 cameraPos = camera.position();
-        for (Screen screen : Manager.getScreens()) {
-            if (screen.texture == null) screen.createTexture();
+    @JvmStatic
+    fun render(matrices: PoseStack, camera: Camera) {
+        val cameraPos = camera.position()
+        for (screen in Manager.getScreens()) {
+            if (screen.texture == null) screen.createTexture()
 
-            matrices.pushPose();
+            matrices.pushPose()
 
             // Translate the matrix stack to the player's screen position
-            BlockPos pos = screen.getPos();
-            Vec3 screenCenter = Vec3.atLowerCornerOf(pos);
-            Vec3 relativePos = screenCenter.subtract(cameraPos);
-            matrices.translate(relativePos.x, relativePos.y, relativePos.z);
+            val pos = screen.pos
+            val screenCenter = Vec3.atLowerCornerOf(pos)
+            val relativePos = screenCenter.subtract(cameraPos)
+            matrices.translate(relativePos.x, relativePos.y, relativePos.z)
 
             // Move the matrix stack forward based on the screen's facing direction
-            Tesselator tessellator = Tesselator.getInstance();
+            val tessellator = Tesselator.getInstance()
 
-            renderScreenTexture(screen, matrices, tessellator);
+            renderScreenTexture(screen, matrices, tessellator)
 
-            matrices.popPose();
+            matrices.popPose()
         }
     }
 
     // Renders the texture of a single screen
-    private static void renderScreenTexture(Screen screen, PoseStack matrices, Tesselator tessellator) {
-        matrices.pushPose();
-        Render.moveForward(matrices, screen.getFacing(), 0.008f);
+    private fun renderScreenTexture(screen: Screen, matrices: PoseStack, tessellator: Tesselator) {
+        matrices.pushPose()
+        Render.moveForward(matrices, screen.facing, 0.008f)
 
-        switch (screen.getFacing()) {
-            case "NORTH":
-                Render.moveHorizontal(matrices, "NORTH", -(screen.getWidth()));
-                Render.moveForward(matrices, "NORTH", 1);
-                break;
-            case "SOUTH":
-                Render.moveHorizontal(matrices, "SOUTH", 1);
-                Render.moveForward(matrices, "SOUTH", 1);
-                break;
-            case "EAST":
-                Render.moveHorizontal(matrices, "EAST", -(screen.getWidth() - 1));
-                Render.moveForward(matrices, "EAST", 2);
-                break;
+        when (screen.facing) {
+            "NORTH" -> {
+                Render.moveHorizontal(matrices, "NORTH", -(screen.getWidth()))
+                Render.moveForward(matrices, "NORTH", 1f)
+            }
+
+            "SOUTH" -> {
+                Render.moveHorizontal(matrices, "SOUTH", 1f)
+                Render.moveForward(matrices, "SOUTH", 1f)
+            }
+
+            "EAST" -> {
+                Render.moveHorizontal(matrices, "EAST", -(screen.getWidth() - 1))
+                Render.moveForward(matrices, "EAST", 2f)
+            }
         }
 
         // Fix the rotation of the matrix stack based on the screen's facing direction
-        Render.fixRotation(matrices, screen.getFacing());
-        matrices.scale(screen.getWidth(), screen.getHeight(), 0);
+        Render.fixRotation(matrices, screen.facing)
+        matrices.scale(screen.getWidth(), screen.getHeight(), 0f)
 
         // Render the screen texture or preview texture
         if (screen.isVideoStarted()) {
-            screen.fitTexture();
-            Render.renderGpuTexture(matrices, tessellator, screen.texture.getTextureView(), screen.renderType);
+            screen.fitTexture()
+            Render.renderGpuTexture(matrices, tessellator, screen.texture!!.getTextureView(), screen.renderType!!)
         } else if (screen.hasPreviewTexture()) {
-            Render.renderGpuTexture(matrices, tessellator, screen.getPreviewTexture().getTextureView(), screen.previewRenderType);
+            Render.renderGpuTexture(
+                matrices,
+                tessellator,
+                screen.previewTexture!!.getTextureView(),
+                screen.previewRenderType!!
+            )
         } else {
-            Render.renderBlack(matrices, tessellator, screen.renderType);
+            Render.renderBlack(matrices, tessellator, screen.renderType!!)
         }
-        matrices.popPose();
+        matrices.popPose()
     }
 }

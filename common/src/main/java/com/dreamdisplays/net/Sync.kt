@@ -1,45 +1,50 @@
-package com.dreamdisplays.net;
+package com.dreamdisplays.net
 
-import com.dreamdisplays.Initializer;
-import net.minecraft.core.UUIDUtil;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
-import org.jspecify.annotations.NullMarked;
-
-import java.util.UUID;
+import com.dreamdisplays.Initializer
+import net.minecraft.core.UUIDUtil
+import net.minecraft.network.FriendlyByteBuf
+import net.minecraft.network.codec.ByteBufCodecs
+import net.minecraft.network.codec.StreamCodec
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload
+import net.minecraft.resources.Identifier
+import org.jspecify.annotations.NullMarked
+import java.util.*
 
 // Packet for synchronizing the playback state of a display
 @NullMarked
-public record Sync(UUID id, boolean isSync, boolean currentState, long currentTime,
-                   long limitTime) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<Sync> PACKET_ID =
-            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "sync"));
+@JvmRecord
+data class Sync(
+    val id: UUID, val isSync: Boolean, val currentState: Boolean, val currentTime: Long,
+    val limitTime: Long
+) : CustomPacketPayload {
+    override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> {
+        return PACKET_ID
+    }
 
-    public static final StreamCodec<FriendlyByteBuf, Sync> PACKET_CODEC =
-            StreamCodec.of(
-                    (buf, packet) -> {
-                        UUIDUtil.STREAM_CODEC.encode(buf, packet.id());
-                        ByteBufCodecs.BOOL.encode(buf, packet.isSync());
-                        ByteBufCodecs.BOOL.encode(buf, packet.currentState());
-                        ByteBufCodecs.VAR_LONG.encode(buf, packet.currentTime());
-                        ByteBufCodecs.VAR_LONG.encode(buf, packet.limitTime());
-                    },
-                    (buf) -> {
-                        UUID id = UUIDUtil.STREAM_CODEC.decode(buf);
+    companion object {
+        @JvmField
+        val PACKET_ID: CustomPacketPayload.Type<Sync> = CustomPacketPayload.Type<Sync>(
+            Identifier.fromNamespaceAndPath(
+                Initializer.MOD_ID, "sync"
+            )
+        )
 
-                        boolean isSync = ByteBufCodecs.BOOL.decode(buf);
-                        boolean currentState = ByteBufCodecs.BOOL.decode(buf);
-                        long currentTime = ByteBufCodecs.VAR_LONG.decode(buf);
-                        long limitTime = ByteBufCodecs.VAR_LONG.decode(buf);
-
-                        return new Sync(id, isSync, currentState, currentTime, limitTime);
-                    });
-
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return PACKET_ID;
+        @JvmField
+        val PACKET_CODEC: StreamCodec<FriendlyByteBuf, Sync> = StreamCodec.of(
+            { buf: FriendlyByteBuf?, packet: Sync? ->
+                UUIDUtil.STREAM_CODEC.encode(buf!!, packet!!.id)
+                ByteBufCodecs.BOOL.encode(buf, packet.isSync)
+                ByteBufCodecs.BOOL.encode(buf, packet.currentState)
+                ByteBufCodecs.VAR_LONG.encode(buf, packet.currentTime)
+                ByteBufCodecs.VAR_LONG.encode(buf, packet.limitTime)
+            },
+            { buf: FriendlyByteBuf? ->
+                val id = UUIDUtil.STREAM_CODEC.decode(buf!!)
+                val isSync = ByteBufCodecs.BOOL.decode(buf)
+                val currentState = ByteBufCodecs.BOOL.decode(buf)
+                val currentTime = ByteBufCodecs.VAR_LONG.decode(buf)
+                val limitTime = ByteBufCodecs.VAR_LONG.decode(buf)
+                Sync(id, isSync, currentState, currentTime, limitTime)
+            })
     }
 }

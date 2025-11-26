@@ -1,29 +1,40 @@
-package com.dreamdisplays.net;
+package com.dreamdisplays.net
 
-import com.dreamdisplays.Initializer;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
-import org.jspecify.annotations.NullMarked;
+import com.dreamdisplays.Initializer
+import net.minecraft.network.FriendlyByteBuf
+import net.minecraft.network.codec.ByteBufCodecs
+import net.minecraft.network.codec.StreamCodec
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload
+import net.minecraft.resources.Identifier
+import org.jspecify.annotations.NullMarked
 
 // Packet for indicating premium status
 @NullMarked
-public record Premium(boolean premium) implements CustomPacketPayload {
-    public static final Type<Premium> PACKET_ID =
-            new Type<>(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "premium"));
+@JvmRecord
+data class Premium(val premium: Boolean) : CustomPacketPayload {
+    override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> {
+        return PACKET_ID
+    }
 
-    public static final StreamCodec<FriendlyByteBuf, Premium> PACKET_CODEC =
-            StreamCodec.of(
-                    (buf, packet) -> ByteBufCodecs.BOOL.encode(buf, packet.premium()),
-                    (buf) -> {
-                        boolean premium = ByteBufCodecs.BOOL.decode(buf);
-                        return new Premium(premium);
-                    });
+    companion object {
+        @JvmField
+        val PACKET_ID: CustomPacketPayload.Type<Premium> = CustomPacketPayload.Type<Premium>(
+            Identifier.fromNamespaceAndPath(
+                Initializer.MOD_ID, "premium"
+            )
+        )
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return PACKET_ID;
+        @JvmField
+        val PACKET_CODEC: StreamCodec<FriendlyByteBuf, Premium> = StreamCodec.of<FriendlyByteBuf, Premium>(
+            { buf: FriendlyByteBuf?, packet: Premium? ->
+                ByteBufCodecs.BOOL.encode(
+                    buf!!,
+                    packet!!.premium
+                )
+            },
+            { buf: FriendlyByteBuf? ->
+                val premium = ByteBufCodecs.BOOL.decode(buf!!)
+                Premium(premium)
+            })
     }
 }

@@ -1,29 +1,40 @@
-package com.dreamdisplays.net;
+package com.dreamdisplays.net
 
-import com.dreamdisplays.Initializer;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
-import org.jspecify.annotations.NullMarked;
+import com.dreamdisplays.Initializer
+import net.minecraft.network.FriendlyByteBuf
+import net.minecraft.network.codec.ByteBufCodecs
+import net.minecraft.network.codec.StreamCodec
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload
+import net.minecraft.resources.Identifier
+import org.jspecify.annotations.NullMarked
 
 // Packet for sending mod version information
 @NullMarked
-public record Version(String version) implements CustomPacketPayload {
-    public static final Type<Version> PACKET_ID =
-            new Type<>(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "version"));
+@JvmRecord
+data class Version(val version: String) : CustomPacketPayload {
+    override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> {
+        return PACKET_ID
+    }
 
-    public static final StreamCodec<FriendlyByteBuf, Version> PACKET_CODEC =
-            StreamCodec.of(
-                    (buf, packet) -> ByteBufCodecs.STRING_UTF8.encode(buf, packet.version()),
-                    (buf) -> {
-                        String version = ByteBufCodecs.STRING_UTF8.decode(buf);
-                        return new Version(version);
-                    });
+    companion object {
+        @JvmField
+        val PACKET_ID: CustomPacketPayload.Type<Version> = CustomPacketPayload.Type<Version>(
+            Identifier.fromNamespaceAndPath(
+                Initializer.MOD_ID, "version"
+            )
+        )
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return PACKET_ID;
+        @JvmField
+        val PACKET_CODEC: StreamCodec<FriendlyByteBuf, Version> = StreamCodec.of<FriendlyByteBuf, Version>(
+            { buf: FriendlyByteBuf?, packet: Version? ->
+                ByteBufCodecs.STRING_UTF8.encode(
+                    buf!!,
+                    packet!!.version
+                )
+            },
+            { buf: FriendlyByteBuf? ->
+                val version = ByteBufCodecs.STRING_UTF8.decode(buf!!)
+                Version(version)
+            })
     }
 }

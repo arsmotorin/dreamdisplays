@@ -1,37 +1,37 @@
-package com.dreamdisplays;
+package com.dreamdisplays
 
-import com.dreamdisplays.screen.Manager;
-import com.dreamdisplays.screen.Screen;
-import net.minecraft.client.Minecraft;
-import org.jspecify.annotations.NullMarked;
+import com.dreamdisplays.screen.Manager
+import net.minecraft.client.Minecraft
+import org.jspecify.annotations.NullMarked
 
 @NullMarked
-public class Focuser extends Thread {
-    public static Focuser instance = new Focuser();
-
-    public Focuser() {
-        setDaemon(true);
-        instance = this;
-        setName("window-focus-mute-thread");
+class Focuser : Thread() {
+    init {
+        setDaemon(true)
+        instance = this
+        setName("window-focus-mute-thread")
     }
 
-    @Override
-    public void run() {
+    override fun run() {
         while (true) {
-            Minecraft client = Minecraft.getInstance();
+            val client = Minecraft.getInstance()
 
-            boolean focused = client.isWindowActive();
+            val focused = client.isWindowActive
 
-            if (Initializer.getConfig().muteOnAltTab) for (Screen screen : Manager.getScreens()) {
-                screen.mute(!focused);
+            if (Initializer.config.muteOnAltTab) for (screen in Manager.getScreens()) {
+                screen.mute(!focused)
             }
 
             try {
-                Thread.sleep(250);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
+                sleep(250)
+            } catch (_: InterruptedException) {
+                currentThread().interrupt()
+                break
             }
         }
+    }
+
+    companion object {
+        var instance: Focuser = Focuser()
     }
 }

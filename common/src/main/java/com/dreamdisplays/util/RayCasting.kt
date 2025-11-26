@@ -1,39 +1,37 @@
-package com.dreamdisplays.util;
+package com.dreamdisplays.util
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec3;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
+import net.minecraft.client.Minecraft
+import net.minecraft.world.level.ClipContext
+import net.minecraft.world.phys.BlockHitResult
+import net.minecraft.world.phys.HitResult
+import org.jspecify.annotations.NullMarked
 
 // Utility class for ray-casting operations
 @NullMarked
-public class RayCasting {
+object RayCasting {
+    fun rCBlock(maxDistance: Double): BlockHitResult? {
+        val client = Minecraft.getInstance()
 
-    @Nullable
-    public static BlockHitResult rCBlock(double maxDistance) {
-        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) return null
 
-        if (client.player == null || client.level == null)
-            return null;
+        val start = client.player!!.getEyePosition(1.0f)
+        val direction = client.player!!.getViewVector(1.0f)
+        val end = start.add(direction.scale(maxDistance))
 
-        Vec3 start = client.player.getEyePosition(1.0f);
-        Vec3 direction = client.player.getViewVector(1.0f);
-        Vec3 end = start.add(direction.scale(maxDistance));
-
-        BlockHitResult hit = client.level.clip(new net.minecraft.world.level.ClipContext(
+        val hit = client.level!!.clip(
+            ClipContext(
                 start,
                 end,
-                net.minecraft.world.level.ClipContext.Block.OUTLINE,
-                net.minecraft.world.level.ClipContext.Fluid.NONE,
-                client.player
-        ));
+                ClipContext.Block.OUTLINE,
+                ClipContext.Fluid.NONE,
+                client.player!!
+            )
+        )
 
-        if (hit.getType() == HitResult.Type.BLOCK) {
-            return hit;
+        if (hit.type == HitResult.Type.BLOCK) {
+            return hit
         }
 
-        return null;
+        return null
     }
 }

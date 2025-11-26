@@ -1,42 +1,37 @@
-package com.dreamdisplays.screen;
+package com.dreamdisplays.screen
 
-import org.jspecify.annotations.NullMarked;
-
-import java.util.Collection;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import org.jspecify.annotations.NullMarked
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 @NullMarked
-public class Manager {
+object Manager {
+    val screens: ConcurrentHashMap<UUID, Screen> = ConcurrentHashMap<UUID, Screen>()
 
-    public static final ConcurrentHashMap<UUID, Screen> screens = new ConcurrentHashMap<>();
-
-    public Manager() {
+    @JvmStatic
+    fun getScreens(): MutableCollection<Screen> {
+        return screens.values
     }
 
-    public static Collection<Screen> getScreens() {
-        return screens.values();
-    }
-
-    public static void registerScreen(Screen screen) {
-        if (screens.containsKey(screen.getID())) {
-            Screen old = screens.get(screen.getID());
-            old.unregister();
+    fun registerScreen(screen: Screen) {
+        if (screens.containsKey(screen.iD)) {
+            val old: Screen = screens.get(screen.iD)!!
+            old.unregister()
         }
 
-        screens.put(screen.getID(), screen);
+        screens[screen.iD] = screen
     }
 
-    public static void unregisterScreen(Screen screen) {
-        screens.remove(screen.getID());
-        screen.unregister();
+    fun unregisterScreen(screen: Screen) {
+        screens.remove(screen.iD)
+        screen.unregister()
     }
 
-    public static void unloadAll() {
-        for (Screen screen : screens.values()) {
-            screen.unregister();
+    fun unloadAll() {
+        for (screen in screens.values) {
+            screen.unregister()
         }
 
-        screens.clear();
+        screens.clear()
     }
 }
