@@ -12,6 +12,7 @@ javacv = "1.5.11"
 javacppPresets = "1.5.11"
 jna = "5.9.0"
 jspecify = "1.0.0"
+bstats = "3.1.0"
 
 neoforge = "21.11.0-alpha.1.21.11-pre2.20251122.134508"
 
@@ -36,3 +37,4 @@ ffmpeg = { module = "org.bytedeco:ffmpeg", version.ref = "javacppPresets" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 jnaPlatform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
+bstats = { module = "org.bstats:bstats-bukkit", version.ref = "bstats" }

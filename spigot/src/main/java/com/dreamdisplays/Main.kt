@@ -9,6 +9,7 @@ import com.dreamdisplays.storage.Storage
 import com.dreamdisplays.utils.Updater
 import com.github.zafarkhaja.semver.Version
 import me.inotsleep.utils.AbstractPlugin
+import org.bstats.bukkit.Metrics
 import org.bukkit.Bukkit
 import org.jspecify.annotations.NullMarked
 
@@ -45,6 +46,10 @@ class Main : AbstractPlugin<Main>() {
                 this, 20L, 20L * 3600L
             ) { Updater.checkForUpdates() }
         }
+
+        // bStats metrics
+        val pluginId = 26488
+        Metrics(this, pluginId)
     }
 
     override fun doDisable() {

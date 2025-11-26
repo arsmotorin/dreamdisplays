@@ -14,6 +14,7 @@ dependencies {
     }
     compileOnly("com.google.code.gson:gson:2.13.2")
     implementation(kotlin("stdlib-jdk8:2.2.21"))
+    implementation("org.bstats:bstats-bukkit:3.1.0")
 }
 
 val targetJavaVersion = 21
@@ -51,6 +52,7 @@ tasks.shadowJar {
     destinationDirectory.set(rootProject.layout.buildDirectory.dir("libs"))
     archiveBaseName.set("dreamdisplays-spigot")
     archiveVersion.set(rootProject.version.toString())
+    relocate("org.bstats", "com.dreamdisplays.bstats")
     manifest {
         attributes(
             "paperweight-mappings-namespace" to "mojang",
