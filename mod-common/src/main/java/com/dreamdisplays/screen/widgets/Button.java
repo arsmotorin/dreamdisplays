@@ -16,7 +16,7 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public abstract class Button extends AbstractWidget {
     private static final WidgetSprites TEXTURES = new WidgetSprites(
-        Identifier.withDefaultNamespace("widget/button"), Identifier.withDefaultNamespace("widget/button_disabled"), Identifier.withDefaultNamespace("widget/button_highlighted")
+            Identifier.withDefaultNamespace("widget/button"), Identifier.withDefaultNamespace("widget/button_disabled"), Identifier.withDefaultNamespace("widget/button_highlighted")
     );
     private final int iconWidth;
     private final int iconHeight;

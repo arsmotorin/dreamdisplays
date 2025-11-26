@@ -1,5 +1,6 @@
 plugins {
     id("net.neoforged.moddev") version libs.versions.moddev
+    kotlin("jvm")
 }
 
 dependencies {
@@ -22,6 +23,7 @@ dependencies {
     implementation(libs.jna)
     implementation(libs.jnaPlatform)
     implementation(libs.lwjgl)
+    implementation(kotlin("stdlib-jdk8"))
 }
 
 neoForge {
@@ -39,4 +41,7 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.jar {
     from(rootProject.file("LICENSE"))
+}
+repositories {
+    mavenCentral()
 }

@@ -4,6 +4,7 @@ plugins {
     id("fabric-loom") version libs.versions.loom
     id("maven-publish")
     id("com.gradleup.shadow") version libs.versions.shadow
+    kotlin("jvm")
 }
 
 loom {
@@ -18,7 +19,11 @@ dependencies {
     })
     modImplementation(libs.fabricLoader)
     modImplementation(libs.fabricApi)
+    modImplementation(libs.fabricLanguageKotlin)
+    include(libs.fabricLanguageKotlin)
     shadow(project(":mod-common"))
+
+    implementation(kotlin("stdlib-jdk8"))
 }
 
 tasks.processResources {
@@ -60,6 +65,8 @@ tasks.shadowJar {
     dependencies {
         include(project(":mod-common"))
 
+        // Kotlin stdlib is provided by Fabric Language Kotlin mod, don't include it here
+
         // JavaCV and FFmpeg
         include(dependency("org.bytedeco:javacv"))
         include(dependency("org.bytedeco:javacpp"))
@@ -80,4 +87,7 @@ tasks.shadowJar {
         include(dependency("org.json:json"))
         include(dependency("me.inotsleep:utils"))
     }
+}
+repositories {
+    mavenCentral()
 }

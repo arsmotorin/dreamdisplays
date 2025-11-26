@@ -4,11 +4,12 @@
 fabricLoader = "0.18.1"
 fabricApi = "0.139.1+1.21.11"
 fabricMinecraft = "1.21.11-pre2"
+fabricLanguageKotlin = "1.13.0+kotlin.2.1.0"
 javatube = "6692a32"
 lwjgl = "3.3.3"
 utils = "1.3.1"
-javacv = "1.5.10"
-javacppPresets = "1.5.10"
+javacv = "1.5.11"
+javacppPresets = "1.5.11"
 jna = "5.9.0"
 jspecify = "1.0.0"
 
@@ -25,6 +26,7 @@ shadow = "9.2.2"
 fabricLoader = { module = "net.fabricmc:fabric-loader", version.ref = "fabricLoader" }
 fabricApi = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabricApi" }
 fabricMinecraft = { module = "com.mojang:minecraft", version.ref = "fabricMinecraft" }
+fabricLanguageKotlin = { module = "net.fabricmc:fabric-language-kotlin", version.ref = "fabricLanguageKotlin" }
 javatube = { module = "com.github.felipeucelli:javatube", version.ref = "javatube" }
 lwjgl = { module = "org.lwjgl:lwjgl", version.ref = "lwjgl" }
 utils = { module = "me.inotsleep:utils", version.ref = "utils" }
