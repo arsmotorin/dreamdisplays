@@ -13,7 +13,9 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
 
     kotlin {
-        jvmToolchain(21)
+        jvmToolchain {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }
     }
 
     kotlin.compilerOptions {
