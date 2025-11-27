@@ -4,21 +4,42 @@
   "name": "Dream Displays",
   "version": "${version}",
   "license": "LGPL-3.0",
-    "description": "Create in-game screens to stream videos on any Minecraft server.",
-  "authors": ["arsmotorin, INotSleep"],
+  "description": "Create in-game screens to stream videos on any Minecraft server.",
+  "authors": [
+    "arsmotorin, INotSleep, Toffikk"
+  ],
   "entrypoints": {
     "client": [
-      "ru.l0sty.dreamdisplays.DreamDisplaysMod"
+      "com.dreamdisplays.DreamDisplaysMod"
     ]
   },
   "mixins": [
     "dreamdisplays.mixins.json"
   ],
+  "accessWidener": "dreamdisplays.accesswidener",
   "depends": {
-    "fabricloader": ">=0.15.11",
+    "fabricloader": ">=0.17",
     "fabric": "*",
-    "minecraft": "1.21.5",
+    "fabric-language-kotlin": ">=1.13.0",
+    "minecraft": "1.21.11-beta.2",
     "java": ">=21"
+  },
+  "custom": {
+    "modmenu": {
+      "badges": [
+        "library"
+      ]
+    },
+    "quilt_loader": {
+      "id": "dreamdisplays",
+      "group": "dreamdisplays",
+      "provides": [
+        {
+          "id": "dreamdisplays",
+          "version": "${version}"
+        }
+      ]
+    }
   },
   "icon": "assets/dreamdisplays/icon.png"
 }

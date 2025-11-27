@@ -1,0 +1,258 @@
+package com.dreamdisplays.storage
+
+import com.dreamdisplays.Main
+import com.dreamdisplays.datatypes.Display
+import com.dreamdisplays.utils.Scheduler
+import me.inotsleep.utils.logging.LoggingManager
+import me.inotsleep.utils.storage.connection.BaseConnection
+import org.bukkit.Bukkit
+import org.bukkit.Location
+import org.bukkit.block.BlockFace
+import org.jspecify.annotations.NullMarked
+import java.nio.ByteBuffer
+import java.sql.SQLException
+import java.util.*
+import com.dreamdisplays.managers.DisplayManager as Manager
+
+/**
+ * Storage manager for handling database operations related to displays.
+ */
+@NullMarked
+class Storage(var plugin: Main) {
+    var connection: BaseConnection? = null
+    var tablePrefix: String? = null
+
+    // Initialize the storage and establish database connection
+    init {
+        val connectTask = Runnable {
+            tablePrefix = Main.config.storage.tablePrefix
+            try {
+                connection = BaseConnection.createConnection(Main.config.storage, plugin.dataFolder)
+                connection?.connect() ?: run {
+                    LoggingManager.error("Failed to create database connection")
+                    Main.disablePlugin()
+                    return@Runnable
+                }
+                onConnect()
+            } catch (e: SQLException) {
+                LoggingManager.error("Could not connect to database", e)
+                Main.disablePlugin()
+            }
+        }
+
+        Scheduler.runAsync(connectTask)
+    }
+
+    // Set up database tables and load existing displays
+    @Throws(SQLException::class)
+    private fun onConnect() {
+        val conn = connection ?: throw SQLException("Connection is null")
+
+        conn.executeUpdate(
+            "CREATE TABLE IF NOT EXISTS " + tablePrefix + "displays (" +
+                    "id BINARY(16) PRIMARY KEY NOT NULL, " +
+                    "ownerId BINARY(16) NOT NULL, " +
+                    "videoCode CHAR(11) NULL, " +
+                    "world CHAR(255) NOT NULL, " +
+                    "pos1 BIGINT NOT NULL, " +
+                    "pos2 BIGINT NOT NULL, " +
+                    "size BIGINT NOT NULL, " +
+                    "facing TINYINT UNSIGNED NOT NULL, " +
+                    "isSync BOOLEAN NOT NULL," +
+                    "duration BIGINT NULL" +
+                    ");"
+        )
+
+        val meta = conn.metaData
+        meta.getColumns(null, null, tablePrefix + "displays", "lang").use { cols ->
+            if (!cols.next()) {
+                conn.executeUpdate(
+                    "ALTER TABLE " + tablePrefix + "displays " +
+                            "ADD COLUMN lang VARCHAR(255) DEFAULT '' NOT NULL"
+                )
+            }
+        }
+        Manager.register(this.allDisplays.filterNotNull())
+    }
+
+    // Save all displays and close the database connection
+    fun onDisable() {
+        val conn = connection ?: return
+
+        try {
+            Manager.save { data: Display -> this.saveDisplay(data) }
+            conn.disconnect()
+        } catch (e: SQLException) {
+            LoggingManager.error("Unable to save data", e)
+        }
+    }
+
+    // Convert UUID to byte array
+    private fun uuidToBytes(uuid: UUID): ByteArray {
+        val buf = ByteBuffer.allocate(16)
+        buf.putLong(uuid.mostSignificantBits)
+        buf.putLong(uuid.leastSignificantBits)
+        return buf.array()
+    }
+
+    // Convert byte array to UUID
+    private fun bytesToUuid(bytes: ByteArray): UUID {
+        val buf = ByteBuffer.wrap(bytes)
+        val msb = buf.getLong()
+        val lsb = buf.getLong()
+        return UUID(msb, lsb)
+    }
+
+    // Save a display to the database
+    fun saveDisplay(data: Display) {
+        val conn = connection ?: run {
+            LoggingManager.error("Cannot save display: connection is null")
+            return
+        }
+
+        val world = data.pos1.world ?: run {
+            LoggingManager.error("Cannot save display: world is null for display ${data.id}")
+            return
+        }
+
+        val sql = "REPLACE INTO " + tablePrefix + "displays " +
+                "(id, ownerId, videoCode, world, pos1, pos2, size, facing, isSync, duration, lang) " +
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+
+        try {
+            conn.executeUpdate(
+                sql,
+                uuidToBytes(data.id),
+                uuidToBytes(data.ownerId),
+                data.url,
+                world.name,
+                packBlockPos(
+                    data.pos1.blockX,
+                    data.pos1.blockY,
+                    data.pos1.blockZ
+                ),
+                packBlockPos(
+                    data.pos2.blockX,
+                    data.pos2.blockY,
+                    data.pos2.blockZ
+                ),
+                pack(data.width, data.height),
+                data.facing.ordinal.toByte(),
+                data.isSync,
+                data.duration,
+                data.lang
+            )
+        } catch (e: SQLException) {
+            LoggingManager.error("Could not save display to database", e)
+            Main.disablePlugin()
+        }
+    }
+
+    // Retrieve all displays from the database
+    val allDisplays: MutableList<Display?>
+        get() {
+            val conn = connection ?: run {
+                LoggingManager.error("Cannot fetch displays: connection is null")
+                return mutableListOf()
+            }
+
+            val sql =
+                "SELECT id, ownerId, videoCode, world, pos1, pos2, size, facing, isSync, duration, lang " +
+                        "FROM " + tablePrefix + "displays"
+            val list: MutableList<Display?> = ArrayList()
+
+            try {
+                conn.executeQuery(sql).use { rs ->
+                    while (rs.next()) {
+                        val id = bytesToUuid(rs.getBytes("id"))
+                        val ownerId = bytesToUuid(rs.getBytes("ownerId"))
+                        val videoCode = rs.getString("videoCode")
+                        val world = Bukkit.getWorld(rs.getString("world"))
+
+                        val packed1 = rs.getLong("pos1")
+                        val packed2 = rs.getLong("pos2")
+                        val x1: Int = unpackX(packed1)
+                        val y1: Int = unpackY(packed1)
+                        val z1: Int = unpackZ(packed1)
+                        val x2: Int = unpackX(packed2)
+                        val y2: Int = unpackY(packed2)
+                        val z2: Int = unpackZ(packed2)
+
+                        val sizePacked = rs.getLong("size")
+                        val width: Int = unpackHigh(sizePacked)
+                        val height: Int = unpackLow(sizePacked)
+
+                        val data = Display(
+                            id, ownerId,
+                            Location(world, x1.toDouble(), y1.toDouble(), z1.toDouble()),
+                            Location(world, x2.toDouble(), y2.toDouble(), z2.toDouble()),
+                            width, height,
+                            BlockFace.entries[rs.getInt("facing")]
+                        )
+                        data.url = videoCode
+                        data.isSync = rs.getBoolean("isSync")
+                        val dur = rs.getLong("duration")
+                        if (!rs.wasNull()) {
+                            data.duration = dur
+                        }
+
+                        data.lang = rs.getString("lang")
+
+                        list.add(data)
+                    }
+                }
+            } catch (e: SQLException) {
+                LoggingManager.error("Could not fetch from database", e)
+                Main.disablePlugin()
+            }
+
+            return list
+        }
+
+    // Delete a display from the database
+    fun deleteDisplay(data: Display) {
+        val conn = connection ?: run {
+            LoggingManager.error("Cannot delete display: connection is null")
+            return
+        }
+
+        val sql = "DELETE FROM " + tablePrefix + "displays WHERE id = ?"
+        try {
+            conn.executeUpdate(sql, uuidToBytes(data.id))
+        } catch (e: SQLException) {
+            LoggingManager.error("Could not delete display from database", e)
+            Main.disablePlugin()
+        }
+    }
+
+    // Packing and unpacking utilities for block positions and sizes
+    companion object {
+        private fun packBlockPos(x: Int, y: Int, z: Int): Long {
+            return ((x and 0x3FFFFFF).toLong() shl 38) or ((z and 0x3FFFFFF).toLong() shl 12) or (y and 0xFFF).toLong()
+        }
+
+        private fun unpackX(packed: Long): Int {
+            return (packed shr 38).toInt()
+        }
+
+        private fun unpackY(packed: Long): Int {
+            return (packed shl 52 shr 52).toInt()
+        }
+
+        private fun unpackZ(packed: Long): Int {
+            return (packed shl 26 shr 38).toInt()
+        }
+
+        fun pack(high: Int, low: Int): Long {
+            return ((high.toLong()) shl 32) or (low.toLong() and 0xFFFFFFFFL)
+        }
+
+        fun unpackHigh(packed: Long): Int {
+            return (packed shr 32).toInt()
+        }
+
+        fun unpackLow(packed: Long): Int {
+            return packed.toInt()
+        }
+    }
+}

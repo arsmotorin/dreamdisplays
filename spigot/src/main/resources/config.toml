@@ -1,59 +1,53 @@
-# Dream Displays by arsmotorin and INotSleep
-# Questions? Telegram: @arsmotorin or Discord: @arsmotorin
+# Dream Displays configuration
+# Support: @arsmotorin (Telegram/Discord)
 
 [language]
-# Language used for plugin messages (en, ru, etc.)
+# Language code for messages
 message_language = "en"
 
-[settings]
-# Discord webhook settings
-webhook_url = ""
-report_cooldown = 15000
-
-# GitHub repository settings for update checks (better leave it as is)
-repo_name = "dreamdisplays"
-repo_owner = "arsmotorin"
-
-# Materials used for display selection and base
+[display]
+# Selection tool and base material
 selection_material = "DIAMOND_AXE"
 base_material = "BLACK_CONCRETE"
 
-# Display size limits (in blocks)
+# Display size limits
+# All values are in blocks
+max_render_distance = 96.0
 min_width = 1
 min_height = 1
 max_width = 32
 max_height = 24
 
-# Maximum distance (in blocks) from which displays render to players
-maxRenderDistance = 96.0
+# Particle effects for selection visualization
+# Note that it doesn't work on Folia
+particles = true
+particles_color = "#00FFFF"
 
-# Particle effects configuration (Folia ignores it)
-CUI_particle_render_delay = 2
-CUI_particles_per_block = 3
-CUI_particles_color = 65280
+# Update notifications
+updates = true
+
+[reports]
+# Report settings
+# webhook_url is a discord webhook URL for sending reports
+# cooldown is in seconds
+webhook_url = ""
+cooldown = 30
 
 [storage]
-# Database settings (SQLITE or MYSQL)
-storageType = "SQLITE"
-sqliteFile = "database.db"
-
-# MySQL settings
+# Storage type: SQLITE or MYSQL
+# If you choose MYSQL, fill in the details below
+type = "SQLITE"
 host = "localhost"
 port = "3306"
 database = "database"
-password = "password"
 username = "username"
-
-# Additional settings for MySQL
-options = "autoReconnect=true&useSSL=false;"
-tablePrefix = ""
+password = "password"
+table_prefix = ""
 
 [permissions]
-# Grants access to premium features (1080p+ quality)
-premium = "group.premium"
-# Allows deleting any display, including ones owned by other players
+# Permission nodes
+premium = "dreamdisplays.premium"
 delete = "dreamdisplays.delete"
-# Allows listing all existing displays on the server
 list = "dreamdisplays.list"
-# Allows reloading the plugin configuration
 reload = "dreamdisplays.reload"
+updates = "dreamdisplays.updates"

@@ -10,15 +10,24 @@
   "structureWrongDepth": "&7D |&f Selection must be at least 1 block long",
   "wrongStructure": "&7D |&f Only black concrete blocks can be used for displays",
   "selectionClear": "&7D |&f Selection has been cleared!",
-  "displayCommandHelp": ["&7D |&f You entered something wrong!"],
+  "displayCommandHelp": [
+    "&7D |&f You entered something wrong!"
+  ],
   "successfulCreation": "&7D |&f Display has been created! Type /display video <youtube link> [language] to set a video",
   "noDisplay": "&7D |&f Display has not been found!",
   "settedURL": "&7D |&f Video has been loaded!",
   "invalidURL": "&7D |&f Your URL is invalid! Please use a valid YouTube link",
   "reportTooQuickly": "&7D |&f You are sending reports too quickly! Please wait before sending another report",
   "reportSent": "&7D |&f Report has been sent!",
-  "newVersion": "&7D |&f New version of Dream Displays (%s)! Please update it!",
-  "usageHeader": ["&a-== Dream Displays ==-", "&aInstalled: &f{0}&7/&f{1}", "&a-== Versions ==-"],
+  "displayDeleted": "&7D |&f Display has been deleted!",
+  "reportNotConfigured": "&7D |&f If you have issues regarding this video, please contact the server administrator",
+  "newVersion": "&7D |&f New version of Dream Displays (%s) is available! Please update your mod!",
+  "newPluginVersion": "&7D |&f New version of Dream Displays plugin (%s) is available! Please update the server plugin!",
+  "usageHeader": [
+    "&a-== Dream Displays ==-",
+    "&aInstalled: &f{0}&7/&f{1}",
+    "&a-== Versions ==-"
+  ],
   "usageVersionEntry": " &7- &f{0}&a: &f{1}",
   "usageFooter": "&a-====== ======-",
   "configReloaded": "&7D | &fDream Displays has been reloaded!",

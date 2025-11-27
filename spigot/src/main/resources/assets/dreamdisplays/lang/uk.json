@@ -10,15 +10,24 @@
   "structureWrongDepth": "&7D |&f Вибір повинен бути хоча б 1 блок у довжину",
   "wrongStructure": "&7D |&f Для дисплеїв можна використовувати тільки блоки чорного бетону",
   "selectionClear": "&7D |&f Вибір очищено!",
-  "displayCommandHelp": ["&7D |&f Ви ввели щось неправильно!"],
+  "displayCommandHelp": [
+    "&7D |&f Ви ввели щось неправильно!"
+  ],
   "successfulCreation": "&7D |&f Дисплей створено! Введіть /display video <посилання на youtube> [мова] щоб встановити відео",
   "noDisplay": "&7D |&f Дисплей не знайдено!",
   "settedURL": "&7D |&f Відео завантажено!",
   "invalidURL": "&7D |&f Ваше посилання недійсне! Будь ласка, використовуйте дійсне посилання YouTube",
   "reportTooQuickly": "&7D |&f Ви надсилаєте звіти занадто швидко! Зачекайте перед надсиланням іншого звіту",
   "reportSent": "&7D |&f Звіт надіслано!",
+  "displayDeleted": "&7D |&f Дисплей видалено!",
+  "reportNotConfigured": "&7D |&f Якщо маєте проблеми стосовно цього вiдео, зв'яжіться з адміністратором сервера",
   "newVersion": "&7D |&f Нова версія Dream Displays (%s)! Будь ласка, оновіть!",
-  "usageHeader": ["&a-== Dream Displays ==-", "&aВстановлено: &f{0}&7/&f{1}", "&a-== Версії ==-"],
+  "newPluginVersion": "&7D |&f Доступна нова версія плагіна Dream Displays (%s)! Будь ласка, оновіть плагін на сервері!",
+  "usageHeader": [
+    "&a-== Dream Displays ==-",
+    "&aВстановлено: &f{0}&7/&f{1}",
+    "&a-== Версії ==-"
+  ],
   "usageVersionEntry": " &7- &f{0}&a: &f{1}",
   "usageFooter": "&a-====== ======-",
   "configReloaded": "&7D | &fDream Displays перезавантажено!",

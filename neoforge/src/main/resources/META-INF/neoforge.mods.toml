@@ -1,0 +1,29 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "LGPL-3.0"
+
+[[mods]]
+
+modId = "dreamdisplays"
+version = "${version}"
+displayName = "DreamDisplays"
+logoFile = "assets/dreamdisplays/icon.png"
+authors = "arsmotorin, INotSleep, Toffikk"
+description = "Create in-game screens to stream videos on any Minecraft server."
+
+[[mixins]]
+config = "dreamdisplays.mixins.json"
+
+[[dependencies.dreamdisplays]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.10.31,)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.dreamdisplays]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.10]"
+ordering = "NONE"
+side = "CLIENT"
