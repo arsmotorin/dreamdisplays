@@ -4,7 +4,6 @@ plugins {
     id("fabric-loom") version libs.versions.loom
     id("maven-publish")
     id("com.gradleup.shadow") version libs.versions.shadow
-    kotlin("jvm")
 }
 
 loom {
@@ -15,15 +14,14 @@ dependencies {
     minecraft(libs.fabricMinecraft)
     mappings(loom.layered {
         officialMojangMappings()
-        parchment(rootProject.property("neoForge.parchment.parchmentArtifact"))
+        parchment(rootProject.property("neoForge.parchment.parchmentArtifact")!!)
     })
-    modImplementation(libs.fabricLoader)
-    modImplementation(libs.fabricApi)
-    modImplementation(libs.fabricLanguageKotlin)
-    include(libs.fabricLanguageKotlin)
-    shadow(project(":common"))
+    modCompileOnly(libs.fabricLoader)
+    modCompileOnly(libs.fabricApi)
+    modCompileOnly(libs.fabricLanguageKotlin)
 
-    implementation(kotlin("stdlib-jdk8"))
+    shadow(project(":common"))
+    compileOnly(kotlin("stdlib-jdk8"))
 }
 
 tasks.processResources {
@@ -35,15 +33,6 @@ tasks.processResources {
     filesMatching("quilt.mod.json") {
         expand(mapOf("version" to projectVersion))
     }
-}
-
-java {
-    withSourcesJar()
-    toolchain { languageVersion.set(JavaLanguageVersion.of(21)) }
-}
-
-tasks.withType<JavaCompile>().configureEach {
-    options.encoding = Charsets.UTF_8.name()
 }
 
 tasks.jar {
@@ -63,31 +52,6 @@ tasks.withType<RemapJarTask>().configureEach {
 tasks.shadowJar {
     configurations = listOf(project.configurations.getByName("shadow"))
     dependencies {
-        include(project(":common"))
-
-        // Kotlin stdlib is provided by Fabric Language Kotlin mod, don't include it here
-
-        // JavaCV and FFmpeg
-        include(dependency("org.bytedeco:javacv"))
-        include(dependency("org.bytedeco:javacpp"))
-        include(dependency("org.bytedeco:ffmpeg"))
-
-        // Platform-specific natives
-        include(dependency("org.bytedeco:javacpp:.*:macosx-arm64"))
-        include(dependency("org.bytedeco:javacpp:.*:macosx-x86_64"))
-        include(dependency("org.bytedeco:javacpp:.*:windows-x86_64"))
-        include(dependency("org.bytedeco:javacpp:.*:linux-x86_64"))
-
-        include(dependency("org.bytedeco:ffmpeg:.*:macosx-arm64"))
-        include(dependency("org.bytedeco:ffmpeg:.*:macosx-x86_64"))
-        include(dependency("org.bytedeco:ffmpeg:.*:windows-x86_64"))
-        include(dependency("org.bytedeco:ffmpeg:.*:linux-x86_64"))
-
-        include(dependency("com.github.felipeucelli:javatube"))
-        include(dependency("org.json:json"))
-        include(dependency("me.inotsleep:utils"))
+        exclude(dependency("org.jspecify:jspecify"))
     }
-}
-repositories {
-    mavenCentral()
 }

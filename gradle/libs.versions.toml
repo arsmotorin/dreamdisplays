@@ -2,23 +2,24 @@
 
 [versions]
 fabricLoader = "0.18.1"
-fabricApi = "0.139.1+1.21.11"
-fabricMinecraft = "1.21.11-pre2"
+fabricApi = "0.139.2+1.21.11"
+fabricMinecraft = "1.21.11-pre3"
 fabricLanguageKotlin = "1.13.0+kotlin.2.1.0"
 javatube = "6692a32"
 lwjgl = "3.3.3"
 utils = "1.3.1"
 javacv = "1.5.11"
 javacppPresets = "1.5.11"
+ffmpegVersion = "7.1"
 jna = "5.9.0"
 jspecify = "1.0.0"
 bstats = "3.1.0"
 
-neoforge = "21.11.0-alpha.1.21.11-pre2.20251122.134508"
+neoforge = "21.11.0-alpha.1.21.11-pre3.20251126.164358"
 
 # Plugin versions
-loom = "1.13.4"
-moddev = "2.0.119"
+loom = "1.14.0-alpha.29"
+moddev = "2.0.120"
 shadow = "9.2.2"
 
 [plugins]

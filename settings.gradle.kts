@@ -6,9 +6,6 @@ pluginManagement {
         maven("https://maven.neoforged.net/releases")
         maven("https://maven.fabricmc.net/")
     }
-    plugins {
-        kotlin("jvm") version "2.2.0"
-    }
 }
 
 plugins {
@@ -18,6 +15,6 @@ plugins {
 rootProject.name = "displays"
 include(":common")
 include(":fabric")
-include(":neoforge")
+//include(":neoforge")
 include(":forge")
 include(":spigot")

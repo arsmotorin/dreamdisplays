@@ -1,7 +1,5 @@
 plugins {
-    java
     id("com.gradleup.shadow") version libs.versions.shadow
-    kotlin("jvm")
 }
 
 dependencies {
@@ -17,23 +15,11 @@ dependencies {
     implementation("org.bstats:bstats-bukkit:3.1.0")
 }
 
-val targetJavaVersion = 21
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(targetJavaVersion))
-    }
-}
-
-tasks.withType<JavaCompile>().configureEach {
-    options.encoding = Charsets.UTF_8.name()
-    options.release.set(targetJavaVersion)
-}
 
 tasks.processResources {
     val projectVersion = version.toString()
     val props = mapOf("version" to projectVersion)
     inputs.properties(props)
-    filteringCharset = Charsets.UTF_8.name()
     filesMatching("plugin.yml") {
         expand(props)
     }
