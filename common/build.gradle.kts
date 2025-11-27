@@ -3,8 +3,8 @@ plugins {
 }
 
 dependencies {
-    val javacppVersion = libs.versions.javacppPresets.get()
-    val ffmpegVersion = "${libs.versions.ffmpegVersion.get()}-$javacppVersion"
+    val javacppVersion = libs.versions.javacv.get()
+    val ffmpegVersion = "${libs.versions.ffmpeg.get()}-$javacppVersion"
 
     api(libs.javacv)
     api(libs.javacpp)
@@ -12,7 +12,6 @@ dependencies {
     api(libs.utils)
     api(libs.javatube)
     api(libs.jspecify)
-
     // Platform-specific FFmpeg natives
     api("org.bytedeco:ffmpeg:$ffmpegVersion:macosx-arm64")
     api("org.bytedeco:ffmpeg:$ffmpegVersion:macosx-x86_64")
@@ -26,8 +25,4 @@ neoForge {
     enable {
         version = libs.versions.neoforge.get()
     }
-}
-
-tasks.jar {
-    from(rootProject.file("LICENSE"))
 }

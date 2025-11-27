@@ -22,6 +22,17 @@ subprojects {
         jvmTarget.set(JvmTarget.JVM_21)
     }
 
+    // i (Toffikk) need this to compile
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }
+    }
+
+    tasks.jar {
+        from(rootProject.file("LICENSE"))
+    }
+
     tasks.withType<AbstractArchiveTask>().configureEach {
         isPreserveFileTimestamps = false
         isReproducibleFileOrder = true

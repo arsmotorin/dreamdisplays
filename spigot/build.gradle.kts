@@ -3,15 +3,14 @@ plugins {
 }
 
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:1.21.8-R0.1-SNAPSHOT")
     compileOnly(libs.jspecify)
     implementation("me.inotsleep:utils:1.3.4")
     implementation("com.github.zafarkhaja:java-semver:0.10.2")
     implementation("com.moandjiezana.toml:toml4j:0.7.2") {
         exclude(group = "com.google.code.gson", module = "gson")
     }
-    compileOnly("com.google.code.gson:gson:2.13.2")
-    implementation(kotlin("stdlib-jdk8:2.2.21"))
+    implementation(kotlin("stdlib-jdk8"))
     implementation("org.bstats:bstats-bukkit:3.1.0")
 }
 

@@ -35,10 +35,6 @@ tasks.processResources {
     }
 }
 
-tasks.jar {
-    from(rootProject.file("LICENSE"))
-}
-
 tasks.withType<RemapJarTask>().configureEach {
     inputFile.set(tasks.shadowJar.flatMap { it.archiveFile })
 
