@@ -10,6 +10,9 @@ import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 
+/**
+ * Mixin for hiding the crosshair when player is focused on a display screen.
+ */
 @Mixin(Gui::class)
 @NullMarked
 class Crosshair {

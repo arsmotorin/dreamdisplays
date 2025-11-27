@@ -13,7 +13,9 @@ import org.joml.Vector3i
 import org.jspecify.annotations.NullMarked
 import java.util.*
 
-// Packet for sending display information
+/**
+ * Packet for sending display information.
+ */
 @NullMarked
 @JvmRecord
 data class Info(

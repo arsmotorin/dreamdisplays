@@ -13,6 +13,9 @@ import java.util.concurrent.CompletableFuture
 import java.util.function.Function
 import javax.imageio.ImageIO
 
+/**
+ * Utility object for image handling.
+ */
 @NullMarked
 object Image {
     @JvmStatic

@@ -8,6 +8,9 @@ import net.minecraft.client.Camera
 import net.minecraft.world.phys.Vec3
 import org.jspecify.annotations.NullMarked
 
+/**
+ * Renders all screens in the world and checks if they are in view of the camera.
+ */
 @NullMarked
 object World {
     // Renders all screens in the world relative to the camera position

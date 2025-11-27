@@ -10,7 +10,9 @@ import net.minecraft.resources.Identifier
 import org.jspecify.annotations.NullMarked
 import java.util.*
 
-// Packet for synchronizing the playback state of a display
+/**
+ * Packet for synchronizing display state.
+ */
 @NullMarked
 @JvmRecord
 data class Sync(

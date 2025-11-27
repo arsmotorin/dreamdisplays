@@ -2,9 +2,10 @@ package com.dreamdisplays.util
 
 import org.jspecify.annotations.NullMarked
 
-// The Facing enum represents the four cardinal compass directions: NORTH, EAST, SOUTH, and WEST.
-// It provides methods to convert between the enum values and their corresponding byte representations
-// used in network packets.
+/**
+ * The Facing enum represents the four cardinal compass directions: NORTH, EAST, SOUTH, and WEST.
+ * This used for screen orientation in the world and for network packet serialization.
+ */
 @NullMarked
 enum class Facing {
     NORTH, EAST, SOUTH, WEST;

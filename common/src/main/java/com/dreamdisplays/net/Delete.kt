@@ -9,7 +9,9 @@ import net.minecraft.resources.Identifier
 import org.jspecify.annotations.NullMarked
 import java.util.*
 
-// Packet for deleting a display
+/**
+ * Packet for deleting a display.
+ */
 @NullMarked
 @JvmRecord
 data class Delete(val id: UUID) : CustomPacketPayload {

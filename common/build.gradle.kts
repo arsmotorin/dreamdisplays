@@ -12,6 +12,7 @@ dependencies {
     api(libs.utils)
     api(libs.javatube)
     api(libs.jspecify)
+
     // Platform-specific FFmpeg natives
     api("org.bytedeco:ffmpeg:$ffmpegVersion:macosx-arm64")
     api("org.bytedeco:ffmpeg:$ffmpegVersion:macosx-x86_64")

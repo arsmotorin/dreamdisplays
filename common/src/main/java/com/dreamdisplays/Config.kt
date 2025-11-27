@@ -5,6 +5,9 @@ import me.inotsleep.utils.config.Path
 import org.jspecify.annotations.NullMarked
 import java.io.File
 
+/**
+ * Configuration for the Dream Displays mod.
+ */
 @NullMarked
 class Config(baseDir: File) : AbstractConfig(baseDir, "config.yml") {
     @Path("mute-on-alt-tab")

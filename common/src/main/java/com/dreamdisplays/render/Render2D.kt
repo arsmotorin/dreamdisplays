@@ -8,7 +8,9 @@ import net.minecraft.client.renderer.rendertype.RenderType
 import org.joml.Matrix3x2fStack
 import org.jspecify.annotations.NullMarked
 
-// Utility class for rendering 2D textured quads
+/**
+ * 2D rendering utilities.
+ */
 @NullMarked
 object Render2D {
     fun drawTexturedQuad(

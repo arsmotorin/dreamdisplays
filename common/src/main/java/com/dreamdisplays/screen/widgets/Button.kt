@@ -13,6 +13,7 @@ import net.minecraft.util.ARGB
 import org.jspecify.annotations.NullMarked
 import kotlin.math.max
 
+// TODO: rewrite this
 @NullMarked
 abstract class Button(
     x: Int,

@@ -6,6 +6,9 @@ import java.net.URI
 import java.net.URISyntaxException
 import java.util.regex.Pattern
 
+/**
+ * General utility functions for the mod.
+ */
 @NullMarked
 object Utils {
 

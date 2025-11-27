@@ -6,7 +6,9 @@ import net.minecraft.world.phys.BlockHitResult
 import net.minecraft.world.phys.HitResult
 import org.jspecify.annotations.NullMarked
 
-// Utility class for ray-casting operations
+/**
+ * Rey-casting utility functions.
+ */
 @NullMarked
 object RayCasting {
     fun rCBlock(maxDistance: Double): BlockHitResult? {

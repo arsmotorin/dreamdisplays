@@ -9,6 +9,9 @@ import net.minecraft.client.renderer.rendertype.RenderType
 import org.joml.Quaternionf
 import org.jspecify.annotations.NullMarked
 
+/**
+ * Main rendering base for rendering screens in the world.
+ */
 @NullMarked
 object Render {
     // Prevent rotation issues

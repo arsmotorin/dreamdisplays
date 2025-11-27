@@ -8,7 +8,9 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.resources.Identifier
 import org.jspecify.annotations.NullMarked
 
-// Packet for indicating premium status
+/**
+ * Packet for premium status (1080p+ quality, etc.)
+ */
 @NullMarked
 @JvmRecord
 data class Premium(val premium: Boolean) : CustomPacketPayload {

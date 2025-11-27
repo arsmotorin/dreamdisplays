@@ -13,6 +13,7 @@ import net.minecraft.network.chat.Style
 import net.minecraft.resources.Identifier
 import org.jspecify.annotations.NullMarked
 
+// TODO: rewrite this
 @NullMarked
 abstract class Toggle(x: Int, y: Int, width: Int, height: Int, message: Component, value: Boolean) :
     AbstractWidget(x, y, width, height, message) {

@@ -11,6 +11,9 @@ import java.io.FileWriter
 import java.io.IOException
 import java.util.*
 
+/**
+ * Manages client display settings.
+ */
 @NullMarked
 object Settings {
     // TODO: move to adequate path

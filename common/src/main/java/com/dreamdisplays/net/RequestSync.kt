@@ -9,7 +9,9 @@ import net.minecraft.resources.Identifier
 import org.jspecify.annotations.NullMarked
 import java.util.*
 
-// Packet for requesting synchronization of a display
+/**
+ * Packet for sending a request for display synchronization.
+ */
 @NullMarked
 @JvmRecord
 data class RequestSync(val id: UUID) : CustomPacketPayload {

@@ -29,6 +29,10 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
 
+/**
+ * Represents a video display screen in the Minecraft world.
+ */
+
 @NullMarked
 class Screen(
     val iD: UUID, ownerId: UUID, var x: Int, var y: Int, var z: Int, // Returns screen facing direction
@@ -68,7 +72,7 @@ class Screen(
     private var lang: String? = null
 
     // Returns list of available video qualities
-    val qualityList: MutableList<Int> = mutableListOf<Int>(144, 240, 360, 480, 720, 1080, 1440, 2160)
+    val qualityList: MutableList<Int> = mutableListOf(144, 240, 360, 480, 720, 1080, 1440, 2160)
 
     // Constructor for the Screen class
     init {
@@ -103,7 +107,7 @@ class Screen(
         this.videoUrl = videoUrl
         this.lang = lang
         this.lastLoadedQuality = this.quality
-        CompletableFuture.runAsync(Runnable {
+        CompletableFuture.runAsync {
             try {
                 this.videoUrl = videoUrl
                 val qualityInt = this.quality.replace("p", "").toInt()
@@ -116,7 +120,7 @@ class Screen(
                 }
                 val config = MediaPlayerConfig(
                     videoUrl,
-                    if (lang != null) lang else "en",
+                    lang,
                     volume.toDouble(),
                     videoQuality,
                     32
@@ -125,7 +129,6 @@ class Screen(
             } catch (e: Throwable) {
                 LoggingManager.error("Screen: Failed to load video", e)
             }
-            // TODO: note for INotSleep: we should delete video previews to avoid problems with videos
             fetchImageTextureFromUrl("https://img.youtube.com/vi/" + extractVideoId(videoUrl) + "/maxresdefault.jpg")
                 .thenAcceptAsync(Consumer { nativeImageBackedTexture: DynamicTexture? ->
                     previewTexture = nativeImageBackedTexture
@@ -134,15 +137,15 @@ class Screen(
                         "screen-preview-" + this.iD + "-" + UUID.randomUUID()
                     )
                     if (previewTexture != null) {
-                        Minecraft.getInstance().getTextureManager().register(previewTextureId!!, previewTexture!!)
-                        previewRenderType = Companion.createRenderType(previewTextureId!!)
+                        Minecraft.getInstance().textureManager.register(previewTextureId!!, previewTexture!!)
+                        previewRenderType = createRenderType(previewTextureId!!)
                     }
                 })
-        })
+        }
 
-        waitForMFInit(Runnable { this.startVideo() })
+        waitForMFInit { this.startVideo() }
 
-        Minecraft.getInstance().execute(Runnable { this.reloadTexture() })
+        Minecraft.getInstance().execute { this.reloadTexture() }
     }
 
     // Updates the screen data based on a DisplayInfoPacket
@@ -181,7 +184,7 @@ class Screen(
 
         val nanos = System.nanoTime()
 
-        waitForMFInit(Runnable {
+        waitForMFInit {
             if (!videoStarted) {
                 startVideo()
                 setVolume(Initializer.config.syncDisplayVolume.toFloat())
@@ -192,7 +195,7 @@ class Screen(
 
             seekVideoTo(packet.currentTime + lostTime)
             setPaused(packet.currentState)
-        })
+        }
     }
 
     fun reloadTexture() {
@@ -209,15 +212,15 @@ class Screen(
             val wasPlaying = videoStarted && !paused
             lastLoadedQuality = quality
             // Execute on render thread to avoid IllegalStateException
-            Minecraft.getInstance().execute(Runnable {
+            Minecraft.getInstance().execute {
                 unregister()
                 reloadTexture() // Recreate texture with new dimensions
                 loadVideo(currentVideoUrl!!, currentLang!!)
                 // Restore playback state
                 if (wasPlaying) {
-                    waitForMFInit(Runnable { this.startVideo() })
+                    waitForMFInit { this.startVideo() }
                 }
-            })
+            }
         }
     }
 
@@ -232,7 +235,7 @@ class Screen(
             else -> maxZ += width - 1
         }
 
-        return x <= pos.getX() && maxX >= pos.getX() && y <= pos.getY() && maxY >= pos.getY() && z <= pos.getZ() && maxZ >= pos.getZ()
+        return pos.x in x..maxX && y <= pos.y && maxY >= pos.y && z <= pos.z && maxZ >= pos.z
     }
 
     // Checks if the video has started playing
@@ -251,9 +254,9 @@ class Screen(
             "EAST", "WEST" -> maxZ += width - 1
         }
 
-        val clampedX = min(max(pos.getX(), x), maxX)
-        val clampedY = min(max(pos.getY(), y), maxY)
-        val clampedZ = min(max(pos.getZ(), z), maxZ)
+        val clampedX = min(max(pos.x, x), maxX)
+        val clampedY = min(max(pos.y, y), maxY)
+        val clampedZ = min(max(pos.z, z), maxZ)
 
         val closestPoint = BlockPos(clampedX, clampedY, clampedZ)
 
@@ -323,10 +326,10 @@ class Screen(
     fun setPaused(paused: Boolean) {
         if (!videoStarted) {
             this.paused = false
-            waitForMFInit(Runnable {
+            waitForMFInit {
                 startVideo()
                 setVolume(Initializer.config.defaultDisplayVolume.toFloat())
-            })
+            }
             return
         }
         this.paused = paused
@@ -369,11 +372,11 @@ class Screen(
         if (mediaPlayer != null) mediaPlayer!!.stop()
 
         // Release textures on render thread to avoid IllegalStateException
-        Minecraft.getInstance().execute(Runnable {
-            val manager = Minecraft.getInstance().getTextureManager()
+        Minecraft.getInstance().execute {
+            val manager = Minecraft.getInstance().textureManager
             if (textureId != null) manager.release(textureId!!)
             if (previewTextureId != null) manager.release(previewTextureId!!)
-        })
+        }
 
         if (Minecraft.getInstance().screen is Menu) {
             val menuScreen = Minecraft.getInstance().screen as Menu
@@ -412,11 +415,10 @@ class Screen(
         textureWidth = (width / height.toDouble() * qualityInt).toInt()
         textureHeight = qualityInt
 
-        //textureId = RenderUtil2D.createEmptyTexture(textureWidth, textureHeight);
         if (texture != null) {
             texture!!.close()
             if (textureId != null) Minecraft.getInstance()
-                .getTextureManager()
+                .textureManager
                 .release(textureId!!)
         }
         texture = DynamicTexture(UUID.randomUUID().toString(), textureWidth, textureHeight, true)
@@ -425,8 +427,8 @@ class Screen(
             "screen-main-texture-" + this.iD + "-" + UUID.randomUUID()
         )
 
-        Minecraft.getInstance().getTextureManager().register(textureId!!, texture!!)
-        renderType = Companion.createRenderType(textureId!!)
+        Minecraft.getInstance().textureManager.register(textureId!!, texture!!)
+        renderType = createRenderType(textureId!!)
     }
 
     fun sendSync() {
@@ -437,25 +439,22 @@ class Screen(
         }
     }
 
+    // TODO: rewrite this as soon as possible
     fun waitForMFInit(action: Runnable) {
-        Thread(Runnable {
+        Thread {
             while (mediaPlayer == null || !mediaPlayer!!.isInitialized) {
                 try {
-                    Thread.sleep(100) // TODO: this is ugly
+                    Thread.sleep(100)
                 } catch (e: InterruptedException) {
                     throw RuntimeException(e)
                 }
             }
             action.run()
-        }).start()
+        }.start()
     }
 
     fun tick(pos: BlockPos) {
         if (mediaPlayer != null) mediaPlayer!!.tick(pos)
-    }
-
-    fun afterSeek() {
-        if (owner && isSync) sendSync()
     }
 
     companion object {

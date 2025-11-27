@@ -25,6 +25,9 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
+/**
+ * Main initializer for the Dream Displays mod.
+ */
 @NullMarked
 object Initializer {
     const val MOD_ID: String = "dreamdisplays"

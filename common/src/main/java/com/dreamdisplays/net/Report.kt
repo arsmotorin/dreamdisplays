@@ -9,7 +9,9 @@ import net.minecraft.resources.Identifier
 import org.jspecify.annotations.NullMarked
 import java.util.*
 
-// Packet for reporting a display
+/**
+ * Packet for reporting about an inappropriate display.
+ */
 @NullMarked
 @JvmRecord
 data class Report(val id: UUID) : CustomPacketPayload {

@@ -15,6 +15,7 @@ import net.minecraft.resources.Identifier
 import net.minecraft.util.Mth
 import org.jspecify.annotations.NullMarked
 
+// TODO: rewrite this
 @NullMarked
 abstract class Slider(x: Int, y: Int, width: Int, height: Int, message: Component, value: Double) :
     AbstractWidget(x, y, width, height, message) {
@@ -36,7 +37,7 @@ abstract class Slider(x: Int, y: Int, width: Int, height: Int, message: Componen
     public override fun updateWidgetNarration(builder: NarrationElementOutput) {
         builder.add(NarratedElementType.TITLE, this.createNarrationMessage())
         if (this.active) {
-            if (this.isFocused()) {
+            if (this.isFocused) {
                 builder.add(NarratedElementType.USAGE, Component.translatable("narration.slider.usage.focused"))
             } else {
                 builder.add(NarratedElementType.USAGE, Component.translatable("narration.slider.usage.hovered"))
@@ -48,13 +49,13 @@ abstract class Slider(x: Int, y: Int, width: Int, height: Int, message: Componen
     public override fun renderWidget(graphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
         graphics.blitSprite(
             RenderPipelines.GUI_TEXTURED,
-            this.texture, this.getX(), this.getY(), this.getWidth(), this.getHeight()
+            this.texture, this.x, this.y, this.getWidth(), this.getHeight()
         )
         graphics.blitSprite(
             RenderPipelines.GUI_TEXTURED,
             this.handleTexture,
-            this.getX() + (this.value * (this.width - 8).toDouble()).toInt(),
-            this.getY(),
+            this.x + (this.value * (this.width - 8).toDouble()).toInt(),
+            this.y,
             8,
             this.getHeight()
         )
@@ -74,7 +75,7 @@ abstract class Slider(x: Int, y: Int, width: Int, height: Int, message: Componen
     }
 
     override fun onRelease(event: MouseButtonEvent) {
-        super.playDownSound(Minecraft.getInstance().getSoundManager())
+        super.playDownSound(Minecraft.getInstance().soundManager)
     }
 
     override fun onDrag(event: MouseButtonEvent, dragX: Double, dragY: Double) {
@@ -87,7 +88,7 @@ abstract class Slider(x: Int, y: Int, width: Int, height: Int, message: Componen
         if (!focused) {
             this.sliderFocused = false
         } else {
-            val guiNavigationType = Minecraft.getInstance().getLastInputType()
+            val guiNavigationType = Minecraft.getInstance().lastInputType
             if (guiNavigationType == InputType.MOUSE || guiNavigationType == InputType.KEYBOARD_TAB) {
                 this.sliderFocused = true
             }
@@ -95,7 +96,7 @@ abstract class Slider(x: Int, y: Int, width: Int, height: Int, message: Componen
     }
 
     private fun setValueFromMouse(mouseX: Double) {
-        this.setFractionalValue((mouseX - (this.getX() + 4).toDouble()) / (this.width - 8).toDouble())
+        this.setFractionalValue((mouseX - (this.x + 4).toDouble()) / (this.width - 8).toDouble())
     }
 
     private fun setFractionalValue(fractionalValue: Double) {

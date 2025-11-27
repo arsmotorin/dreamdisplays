@@ -4,6 +4,9 @@ import com.dreamdisplays.screen.Manager
 import net.minecraft.client.Minecraft
 import org.jspecify.annotations.NullMarked
 
+/**
+ * Thread for muting/unmuting audio when the Minecraft window loses/gains focus.
+ */
 @NullMarked
 class Focuser : Thread() {
     init {
