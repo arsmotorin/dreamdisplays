@@ -41,6 +41,9 @@ public class Configuration extends Screen {
     Slider quality = null;
 
     @Nullable
+    Slider brightness = null;
+
+    @Nullable
     Toggle sync = null;
 
     @Nullable
@@ -57,6 +60,9 @@ public class Configuration extends Screen {
 
     @Nullable
     Button qualityReset = null;
+
+    @Nullable
+    Button brightnessReset = null;
 
     @Nullable
     Button volumeReset = null;
@@ -225,6 +231,27 @@ public class Configuration extends Screen {
             }
         };
 
+        brightness = new Slider(
+                0,
+                0,
+                0,
+                0,
+                Component.literal((int) Math.floor(screen.getBrightness() * 100) + "%"),
+                screen.getBrightness() / 2.0
+        ) {
+            @Override
+            protected void updateMessage() {
+                setMessage(
+                        Component.literal((int) Math.floor(value * 200) + "%")
+                );
+            }
+
+            @Override
+            protected void applyValue() {
+                screen.setBrightness((float) (value * 2.0));
+            }
+        };
+
         renderDReset = new Button(
                 0,
                 0,
@@ -269,6 +296,26 @@ public class Configuration extends Screen {
                 quality.setMessage(
                         Component.nullToEmpty(toQuality(targetIndex) + "p")
                 );
+            }
+        };
+
+        brightnessReset = new Button(
+                0,
+                0,
+                0,
+                0,
+                64,
+                64,
+                Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bri"),
+                2
+        ) {
+            @Override
+            public void onPress() {
+                screen.setBrightness(1.0f);
+                if (brightness != null) {
+                    brightness.value = 0.5;
+                    brightness.setMessage(Component.literal("100%"));
+                }
             }
         };
 
@@ -343,6 +390,9 @@ public class Configuration extends Screen {
         };
 
         sync.active = screen.owner;
+        if (brightness != null) {
+            brightness.active = !screen.isSync || screen.owner;
+        }
 
         deleteButton = new Button(
                 0,
@@ -414,6 +464,8 @@ public class Configuration extends Screen {
         addRenderableWidget(renderD);
         addRenderableWidget(quality);
         addRenderableWidget(qualityReset);
+        addRenderableWidget(brightness);
+        addRenderableWidget(brightnessReset);
         addRenderableWidget(renderDReset);
         addRenderableWidget(volumeReset);
         addRenderableWidget(sync);
@@ -577,6 +629,9 @@ public class Configuration extends Screen {
                         screen.getQuality(),
                         "720"
                 );
+            }
+            if (brightnessReset != null && brightness != null) {
+                brightnessReset.active = Math.abs(brightness.value - 0.5) > 0.01; // Allow small floating point tolerance
             }
             if (volumeReset != null && volume != null) {
                 volumeReset.active = Math.abs(volume.value - 0.5) > 0.01; // Allow small floating point tolerance
@@ -806,6 +861,43 @@ public class Configuration extends Screen {
             );
         }
 
+        cY += 5 + vCH;
+
+        // brightness and brightnessReset settings
+        if (brightness != null && brightnessReset != null) {
+            placeButton(vCH, maxSW, cY, brightness, brightnessReset);
+        }
+
+        // Setting the brightness text and calculating coordinates for tooltip
+        Component brightnessComponent = Component.translatable(
+                "dreamdisplays.button.brightness"
+        );
+        int brightnessTextX = this.width / 2 - maxSW / 2;
+        int brightnessTextY = cY + vCH / 2 - font.lineHeight / 2;
+        guiGraphics.drawString(
+                font,
+                brightnessComponent,
+                brightnessTextX,
+                brightnessTextY,
+                0xFFFFFFFF,
+                true
+        );
+
+        List<Component> brightnessTooltip = List.of(
+                Component.translatable(
+                        "dreamdisplays.button.brightness.tooltip.1"
+                ).withStyle(style ->
+                        style.withColor(ChatFormatting.WHITE).withBold(true)
+                ),
+                Component.translatable(
+                        "dreamdisplays.button.brightness.tooltip.2"
+                ).withStyle(style -> style.withColor(ChatFormatting.GRAY)),
+                Component.translatable(
+                        "dreamdisplays.button.brightness.tooltip.3",
+                        brightness != null ? (int) Math.floor(brightness.value * 200) : 100
+                ).withStyle(style -> style.withColor(ChatFormatting.GOLD))
+        );
+
         cY += 15 + vCH;
         if (sync != null && syncReset != null) {
             placeButton(vCH, maxSW, cY, sync, syncReset);
@@ -878,6 +970,16 @@ public class Configuration extends Screen {
                 font.width(qualityComponent),
                 font.lineHeight,
                 qualityTooltip
+        );
+        renderTooltipIfHovered(
+                guiGraphics,
+                mouseX,
+                mouseY,
+                brightnessTextX,
+                brightnessTextY,
+                font.width(brightnessComponent),
+                font.lineHeight,
+                brightnessTooltip
         );
         renderTooltipIfHovered(
                 guiGraphics,

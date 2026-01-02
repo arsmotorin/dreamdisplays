@@ -207,11 +207,13 @@ public class Settings {
             UUID displayUuid,
             float volume,
             String quality,
+            float brightness,
             boolean muted
     ) {
         DisplaySettings settings = getSettings(displayUuid);
         settings.volume = volume;
         settings.quality = quality;
+        settings.brightness = brightness;
         settings.muted = muted;
         save();
     }
@@ -269,6 +271,7 @@ public class Settings {
 
         public float volume = 0.5f;
         public String quality = "720";
+        public float brightness = 1.0f;
         public boolean muted = false;
 
         public DisplaySettings() {

@@ -45,6 +45,7 @@ public class Screen {
     private int width;
     private int height;
     private float volume;
+    private float brightness;
     private boolean videoStarted;
     private boolean paused;
     private String quality;
@@ -87,6 +88,7 @@ public class Screen {
         Settings.DisplaySettings savedSettings = Settings.getSettings(uuid);
         this.volume = savedSettings.volume;
         this.quality = savedSettings.quality;
+        this.brightness = savedSettings.brightness;
         this.muted = savedSettings.muted;
 
         if (isSync) {
@@ -295,13 +297,28 @@ public class Screen {
         }
         // reloadTexture();
         // Save settings
-        Settings.updateSettings(uuid, volume, quality, muted);
+        Settings.updateSettings(uuid, volume, quality, brightness, muted);
     }
 
     // Returns list of available video qualities
     public List<Integer> getQualityList() {
         if (mediaPlayer == null) return Collections.emptyList();
         return mediaPlayer.getAvailableQualities();
+    }
+
+    // Returns video brightness (0.0 to 2.0)
+    public float getBrightness() {
+        return brightness;
+    }
+
+    // Sets video brightness (0.0 to 2.0 - 100%)
+    public void setBrightness(float brightness) {
+        this.brightness = Math.max(0, Math.min(2, brightness));
+        if (mediaPlayer != null) {
+            mediaPlayer.setBrightness(this.brightness);
+        }
+        // Save settings
+        Settings.updateSettings(uuid, volume, quality, this.brightness, muted);
     }
 
     // Starts video playback
@@ -400,7 +417,7 @@ public class Screen {
         muted = status;
 
         setVideoVolume(!status ? volume : 0);
-        Settings.updateSettings(uuid, volume, quality, muted);
+        Settings.updateSettings(uuid, volume, quality, brightness, muted);
     }
 
     public double getVolume() {
@@ -411,7 +428,7 @@ public class Screen {
     public void setVolume(float volume) {
         this.volume = volume;
         setVideoVolume(volume);
-        Settings.updateSettings(uuid, volume, quality, muted);
+        Settings.updateSettings(uuid, volume, quality, brightness, muted);
     }
 
     // Creates a new texture for the screen based on its dimensions and quality

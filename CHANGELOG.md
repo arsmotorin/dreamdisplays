@@ -1,26 +1,26 @@
 # Version 1.4.0
 
 - [ ] Add spacial audio support
+- [ ] Support single-player mode ([#31](https://github.com/arsmotorin/dreamdisplays/issues/59))
 - [ ] Add toggle button for window focus
 - [ ] Add toggle button for video repeating
+- [ ] Add action bar messages when player looks at display
+- [ ] Fix desynchronization after player relog
+- [ ] Support natives
 
 Plugin:
 
-- [ ] No changes
+- [ ] Add config migrator from old versions of the plugin
 
 # Version 1.3.0
 
 Mod:
 
-- [ ] Support single-player mode ([#31](https://github.com/arsmotorin/dreamdisplays/issues/59))
-- [ ] Add action bar messages when player looks at display
-- [ ] Fix desynchronization after player relog
-- [ ] Support natives
 - [ ] Store paused state of display
-- [ ] Ability to change brightness of display
+- [x] Ability to change brightness of display
 - [x] Fix playing videos after changing quality
 - [ ] Move default render distance from client to server side ([#59](https://github.com/arsmotorin/dreamdisplays/issues/59))
-- [ ] Fix duplicated displays if they are syncronized ([#61](https://github.com/arsmotorin/dreamdisplays/issues/61))
+- [ ] Fix duplicated displays if they are synchronized ([#61](https://github.com/arsmotorin/dreamdisplays/issues/61))
 - [x] Change maximum of render distance to 128 blocks ([#59](https://github.com/arsmotorin/dreamdisplays/issues/59))
 - [x] Change maximum volume to 200% ([#60](https://github.com/arsmotorin/dreamdisplays/issues/60))
 - [x] Support CurseForge releases
@@ -28,7 +28,6 @@ Mod:
 
 Plugin:
 
-- [ ] Add config migrator from old versions of the plugin
 - [x] Refactors and small improvements
 - [x] Documentation in codebase of the plugin
 - [x] Improve update logic and fix ignoring mod versions ([#63](https://github.com/arsmotorin/dreamdisplays/issues/63))

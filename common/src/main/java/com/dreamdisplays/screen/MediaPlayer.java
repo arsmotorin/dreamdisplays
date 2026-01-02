@@ -80,6 +80,7 @@ public class MediaPlayer {
     private volatile double userVolume =
             (Initializer.config.defaultDisplayVolume);
     private volatile double lastAttenuation = 1.0;
+    private volatile double brightness = 1.0;
     private volatile boolean frameReady = false;
     private volatile int cachedScreenW = -1,
             cachedScreenH = -1; // Cache screen dimensions
@@ -137,6 +138,31 @@ public class MediaPlayer {
         result.flip();
 
         return result;
+    }
+
+    private static void applyBrightnessToBuffer(ByteBuffer buffer, double brightness) {
+        if (Math.abs(brightness - 1.0) < 1e-5) return; // Skip if brightness is 1.0
+
+        buffer.rewind();
+        while (buffer.remaining() >= 4) {
+            int r = buffer.get() & 0xFF;
+            int g = buffer.get() & 0xFF;
+            int b = buffer.get() & 0xFF;
+            byte a = buffer.get();
+
+            // Apply brightness
+            r = (int) Math.min(255, r * brightness);
+            g = (int) Math.min(255, g * brightness);
+            b = (int) Math.min(255, b * brightness);
+
+            // Put values back (need to go back 4 bytes)
+            buffer.position(buffer.position() - 4);
+            buffer.put((byte) r);
+            buffer.put((byte) g);
+            buffer.put((byte) b);
+            buffer.put(a);
+        }
+        buffer.flip();
     }
 
     private static int parseQuality(Stream stream) {
@@ -210,6 +236,10 @@ public class MediaPlayer {
         userVolume = Math.max(0, Math.min(2, volume));
         currentVolume = userVolume * lastAttenuation;
         safeExecute(this::applyVolume);
+    }
+
+    public void setBrightness(double brightness) {
+        this.brightness = Math.max(0, Math.min(2, brightness));
     }
 
     public boolean textureFilled() {
@@ -483,6 +513,7 @@ public class MediaPlayer {
 
         // If dimensions match, use directly
         if (currentFrameWidth == targetW && currentFrameHeight == targetH) {
+            applyBrightnessToBuffer(converted, brightness);
             preparedBuffer = converted;
             preparedW = targetW;
             preparedH = targetH;
@@ -505,6 +536,7 @@ public class MediaPlayer {
                 targetH
         );
 
+        applyBrightnessToBuffer(scaled, brightness);
         preparedBuffer = scaled;
         preparedW = targetW;
         preparedH = targetH;
