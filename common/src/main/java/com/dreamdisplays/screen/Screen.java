@@ -189,11 +189,24 @@ public class Screen {
             }
 
             if (paused) setPaused(false);
+//            if (paused != packet.currentState()) {
+//                if (paused) setPaused(false);
+//            }
 
             long lostTime = System.nanoTime() - nanos;
+//            long targetTime = packet.currentTime() + lostTime;
+//            long currentTime = getCurrentTimeNanos();
 
             seekVideoTo(packet.currentTime() + lostTime);
             setPaused(packet.currentState());
+//            long diff = Math.abs(targetTime - currentTime);
+//            if (diff > 2_000_000_000L) {
+//                seekVideoTo(targetTime);
+//            }
+//
+//            if (paused != packet.currentState()) {
+//                setPaused(packet.currentState());
+//            }
         });
     }
 

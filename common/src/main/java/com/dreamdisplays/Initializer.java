@@ -137,6 +137,11 @@ public class Initializer {
                 height,
                 isSync
         );
+
+//        Settings.FullDisplayData savedData = Settings.getDisplayData(uuid);
+//        int renderDistance = savedData != null ? savedData.renderDistance : config.defaultDistance;
+//        screen.setRenderDistance(renderDistance);
+
         Player player = Minecraft.getInstance().player;
         if (
                 player != null &&
