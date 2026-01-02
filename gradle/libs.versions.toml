@@ -1,8 +1,8 @@
 # https://fabricmc.net/develop/
 
 [versions]
-fabricLoader = "0.18.3"
-fabricApi = "0.140.0+1.21.11"
+fabricLoader = "0.18.4"
+fabricApi = "0.140.2+1.21.11"
 fabricMinecraft = "1.21.11"
 javatube = "6692a32"
 utils = "1.4.10"
@@ -11,11 +11,11 @@ jspecify = "1.0.0"
 adventure = "4.26.1"
 adventurePlatform = "4.4.1"
 
-neoforge = "21.11.10-beta"
+neoforge = "21.11.19-beta"
 
 # Plugin versions
 loom = "1.15.0-alpha.6"
-moddev = "2.0.133"
+moddev = "2.0.137"
 shadow = "9.3.0"
 
 [plugins]
