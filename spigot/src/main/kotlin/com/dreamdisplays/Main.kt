@@ -20,6 +20,9 @@ class Main : AbstractPlugin<Main>() {
     override fun doEnable() {
         log("Enabling DreamDisplays v${description.version}...")
 
+        // Initialize Scheduler
+        com.dreamdisplays.utils.Scheduler.init(this)
+
         // Adventure API
         audiences = runCatching { BukkitAudiences.create(this) }.getOrElse {
             logger.warning("Adventure API not supported on this server.")

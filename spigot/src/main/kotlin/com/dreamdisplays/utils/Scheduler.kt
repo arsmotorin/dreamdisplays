@@ -15,6 +15,11 @@ object Scheduler {
 
     private lateinit var plugin: Plugin
 
+    // Initialize the scheduler with the plugin instance
+    fun init(plugin: Plugin) {
+        this.plugin = plugin
+    }
+
     // Run async
     fun runAsync(task: Runnable) {
         if (isFolia) {
