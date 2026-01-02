@@ -62,7 +62,7 @@ We welcome contributions! If you want to improve the mod, fix bugs, or add new f
 
 ## Any questions?
 
-Questions you can ask in the Issues, [here](https://github.com/arsmotorin/dreamdisplays/issues).
+Questions you can ask in [Discord server](https://discord.gg/uwMMZ2KWk6).
 
 ## Donate us
 
