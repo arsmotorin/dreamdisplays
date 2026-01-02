@@ -16,13 +16,14 @@ Plugin:
 
 Mod:
 
-- [ ] Store paused state of display
-- [x] Ability to change brightness of display
-- [x] Fix playing videos after changing quality
+- [x] Smoother video playback and some optimizations
+- [x] Video brightness control
+- [x] Store paused state of display
 - [ ] Move default render distance from client to server side ([#59](https://github.com/arsmotorin/dreamdisplays/issues/59))
-- [ ] Fix duplicated displays if they are synchronized ([#61](https://github.com/arsmotorin/dreamdisplays/issues/61))
 - [x] Change maximum of render distance to 128 blocks ([#59](https://github.com/arsmotorin/dreamdisplays/issues/59))
 - [x] Change maximum volume to 200% ([#60](https://github.com/arsmotorin/dreamdisplays/issues/60))
+- [x] Fix playing videos after changing quality
+- [ ] Fix duplicated displays if they are synchronized ([#61](https://github.com/arsmotorin/dreamdisplays/issues/61))
 - [x] Support CurseForge releases
 - [x] Documentation in codebase of the mod
 

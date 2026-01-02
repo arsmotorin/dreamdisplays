@@ -208,13 +208,15 @@ public class Settings {
             float volume,
             String quality,
             float brightness,
-            boolean muted
+            boolean muted,
+            boolean paused
     ) {
         DisplaySettings settings = getSettings(displayUuid);
         settings.volume = volume;
         settings.quality = quality;
         settings.brightness = brightness;
         settings.muted = muted;
+        settings.paused = paused;
         save();
     }
 
@@ -266,13 +268,14 @@ public class Settings {
         );
     }
 
-    // Client settings for a display (volume, quality, muted)
+    // Client settings for a display (volume, quality, muted, brightness, paused)
     public static class DisplaySettings {
 
         public float volume = 0.5f;
         public String quality = "720";
         public float brightness = 1.0f;
         public boolean muted = false;
+        public boolean paused = true;
 
         public DisplaySettings() {
         }

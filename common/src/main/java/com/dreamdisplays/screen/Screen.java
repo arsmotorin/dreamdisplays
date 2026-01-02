@@ -90,6 +90,7 @@ public class Screen {
         this.quality = savedSettings.quality;
         this.brightness = savedSettings.brightness;
         this.muted = savedSettings.muted;
+        this.paused = savedSettings.paused;
 
         if (isSync) {
             sendRequestSyncPacket();
@@ -118,6 +119,7 @@ public class Screen {
         // Load the video URL and language into the screen
         this.videoUrl = videoUrl;
         this.lang = lang;
+        boolean shouldBePaused = this.paused;
         CompletableFuture.runAsync(() -> {
             mediaPlayer = new MediaPlayer(videoUrl, lang, this);
             int qualityInt = Integer.parseInt(this.quality.replace("p", ""));
@@ -125,7 +127,15 @@ public class Screen {
             textureHeight = qualityInt;
         });
 
-        waitForMFInit(this::startVideo);
+        waitForMFInit(() -> {
+            startVideo();
+            if (shouldBePaused) {
+                this.paused = true;
+                if (mediaPlayer != null) {
+                    mediaPlayer.pause();
+                }
+            }
+        });
 
         Minecraft.getInstance().execute(this::reloadTexture);
     }
@@ -152,6 +162,7 @@ public class Screen {
                 !Objects.equals(videoUrl, packet.url()) ||
                         !Objects.equals(lang, packet.lang())
         ) {
+            this.paused = false;
             loadVideo(packet.url(), packet.lang());
             if (isSync) {
                 sendRequestSyncPacket();
@@ -297,7 +308,7 @@ public class Screen {
         }
         // reloadTexture();
         // Save settings
-        Settings.updateSettings(uuid, volume, quality, brightness, muted);
+        Settings.updateSettings(uuid, volume, quality, brightness, muted, paused);
     }
 
     // Returns list of available video qualities
@@ -318,15 +329,19 @@ public class Screen {
             mediaPlayer.setBrightness(this.brightness);
         }
         // Save settings
-        Settings.updateSettings(uuid, volume, quality, this.brightness, muted);
+        Settings.updateSettings(uuid, volume, quality, this.brightness, muted, paused);
     }
 
     // Starts video playback
     public void startVideo() {
         if (mediaPlayer != null) {
-            mediaPlayer.play();
             videoStarted = true;
-            paused = false;
+            if (paused) {
+                mediaPlayer.pause();
+            } else {
+                mediaPlayer.play();
+                paused = false;
+            }
             restoreSavedTime();
         }
     }
@@ -339,7 +354,7 @@ public class Screen {
     // Sets the paused state of the video
     public void setPaused(boolean paused) {
         if (!videoStarted) {
-            this.paused = false;
+            this.paused = paused;
             waitForMFInit(() -> {
                 startVideo();
                 setVolume((float) Initializer.config.defaultDisplayVolume);
@@ -354,6 +369,7 @@ public class Screen {
                 mediaPlayer.play();
             }
         }
+        Settings.updateSettings(uuid, volume, quality, brightness, muted, paused);
         if (owner && isSync) sendSync();
     }
 
@@ -417,7 +433,7 @@ public class Screen {
         muted = status;
 
         setVideoVolume(!status ? volume : 0);
-        Settings.updateSettings(uuid, volume, quality, brightness, muted);
+        Settings.updateSettings(uuid, volume, quality, brightness, muted, paused);
     }
 
     public double getVolume() {
@@ -428,7 +444,7 @@ public class Screen {
     public void setVolume(float volume) {
         this.volume = volume;
         setVideoVolume(volume);
-        Settings.updateSettings(uuid, volume, quality, brightness, muted);
+        Settings.updateSettings(uuid, volume, quality, brightness, muted, paused);
     }
 
     // Creates a new texture for the screen based on its dimensions and quality

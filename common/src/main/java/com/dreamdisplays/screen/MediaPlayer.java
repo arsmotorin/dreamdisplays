@@ -82,8 +82,19 @@ public class MediaPlayer {
     private volatile double lastAttenuation = 1.0;
     private volatile double brightness = 1.0;
     private volatile boolean frameReady = false;
-    private volatile int cachedScreenW = -1,
-            cachedScreenH = -1; // Cache screen dimensions
+    private int syncCheckCounter = 0;
+    private static final int SYNC_CHECK_INTERVAL = 100; // Check sync every 100 ticks (~5 seconds)
+    private static final long MAX_SYNC_DRIFT_NS = 500_000_000L; // 500ms max drift before resync
+
+    // Buffer system
+    private @Nullable ByteBuffer convertBuffer = null;
+    private int convertBufferSize = 0;
+    private @Nullable ByteBuffer scaleBuffer = null;
+    private int scaleBufferSize = 0;
+
+    // Frame rate limiting
+    private volatile long lastFrameTime = 0;
+    private static final long MIN_FRAME_INTERVAL_NS = 16_666_667L; // ~60fps max
 
     // === CONSTRUCTOR =====================================================================
     public MediaPlayer(String youtubeUrl, String lang, Screen screen) {
@@ -123,21 +134,25 @@ public class MediaPlayer {
         return result;
     }
 
-    private static ByteBuffer convertToRGBA(
+    private ByteBuffer convertToRGBA(
             ByteBuffer srcBuffer,
             int width,
             int height
     ) {
         int size = width * height * 4;
-        ByteBuffer result = ByteBuffer.allocateDirect(size).order(
-                ByteOrder.nativeOrder()
-        );
 
+        // Reuse buffer if possible, otherwise allocate new one
+        if (convertBuffer == null || convertBufferSize < size) {
+            convertBuffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
+            convertBufferSize = size;
+        }
+
+        convertBuffer.clear();
         srcBuffer.rewind();
-        result.put(srcBuffer);
-        result.flip();
+        convertBuffer.put(srcBuffer);
+        convertBuffer.flip();
 
-        return result;
+        return convertBuffer;
     }
 
     private static void applyBrightnessToBuffer(ByteBuffer buffer, double brightness) {
@@ -481,17 +496,17 @@ public class MediaPlayer {
 
     private void prepareBufferAsync() {
         if (currentFrameBuffer == null) return;
+
+        // Frame rate limiting - skip if too soon since last frame
+        long now = System.nanoTime();
+        if (now - lastFrameTime < MIN_FRAME_INTERVAL_NS) return;
+        lastFrameTime = now;
+
         int w = screen.textureWidth,
                 h = screen.textureHeight;
 
         // Skip if screen dimensions are zero
         if (w == 0 || h == 0) return;
-
-        // Skip if dimensions haven't changed (avoid re-processing)
-        if (cachedScreenW == w && cachedScreenH == h && frameReady) return;
-
-        cachedScreenW = w;
-        cachedScreenH = h;
 
         try {
             frameExecutor.submit(this::prepareBuffer);
@@ -504,7 +519,7 @@ public class MediaPlayer {
                 targetH = screen.textureHeight;
         if (targetW == 0 || targetH == 0 || currentFrameBuffer == null) return;
 
-        // Convert the frame buffer to RGBA
+        // Convert the frame buffer to RGBA (reuses buffer internally)
         ByteBuffer converted = convertToRGBA(
                 currentFrameBuffer,
                 currentFrameWidth,
@@ -517,38 +532,43 @@ public class MediaPlayer {
             preparedBuffer = converted;
             preparedW = targetW;
             preparedH = targetH;
-            frameReady = true; // Mark that new frame is ready
-            // Update texture on render thread
+            frameReady = true;
             Minecraft.getInstance().execute(screen::fitTexture);
             return;
         }
 
-        // Scale the buffer to target dimensions
-        ByteBuffer scaled = ByteBuffer.allocateDirect(
-                targetW * targetH * 4
-        ).order(ByteOrder.nativeOrder());
+        // Reuse scale buffer if possible
+        int scaleSize = targetW * targetH * 4;
+        if (scaleBuffer == null || scaleBufferSize < scaleSize) {
+            scaleBuffer = ByteBuffer.allocateDirect(scaleSize).order(ByteOrder.nativeOrder());
+            scaleBufferSize = scaleSize;
+        }
+        scaleBuffer.clear();
+
         Converter.scaleRGBA(
                 converted,
                 currentFrameWidth,
                 currentFrameHeight,
-                scaled,
+                scaleBuffer,
                 targetW,
                 targetH
         );
 
-        applyBrightnessToBuffer(scaled, brightness);
-        preparedBuffer = scaled;
+        applyBrightnessToBuffer(scaleBuffer, brightness);
+        preparedBuffer = scaleBuffer;
         preparedW = targetW;
         preparedH = targetH;
-        frameReady = true; // Mark that new frame is ready
+        frameReady = true;
 
-        // Update texture on render thread
         Minecraft.getInstance().execute(screen::fitTexture);
     }
 
     // === PLAYBACK HELPERS ================================================================
     private void doPlay() {
         if (!initialized) return;
+
+        // Get current audio position FIRST (audio is the master clock)
+        long audioPos = audioPipeline.queryPosition(Format.TIME);
 
         audioPipeline.pause();
         if (videoPipeline != null) {
@@ -561,6 +581,12 @@ public class MediaPlayer {
             videoPipeline.getState();
         }
 
+        // Sync video to audio position (audio is master)
+        if (videoPipeline != null && audioPos > 0) {
+            videoPipeline.seekSimple(Format.TIME, EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE), audioPos);
+            videoPipeline.getState(); // Wait for seek to complete
+        }
+
         // Use audio pipeline's clock for video sync
         Clock audioClock = audioPipeline.getClock();
         if (audioClock != null && videoPipeline != null) {
@@ -568,16 +594,10 @@ public class MediaPlayer {
             videoPipeline.setBaseTime(audioPipeline.getBaseTime());
         }
 
-        // Start audio first
-        audioPipeline.play();
-
-        // Then start video
-        if (videoPipeline != null) {
-            if (!screen.getPaused()) {
+        if (!screen.getPaused()) {
+            audioPipeline.play();
+            if (videoPipeline != null) {
                 videoPipeline.play();
-            } else {
-                videoPipeline.play();
-                videoPipeline.pause();
             }
         }
     }
@@ -688,13 +708,42 @@ public class MediaPlayer {
     // === TICK ================================================================
     public void tick(BlockPos playerPos, double maxRadius) {
         if (!initialized) return;
+
+        // Volume attenuation based on distance
         double dist = screen.getDistanceToScreen(playerPos);
         double attenuation = Math.pow(1.0 - Math.min(1.0, dist / maxRadius), 2);
-        if (Math.abs(attenuation - lastAttenuation) < 1e-5) return;
+        if (Math.abs(attenuation - lastAttenuation) > 1e-5) {
+            lastAttenuation = attenuation;
+            currentVolume = userVolume * attenuation;
+            safeExecute(this::applyVolume);
+        }
 
-        lastAttenuation = attenuation;
-        currentVolume = userVolume * attenuation;
-        safeExecute(this::applyVolume);
+        // Periodic sync check - only when playing
+        if (!screen.getPaused()) {
+            syncCheckCounter++;
+            if (syncCheckCounter >= SYNC_CHECK_INTERVAL) {
+                syncCheckCounter = 0;
+                safeExecute(this::checkAndFixSync);
+            }
+        }
+    }
+
+    private void checkAndFixSync() {
+        if (!initialized || videoPipeline == null || audioPipeline == null) return;
+        if (screen.getPaused()) return;
+
+        try {
+            long audioPos = audioPipeline.queryPosition(Format.TIME);
+            long videoPos = videoPipeline.queryPosition(Format.TIME);
+            long drift = Math.abs(audioPos - videoPos);
+
+            if (drift > MAX_SYNC_DRIFT_NS) {
+                // Sync video to audio (audio is master)
+                videoPipeline.seekSimple(Format.TIME, EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE), audioPos);
+            }
+        } catch (Exception ignored) {
+            // Ignore query errors during playback
+        }
     }
 
     // === CONCURRENCY HELPERS =============================================================
