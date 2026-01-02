@@ -18,7 +18,7 @@ Mod:
 - [ ] Support natives
 - [ ] Store paused state of display
 - [ ] Ability to change brightness of display
-- [ ] Fix playing videos after changing quality
+- [x] Fix playing videos after changing quality
 - [ ] Move default render distance from client to server side ([#59](https://github.com/arsmotorin/dreamdisplays/issues/59))
 - [ ] Fix duplicated displays if they are syncronized ([#61](https://github.com/arsmotorin/dreamdisplays/issues/61))
 - [x] Change maximum of render distance to 128 blocks ([#59](https://github.com/arsmotorin/dreamdisplays/issues/59))

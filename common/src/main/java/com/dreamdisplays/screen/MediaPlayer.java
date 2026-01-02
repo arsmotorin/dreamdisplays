@@ -643,8 +643,10 @@ public class MediaPlayer {
         audioPipeline.seekSimple(Format.TIME, flags, pos);
         newVid.seekSimple(Format.TIME, flags, pos);
 
-        audioPipeline.play();
-        if (!screen.getPaused()) newVid.play();
+        if (!screen.getPaused()) {
+            audioPipeline.play();
+            newVid.play();
+        }
 
         videoPipeline = newVid;
         currentVideoStream = chosen;
