@@ -90,8 +90,6 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
     }
 
     private fun handleVersion(player: Player, message: ByteArray) {
-        if (modVersion == null) return
-
         runCatching {
             val version = readVersionString(message)
             log("${player.name} joined with Dream Displays $version")

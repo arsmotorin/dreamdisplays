@@ -20,6 +20,7 @@ Mod:
 - [ ] Ability to change brightness of display
 - [ ] Fix playing videos after changing quality
 - [ ] Move default render distance from client to server side ([#59](https://github.com/arsmotorin/dreamdisplays/issues/59))
+- [ ] Fix duplicated displays if they are syncronized ([#61](https://github.com/arsmotorin/dreamdisplays/issues/61))
 - [x] Change maximum of render distance to 128 blocks ([#59](https://github.com/arsmotorin/dreamdisplays/issues/59))
 - [x] Change maximum volume to 200% ([#60](https://github.com/arsmotorin/dreamdisplays/issues/60))
 - [x] Support CurseForge releases
@@ -30,6 +31,7 @@ Plugin:
 - [ ] Add config migrator from old versions of the plugin
 - [x] Refactors and small improvements
 - [x] Documentation in codebase of the plugin
+- [x] Improve update logic and fix ignoring mod versions ([#63](https://github.com/arsmotorin/dreamdisplays/issues/63))
 
 # Version 1.2.0
 

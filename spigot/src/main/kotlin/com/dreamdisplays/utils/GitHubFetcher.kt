@@ -4,12 +4,14 @@ import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.google.gson.reflect.TypeToken
 import me.inotsleep.utils.logging.LoggingManager.error
+import me.inotsleep.utils.logging.LoggingManager.warn
 import org.jspecify.annotations.NullMarked
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpClient.newHttpClient
 import java.net.http.HttpRequest.newBuilder
 import java.net.http.HttpResponse.BodyHandlers.ofString
+import java.time.Duration
 
 @NullMarked
 object GitHubFetcher {
@@ -18,16 +20,30 @@ object GitHubFetcher {
 
     @Throws(Exception::class)
     fun fetchReleases(owner: String, repo: String): List<Release> {
+        val url = "https://api.github.com/repos/$owner/$repo/releases"
+
         val request = newBuilder()
-            .uri(URI.create("https://api.github.com/repos/$owner/$repo/releases"))
+            .uri(URI.create(url))
             .header("Accept", "application/vnd.github.v3+json")
-            .header("User-Agent", "Updater")
+            .header("User-Agent", "DreamDisplays-Updater")
+            .timeout(Duration.ofSeconds(10))
             .build()
 
-        val response = client.send(request, ofString())
+        val response = try {
+            client.send(request, ofString())
+        } catch (e: Exception) {
+            error("Failed to connect to GitHub API: ${e.message}")
+            throw e
+        }
 
         if (response.statusCode() != 200) {
-            error("GitHub API error ${response.statusCode()}: ${response.body()}")
+            val errorMsg = when (response.statusCode()) {
+                403 -> "GitHub API rate limit exceeded or access forbidden"
+                500, 502, 503 -> "GitHub servers are experiencing issues"
+                else -> "Unexpected error"
+            }
+            error("GitHub API returned status ${response.statusCode()}: $errorMsg")
+            warn("Response body: ${response.body().take(200)}")
             return emptyList()
         }
 
