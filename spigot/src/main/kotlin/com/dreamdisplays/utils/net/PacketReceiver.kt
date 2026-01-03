@@ -161,7 +161,12 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
 
         if (hasBeenNotifiedAboutPluginUpdate(player)) return
 
-        val currentVersion = parse(plugin.description.version)
+        val currentVersionString = plugin.description.version
+        if (currentVersionString.contains("-SNAPSHOT", ignoreCase = true)) {
+            return
+        }
+
+        val currentVersion = parse(currentVersionString)
         val latestVersion = parse(latestPluginVersion)
 
         if (currentVersion < latestVersion) {

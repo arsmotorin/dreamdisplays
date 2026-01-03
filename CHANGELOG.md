@@ -22,7 +22,7 @@ Mod:
 
 Plugin:
 
-- [ ] No changes
+- [x] Detect snapshot versions correctly
 
 # Version 1.3.0
 
