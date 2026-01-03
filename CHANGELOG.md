@@ -1,5 +1,7 @@
 # Version 1.4.0
 
+Mod:
+
 - [ ] Add spacial audio support
 - [ ] Support single-player mode ([#31](https://github.com/arsmotorin/dreamdisplays/issues/59))
 - [ ] Add toggle button for window focus
@@ -10,6 +12,26 @@
 Plugin:
 
 - [ ] Add config migrator from old versions of the plugin
+
+# Version 1.3.3
+
+Mod:
+
+- [ ] Rewrite entire mod in Kotlin
+
+Plugin:
+
+- [ ] No changes
+
+# Version 1.3.2
+
+Mod:
+
+- [x] Fix display deletion not working properly
+
+Plugin:
+
+- [x] No changes
 
 # Version 1.3.1
 

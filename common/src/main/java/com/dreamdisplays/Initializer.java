@@ -379,6 +379,8 @@ public class Initializer {
             Manager.unregisterScreen(screen);
         }
 
+        Manager.unloadedScreens.remove(packet.uuid());
+
         Settings.removeDisplay(packet.uuid());
         LoggingManager.info(
                 "Display deleted and removed from saved data: " + packet.uuid()
