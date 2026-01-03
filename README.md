@@ -21,6 +21,9 @@ For this mod to work, players install the client mod, while server admins only n
 - **Ad-free YouTube video playback, so you can enjoy uninterrupted viewing**
 - **Seamless multiplayer synchronization**
 - Adjustable resolutions from 144p up to 4K
+- Volume control from 0% to 200%
+- Brightness control from 0% to 200%
+- Multiple video languages support
 - Customizable screen sizes in blocks
 - Integrated controls for play, pause, and seek
 - Native optimizations (in development)
@@ -34,9 +37,9 @@ For this mod to work, players install the client mod, while server admins only n
 
 ## Planned features
 
+- Switch from GStreamer to FFmpeg (in high-priority)
 - Support for additional video platforms
 - Support real-time streams
-- Switch from GStreamer to FFmpeg for better performance
 - Better user interface
 - Native optimizations
 - Expanded /display commands
