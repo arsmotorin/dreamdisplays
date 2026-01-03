@@ -12,6 +12,7 @@ import com.dreamdisplays.util.Utils;
 import me.inotsleep.utils.logging.LoggingManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -43,6 +44,7 @@ public class Initializer {
     private static final AtomicReference<@Nullable ClientLevel> lastLevel =
             new AtomicReference<>(null);
     private static final AtomicBoolean wasFocused = new AtomicBoolean(false);
+    private static int unloadCheckTick = 0;
     public static Config config = new Config(new File("./config/" + MOD_ID));
     public static Thread timerThread = new Thread(() -> {
         int lastDistance = 64;
@@ -96,6 +98,46 @@ public class Initializer {
             return;
         }
 
+        // Check if player is in range before creating the display
+        Player player = Minecraft.getInstance().player;
+        if (player != null) {
+            // Get saved render distance or use default
+            Settings.FullDisplayData savedData = Settings.getDisplayData(packet.uuid());
+            int renderDistance = savedData != null ? savedData.renderDistance : config.defaultDistance;
+
+            // Screen.getDistanceToScreen()
+            int x = packet.pos().x;
+            int y = packet.pos().y;
+            int z = packet.pos().z;
+            int width = packet.width();
+            int height = packet.height();
+            String facing = packet.facing().toString();
+
+            int maxX = x;
+            int maxY = y + height - 1;
+            int maxZ = z;
+
+            switch (facing) {
+                case "NORTH", "SOUTH" -> maxX += width - 1;
+                case "EAST", "WEST" -> maxZ += width - 1;
+            }
+
+            BlockPos playerPos = player.blockPosition();
+            int clampedX = Math.min(Math.max(playerPos.getX(), x), maxX);
+            int clampedY = Math.min(Math.max(playerPos.getY(), y), maxY);
+            int clampedZ = Math.min(Math.max(playerPos.getZ(), z), maxZ);
+
+            BlockPos closestPos = new BlockPos(clampedX, clampedY, clampedZ);
+            double distance = Math.sqrt(playerPos.distSqr(closestPos));
+
+            // Only create if within render distance
+            if (distance > renderDistance) {
+                return;
+            }
+        }
+
+        Manager.unloadedScreens.remove(packet.uuid());
+
         createScreen(
                 packet.uuid(),
                 packet.ownerUuid(),
@@ -138,16 +180,10 @@ public class Initializer {
                 isSync
         );
 
-//        Settings.FullDisplayData savedData = Settings.getDisplayData(uuid);
-//        int renderDistance = savedData != null ? savedData.renderDistance : config.defaultDistance;
-//        screen.setRenderDistance(renderDistance);
+        Settings.FullDisplayData savedData = Settings.getDisplayData(uuid);
+        int renderDistance = savedData != null ? savedData.renderDistance : config.defaultDistance;
+        screen.setRenderDistance(renderDistance);
 
-        Player player = Minecraft.getInstance().player;
-        if (
-                player != null &&
-                        screen.getDistanceToScreen(player.blockPosition()) >
-                                Initializer.config.defaultDistance
-        ) return;
         Manager.registerScreen(screen);
         if (!Objects.equals(code, "")) screen.loadVideo(code, lang);
     }
@@ -157,6 +193,33 @@ public class Initializer {
         Screen screen = Manager.screens.get(packet.uuid());
         if (screen != null) {
             screen.updateData(packet);
+        }
+    }
+
+    // Restore a screen from cached data (when player enters render distance)
+    private static void restoreScreen(Settings.FullDisplayData data) {
+        Screen screen = new Screen(
+                data.uuid,
+                data.ownerUuid,
+                data.x,
+                data.y,
+                data.z,
+                data.facing,
+                data.width,
+                data.height,
+                data.isSync
+        );
+
+        screen.setRenderDistance(data.renderDistance);
+        screen.setSavedTimeNanos(data.currentTimeNanos);
+        screen.setVolume(data.volume);
+        screen.setQuality(data.quality);
+        screen.muted = data.muted;
+
+        Manager.screens.put(screen.getUUID(), screen);
+
+        if (data.videoUrl != null && !data.videoUrl.isEmpty()) {
+            screen.loadVideo(data.videoUrl, data.lang != null ? data.lang : "");
         }
     }
 
@@ -202,6 +265,47 @@ public class Initializer {
         Initializer.isOnScreen = false;
         Player player = minecraft.player;
         if (player == null) return;
+
+        unloadCheckTick++;
+        if (unloadCheckTick >= 10 && Initializer.displaysEnabled && !Manager.unloadedScreens.isEmpty()) {
+            unloadCheckTick = 0;
+            // Collect screens to restore first to avoid ConcurrentModificationException
+            java.util.List<Settings.FullDisplayData> toRestore = new java.util.ArrayList<>();
+
+            for (Settings.FullDisplayData data : Manager.unloadedScreens.values()) {
+                if (data.videoUrl == null || data.videoUrl.isEmpty()) continue;
+
+                // Screen.getDistanceToScreen
+                int maxX = data.x;
+                int maxY = data.y + data.height - 1;
+                int maxZ = data.z;
+
+                switch (data.facing) {
+                    case "NORTH", "SOUTH" -> maxX += data.width - 1;
+                    case "EAST", "WEST" -> maxZ += data.width - 1;
+                }
+
+                BlockPos playerPos = player.blockPosition();
+                int clampedX = Math.min(Math.max(playerPos.getX(), data.x), maxX);
+                int clampedY = Math.min(Math.max(playerPos.getY(), data.y), maxY);
+                int clampedZ = Math.min(Math.max(playerPos.getZ(), data.z), maxZ);
+
+                BlockPos closestPos = new BlockPos(clampedX, clampedY, clampedZ);
+                double distance = Math.sqrt(playerPos.distSqr(closestPos));
+
+                // If player is now in range, mark for restoration
+                if (distance <= data.renderDistance) {
+                    toRestore.add(data);
+                }
+            }
+
+            // Now restore outside the iteration
+            for (Settings.FullDisplayData data : toRestore) {
+                Manager.unloadedScreens.remove(data.uuid);
+                restoreScreen(data);
+            }
+        }
+
         for (Screen screen : Manager.getScreens()) {
             double displayRenderDistance = screen.getRenderDistance();
 

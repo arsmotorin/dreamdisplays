@@ -184,9 +184,6 @@ public class Settings {
             try (Writer writer = new FileWriter(serverFile)) {
                 GSON.toJson(toSave, writer);
             }
-            LoggingManager.info(
-                    "Saved " + toSave.size() + " displays for server: " + serverId
-            );
         } catch (IOException e) {
             LoggingManager.error(
                     "Failed to save server displays for " + serverId,

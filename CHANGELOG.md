@@ -15,8 +15,10 @@ Plugin:
 
 Mod:
 
-- [ ] Fix duplicated displays if they are synchronized ([#61](https://github.com/arsmotorin/dreamdisplays/issues/61))
-- [ ] Fix desynchronization after player relog
+- [x] Fix displays disappearing permanently when player walks out of render distance
+- [x] Displays now load immediately when entering render distance
+- [x] Fewer logs
+- [x] Updated dependencies
 
 Plugin:
 
@@ -26,6 +28,7 @@ Plugin:
 
 Mod:
 
+- [x] We've created [Discord server](https://discord.gg/uwMMZ2KWk6)!
 - [x] Smoother video playback and some optimizations
 - [x] Video brightness control
 - [x] Store paused state of display

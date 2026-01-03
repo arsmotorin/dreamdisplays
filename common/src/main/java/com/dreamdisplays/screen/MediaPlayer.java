@@ -213,6 +213,10 @@ public class MediaPlayer {
         safeExecute(() -> doSeek(nanos, b));
     }
 
+    public void seekToFast(long nanos) {
+        safeExecute(() -> doSeekFast(nanos));
+    }
+
     public void seekRelative(double s) {
         safeExecute(() -> {
             if (!initialized) return;
@@ -634,6 +638,25 @@ public class MediaPlayer {
         if (videoPipeline != null && !screen.getPaused()) videoPipeline.play();
 
         if (b) screen.afterSeek();
+    }
+
+    private void doSeekFast(long nanos) {
+        if (!initialized) return;
+        EnumSet<SeekFlags> flags = EnumSet.of(
+                SeekFlags.FLUSH,
+                SeekFlags.KEY_UNIT
+        );
+        audioPipeline.pause();
+        if (videoPipeline != null) videoPipeline.pause();
+        if (videoPipeline != null) videoPipeline.seekSimple(
+                Format.TIME,
+                flags,
+                nanos
+        );
+        audioPipeline.seekSimple(Format.TIME, flags, nanos);
+        if (videoPipeline != null) videoPipeline.getState(); // Waiting for pre-roll
+        audioPipeline.play();
+        if (videoPipeline != null && !screen.getPaused()) videoPipeline.play();
     }
 
     private void applyVolume() {

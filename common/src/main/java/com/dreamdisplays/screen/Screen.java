@@ -530,7 +530,7 @@ public class Screen {
                         mediaPlayer != null &&
                         mediaPlayer.isInitialized()
         ) {
-            mediaPlayer.seekTo(savedTimeNanos, false);
+            mediaPlayer.seekToFast(savedTimeNanos);
         }
     }
 

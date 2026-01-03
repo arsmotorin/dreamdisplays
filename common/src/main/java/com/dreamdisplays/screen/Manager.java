@@ -16,6 +16,10 @@ public class Manager {
     public static final ConcurrentHashMap<UUID, Screen> screens =
             new ConcurrentHashMap<>();
 
+    // Cache of unloaded displays
+    public static final ConcurrentHashMap<UUID, Settings.FullDisplayData> unloadedScreens =
+            new ConcurrentHashMap<>();
+
     public Manager() {
     }
 
@@ -51,6 +55,31 @@ public class Manager {
     }
 
     public static void unregisterScreen(Screen screen) {
+        // Cache the display data before unregistering
+        String videoUrl = screen.getVideoUrl();
+        String lang = screen.getLang();
+        UUID ownerUuid = screen.getOwnerUuid();
+
+        Settings.FullDisplayData data = new Settings.FullDisplayData(
+                screen.getUUID(),
+                screen.getPos().getX(),
+                screen.getPos().getY(),
+                screen.getPos().getZ(),
+                screen.getFacing(),
+                (int) screen.getWidth(),
+                (int) screen.getHeight(),
+                videoUrl != null ? videoUrl : "",
+                lang != null ? lang : "",
+                (float) screen.getVolume(),
+                screen.getQuality(),
+                screen.muted,
+                screen.isSync,
+                ownerUuid != null ? ownerUuid : screen.getUUID(),
+                screen.getRenderDistance(),
+                screen.getCurrentTimeNanos()
+        );
+        unloadedScreens.put(screen.getUUID(), data);
+
         screens.remove(screen.getUUID());
         screen.unregister();
     }
@@ -61,6 +90,7 @@ public class Manager {
         }
 
         screens.clear();
+        unloadedScreens.clear(); // Clear cache when changing servers
     }
 
     // Save screen data to persistent storage
@@ -103,6 +133,5 @@ public class Manager {
         for (Screen screen : screens.values()) {
             saveScreenData(screen);
         }
-        LoggingManager.info("Saved " + screens.size() + " displays");
     }
 }
