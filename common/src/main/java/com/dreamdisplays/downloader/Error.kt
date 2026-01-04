@@ -1,83 +1,71 @@
-package com.dreamdisplays.downloader;
+package com.dreamdisplays.downloader
 
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
-import org.jspecify.annotations.NullMarked;
+import net.minecraft.client.gui.GuiGraphics
+import net.minecraft.client.gui.components.Button
+import net.minecraft.client.gui.screens.Screen
+import net.minecraft.network.chat.Component
+import org.jspecify.annotations.NullMarked
 
 /**
  * Will be removed in 2.0.0 version and replaced with FFmpeg solution.
  */
 @NullMarked
-public class Error extends Screen {
-
-    private final Screen parent;
-    private final String errorMessage;
-
-    // Constructor for GStreamerErrorScreen
-    public Error(Screen parent, String errorMessage) {
-        super(Component.nullToEmpty("Error while downloading GStreamer"));
-        this.parent = parent;
-        this.errorMessage = errorMessage;
-    }
+class Error(
+    private val parent: Screen,
+    private val errorMessage: String
+) : Screen(Component.nullToEmpty("Error while downloading GStreamer")) {
 
     // Initializes the screen and adds the "Continue" button
-    @Override
-    protected void init() {
-        super.init();
+    override fun init() {
+        super.init()
 
-        this.addRenderableWidget(
-                Button.builder(Component.nullToEmpty("Continue"), button ->
-                                minecraft.setScreen(parent)
-                        )
-                        .bounds(this.width / 2 - 50, this.height / 2 + 40, 100, 20)
-                        .build()
-        );
+        addRenderableWidget(
+            Button.builder(
+                Component.nullToEmpty("Continue")
+            ) { minecraft.setScreen(parent) }
+                .bounds(width / 2 - 50, height / 2 + 40, 100, 20)
+                .build()
+        )
     }
 
     // Renders the error screen with title and error message
-    @Override
-    public void render(
-            GuiGraphics context,
-            int mouseX,
-            int mouseY,
-            float delta
+    override fun render(
+        context: GuiGraphics,
+        mouseX: Int,
+        mouseY: Int,
+        delta: Float
     ) {
-        this.renderBackground(context, mouseX, mouseY, delta);
+        renderBackground(context, mouseX, mouseY, delta)
 
-        String titleText = this.title.getString();
+        val titleText = title.string
+        val titleWidth = font.width(titleText)
 
         // Centered title
-        int titleWidth = this.font.width(titleText);
-
-        // Draw the title text in the center of the screen
         context.drawString(
-                font,
-                titleText,
-                (int) ((this.width - titleWidth) / 2f),
-                (int) (this.height / 2f - 40f),
-                0xFF5555,
-                true
-        );
+            font,
+            titleText,
+            ((width - titleWidth) / 2f).toInt(),
+            (height / 2f - 40f).toInt(),
+            0xFF5555,
+            true
+        )
 
         // Error message
-        int msgWidth = this.font.width(errorMessage);
+        val msgWidth = font.width(errorMessage)
         context.drawString(
-                font,
-                errorMessage,
-                (int) ((this.width - msgWidth) / 2f),
-                (int) (this.height / 2f - 20f),
-                0xFF5555,
-                true
-        );
+            font,
+            errorMessage,
+            ((width - msgWidth) / 2f).toInt(),
+            (height / 2f - 20f).toInt(),
+            0xFF5555,
+            true
+        )
 
-        super.render(context, mouseX, mouseY, delta);
+        super.render(context, mouseX, mouseY, delta)
     }
 
     // Disable closing on ESC key
-    @Override
-    public boolean shouldCloseOnEsc() {
-        return false;
+    override fun shouldCloseOnEsc(): Boolean {
+        return false
     }
 }
