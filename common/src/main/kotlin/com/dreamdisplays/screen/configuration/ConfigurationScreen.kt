@@ -334,28 +334,38 @@ class ConfigurationScreen private constructor() : Screen(Component.translatable(
         mouseY: Int,
         displayScreen: DisplayScreen,
         maxSW: Int,
-        startY: Int
+        startY: Int,
     ) {
         var cY = startY
 
-        cY = renderSettingRow(guiGraphics, mouseX, mouseY, maxSW, cY, volume, volumeReset,
-            "dreamdisplays.button.volume", TooltipFactory.volumeTooltip(volume?.value ?: 0.5))
+        cY = renderSettingRow(
+            guiGraphics, mouseX, mouseY, maxSW, cY, volume, volumeReset,
+            "dreamdisplays.button.volume", TooltipFactory.volumeTooltip(volume?.value ?: 0.5)
+        )
 
-        cY = renderSettingRow(guiGraphics, mouseX, mouseY, maxSW, cY, renderD, renderDReset,
-            "dreamdisplays.button.render-distance", TooltipFactory.renderDistanceTooltip(renderD?.value ?: 0.5))
+        cY = renderSettingRow(
+            guiGraphics, mouseX, mouseY, maxSW, cY, renderD, renderDReset,
+            "dreamdisplays.button.render-distance", TooltipFactory.renderDistanceTooltip(renderD?.value ?: 0.5)
+        )
 
         val qualityList = displayScreen.getQualityList()
         val currentQuality = toQuality(((quality?.value ?: 0.0) * qualityList.size).toInt())
         val showHighQualityWarning = (displayScreen.quality.toIntOrNull() ?: 0) >= 1080
-        cY = renderSettingRow(guiGraphics, mouseX, mouseY, maxSW, cY, quality, qualityReset,
-            "dreamdisplays.button.quality", TooltipFactory.qualityTooltip(currentQuality, showHighQualityWarning))
+        cY = renderSettingRow(
+            guiGraphics, mouseX, mouseY, maxSW, cY, quality, qualityReset,
+            "dreamdisplays.button.quality", TooltipFactory.qualityTooltip(currentQuality, showHighQualityWarning)
+        )
 
-        cY = renderSettingRow(guiGraphics, mouseX, mouseY, maxSW, cY, brightness, brightnessReset,
-            "dreamdisplays.button.brightness", TooltipFactory.brightnessTooltip(brightness?.value ?: 0.5))
+        cY = renderSettingRow(
+            guiGraphics, mouseX, mouseY, maxSW, cY, brightness, brightnessReset,
+            "dreamdisplays.button.brightness", TooltipFactory.brightnessTooltip(brightness?.value ?: 0.5)
+        )
 
         cY += 10
-        cY = renderSettingRow(guiGraphics, mouseX, mouseY, maxSW, cY, sync, syncReset,
-            "dreamdisplays.button.synchronization", TooltipFactory.syncTooltip(sync?.value ?: false))
+        cY = renderSettingRow(
+            guiGraphics, mouseX, mouseY, maxSW, cY, sync, syncReset,
+            "dreamdisplays.button.synchronization", TooltipFactory.syncTooltip(sync?.value ?: false)
+        )
     }
 
     private fun renderSettingRow(
@@ -367,7 +377,7 @@ class ConfigurationScreen private constructor() : Screen(Component.translatable(
         widget: net.minecraft.client.gui.components.AbstractWidget?,
         resetButton: Button?,
         labelKey: String,
-        tooltip: List<Component>
+        tooltip: List<Component>,
     ): Int {
         if (widget != null && resetButton != null) {
             widget.x = width / 2 + maxSW / 2 - 80 - WIDGET_HEIGHT - 5
@@ -393,10 +403,28 @@ class ConfigurationScreen private constructor() : Screen(Component.translatable(
 
     private fun renderActionButtonTooltips(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int) {
         deleteButton?.let {
-            renderTooltipIfHovered(guiGraphics, mouseX, mouseY, it.x, it.y, it.width, it.height, TooltipFactory.deleteTooltip())
+            renderTooltipIfHovered(
+                guiGraphics,
+                mouseX,
+                mouseY,
+                it.x,
+                it.y,
+                it.width,
+                it.height,
+                TooltipFactory.deleteTooltip()
+            )
         }
         reportButton?.let {
-            renderTooltipIfHovered(guiGraphics, mouseX, mouseY, it.x, it.y, it.width, it.height, TooltipFactory.reportTooltip())
+            renderTooltipIfHovered(
+                guiGraphics,
+                mouseX,
+                mouseY,
+                it.x,
+                it.y,
+                it.width,
+                it.height,
+                TooltipFactory.reportTooltip()
+            )
         }
     }
 
@@ -408,7 +436,7 @@ class ConfigurationScreen private constructor() : Screen(Component.translatable(
         elementY: Int,
         elementWidth: Int,
         elementHeight: Int,
-        tooltip: List<Component>
+        tooltip: List<Component>,
     ) {
         if (mouseX in elementX..elementX + elementWidth && mouseY in elementY..elementY + elementHeight) {
             guiGraphics.setComponentTooltipForNextFrame(font, tooltip, mouseX, mouseY)

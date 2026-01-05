@@ -8,10 +8,10 @@ import com.dreamdisplays.net.common.Version
 import com.dreamdisplays.net.s2c.DisplayInfo
 import com.dreamdisplays.net.s2c.Premium
 import com.dreamdisplays.net.s2c.ReportEnabled
-import com.dreamdisplays.screen.configuration.ConfigurationScreen
 import com.dreamdisplays.screen.Manager
 import com.dreamdisplays.screen.Screen
 import com.dreamdisplays.screen.Settings
+import com.dreamdisplays.screen.configuration.ConfigurationScreen
 import com.dreamdisplays.util.Facing
 import com.dreamdisplays.util.RayCasting
 import com.dreamdisplays.util.Utils
@@ -27,7 +27,7 @@ import org.jspecify.annotations.NullMarked
 import org.lwjgl.glfw.GLFW
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
@@ -67,12 +67,16 @@ object Initializer {
 
     @JvmField
     var isOnScreen = false
+
     @JvmField
     var focusMode = false
+
     @JvmField
     var displaysEnabled = true
+
     @JvmField
     var isPremium = false
+
     @JvmField
     var isReportingEnabled = true
 
@@ -180,7 +184,7 @@ object Initializer {
         height: Int,
         code: String,
         lang: String,
-        isSync: Boolean
+        isSync: Boolean,
     ) {
         val screen = Screen(
             uuid,

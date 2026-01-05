@@ -46,7 +46,7 @@ object ScreenRenderer {
     private fun renderScreenTexture(
         screen: Screen,
         stack: PoseStack,
-        tessellator: Tesselator
+        tessellator: Tesselator,
     ) {
         stack.pushPose()
         moveForward(stack, screen.getFacing(), 0.008f)
@@ -56,10 +56,12 @@ object ScreenRenderer {
                 moveHorizontal(stack, "NORTH", -(screen.getWidth()))
                 moveForward(stack, "NORTH", 1f)
             }
+
             "SOUTH" -> {
                 moveHorizontal(stack, "SOUTH", 1f)
                 moveForward(stack, "SOUTH", 1f)
             }
+
             "EAST" -> {
                 moveHorizontal(stack, "EAST", -(screen.getWidth() - 1))
                 moveForward(stack, "EAST", 2f)
@@ -93,18 +95,21 @@ object ScreenRenderer {
                 )
                 stack.translate(0f, 0f, 1f)
             }
+
             "WEST" -> {
                 rotation = Quaternionf().rotationY(
                     Math.toRadians(-90.0).toFloat()
                 )
                 stack.translate(0f, 0f, 0f)
             }
+
             "EAST" -> {
                 rotation = Quaternionf().rotationY(
                     Math.toRadians(90.0).toFloat()
                 )
                 stack.translate(-1f, 0f, 1f)
             }
+
             else -> {
                 rotation = Quaternionf()
                 stack.translate(-1f, 0f, 0f)
@@ -117,7 +122,7 @@ object ScreenRenderer {
     private fun moveForward(
         stack: PoseStack,
         facing: String,
-        amount: Float
+        amount: Float,
     ) {
         when (facing) {
             "NORTH" -> stack.translate(0f, 0f, -amount)
@@ -131,7 +136,7 @@ object ScreenRenderer {
     private fun moveHorizontal(
         stack: PoseStack,
         facing: String,
-        amount: Float
+        amount: Float,
     ) {
         when (facing) {
             "NORTH" -> stack.translate(-amount, 0f, 0f)
@@ -145,7 +150,7 @@ object ScreenRenderer {
     private fun renderGpuTexture(
         stack: PoseStack,
         tesselator: Tesselator,
-        type: RenderType
+        type: RenderType,
     ) {
         val pose = stack.last().pose()
 
@@ -190,7 +195,7 @@ object ScreenRenderer {
     private fun renderColor(
         stack: PoseStack,
         tesselator: Tesselator,
-        type: RenderType
+        type: RenderType,
     ) {
         val pose = stack.last().pose()
 

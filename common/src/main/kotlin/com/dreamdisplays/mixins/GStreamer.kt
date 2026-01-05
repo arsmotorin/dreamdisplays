@@ -1,6 +1,5 @@
 package com.dreamdisplays.mixins
 
-import com.dreamdisplays.downloader.Error as DownloadError
 import com.dreamdisplays.downloader.GStreamerState
 import com.dreamdisplays.downloader.Listener
 import com.dreamdisplays.downloader.Menu
@@ -15,6 +14,7 @@ import org.spongepowered.asm.mixin.Shadow
 import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
+import com.dreamdisplays.downloader.Error as DownloadError
 
 /**
  * Will be removed in 2.0.0 version and replaced with FFmpeg solution.

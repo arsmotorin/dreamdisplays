@@ -55,7 +55,7 @@ object Region {
         val width: Int,
         val height: Int,
         val deltaX: Int,
-        val deltaZ: Int
+        val deltaZ: Int,
     ) {
 
         fun getMinLocation(world: World?): Location {

@@ -19,7 +19,7 @@ class Menu(private val parentMenu: Screen) : Screen(
         graphics: GuiGraphics,
         mouseX: Int,
         mouseY: Int,
-        partialTick: Float
+        partialTick: Float,
     ) {
         super.render(graphics, mouseX, mouseY, partialTick)
         val cx = width / 2f

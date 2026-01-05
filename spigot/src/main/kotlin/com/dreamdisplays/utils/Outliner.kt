@@ -16,7 +16,7 @@ object Outliner {
 
     data class OutlineData(
         val box: BoundingBox,
-        val world: org.bukkit.World
+        val world: org.bukkit.World,
     )
 
     // Show outline for a player between two positions

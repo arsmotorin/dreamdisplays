@@ -13,7 +13,7 @@ import net.minecraft.client.renderer.texture.DynamicTexture
 import net.minecraft.core.BlockPos
 import net.minecraft.resources.Identifier
 import org.jspecify.annotations.NullMarked
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import kotlin.math.max
 import kotlin.math.min
@@ -32,16 +32,24 @@ class Screen(
     private var facing: String,
     private var width: Int,
     private var height: Int,
-    @JvmField var isSync: Boolean
+    @JvmField var isSync: Boolean,
 ) {
-    @JvmField var owner: Boolean = false
-    @JvmField var errored: Boolean = false
-    @JvmField var muted: Boolean = false
-    @JvmField var texture: DynamicTexture? = null
-    @JvmField var textureId: Identifier? = null
-    @JvmField var renderType: RenderType? = null
-    @JvmField var textureWidth: Int = 0
-    @JvmField var textureHeight: Int = 0
+    @JvmField
+    var owner: Boolean = false
+    @JvmField
+    var errored: Boolean = false
+    @JvmField
+    var muted: Boolean = false
+    @JvmField
+    var texture: DynamicTexture? = null
+    @JvmField
+    var textureId: Identifier? = null
+    @JvmField
+    var renderType: RenderType? = null
+    @JvmField
+    var textureWidth: Int = 0
+    @JvmField
+    var textureHeight: Int = 0
 
     var volume: Double = 0.0
         set(value) {
@@ -76,6 +84,7 @@ class Screen(
     private var mediaPlayer: MediaPlayer? = null
     var videoUrl: String? = null
         private set
+
     // Cache (good for performance)
     private var blockPos: BlockPos? = null
     var lang: String? = null

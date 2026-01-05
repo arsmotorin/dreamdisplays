@@ -15,7 +15,7 @@ object Converter {
         srcH: Int,
         dstBuffer: ByteBuffer?,
         dstW: Int,
-        dstH: Int
+        dstH: Int,
     ) {
         require(!(srcBuffer == null || dstBuffer == null)) { "Source and destination buffers cannot be null" }
 
@@ -66,7 +66,7 @@ object Converter {
         srcH: Int,
         dstBuffer: ByteBuffer,
         dstW: Int,
-        dstH: Int
+        dstH: Int,
     ) {
         scaleRGBAImageJava(srcBuffer, srcW, srcH, dstBuffer, dstW, dstH)
     }

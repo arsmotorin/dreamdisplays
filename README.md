@@ -3,7 +3,8 @@
 
 <div align="center"> <img src="https://i.imgur.com/wAndZVq.png" alt="Dream Displays"> </div>
 
-Download from [Modrinth](https://modrinth.com/plugin/dreamdisplays) or [CurseForge](https://www.curseforge.com/minecraft/mc-mods/dreamdisplays)!
+Download from [Modrinth](https://modrinth.com/plugin/dreamdisplays)
+or [CurseForge](https://www.curseforge.com/minecraft/mc-mods/dreamdisplays)!
 
 ## Available for Fabric, NeoForge and popular server forks
 

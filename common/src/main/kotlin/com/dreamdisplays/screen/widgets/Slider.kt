@@ -1,7 +1,6 @@
 package com.dreamdisplays.screen.widgets
 
 import com.mojang.blaze3d.platform.InputConstants
-import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.components.AbstractWidget
 import net.minecraft.client.gui.narration.NarratedElementType
@@ -25,7 +24,7 @@ abstract class Slider(
     width: Int,
     height: Int,
     message: Component,
-    @JvmField var value: Double
+    @JvmField var value: Double,
 ) : AbstractWidget(x, y, width, height, message) {
 
     private var sliderFocused: Boolean = false
@@ -62,7 +61,7 @@ abstract class Slider(
         graphics: GuiGraphics,
         mouseX: Int,
         mouseY: Int,
-        partialTick: Float
+        partialTick: Float,
     ) {
         graphics.blitSprite(
             RenderPipelines.GUI_TEXTURED,
@@ -101,7 +100,7 @@ abstract class Slider(
     override fun onDrag(
         event: MouseButtonEvent,
         dragX: Double,
-        dragY: Double
+        dragY: Double,
     ) {
         this.setValueFromMouse(event.x)
         super.onDrag(event, dragX, dragY)

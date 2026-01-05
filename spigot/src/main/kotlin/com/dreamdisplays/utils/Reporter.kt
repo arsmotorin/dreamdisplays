@@ -31,7 +31,7 @@ object Reporter {
         displayId: UUID,
         reporter: Player,
         webhookUrl: String,
-        ownerName: String?
+        ownerName: String?,
     ) {
         val payload = buildWebhookPayload(
             location,
@@ -49,7 +49,7 @@ object Reporter {
         videoLink: String?,
         displayId: UUID,
         reporterName: String,
-        ownerName: String?
+        ownerName: String?,
     ): String {
         val embed = JsonObject().apply {
             addProperty("description", EMBED_TITLE)
@@ -68,7 +68,7 @@ object Reporter {
         videoLink: String?,
         displayId: UUID,
         reporterName: String,
-        ownerName: String?
+        ownerName: String?,
     ): JsonArray {
         return JsonArray().apply {
             add(createField("Location", location.toReadableString(), inline = false))

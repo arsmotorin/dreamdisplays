@@ -32,7 +32,10 @@ object TooltipFactory {
         Component.translatable("dreamdisplays.button.render-distance.tooltip.6")
             .withStyle { it.withColor(ChatFormatting.DARK_GRAY) },
         Component.translatable("dreamdisplays.button.render-distance.tooltip.7"),
-        Component.translatable("dreamdisplays.button.render-distance.tooltip.8", (currentValue * (128 - 24) + 24).toInt())
+        Component.translatable(
+            "dreamdisplays.button.render-distance.tooltip.8",
+            (currentValue * (128 - 24) + 24).toInt()
+        )
             .withStyle { it.withColor(ChatFormatting.GOLD) }
     )
 

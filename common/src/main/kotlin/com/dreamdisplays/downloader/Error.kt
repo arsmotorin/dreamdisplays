@@ -12,7 +12,7 @@ import org.jspecify.annotations.NullMarked
 @NullMarked
 class Error(
     private val parent: Screen,
-    private val errorMessage: String
+    private val errorMessage: String,
 ) : Screen(Component.nullToEmpty("Error while downloading GStreamer")) {
 
     // Initializes the screen and adds the "Continue" button
@@ -33,7 +33,7 @@ class Error(
         context: GuiGraphics,
         mouseX: Int,
         mouseY: Int,
-        delta: Float
+        delta: Float,
     ) {
         renderBackground(context, mouseX, mouseY, delta)
 

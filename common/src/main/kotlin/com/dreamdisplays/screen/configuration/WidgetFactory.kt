@@ -7,8 +7,8 @@ import com.dreamdisplays.screen.widgets.Slider
 import com.dreamdisplays.screen.widgets.Toggle
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
-import com.dreamdisplays.screen.Screen as DisplayScreen
 import kotlin.math.floor
+import com.dreamdisplays.screen.Screen as DisplayScreen
 
 /**
  * Factory for creating widgets used in the configuration screen.
@@ -141,7 +141,12 @@ object WidgetFactory {
         }
     }
 
-    fun createQualityResetButton(screen: DisplayScreen, qualitySlider: () -> Slider?, toQuality: (Int) -> String, fromQuality: (String) -> Int): Button {
+    fun createQualityResetButton(
+        screen: DisplayScreen,
+        qualitySlider: () -> Slider?,
+        toQuality: (Int) -> String,
+        fromQuality: (String) -> Int,
+    ): Button {
         return object : Button(
             0, 0, 0, 0, 64, 64,
             Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bri"), 2
@@ -195,7 +200,8 @@ object WidgetFactory {
             screen.isSync
         ) {
             override fun updateMessage() {
-                message = Component.translatable(if (value) "dreamdisplays.button.enabled" else "dreamdisplays.button.disabled")
+                message =
+                    Component.translatable(if (value) "dreamdisplays.button.enabled" else "dreamdisplays.button.disabled")
             }
 
             override fun applyValue() {

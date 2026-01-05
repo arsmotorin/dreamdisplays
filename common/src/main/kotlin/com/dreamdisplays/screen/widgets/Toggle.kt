@@ -22,7 +22,7 @@ abstract class Toggle(
     width: Int,
     height: Int,
     message: Component,
-    @JvmField var value: Boolean
+    @JvmField var value: Boolean,
 ) : AbstractWidget(x, y, width, height, message) {
 
     private var dValue: Double = if (value) 1.0 else 0.0
@@ -45,7 +45,7 @@ abstract class Toggle(
         guiGraphics: GuiGraphics,
         mouseX: Int,
         mouseY: Int,
-        partialTick: Float
+        partialTick: Float,
     ) {
         guiGraphics.blitSprite(
             RenderPipelines.GUI_TEXTURED,

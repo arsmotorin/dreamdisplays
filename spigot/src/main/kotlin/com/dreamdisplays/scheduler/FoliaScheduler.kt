@@ -22,7 +22,7 @@ object FoliaScheduler : AdapterScheduler {
         plugin: Plugin,
         delayTicks: Long,
         intervalTicks: Long,
-        task: Runnable
+        task: Runnable,
     ) {
         val consumer = Proxy.newProxyInstance(
             consumerClass.classLoader,

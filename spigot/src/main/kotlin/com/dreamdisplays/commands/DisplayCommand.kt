@@ -73,7 +73,7 @@ class DisplayCommand :
         sender: CommandSender,
         command: Command,
         label: String,
-        args: Array<String>
+        args: Array<String>,
     ): Boolean {
         toExecute(sender, label, args as Array<String?>)
         return true
@@ -85,7 +85,7 @@ class DisplayCommand :
         sender: CommandSender,
         command: Command,
         alias: String,
-        args: Array<String>
+        args: Array<String>,
     ): MutableList<String?> {
         return complete(sender, args as Array<String?>)
     }

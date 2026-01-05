@@ -119,7 +119,8 @@ class DreamDisplaysMod : ClientModInitializer, Mod {
             if (client.level != null && client.player != null) {
                 // Use server address as server ID for local singleplayer worlds
                 // TODO: add support for singleplayer in the future.
-                val serverId = if (client.hasSingleplayerServer()) "singleplayer" else (if (client.currentServer != null) client.currentServer!!.ip else "unknown")
+                val serverId =
+                    if (client.hasSingleplayerServer()) "singleplayer" else (if (client.currentServer != null) client.currentServer!!.ip else "unknown")
                 Manager.loadScreensForServer(serverId)
             }
         })

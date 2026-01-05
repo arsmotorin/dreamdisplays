@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 class Crosshair {
     @Inject(method = ["renderCrosshair"], at = [At("HEAD")], cancellable = true)
     fun renderCrosshair(
-        ci: CallbackInfo
+        ci: CallbackInfo,
     ) {
         if (Initializer.isOnScreen) {
             ci.cancel()

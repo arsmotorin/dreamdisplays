@@ -6,7 +6,7 @@ import org.freedesktop.gstreamer.Gst
 import org.jspecify.annotations.NullMarked
 import java.io.File
 import java.io.IOException
-import java.util.ArrayDeque
+import java.util.*
 import java.util.regex.Pattern
 import kotlin.concurrent.thread
 
@@ -21,6 +21,7 @@ object Init {
         ".*\\.so(\\.\\d+)*$",
         Pattern.CASE_INSENSITIVE
     )
+
     // Pattern to match macOS dynamic libraries
     private val DYLIB_PATTERN = Pattern.compile(
         ".*\\.(dylib|jnilib)$",
@@ -80,7 +81,8 @@ object Init {
                     // Update progress and task message
                     Listener.progress = loadedCount.toFloat() / total
 
-                    Listener.task = "Loading libraries for Dream Displays $loadedCount/$total ($loadedThisPass/$passSize)"
+                    Listener.task =
+                        "Loading libraries for Dream Displays $loadedCount/$total ($loadedThisPass/$passSize)"
                 } catch (_: LinkageError) {
                     toLoad.addLast(path)
                 }

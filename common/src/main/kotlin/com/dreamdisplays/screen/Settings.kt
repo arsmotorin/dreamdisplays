@@ -4,12 +4,8 @@ import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import me.inotsleep.utils.logging.LoggingManager
 import org.jspecify.annotations.NullMarked
-import java.io.File
-import java.io.FileNotFoundException
-import java.io.FileReader
-import java.io.FileWriter
-import java.io.IOException
-import java.util.UUID
+import java.io.*
+import java.util.*
 
 /**
  * Manages loading and saving of display settings and data.
@@ -158,7 +154,7 @@ object Settings {
         quality: String,
         brightness: Float,
         muted: Boolean,
-        paused: Boolean
+        paused: Boolean,
     ) {
         val settings = getSettings(displayUuid)
         settings.volume = volume
@@ -213,11 +209,16 @@ object Settings {
 
     // Client settings for a display (volume, quality, muted, brightness, paused)
     class DisplaySettings {
-        @JvmField var volume: Float = 0.5f
-        @JvmField var quality: String = "720"
-        @JvmField var brightness: Float = 1.0f
-        @JvmField var muted: Boolean = false
-        @JvmField var paused: Boolean = true
+        @JvmField
+        var volume: Float = 0.5f
+        @JvmField
+        var quality: String = "720"
+        @JvmField
+        var brightness: Float = 1.0f
+        @JvmField
+        var muted: Boolean = false
+        @JvmField
+        var paused: Boolean = true
     }
 
     // Full display data (stored per server)
@@ -237,7 +238,7 @@ object Settings {
         @JvmField var isSync: Boolean,
         @JvmField var ownerUuid: UUID,
         @JvmField var renderDistance: Int = 64,
-        @JvmField var currentTimeNanos: Long = 0
+        @JvmField var currentTimeNanos: Long = 0,
     )
 }
 

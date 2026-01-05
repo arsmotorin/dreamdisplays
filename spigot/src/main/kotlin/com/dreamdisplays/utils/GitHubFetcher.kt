@@ -57,6 +57,6 @@ object GitHubFetcher {
         @field:SerializedName("tag_name") val tagName: String,
         @field:SerializedName("name") val name: String,
         @field:SerializedName("html_url") val htmlUrl: String,
-        @field:SerializedName("published_at") val publishedAt: String
+        @field:SerializedName("published_at") val publishedAt: String,
     )
 }

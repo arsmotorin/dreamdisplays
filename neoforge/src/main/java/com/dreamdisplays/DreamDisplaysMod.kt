@@ -113,7 +113,8 @@ class DreamDisplaysMod(modEventBus: IEventBus) : com.dreamdisplays.Mod {
     fun onClientLogin(event: ClientPlayerNetworkEvent.LoggingIn) {
         val mc = Minecraft.getInstance()
         if (mc.level != null && mc.player != null) {
-            val serverId = if (mc.hasSingleplayerServer()) "singleplayer" else (if (mc.currentServer != null) mc.currentServer!!.ip else "unknown")
+            val serverId =
+                if (mc.hasSingleplayerServer()) "singleplayer" else (if (mc.currentServer != null) mc.currentServer!!.ip else "unknown")
             Manager.loadScreensForServer(serverId)
         }
     }

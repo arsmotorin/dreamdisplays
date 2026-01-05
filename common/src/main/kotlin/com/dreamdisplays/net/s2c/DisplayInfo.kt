@@ -6,8 +6,7 @@ import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import org.joml.Vector3i
-import java.util.UUID
-import kotlin.jvm.JvmField
+import java.util.*
 
 data class DisplayInfo(
     val uuid: UUID,
@@ -18,13 +17,14 @@ data class DisplayInfo(
     val url: String,
     val facing: Facing,
     val isSync: Boolean,
-    val lang: String
+    val lang: String,
 ) : CustomPacketPayload {
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = PACKET_ID
 
     companion object {
         @JvmField
         val PACKET_ID: CustomPacketPayload.Type<DisplayInfo> = createType("display_info")
+
         @JvmField
         val PACKET_CODEC: StreamCodec<FriendlyByteBuf, DisplayInfo> = StreamCodec.of(
             { buf, packet ->
