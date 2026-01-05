@@ -1,5 +1,6 @@
 plugins {
     java
+    kotlin("jvm")
 }
 
 subprojects {
@@ -26,4 +27,12 @@ subprojects {
         maven("https://oss.sonatype.org/content/groups/public/")
         maven("https://jitpack.io")
     }
+}
+
+dependencies {
+    implementation(kotlin("stdlib-jdk8"))
+}
+
+repositories {
+    mavenCentral()
 }

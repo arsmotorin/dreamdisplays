@@ -1,148 +1,129 @@
-package com.dreamdisplays;
+package com.dreamdisplays
 
-import com.dreamdisplays.net.Packets.*;
-import com.dreamdisplays.render.ScreenRenderer;
-import com.dreamdisplays.screen.Manager;
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.Camera;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
-import org.jspecify.annotations.NullMarked;
+import com.dreamdisplays.net.c2s.Report
+import com.dreamdisplays.net.c2s.RequestSync
+import com.dreamdisplays.net.common.Delete
+import com.dreamdisplays.net.common.DisplayEnabled
+import com.dreamdisplays.net.common.Sync
+import com.dreamdisplays.net.common.Version
+import com.dreamdisplays.net.s2c.DisplayInfo
+import com.dreamdisplays.net.s2c.Premium
+import com.dreamdisplays.net.s2c.ReportEnabled
+import com.dreamdisplays.render.ScreenRenderer
+import com.dreamdisplays.screen.Manager
+import net.minecraft.client.Minecraft
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload
+import net.neoforged.api.distmarker.Dist
+import net.neoforged.bus.api.IEventBus
+import net.neoforged.bus.api.SubscribeEvent
+import net.neoforged.fml.common.Mod
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent
+import net.neoforged.neoforge.client.event.ClientTickEvent
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent
+import net.neoforged.neoforge.common.NeoForge
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent
+import org.jspecify.annotations.NullMarked
 
 @NullMarked
 @Mod(value = DreamDisplaysMod.MOD_ID, dist = Dist.CLIENT)
-public class DreamDisplaysMod implements com.dreamdisplays.Mod {
+class DreamDisplaysMod(modEventBus: IEventBus) : com.dreamdisplays.Mod {
 
-    public static final String MOD_ID = "dreamdisplays";
-
-    public DreamDisplaysMod(IEventBus modEventBus) {
-        Initializer.onModInit(this);
-        modEventBus.addListener(this::registerPayloads);
-        NeoForge.EVENT_BUS.register(this);
+    init {
+        Initializer.onModInit(this)
+        modEventBus.addListener(this::registerPayloads)
+        NeoForge.EVENT_BUS.register(this)
     }
 
-    public void registerPayloads(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event
-                .registrar(MOD_ID)
-                .optional()
-                .versioned("1");
+    fun registerPayloads(event: RegisterPayloadHandlersEvent) {
+        val registrar = event.registrar(MOD_ID).optional().versioned("1")
         registrar.playBidirectional(
-                Delete.PACKET_ID,
-                Delete.PACKET_CODEC,
-                (serverPayload, ctx) -> {
-                },
-                (clientPayload, ctx) -> Initializer.onDeletePacket(clientPayload)
-        );
+            Delete.PACKET_ID,
+            Delete.PACKET_CODEC,
+            { _, _ -> },
+            { clientPayload, _ -> Initializer.onDeletePacket(clientPayload) }
+        )
         registrar.playToClient(
-                Info.PACKET_ID,
-                Info.PACKET_CODEC,
-                (payload, ctx) -> Initializer.onDisplayInfoPacket(payload)
-        );
+            DisplayInfo.PACKET_ID,
+            DisplayInfo.PACKET_CODEC
+        ) { payload, _ -> Initializer.onDisplayInfoPacket(payload) }
 
         registrar.playToClient(
-                Premium.PACKET_ID,
-                Premium.PACKET_CODEC,
-                (payload, ctx) -> Initializer.onPremiumPacket(payload)
-        );
+            Premium.PACKET_ID,
+            Premium.PACKET_CODEC
+        ) { payload, _ -> Initializer.onPremiumPacket(payload) }
 
         registrar.playToClient(
-                DisplayEnabled.PACKET_ID,
-                DisplayEnabled.PACKET_CODEC,
-                (payload, ctx) -> Initializer.onDisplayEnabledPacket(payload)
-        );
+            DisplayEnabled.PACKET_ID,
+            DisplayEnabled.PACKET_CODEC
+        ) { payload, _ -> Initializer.onDisplayEnabledPacket(payload) }
 
         registrar.playToClient(
-                ReportEnabled.PACKET_ID,
-                ReportEnabled.PACKET_CODEC,
-                (payload, ctx) -> Initializer.onReportEnabledPacket(payload)
-        );
+            ReportEnabled.PACKET_ID,
+            ReportEnabled.PACKET_CODEC
+        ) { payload, _ -> Initializer.onReportEnabledPacket(payload) }
 
         registrar.playBidirectional(
-                Sync.PACKET_ID,
-                Sync.PACKET_CODEC,
-                (serverPayload, ctx) -> {
-                },
-                (clientPayload, ctx) -> Initializer.onSyncPacket(clientPayload)
-        );
+            Sync.PACKET_ID,
+            Sync.PACKET_CODEC,
+            { _, _ -> },
+            { clientPayload, _ -> Initializer.onSyncPacket(clientPayload) }
+        )
 
         registrar.playToServer(
-                RequestSync.PACKET_ID,
-                RequestSync.PACKET_CODEC,
-                (p, c) -> {
-                }
-        );
+            RequestSync.PACKET_ID,
+            RequestSync.PACKET_CODEC
+        ) { _, _ -> }
         registrar.playToServer(
-                Report.PACKET_ID,
-                Report.PACKET_CODEC,
-                (p, c) -> {
-                }
-        );
+            Report.PACKET_ID,
+            Report.PACKET_CODEC
+        ) { _, _ -> }
         registrar.playToServer(
-                Version.PACKET_ID,
-                Version.PACKET_CODEC,
-                (p, c) -> {
-                }
-        );
+            Version.PACKET_ID,
+            Version.PACKET_CODEC
+        ) { _, _ -> }
     }
 
     @SubscribeEvent
-    public void onClientTick(ClientTickEvent.Post event) {
-        Initializer.onEndTick(Minecraft.getInstance());
+    fun onClientTick(event: ClientTickEvent.Post) {
+        Initializer.onEndTick(Minecraft.getInstance())
     }
 
     @SubscribeEvent
-    public void onClientStop(ClientPlayerNetworkEvent.LoggingOut event) {
-        Manager.saveAllScreens();
-        Manager.unloadAll();
+    fun onClientStop(event: ClientPlayerNetworkEvent.LoggingOut) {
+        Manager.saveAllScreens()
+        Manager.unloadAll()
     }
 
     @SubscribeEvent
-    public void onClientStopping(ClientPlayerNetworkEvent.LoggingOut event) {
-        Initializer.onStop();
+    fun onClientStopping(event: ClientPlayerNetworkEvent.LoggingOut) {
+        Initializer.onStop()
     }
 
     @SubscribeEvent
-    public void onRenderLevelAfterEntities(
-            RenderLevelStageEvent.AfterEntities event
-    ) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.player == null) return;
+    fun onRenderLevelAfterEntities(event: RenderLevelStageEvent.AfterEntities) {
+        val mc = Minecraft.getInstance()
+        if (mc.level == null || mc.player == null) return
 
-        PoseStack poseStack = event.getPoseStack();
-        Camera camera = mc.gameRenderer.getMainCamera();
-        ScreenRenderer.render(poseStack, camera);
+        val poseStack = event.poseStack
+        val camera = mc.gameRenderer.mainCamera
+        ScreenRenderer.render(poseStack, camera)
     }
 
     @SubscribeEvent
-    public void onClientLogin(ClientPlayerNetworkEvent.LoggingIn event) {
-        Minecraft mc = Minecraft.getInstance();
+    fun onClientLogin(event: ClientPlayerNetworkEvent.LoggingIn) {
+        val mc = Minecraft.getInstance()
         if (mc.level != null && mc.player != null) {
-            String serverId = mc.hasSingleplayerServer()
-                    ? "singleplayer"
-                    : (mc.getCurrentServer() != null
-                    ? mc.getCurrentServer().ip
-                    : "unknown");
-            Manager.loadScreensForServer(serverId);
+            val serverId = if (mc.hasSingleplayerServer()) "singleplayer" else (if (mc.currentServer != null) mc.currentServer!!.ip else "unknown")
+            Manager.loadScreensForServer(serverId)
         }
     }
 
-    @Override
-    public void sendPacket(CustomPacketPayload packet) {
-        var connection = Minecraft.getInstance().getConnection();
-        if (connection != null) {
-            connection.send(packet);
-        }
+    override fun sendPacket(packet: CustomPacketPayload) {
+        val connection = Minecraft.getInstance().connection
+        connection?.send(packet)
+    }
+
+    companion object {
+        const val MOD_ID = "dreamdisplays"
     }
 }

@@ -1,149 +1,137 @@
-package com.dreamdisplays;
+package com.dreamdisplays
 
-import com.dreamdisplays.net.Packets.*;
-import com.dreamdisplays.render.ScreenRenderer;
-import com.dreamdisplays.screen.Manager;
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
-import net.minecraft.client.Camera;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import org.jspecify.annotations.NullMarked;
+import com.dreamdisplays.net.c2s.Report
+import com.dreamdisplays.net.c2s.RequestSync
+import com.dreamdisplays.net.common.Delete
+import com.dreamdisplays.net.common.DisplayEnabled
+import com.dreamdisplays.net.common.Sync
+import com.dreamdisplays.net.common.Version
+import com.dreamdisplays.net.s2c.DisplayInfo
+import com.dreamdisplays.net.s2c.Premium
+import com.dreamdisplays.net.s2c.ReportEnabled
+import com.dreamdisplays.render.ScreenRenderer
+import com.dreamdisplays.screen.Manager
+import net.fabricmc.api.ClientModInitializer
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
+import net.minecraft.client.Minecraft
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload
+import org.jspecify.annotations.NullMarked
 
 @NullMarked
-public class DreamDisplaysMod implements ClientModInitializer, Mod {
+class DreamDisplaysMod : ClientModInitializer, Mod {
 
-    @Override
-    public void onInitializeClient() {
-        Initializer.onModInit(this);
-
-        PayloadTypeRegistry.playS2C().register(
-                Info.PACKET_ID,
-                Info.PACKET_CODEC
-        );
+    override fun onInitializeClient() {
+        Initializer.onModInit(this)
 
         PayloadTypeRegistry.playS2C().register(
-                Sync.PACKET_ID,
-                Sync.PACKET_CODEC
-        );
+            DisplayInfo.PACKET_ID,
+            DisplayInfo.PACKET_CODEC
+        )
 
         PayloadTypeRegistry.playS2C().register(
-                Premium.PACKET_ID,
-                Premium.PACKET_CODEC
-        );
+            Sync.PACKET_ID,
+            Sync.PACKET_CODEC
+        )
 
         PayloadTypeRegistry.playS2C().register(
-                Delete.PACKET_ID,
-                Delete.PACKET_CODEC
-        );
+            Premium.PACKET_ID,
+            Premium.PACKET_CODEC
+        )
 
         PayloadTypeRegistry.playS2C().register(
-                DisplayEnabled.PACKET_ID,
-                DisplayEnabled.PACKET_CODEC
-        );
+            Delete.PACKET_ID,
+            Delete.PACKET_CODEC
+        )
 
         PayloadTypeRegistry.playS2C().register(
-                ReportEnabled.PACKET_ID,
-                ReportEnabled.PACKET_CODEC
-        );
+            DisplayEnabled.PACKET_ID,
+            DisplayEnabled.PACKET_CODEC
+        )
+
+        PayloadTypeRegistry.playS2C().register(
+            ReportEnabled.PACKET_ID,
+            ReportEnabled.PACKET_CODEC
+        )
 
         PayloadTypeRegistry.playC2S().register(
-                Sync.PACKET_ID,
-                Sync.PACKET_CODEC
-        );
+            Sync.PACKET_ID,
+            Sync.PACKET_CODEC
+        )
 
         PayloadTypeRegistry.playC2S().register(
-                RequestSync.PACKET_ID,
-                RequestSync.PACKET_CODEC
-        );
+            RequestSync.PACKET_ID,
+            RequestSync.PACKET_CODEC
+        )
 
         PayloadTypeRegistry.playC2S().register(
-                Delete.PACKET_ID,
-                Delete.PACKET_CODEC
-        );
+            Delete.PACKET_ID,
+            Delete.PACKET_CODEC
+        )
         PayloadTypeRegistry.playC2S().register(
-                Report.PACKET_ID,
-                Report.PACKET_CODEC
-        );
+            Report.PACKET_ID,
+            Report.PACKET_CODEC
+        )
         PayloadTypeRegistry.playC2S().register(
-                Version.PACKET_ID,
-                Version.PACKET_CODEC
-        );
+            Version.PACKET_ID,
+            Version.PACKET_CODEC
+        )
 
         ClientPlayNetworking.registerGlobalReceiver(
-                Info.PACKET_ID,
-                (payload, unused) -> Initializer.onDisplayInfoPacket(payload)
-        );
+            DisplayInfo.PACKET_ID
+        ) { payload, _ -> Initializer.onDisplayInfoPacket(payload) }
         ClientPlayNetworking.registerGlobalReceiver(
-                Premium.PACKET_ID,
-                (payload, unused) -> Initializer.onPremiumPacket(payload)
-        );
+            Premium.PACKET_ID
+        ) { payload, _ -> Initializer.onPremiumPacket(payload) }
         ClientPlayNetworking.registerGlobalReceiver(
-                Delete.PACKET_ID,
-                (deletePacket, unused) -> Initializer.onDeletePacket(deletePacket)
-        );
+            Delete.PACKET_ID
+        ) { deletePacket, _ -> Initializer.onDeletePacket(deletePacket) }
 
         ClientPlayNetworking.registerGlobalReceiver(
-                DisplayEnabled.PACKET_ID,
-                (payload, unused) -> Initializer.onDisplayEnabledPacket(payload)
-        );
+            DisplayEnabled.PACKET_ID
+        ) { payload, _ -> Initializer.onDisplayEnabledPacket(payload) }
 
         ClientPlayNetworking.registerGlobalReceiver(
-                Sync.PACKET_ID,
-                (payload, unused) -> Initializer.onSyncPacket(payload)
-        );
+            Sync.PACKET_ID
+        ) { payload, _ -> Initializer.onSyncPacket(payload) }
 
         ClientPlayNetworking.registerGlobalReceiver(
-                ReportEnabled.PACKET_ID,
-                (payload, unused) -> Initializer.onReportEnabledPacket(payload)
-        );
+            ReportEnabled.PACKET_ID
+        ) { payload, _ -> Initializer.onReportEnabledPacket(payload) }
 
-        WorldRenderEvents.AFTER_ENTITIES.register(context -> {
-            Minecraft minecraft = Minecraft.getInstance();
+        WorldRenderEvents.AFTER_ENTITIES.register(WorldRenderEvents.AfterEntities { context ->
+            val minecraft = Minecraft.getInstance()
             if (minecraft.level == null || minecraft.player == null) {
-                return;
+                return@AfterEntities
             }
-            PoseStack matrices = context.matrices();
-            Camera camera = context.gameRenderer().getMainCamera();
-            ScreenRenderer.render(matrices, camera);
-        });
+            val matrices = context.matrices()
+            val camera = context.gameRenderer().mainCamera
+            ScreenRenderer.render(matrices, camera)
+        })
 
-        ClientTickEvents.END_CLIENT_TICK.register(Initializer::onEndTick);
+        ClientTickEvents.END_CLIENT_TICK.register(ClientTickEvents.EndTick { Initializer.onEndTick(it) })
 
         // Load displays when joining a world
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+        ClientPlayConnectionEvents.JOIN.register(ClientPlayConnectionEvents.Join { _, _, client ->
             if (client.level != null && client.player != null) {
                 // Use server address as server ID for local singleplayer worlds
                 // TODO: add support for singleplayer in the future.
-                // For now, we just use "singleplayer" as the ID.
-                String serverId = client.isLocalServer()
-                        ? "singleplayer"
-                        : (client.getCurrentServer() != null
-                        ? client.getCurrentServer().ip
-                        : "unknown");
-                Manager.loadScreensForServer(serverId);
+                val serverId = if (client.hasSingleplayerServer()) "singleplayer" else (if (client.currentServer != null) client.currentServer!!.ip else "unknown")
+                Manager.loadScreensForServer(serverId)
             }
-        });
+        })
 
-        // Save displays when disconnecting from a world
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
-            Manager.saveAllScreens();
-            Manager.unloadAll();
-        });
-
-        ClientLifecycleEvents.CLIENT_STOPPING.register(minecraftClient ->
-                Initializer.onStop()
-        );
+        ClientPlayConnectionEvents.DISCONNECT.register(ClientPlayConnectionEvents.Disconnect { _, _ ->
+            Manager.saveAllScreens()
+            Manager.unloadAll()
+            Initializer.onStop()
+        })
     }
 
-    @Override
-    public void sendPacket(CustomPacketPayload packet) {
-        ClientPlayNetworking.send(packet);
+    override fun sendPacket(packet: CustomPacketPayload) {
+        ClientPlayNetworking.send(packet)
     }
 }
