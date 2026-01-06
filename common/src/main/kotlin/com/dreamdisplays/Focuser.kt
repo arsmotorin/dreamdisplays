@@ -1,7 +1,10 @@
 package com.dreamdisplays
 
+import com.dreamdisplays.Initializer.config
 import com.dreamdisplays.screen.Manager
+import com.dreamdisplays.screen.Manager.getScreens
 import net.minecraft.client.Minecraft
+import net.minecraft.client.Minecraft.getInstance
 import org.jspecify.annotations.NullMarked
 
 /**
@@ -17,12 +20,12 @@ class Focuser : Thread("window-focus-mute-thread") {
 
     override fun run() {
         while (true) {
-            val client = Minecraft.getInstance()
+            val client = getInstance()
 
             val focused = client.isWindowActive
 
-            if (Initializer.config.muteOnAltTab) {
-                for (screen in Manager.getScreens()) {
+            if (config.muteOnAltTab) {
+                for (screen in getScreens()) {
                     screen.mute(!focused)
                 }
             }

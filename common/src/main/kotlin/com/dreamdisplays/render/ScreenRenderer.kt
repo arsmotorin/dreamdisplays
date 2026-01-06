@@ -1,11 +1,12 @@
 package com.dreamdisplays.render
 
-import com.dreamdisplays.screen.Manager
+import com.dreamdisplays.screen.Manager.getScreens
 import com.dreamdisplays.screen.Screen
-import com.mojang.blaze3d.vertex.DefaultVertexFormat
+import com.mojang.blaze3d.vertex.DefaultVertexFormat.BLOCK
 import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.blaze3d.vertex.Tesselator
-import com.mojang.blaze3d.vertex.VertexFormat
+import com.mojang.blaze3d.vertex.Tesselator.getInstance
+import com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS
 import net.minecraft.client.Camera
 import net.minecraft.client.renderer.rendertype.RenderType
 import net.minecraft.world.phys.Vec3
@@ -22,7 +23,7 @@ object ScreenRenderer {
     @JvmStatic
     fun render(stack: PoseStack, camera: Camera) {
         val cameraPos = camera.position()
-        for (screen in Manager.getScreens()) {
+        for (screen in getScreens()) {
             if (screen.texture == null) screen.createTexture()
 
             stack.pushPose()
@@ -34,7 +35,7 @@ object ScreenRenderer {
             stack.translate(relativePos.x, relativePos.y, relativePos.z)
 
             // Move the matrix stack forward based on the screen's facing direction
-            val tessellator = Tesselator.getInstance()
+            val tessellator = getInstance()
 
             renderScreenTexture(screen, stack, tessellator)
 
@@ -155,8 +156,8 @@ object ScreenRenderer {
         val pose = stack.last().pose()
 
         val builder = tesselator.begin(
-            VertexFormat.Mode.QUADS,
-            DefaultVertexFormat.BLOCK
+            QUADS,
+            BLOCK
         )
 
         builder
@@ -200,8 +201,8 @@ object ScreenRenderer {
         val pose = stack.last().pose()
 
         val builder = tesselator.begin(
-            VertexFormat.Mode.QUADS,
-            DefaultVertexFormat.BLOCK
+            QUADS,
+            BLOCK
         )
 
         builder

@@ -1,15 +1,21 @@
 package com.dreamdisplays.screen.widgets
 
 import com.mojang.blaze3d.platform.InputConstants
+import com.mojang.blaze3d.platform.InputConstants.KEY_LEFT
+import com.mojang.blaze3d.platform.InputConstants.KEY_RIGHT
 import net.minecraft.client.gui.GuiGraphics
+import net.minecraft.client.gui.GuiGraphics.HoveredTextEffects
+import net.minecraft.client.gui.GuiGraphics.HoveredTextEffects.TOOLTIP_AND_CURSOR
 import net.minecraft.client.gui.components.AbstractWidget
 import net.minecraft.client.gui.narration.NarrationElementOutput
 import net.minecraft.client.input.KeyEvent
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.client.renderer.RenderPipelines
+import net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.MutableComponent
 import net.minecraft.resources.Identifier
+import net.minecraft.resources.Identifier.withDefaultNamespace
 import org.jspecify.annotations.NullMarked
 
 /**
@@ -48,7 +54,7 @@ abstract class Toggle(
         partialTick: Float,
     ) {
         guiGraphics.blitSprite(
-            RenderPipelines.GUI_TEXTURED,
+            GUI_TEXTURED,
             this.texture,
             this.x,
             this.y,
@@ -56,7 +62,7 @@ abstract class Toggle(
             this.height
         )
         guiGraphics.blitSprite(
-            RenderPipelines.GUI_TEXTURED,
+            GUI_TEXTURED,
             this.handleTexture,
             this.x + (this.dValue * (this.width - 8).toDouble()).toInt(),
             this.y,
@@ -70,7 +76,7 @@ abstract class Toggle(
         this.renderScrollingStringOverContents(
             guiGraphics.textRendererForWidget(
                 this,
-                GuiGraphics.HoveredTextEffects.TOOLTIP_AND_CURSOR
+                TOOLTIP_AND_CURSOR
             ),
             message,
             2
@@ -96,7 +102,7 @@ abstract class Toggle(
     protected abstract fun applyValue()
 
     override fun keyPressed(event: KeyEvent): Boolean {
-        if (event.key == InputConstants.KEY_LEFT || event.key == InputConstants.KEY_RIGHT) {
+        if (event.key == KEY_LEFT || event.key == KEY_RIGHT) {
             this.setValue(!this.value)
             return true
         }
@@ -104,14 +110,14 @@ abstract class Toggle(
     }
 
     companion object {
-        private val TEXTURE_ID = Identifier.withDefaultNamespace(
+        private val TEXTURE_ID = withDefaultNamespace(
             "widget/slider"
         )
         private val HIGHLIGHTED_TEXTURE_ID =
-            Identifier.withDefaultNamespace("widget/slider_highlighted")
+            withDefaultNamespace("widget/slider_highlighted")
         private val HANDLE_TEXTURE_ID =
-            Identifier.withDefaultNamespace("widget/slider_handle")
+            withDefaultNamespace("widget/slider_handle")
         private val HANDLE_HIGHLIGHTED_TEXTURE_ID =
-            Identifier.withDefaultNamespace("widget/slider_handle_highlighted")
+            withDefaultNamespace("widget/slider_handle_highlighted")
     }
 }

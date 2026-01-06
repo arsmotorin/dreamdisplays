@@ -47,7 +47,7 @@ object Utils {
                     var videoId = path.substring(1)
                     // Remove any query parameters from the video ID
                     videoId = videoId.split("[?#]".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0]
-                    return if (videoId.isEmpty()) null else videoId
+                    return videoId.ifEmpty { null }
                 }
             }
 
@@ -74,7 +74,7 @@ object Utils {
                             // Remove any query parameters
                             val videoId =
                                 segment.split("[?#]".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0]
-                            return if (videoId.isEmpty()) null else videoId
+                            return videoId.ifEmpty { null }
                         }
                     }
                 }

@@ -1,20 +1,25 @@
 package com.dreamdisplays.screen.configuration
 
-import com.dreamdisplays.Initializer
+import com.dreamdisplays.Initializer.MOD_ID
+import com.dreamdisplays.Initializer.config
+import com.dreamdisplays.Initializer.isReportingEnabled
+import com.dreamdisplays.Initializer.sendPacket
 import com.dreamdisplays.net.c2s.Report
 import com.dreamdisplays.net.common.Delete
-import com.dreamdisplays.screen.Manager
-import com.dreamdisplays.screen.Settings
+import com.dreamdisplays.screen.Manager.unregisterScreen
+import com.dreamdisplays.screen.Settings.removeDisplay
+import com.dreamdisplays.screen.configuration.TooltipFactory.errorMessages
 import com.dreamdisplays.screen.widgets.Button
 import com.dreamdisplays.screen.widgets.Slider
 import com.dreamdisplays.screen.widgets.Toggle
-import net.minecraft.client.Minecraft
+import net.minecraft.client.Minecraft.getInstance
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.components.WidgetSprites
 import net.minecraft.client.gui.screens.Screen
-import net.minecraft.client.renderer.RenderPipelines
+import net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED
 import net.minecraft.network.chat.Component
-import net.minecraft.resources.Identifier
+import net.minecraft.network.chat.Component.translatable
+import net.minecraft.resources.Identifier.fromNamespaceAndPath
 import org.jspecify.annotations.NullMarked
 import kotlin.math.abs
 import kotlin.math.max
@@ -26,7 +31,7 @@ import com.dreamdisplays.screen.Screen as DisplayScreen
  * Refactored from Java to Kotlin with better code organization.
  */
 @NullMarked
-class ConfigurationScreen private constructor() : Screen(Component.translatable("dreamdisplays.ui.title")) {
+class ConfigurationScreen private constructor() : Screen(translatable("dreamdisplays.ui.title")) {
 
     // Sliders
     private var volume: Slider? = null
@@ -62,7 +67,7 @@ class ConfigurationScreen private constructor() : Screen(Component.translatable(
         fun open(screen: DisplayScreen) {
             val configScreen = ConfigurationScreen()
             configScreen.screen = screen
-            Minecraft.getInstance().setScreen(configScreen)
+            getInstance().setScreen(configScreen)
         }
     }
 
@@ -118,33 +123,33 @@ class ConfigurationScreen private constructor() : Screen(Component.translatable(
     private fun initActionButtons(displayScreen: DisplayScreen) {
         deleteButton = object : Button(
             0, 0, 0, 0, 64, 64,
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "delete"), 2
+            fromNamespaceAndPath(MOD_ID, "delete"), 2
         ) {
             override fun onPress() {
-                Settings.removeDisplay(displayScreen.uuid)
-                Manager.unregisterScreen(displayScreen)
-                Initializer.sendPacket(Delete(displayScreen.uuid))
+                removeDisplay(displayScreen.uuid)
+                unregisterScreen(displayScreen)
+                sendPacket(Delete(displayScreen.uuid))
                 onClose()
             }
         }
         deleteButton?.active = displayScreen.owner
 
-        if (Initializer.isReportingEnabled) {
+        if (isReportingEnabled) {
             reportButton = object : Button(
                 0, 0, 0, 0, 64, 64,
-                Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "report"), 2
+                fromNamespaceAndPath(MOD_ID, "report"), 2
             ) {
                 override fun onPress() {
-                    Initializer.sendPacket(Report(displayScreen.uuid))
+                    sendPacket(Report(displayScreen.uuid))
                     onClose()
                 }
             }
         }
 
         val redButtonSprites = WidgetSprites(
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "widgets/red_button"),
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "widgets/red_button_disabled"),
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "widgets/red_button_highlighted")
+            fromNamespaceAndPath(MOD_ID, "widgets/red_button"),
+            fromNamespaceAndPath(MOD_ID, "widgets/red_button_disabled"),
+            fromNamespaceAndPath(MOD_ID, "widgets/red_button_highlighted")
         )
 
         deleteButton?.setSprites(redButtonSprites)
@@ -257,7 +262,7 @@ class ConfigurationScreen private constructor() : Screen(Component.translatable(
         if (displayScreen.isVideoStarted() && displayScreen.texture != null && displayScreen.textureId != null) {
             displayScreen.fitTexture()
             guiGraphics.blit(
-                RenderPipelines.GUI_TEXTURED,
+                GUI_TEXTURED,
                 displayScreen.textureId!!,
                 sX, cY,
                 0f, 0f,
@@ -271,7 +276,7 @@ class ConfigurationScreen private constructor() : Screen(Component.translatable(
     }
 
     private fun renderHeader(guiGraphics: GuiGraphics) {
-        val headerText = Component.translatable("dreamdisplays.ui.title")
+        val headerText = translatable("dreamdisplays.ui.title")
         guiGraphics.drawString(
             font,
             headerText,
@@ -284,7 +289,7 @@ class ConfigurationScreen private constructor() : Screen(Component.translatable(
 
     private fun updateWidgetStates(displayScreen: DisplayScreen) {
         syncReset?.active = displayScreen.owner && displayScreen.isSync
-        renderDReset?.active = displayScreen.renderDistance != Initializer.config.defaultDistance
+        renderDReset?.active = displayScreen.renderDistance != config.defaultDistance
         qualityReset?.active = displayScreen.quality != "720"
         brightnessReset?.active = abs((brightness?.value ?: 0.5) - 0.5) > 0.01
         volumeReset?.active = abs((volume?.value ?: 0.5) - 0.5) > 0.01
@@ -295,7 +300,7 @@ class ConfigurationScreen private constructor() : Screen(Component.translatable(
     private fun renderErrorState(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, delta: Float) {
         disableAllWidgets()
 
-        val errorComponents = TooltipFactory.errorMessages()
+        val errorComponents = errorMessages()
         var yP = height / 2 - ((font.lineHeight + 2) * errorComponents.size) / 2
 
         for (component in errorComponents) {
@@ -391,7 +396,7 @@ class ConfigurationScreen private constructor() : Screen(Component.translatable(
             resetButton.height = WIDGET_HEIGHT
         }
 
-        val label = Component.translatable(labelKey)
+        val label = translatable(labelKey)
         val labelX = width / 2 - maxSW / 2
         val labelY = cY + WIDGET_HEIGHT / 2 - font.lineHeight / 2
         guiGraphics.drawString(font, label, labelX, labelY, 0xFFFFFFFF.toInt(), true)

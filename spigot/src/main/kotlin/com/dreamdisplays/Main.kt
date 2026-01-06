@@ -5,10 +5,12 @@ import com.dreamdisplays.registrar.ChannelRegistrar.registerChannels
 import com.dreamdisplays.registrar.CommandRegistrar.registerCommands
 import com.dreamdisplays.registrar.ListenerRegistrar.registerListeners
 import com.dreamdisplays.registrar.SchedulerRegistrar.runRepeatingTasks
+import com.dreamdisplays.utils.Scheduler
 import com.github.zafarkhaja.semver.Version
 import me.inotsleep.utils.AbstractPlugin
 import me.inotsleep.utils.logging.LoggingManager.log
 import net.kyori.adventure.platform.bukkit.BukkitAudiences
+import net.kyori.adventure.platform.bukkit.BukkitAudiences.create
 import org.bstats.bukkit.Metrics
 import org.jspecify.annotations.NullMarked
 
@@ -21,10 +23,10 @@ class Main : AbstractPlugin<Main>() {
         log("Enabling DreamDisplays v${description.version}...")
 
         // Initialize Scheduler
-        com.dreamdisplays.utils.Scheduler.init(this)
+        Scheduler.init(this)
 
         // Adventure API
-        audiences = runCatching { BukkitAudiences.create(this) }.getOrElse {
+        audiences = runCatching { create(this) }.getOrElse {
             logger.warning("Adventure API not supported on this server.")
             null
         }

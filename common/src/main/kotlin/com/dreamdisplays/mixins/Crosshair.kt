@@ -1,6 +1,7 @@
 package com.dreamdisplays.mixins
 
 import com.dreamdisplays.Initializer
+import com.dreamdisplays.Initializer.isOnScreen
 import net.minecraft.client.gui.Gui
 import org.jspecify.annotations.NullMarked
 import org.spongepowered.asm.mixin.Mixin
@@ -18,7 +19,7 @@ class Crosshair {
     fun renderCrosshair(
         ci: CallbackInfo,
     ) {
-        if (Initializer.isOnScreen) {
+        if (isOnScreen) {
             ci.cancel()
         }
     }

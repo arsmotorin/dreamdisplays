@@ -1,5 +1,13 @@
 package com.dreamdisplays
 
+import com.dreamdisplays.Initializer.onDeletePacket
+import com.dreamdisplays.Initializer.onDisplayEnabledPacket
+import com.dreamdisplays.Initializer.onDisplayInfoPacket
+import com.dreamdisplays.Initializer.onEndTick
+import com.dreamdisplays.Initializer.onModInit
+import com.dreamdisplays.Initializer.onPremiumPacket
+import com.dreamdisplays.Initializer.onReportEnabledPacket
+import com.dreamdisplays.Initializer.onSyncPacket
 import com.dreamdisplays.net.c2s.Report
 import com.dreamdisplays.net.c2s.RequestSync
 import com.dreamdisplays.net.common.Delete
@@ -9,15 +17,19 @@ import com.dreamdisplays.net.common.Version
 import com.dreamdisplays.net.s2c.DisplayInfo
 import com.dreamdisplays.net.s2c.Premium
 import com.dreamdisplays.net.s2c.ReportEnabled
-import com.dreamdisplays.render.ScreenRenderer
-import com.dreamdisplays.screen.Manager
+import com.dreamdisplays.render.ScreenRenderer.render
+import com.dreamdisplays.screen.Manager.loadScreensForServer
+import com.dreamdisplays.screen.Manager.saveAllScreens
+import com.dreamdisplays.screen.Manager.unloadAll
 import net.fabricmc.api.ClientModInitializer
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
-import net.minecraft.client.Minecraft
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.*
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.*
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents.*
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry.playC2S
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry.playS2C
+import net.minecraft.client.Minecraft.getInstance
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import org.jspecify.annotations.NullMarked
 
@@ -25,114 +37,114 @@ import org.jspecify.annotations.NullMarked
 class DreamDisplaysMod : ClientModInitializer, Mod {
 
     override fun onInitializeClient() {
-        Initializer.onModInit(this)
+        onModInit(this)
 
-        PayloadTypeRegistry.playS2C().register(
+        playS2C().register(
             DisplayInfo.PACKET_ID,
             DisplayInfo.PACKET_CODEC
         )
 
-        PayloadTypeRegistry.playS2C().register(
+        playS2C().register(
             Sync.PACKET_ID,
             Sync.PACKET_CODEC
         )
 
-        PayloadTypeRegistry.playS2C().register(
+        playS2C().register(
             Premium.PACKET_ID,
             Premium.PACKET_CODEC
         )
 
-        PayloadTypeRegistry.playS2C().register(
+        playS2C().register(
             Delete.PACKET_ID,
             Delete.PACKET_CODEC
         )
 
-        PayloadTypeRegistry.playS2C().register(
+        playS2C().register(
             DisplayEnabled.PACKET_ID,
             DisplayEnabled.PACKET_CODEC
         )
 
-        PayloadTypeRegistry.playS2C().register(
+        playS2C().register(
             ReportEnabled.PACKET_ID,
             ReportEnabled.PACKET_CODEC
         )
 
-        PayloadTypeRegistry.playC2S().register(
+        playC2S().register(
             Sync.PACKET_ID,
             Sync.PACKET_CODEC
         )
 
-        PayloadTypeRegistry.playC2S().register(
+        playC2S().register(
             RequestSync.PACKET_ID,
             RequestSync.PACKET_CODEC
         )
 
-        PayloadTypeRegistry.playC2S().register(
+        playC2S().register(
             Delete.PACKET_ID,
             Delete.PACKET_CODEC
         )
-        PayloadTypeRegistry.playC2S().register(
+        playC2S().register(
             Report.PACKET_ID,
             Report.PACKET_CODEC
         )
-        PayloadTypeRegistry.playC2S().register(
+        playC2S().register(
             Version.PACKET_ID,
             Version.PACKET_CODEC
         )
 
-        ClientPlayNetworking.registerGlobalReceiver(
+        registerGlobalReceiver(
             DisplayInfo.PACKET_ID
-        ) { payload, _ -> Initializer.onDisplayInfoPacket(payload) }
-        ClientPlayNetworking.registerGlobalReceiver(
+        ) { payload, _ -> onDisplayInfoPacket(payload) }
+        registerGlobalReceiver(
             Premium.PACKET_ID
-        ) { payload, _ -> Initializer.onPremiumPacket(payload) }
-        ClientPlayNetworking.registerGlobalReceiver(
+        ) { payload, _ -> onPremiumPacket(payload) }
+        registerGlobalReceiver(
             Delete.PACKET_ID
-        ) { deletePacket, _ -> Initializer.onDeletePacket(deletePacket) }
+        ) { deletePacket, _ -> onDeletePacket(deletePacket) }
 
-        ClientPlayNetworking.registerGlobalReceiver(
+        registerGlobalReceiver(
             DisplayEnabled.PACKET_ID
-        ) { payload, _ -> Initializer.onDisplayEnabledPacket(payload) }
+        ) { payload, _ -> onDisplayEnabledPacket(payload) }
 
-        ClientPlayNetworking.registerGlobalReceiver(
+        registerGlobalReceiver(
             Sync.PACKET_ID
-        ) { payload, _ -> Initializer.onSyncPacket(payload) }
+        ) { payload, _ -> onSyncPacket(payload) }
 
-        ClientPlayNetworking.registerGlobalReceiver(
+        registerGlobalReceiver(
             ReportEnabled.PACKET_ID
-        ) { payload, _ -> Initializer.onReportEnabledPacket(payload) }
+        ) { payload, _ -> onReportEnabledPacket(payload) }
 
-        WorldRenderEvents.AFTER_ENTITIES.register(WorldRenderEvents.AfterEntities { context ->
-            val minecraft = Minecraft.getInstance()
+        AFTER_ENTITIES.register(AfterEntities { context ->
+            val minecraft = getInstance()
             if (minecraft.level == null || minecraft.player == null) {
                 return@AfterEntities
             }
             val matrices = context.matrices()
             val camera = context.gameRenderer().mainCamera
-            ScreenRenderer.render(matrices, camera)
+            render(matrices, camera)
         })
 
-        ClientTickEvents.END_CLIENT_TICK.register(ClientTickEvents.EndTick { Initializer.onEndTick(it) })
+        END_CLIENT_TICK.register(EndTick { onEndTick(it) })
 
         // Load displays when joining a world
-        ClientPlayConnectionEvents.JOIN.register(ClientPlayConnectionEvents.Join { _, _, client ->
+        JOIN.register(Join { _, _, client ->
             if (client.level != null && client.player != null) {
                 // Use server address as server ID for local singleplayer worlds
                 // TODO: add support for singleplayer in the future.
                 val serverId =
                     if (client.hasSingleplayerServer()) "singleplayer" else (if (client.currentServer != null) client.currentServer!!.ip else "unknown")
-                Manager.loadScreensForServer(serverId)
+                loadScreensForServer(serverId)
             }
         })
 
-        ClientPlayConnectionEvents.DISCONNECT.register(ClientPlayConnectionEvents.Disconnect { _, _ ->
-            Manager.saveAllScreens()
-            Manager.unloadAll()
+        DISCONNECT.register(Disconnect { _, _ ->
+            saveAllScreens()
+            unloadAll()
             Initializer.onStop()
         })
     }
 
     override fun sendPacket(packet: CustomPacketPayload) {
-        ClientPlayNetworking.send(packet)
+        send(packet)
     }
 }

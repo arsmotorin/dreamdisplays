@@ -4,6 +4,7 @@ import me.inotsleep.utils.config.AbstractConfig
 import me.inotsleep.utils.config.Path
 import org.jspecify.annotations.NullMarked
 import java.io.File
+import java.lang.System.setProperty
 
 /**
  * Client configuration settings.
@@ -33,7 +34,7 @@ class Config(baseDir: File) : AbstractConfig(baseDir, "config.yml") {
 
     companion object {
         init {
-            System.setProperty("file.encoding", "UTF-8")
+            setProperty("file.encoding", "UTF-8")
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.dreamdisplays
 
+import com.dreamdisplays.Focuser.Companion.instance
 import com.dreamdisplays.downloader.Init
 import com.dreamdisplays.net.common.Delete
 import com.dreamdisplays.net.common.DisplayEnabled
@@ -9,13 +10,25 @@ import com.dreamdisplays.net.s2c.DisplayInfo
 import com.dreamdisplays.net.s2c.Premium
 import com.dreamdisplays.net.s2c.ReportEnabled
 import com.dreamdisplays.screen.Manager
+import com.dreamdisplays.screen.Manager.registerScreen
+import com.dreamdisplays.screen.Manager.saveAllScreens
+import com.dreamdisplays.screen.Manager.saveScreenData
+import com.dreamdisplays.screen.Manager.screens
+import com.dreamdisplays.screen.Manager.unloadAll
+import com.dreamdisplays.screen.Manager.unloadedScreens
+import com.dreamdisplays.screen.Manager.unregisterScreen
 import com.dreamdisplays.screen.Screen
 import com.dreamdisplays.screen.Settings
+import com.dreamdisplays.screen.Settings.FullDisplayData
+import com.dreamdisplays.screen.Settings.load
+import com.dreamdisplays.screen.Settings.removeDisplay
 import com.dreamdisplays.screen.configuration.ConfigurationScreen
 import com.dreamdisplays.util.Facing
 import com.dreamdisplays.util.RayCasting
 import com.dreamdisplays.util.Utils
-import me.inotsleep.utils.logging.LoggingManager
+import me.inotsleep.utils.logging.LoggingManager.error
+import me.inotsleep.utils.logging.LoggingManager.info
+import me.inotsleep.utils.logging.LoggingManager.setLogger
 import net.minecraft.client.Minecraft
 import net.minecraft.client.multiplayer.ClientLevel
 import net.minecraft.core.BlockPos
@@ -25,11 +38,12 @@ import net.minecraft.world.effect.MobEffects
 import org.joml.Vector3i
 import org.jspecify.annotations.NullMarked
 import org.lwjgl.glfw.GLFW
-import org.slf4j.LoggerFactory
+import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.sqrt
 
 /**
  * Main initializer.
@@ -84,22 +98,17 @@ object Initializer {
     private lateinit var mod: Mod
 
     @JvmStatic
-    fun getConfig(): Config {
-        return config
-    }
-
-    @JvmStatic
     fun onModInit(dreamDisplaysMod: Mod) {
         mod = dreamDisplaysMod
-        LoggingManager.setLogger(LoggerFactory.getLogger(MOD_ID))
-        LoggingManager.info("Starting Dream Displays...")
+        setLogger(getLogger(MOD_ID))
+        info("Starting Dream Displays...")
         config.reload()
 
         // Load client display settings
-        Settings.load()
+        load()
 
         Init.init()
-        Focuser.instance.start()
+        instance.start()
 
         timerThread.start()
     }
@@ -108,8 +117,8 @@ object Initializer {
     fun onDisplayInfoPacket(packet: DisplayInfo) {
         if (!displaysEnabled) return
 
-        if (Manager.screens.containsKey(packet.uuid)) {
-            val screen = Manager.screens[packet.uuid]
+        if (screens.containsKey(packet.uuid)) {
+            val screen = screens[packet.uuid]
             screen?.updateData(packet)
             return
         }
@@ -144,7 +153,7 @@ object Initializer {
             val clampedZ = playerPos.z.coerceIn(z, maxZ)
 
             val closestPos = BlockPos(clampedX, clampedY, clampedZ)
-            val distance = Math.sqrt(playerPos.distSqr(closestPos))
+            val distance = sqrt(playerPos.distSqr(closestPos))
 
             // Only create if within render distance
             if (distance > renderDistance) {
@@ -152,7 +161,7 @@ object Initializer {
             }
         }
 
-        Manager.unloadedScreens.remove(packet.uuid)
+        unloadedScreens.remove(packet.uuid)
 
         createScreen(
             packet.uuid,
@@ -202,19 +211,19 @@ object Initializer {
         val renderDistance = savedData?.renderDistance ?: config.defaultDistance
         screen.renderDistance = renderDistance
 
-        Manager.registerScreen(screen)
+        registerScreen(screen)
         if (code != "") screen.loadVideo(code, lang)
     }
 
     @JvmStatic
     fun onSyncPacket(packet: Sync) {
-        if (!Manager.screens.containsKey(packet.uuid)) return
-        val screen = Manager.screens[packet.uuid]
+        if (!screens.containsKey(packet.uuid)) return
+        val screen = screens[packet.uuid]
         screen?.updateData(packet)
     }
 
     // Restore a screen from cached data (when player enters render distance)
-    private fun restoreScreen(data: Settings.FullDisplayData) {
+    private fun restoreScreen(data: FullDisplayData) {
         val screen = Screen(
             data.uuid,
             data.ownerUuid,
@@ -233,7 +242,7 @@ object Initializer {
         screen.quality = data.quality
         screen.muted = data.muted
 
-        Manager.screens[screen.uuid] = screen
+        screens[screen.uuid] = screen
 
         if (data.videoUrl.isNotEmpty()) {
             screen.loadVideo(data.videoUrl, data.lang)
@@ -245,7 +254,7 @@ object Initializer {
             val version = Utils.getModVersion()
             sendPacket(Version(version))
         } catch (e: Exception) {
-            LoggingManager.error("Unable to get version", e)
+            error("Unable to get version", e)
         }
     }
 
@@ -261,7 +270,7 @@ object Initializer {
             if (level != lastLevel.get()) {
                 lastLevel.set(level)
 
-                Manager.unloadAll()
+                unloadAll()
                 hoveredScreen = null
 
                 checkVersionAndSendPacket()
@@ -271,7 +280,7 @@ object Initializer {
         } else {
             if (wasInMultiplayer.get()) {
                 wasInMultiplayer.set(false)
-                Manager.unloadAll()
+                unloadAll()
                 hoveredScreen = null
                 lastLevel.set(null)
                 return
@@ -284,12 +293,12 @@ object Initializer {
         val player = minecraft.player ?: return
 
         unloadCheckTick++
-        if (unloadCheckTick >= 10 && displaysEnabled && !Manager.unloadedScreens.isEmpty()) {
+        if (unloadCheckTick >= 10 && displaysEnabled && !unloadedScreens.isEmpty()) {
             unloadCheckTick = 0
             // Collect screens to restore first to avoid ConcurrentModificationException
-            val toRestore = ArrayList<Settings.FullDisplayData>()
+            val toRestore = ArrayList<FullDisplayData>()
 
-            for (data in Manager.unloadedScreens.values) {
+            for (data in unloadedScreens.values) {
                 if (data.videoUrl.isEmpty()) continue
 
                 // Screen.getDistanceToScreen
@@ -308,7 +317,7 @@ object Initializer {
                 val clampedZ = playerPos.z.coerceIn(data.z, maxZ)
 
                 val closestPos = BlockPos(clampedX, clampedY, clampedZ)
-                val distance = Math.sqrt(playerPos.distSqr(closestPos))
+                val distance = sqrt(playerPos.distSqr(closestPos))
 
                 // If player is now in range, mark for restoration
                 if (distance <= data.renderDistance) {
@@ -318,7 +327,7 @@ object Initializer {
 
             // Now restore outside the iteration
             for (data in toRestore) {
-                Manager.unloadedScreens.remove(data.uuid)
+                unloadedScreens.remove(data.uuid)
                 restoreScreen(data)
             }
         }
@@ -331,8 +340,8 @@ object Initializer {
                 screen.getDistanceToScreen(player.blockPosition()) ||
                 !displaysEnabled
             ) {
-                Manager.saveScreenData(screen)
-                Manager.unregisterScreen(screen)
+                saveScreenData(screen)
+                unregisterScreen(screen)
                 if (hoveredScreen == screen) {
                     hoveredScreen = null
                     isOnScreen = false
@@ -388,25 +397,25 @@ object Initializer {
 
     @JvmStatic
     fun onDeletePacket(packet: Delete) {
-        val screen = Manager.screens[packet.uuid]
+        val screen = screens[packet.uuid]
         if (screen != null) {
-            Manager.unregisterScreen(screen)
+            unregisterScreen(screen)
         }
 
-        Manager.unloadedScreens.remove(packet.uuid)
+        unloadedScreens.remove(packet.uuid)
 
-        Settings.removeDisplay(packet.uuid)
-        LoggingManager.info(
+        removeDisplay(packet.uuid)
+        info(
             "Display deleted and removed from saved data: " + packet.uuid
         )
     }
 
     @JvmStatic
     fun onStop() {
-        Manager.saveAllScreens()
+        saveAllScreens()
         timerThread.interrupt()
-        Manager.unloadAll()
-        Focuser.instance.interrupt()
+        unloadAll()
+        instance.interrupt()
     }
 
     @JvmStatic

@@ -1,20 +1,29 @@
 package com.dreamdisplays.screen
 
-import com.dreamdisplays.Initializer
+import com.dreamdisplays.Initializer.MOD_ID
+import com.dreamdisplays.Initializer.config
+import com.dreamdisplays.Initializer.sendPacket
 import com.dreamdisplays.net.c2s.RequestSync
 import com.dreamdisplays.net.common.Sync
 import com.dreamdisplays.net.s2c.DisplayInfo
+import com.dreamdisplays.screen.Settings.updateSettings
 import com.dreamdisplays.screen.configuration.ConfigurationScreen
 import net.minecraft.client.Minecraft
-import net.minecraft.client.renderer.RenderPipelines
-import net.minecraft.client.renderer.rendertype.RenderSetup
+import net.minecraft.client.Minecraft.getInstance
+import net.minecraft.client.renderer.RenderPipelines.SOLID_BLOCK
+import net.minecraft.client.renderer.rendertype.RenderSetup.builder
 import net.minecraft.client.renderer.rendertype.RenderType
+import net.minecraft.client.renderer.rendertype.RenderType.BIG_BUFFER_SIZE
+import net.minecraft.client.renderer.rendertype.RenderType.create
 import net.minecraft.client.renderer.texture.DynamicTexture
 import net.minecraft.core.BlockPos
 import net.minecraft.resources.Identifier
+import net.minecraft.resources.Identifier.fromNamespaceAndPath
 import org.jspecify.annotations.NullMarked
+import java.lang.Integer.parseInt
+import java.lang.Thread.sleep
 import java.util.*
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletableFuture.runAsync
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
@@ -55,7 +64,7 @@ class Screen(
         set(value) {
             field = value
             setVideoVolume(value.toFloat())
-            Settings.updateSettings(uuid, value.toFloat(), quality, brightness, muted, paused)
+            updateSettings(uuid, value.toFloat(), quality, brightness, muted, paused)
         }
 
     var brightness: Float = 0f
@@ -63,7 +72,7 @@ class Screen(
             field = max(0f, min(2f, value))
             mediaPlayer?.setBrightness(field.toDouble())
             // Save settings
-            Settings.updateSettings(uuid, volume.toFloat(), quality, field, muted, paused)
+            updateSettings(uuid, volume.toFloat(), quality, field, muted, paused)
         }
 
     private var videoStarted: Boolean = false
@@ -75,7 +84,7 @@ class Screen(
             mediaPlayer?.setQuality(value)
             // reloadTexture();
             // Save settings
-            Settings.updateSettings(uuid, volume.toFloat(), value, brightness, muted, paused)
+            updateSettings(uuid, volume.toFloat(), value, brightness, muted, paused)
         }
     private var savedTimeNanos: Long = 0
     var renderDistance: Int = 64
@@ -91,8 +100,8 @@ class Screen(
         private set
 
     init {
-        owner = Minecraft.getInstance().player != null &&
-                (ownerUuid.toString() == Minecraft.getInstance().player!!.uuid.toString())
+        owner = getInstance().player != null &&
+                (ownerUuid.toString() == getInstance().player!!.uuid.toString())
 
         // Load saved settings for this display
         val savedSettings = Settings.getSettings(uuid)
@@ -123,9 +132,9 @@ class Screen(
         this.videoUrl = videoUrl
         this.lang = lang
         val shouldBePaused = this.paused
-        CompletableFuture.runAsync {
+        runAsync {
             mediaPlayer = MediaPlayer(videoUrl, lang.toString(), this)
-            val qualityInt = Integer.parseInt(this.quality.replace("p", ""))
+            val qualityInt = parseInt(this.quality.replace("p", ""))
             textureWidth = ((width / height.toDouble()) * qualityInt).toInt()
             textureHeight = qualityInt
         }
@@ -138,7 +147,7 @@ class Screen(
             }
         }
 
-        Minecraft.getInstance().execute { reloadTexture() }
+        getInstance().execute { reloadTexture() }
     }
 
     // Updates the screen data based on a DisplayInfoPacket
@@ -153,8 +162,8 @@ class Screen(
         this.height = packet.height
         this.isSync = packet.isSync
 
-        owner = Minecraft.getInstance().player != null &&
-                (packet.ownerUuid.toString() == Minecraft.getInstance().player!!.uuid.toString())
+        owner = getInstance().player != null &&
+                (packet.ownerUuid.toString() == getInstance().player!!.uuid.toString())
 
         if (videoUrl != packet.url || lang != packet.lang) {
             this.paused = false
@@ -167,7 +176,7 @@ class Screen(
 
     // Sends a RequestSyncPacket to the server to request synchronization data
     private fun sendRequestSyncPacket() {
-        Initializer.sendPacket(RequestSync(uuid))
+        sendPacket(RequestSync(uuid))
     }
 
     // Updates the screen data based on a SyncPacket
@@ -180,7 +189,7 @@ class Screen(
         waitForMFInit {
             if (!videoStarted) {
                 startVideo()
-                setVideoVolume(Initializer.config.syncDisplayVolume.toFloat())
+                setVideoVolume(config.syncDisplayVolume.toFloat())
             }
 
             if (paused) setPaused(false)
@@ -316,7 +325,7 @@ class Screen(
             this.paused = paused
             waitForMFInit {
                 startVideo()
-                setVideoVolume(Initializer.config.defaultDisplayVolume.toFloat())
+                setVideoVolume(config.defaultDisplayVolume.toFloat())
             }
             return
         }
@@ -328,7 +337,7 @@ class Screen(
                 mediaPlayer!!.play()
             }
         }
-        Settings.updateSettings(uuid, volume.toFloat(), quality, brightness, muted, paused)
+        updateSettings(uuid, volume.toFloat(), quality, brightness, muted, paused)
         if (owner && isSync) sendSync()
     }
 
@@ -365,7 +374,7 @@ class Screen(
     }
 
     private fun getMinecraft(): Minecraft {
-        val minecraft = Minecraft.getInstance()
+        val minecraft = getInstance()
         if (textureId != null) {
             minecraft.execute {
                 val manager = minecraft.textureManager
@@ -385,19 +394,19 @@ class Screen(
         muted = status
 
         setVideoVolume(if (!status) volume.toFloat() else 0f)
-        Settings.updateSettings(uuid, volume.toFloat(), quality, brightness, muted, paused)
+        updateSettings(uuid, volume.toFloat(), quality, brightness, muted, paused)
     }
 
 
     // Creates a new texture for the screen based on its dimensions and quality
     fun createTexture() {
-        val qualityInt = Integer.parseInt(this.quality.replace("p", ""))
+        val qualityInt = parseInt(this.quality.replace("p", ""))
         textureWidth = ((width / height.toDouble()) * qualityInt).toInt()
         textureHeight = qualityInt
 
         if (texture != null) {
             texture!!.close()
-            if (textureId != null) Minecraft.getInstance()
+            if (textureId != null) getInstance()
                 .textureManager
                 .release(textureId!!)
         }
@@ -407,12 +416,12 @@ class Screen(
             textureHeight,
             true
         )
-        textureId = Identifier.fromNamespaceAndPath(
-            Initializer.MOD_ID,
+        textureId = fromNamespaceAndPath(
+            MOD_ID,
             "screen-main-texture-" + uuid + "-" + UUID.randomUUID()
         )
 
-        Minecraft.getInstance()
+        getInstance()
             .textureManager
             .register(textureId!!, texture!!)
         renderType = createRenderType(textureId!!)
@@ -420,7 +429,7 @@ class Screen(
 
     fun sendSync() {
         if (mediaPlayer != null) {
-            Initializer.sendPacket(
+            sendPacket(
                 Sync(
                     uuid,
                     isSync,
@@ -458,7 +467,7 @@ class Screen(
         Thread {
             while (mediaPlayer == null || !mediaPlayer!!.isInitialized) {
                 try {
-                    Thread.sleep(100) // TODO: this is ugly
+                    sleep(100) // TODO: this is ugly
                 } catch (e: InterruptedException) {
                     throw RuntimeException(e)
                 }
@@ -470,7 +479,7 @@ class Screen(
     fun tick(pos: BlockPos) {
         mediaPlayer?.tick(
             pos,
-            Initializer.config.defaultDistance.toDouble()
+            config.defaultDistance.toDouble()
         )
     }
 
@@ -481,11 +490,11 @@ class Screen(
     companion object {
         // Creates a custom RenderType for rendering the screen texture
         private fun createRenderType(id: Identifier): RenderType {
-            return RenderType.create(
+            return create(
                 "dream-displays",
-                RenderSetup.builder(RenderPipelines.SOLID_BLOCK)
+                builder(SOLID_BLOCK)
                     .withTexture("Sampler0", id)
-                    .bufferSize(RenderType.BIG_BUFFER_SIZE)
+                    .bufferSize(BIG_BUFFER_SIZE)
                     .affectsCrumbling()
                     .useLightmap()
                     .createRenderSetup()

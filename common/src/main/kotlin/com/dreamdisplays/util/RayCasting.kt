@@ -1,9 +1,14 @@
 package com.dreamdisplays.util
 
 import net.minecraft.client.Minecraft
+import net.minecraft.client.Minecraft.getInstance
 import net.minecraft.world.level.ClipContext
+import net.minecraft.world.level.ClipContext.Block
+import net.minecraft.world.level.ClipContext.Fluid
 import net.minecraft.world.phys.BlockHitResult
 import net.minecraft.world.phys.HitResult
+import net.minecraft.world.phys.HitResult.Type
+import net.minecraft.world.phys.HitResult.Type.BLOCK
 import org.jspecify.annotations.NullMarked
 
 /**
@@ -14,7 +19,7 @@ object RayCasting {
 
     @JvmStatic
     fun rCBlock(maxDistance: Double): BlockHitResult? {
-        val minecraft = Minecraft.getInstance()
+        val minecraft = getInstance()
         val player = minecraft.player
 
         if (player == null || minecraft.level == null) return null
@@ -27,13 +32,13 @@ object RayCasting {
             ClipContext(
                 start,
                 end,
-                ClipContext.Block.OUTLINE,
-                ClipContext.Fluid.NONE,
+                Block.OUTLINE,
+                Fluid.NONE,
                 player
             )
         )
 
-        if (hitResult.type == HitResult.Type.BLOCK) {
+        if (hitResult.type == BLOCK) {
             return hitResult
         }
 

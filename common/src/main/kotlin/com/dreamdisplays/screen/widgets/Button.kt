@@ -1,14 +1,17 @@
 package com.dreamdisplays.screen.widgets
 
 import net.minecraft.client.Minecraft
+import net.minecraft.client.Minecraft.getInstance
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.components.AbstractWidget
 import net.minecraft.client.gui.components.WidgetSprites
 import net.minecraft.client.gui.narration.NarrationElementOutput
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.client.renderer.RenderPipelines
+import net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
+import net.minecraft.resources.Identifier.withDefaultNamespace
 import net.minecraft.util.ARGB
 import org.jspecify.annotations.NullMarked
 
@@ -41,7 +44,7 @@ abstract class Button(
 
     override fun onClick(event: MouseButtonEvent, doubleClick: Boolean) {
         this.onPress()
-        super.playDownSound(Minecraft.getInstance().soundManager)
+        super.playDownSound(getInstance().soundManager)
     }
 
     override fun updateWidgetNarration(builder: NarrationElementOutput) {
@@ -54,7 +57,7 @@ abstract class Button(
         partialTick: Float,
     ) {
         guiGraphics.blitSprite(
-            RenderPipelines.GUI_TEXTURED,
+            GUI_TEXTURED,
             if (setSprites != null) setSprites!![this.active, this.isHoveredOrFocused] else SPRITES[this.active, this.isHoveredOrFocused],
             this.x,
             this.y,
@@ -77,7 +80,7 @@ abstract class Button(
         val dy = y + height / 2 - iconH / 2
 
         guiGraphics.blitSprite(
-            RenderPipelines.GUI_TEXTURED,
+            GUI_TEXTURED,
             iconTextureId,
             dx,
             dy,
@@ -89,9 +92,9 @@ abstract class Button(
 
     companion object {
         private val SPRITES = WidgetSprites(
-            Identifier.withDefaultNamespace("widget/button"),
-            Identifier.withDefaultNamespace("widget/button_disabled"),
-            Identifier.withDefaultNamespace("widget/button_highlighted")
+            withDefaultNamespace("widget/button"),
+            withDefaultNamespace("widget/button_disabled"),
+            withDefaultNamespace("widget/button_highlighted")
         )
     }
 }

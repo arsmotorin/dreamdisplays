@@ -1,5 +1,8 @@
 package com.dreamdisplays.screen
 
+import com.dreamdisplays.screen.Settings.FullDisplayData
+import com.dreamdisplays.screen.Settings.getDisplayData
+import com.dreamdisplays.screen.Settings.getSettings
 import me.inotsleep.utils.logging.LoggingManager
 import org.jspecify.annotations.NullMarked
 import java.util.*
@@ -16,7 +19,7 @@ object Manager {
 
     // Cache of unloaded displays
     @JvmField
-    val unloadedScreens: ConcurrentHashMap<UUID, Settings.FullDisplayData> = ConcurrentHashMap()
+    val unloadedScreens: ConcurrentHashMap<UUID, FullDisplayData> = ConcurrentHashMap()
 
     @JvmStatic
     fun getScreens(): Collection<Screen> {
@@ -30,12 +33,12 @@ object Manager {
             old?.unregister()
         }
 
-        val clientSettings = Settings.getSettings(screen.uuid)
+        val clientSettings = getSettings(screen.uuid)
         screen.volume = clientSettings.volume.toDouble()
         screen.quality = clientSettings.quality
         screen.muted = clientSettings.muted
 
-        val savedData = Settings.getDisplayData(screen.uuid)
+        val savedData = getDisplayData(screen.uuid)
         if (savedData != null) {
             screen.renderDistance = savedData.renderDistance
             screen.setSavedTimeNanos(savedData.currentTimeNanos)
@@ -54,7 +57,7 @@ object Manager {
         val lang = screen.lang
         val ownerUuid = screen.ownerUuid
 
-        val data = Settings.FullDisplayData(
+        val data = FullDisplayData(
             screen.uuid,
             screen.getPos().x,
             screen.getPos().y,
@@ -91,7 +94,7 @@ object Manager {
     // Save screen data to persistent storage
     @JvmStatic
     fun saveScreenData(screen: Screen) {
-        val data = Settings.FullDisplayData(
+        val data = FullDisplayData(
             screen.uuid,
             screen.getPos().x,
             screen.getPos().y,

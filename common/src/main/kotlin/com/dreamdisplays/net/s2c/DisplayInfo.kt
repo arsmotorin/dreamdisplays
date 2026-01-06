@@ -2,9 +2,12 @@ package com.dreamdisplays.net.s2c
 
 import com.dreamdisplays.net.common.createType
 import com.dreamdisplays.util.Facing
+import com.dreamdisplays.util.Facing.Companion.fromPacket
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
+import net.minecraft.network.codec.StreamCodec.*
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload.Type
 import org.joml.Vector3i
 import java.util.*
 
@@ -19,14 +22,14 @@ data class DisplayInfo(
     val isSync: Boolean,
     val lang: String,
 ) : CustomPacketPayload {
-    override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = PACKET_ID
+    override fun type(): Type<out CustomPacketPayload> = PACKET_ID
 
     companion object {
         @JvmField
-        val PACKET_ID: CustomPacketPayload.Type<DisplayInfo> = createType("display_info")
+        val PACKET_ID: Type<DisplayInfo> = createType("display_info")
 
         @JvmField
-        val PACKET_CODEC: StreamCodec<FriendlyByteBuf, DisplayInfo> = StreamCodec.of(
+        val PACKET_CODEC: StreamCodec<FriendlyByteBuf, DisplayInfo> = of(
             { buf, packet ->
                 buf.writeUUID(packet.uuid)
                 buf.writeUUID(packet.ownerUuid)
@@ -52,7 +55,7 @@ data class DisplayInfo(
                     buf.readVarInt(),
                     buf.readVarInt(),
                     buf.readUtf(),
-                    Facing.fromPacket(buf.readByte()),
+                    buf.readByte().fromPacket(),
                     buf.readBoolean(),
                     buf.readUtf()
                 )

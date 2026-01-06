@@ -1,17 +1,24 @@
 package com.dreamdisplays.screen.widgets
 
 import com.mojang.blaze3d.platform.InputConstants
+import com.mojang.blaze3d.platform.InputConstants.KEY_LEFT
+import com.mojang.blaze3d.platform.InputConstants.KEY_RIGHT
 import net.minecraft.client.gui.GuiGraphics
+import net.minecraft.client.gui.GuiGraphics.HoveredTextEffects
 import net.minecraft.client.gui.components.AbstractWidget
 import net.minecraft.client.gui.narration.NarratedElementType
 import net.minecraft.client.gui.narration.NarrationElementOutput
 import net.minecraft.client.input.KeyEvent
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.client.renderer.RenderPipelines
+import net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED
 import net.minecraft.network.chat.Component
+import net.minecraft.network.chat.Component.translatable
 import net.minecraft.network.chat.MutableComponent
 import net.minecraft.resources.Identifier
+import net.minecraft.resources.Identifier.withDefaultNamespace
 import net.minecraft.util.Mth
+import net.minecraft.util.Mth.clamp
 import org.jspecify.annotations.NullMarked
 
 /**
@@ -36,7 +43,7 @@ abstract class Slider(
         get() = if (!this.isHovered && !this.sliderFocused) HANDLE_TEXTURE_ID else HANDLE_HIGHLIGHTED_TEXTURE_ID
 
     override fun createNarrationMessage(): MutableComponent {
-        return Component.translatable("gui.narrate.slider", this.message)
+        return translatable("gui.narrate.slider", this.message)
     }
 
     override fun updateWidgetNarration(builder: NarrationElementOutput) {
@@ -45,12 +52,12 @@ abstract class Slider(
             if (this.isFocused) {
                 builder.add(
                     NarratedElementType.USAGE,
-                    Component.translatable("narration.slider.usage.focused")
+                    translatable("narration.slider.usage.focused")
                 )
             } else {
                 builder.add(
                     NarratedElementType.USAGE,
-                    Component.translatable("narration.slider.usage.hovered")
+                    translatable("narration.slider.usage.hovered")
                 )
             }
         }
@@ -64,7 +71,7 @@ abstract class Slider(
         partialTick: Float,
     ) {
         graphics.blitSprite(
-            RenderPipelines.GUI_TEXTURED,
+            GUI_TEXTURED,
             this.texture,
             this.x,
             this.y,
@@ -72,7 +79,7 @@ abstract class Slider(
             this.height
         )
         graphics.blitSprite(
-            RenderPipelines.GUI_TEXTURED,
+            GUI_TEXTURED,
             this.handleTexture,
             this.x + (this.value * (this.width - 8).toDouble()).toInt(),
             this.y,
@@ -86,7 +93,7 @@ abstract class Slider(
         this.renderScrollingStringOverContents(
             graphics.textRendererForWidget(
                 this,
-                GuiGraphics.HoveredTextEffects.TOOLTIP_AND_CURSOR
+                HoveredTextEffects.TOOLTIP_AND_CURSOR
             ),
             message,
             2
@@ -112,7 +119,7 @@ abstract class Slider(
 
     private fun setValue(value: Double) {
         val d = this.value
-        this.value = Mth.clamp(value, 0.0, 1.0)
+        this.value = clamp(value, 0.0, 1.0)
         if (d != this.value) {
             this.applyValue()
         }
@@ -125,8 +132,8 @@ abstract class Slider(
     protected abstract fun applyValue()
 
     override fun keyPressed(event: KeyEvent): Boolean {
-        if (event.key == InputConstants.KEY_LEFT || event.key == InputConstants.KEY_RIGHT) {
-            val f = if (event.key == InputConstants.KEY_LEFT) -1.0f else 1.0f
+        if (event.key == KEY_LEFT || event.key == KEY_RIGHT) {
+            val f = if (event.key == KEY_LEFT) -1.0f else 1.0f
             this.setValue(this.value + (f / (this.width - 8)).toDouble())
             return true
         }
@@ -134,14 +141,14 @@ abstract class Slider(
     }
 
     companion object {
-        private val TEXTURE_ID = Identifier.withDefaultNamespace(
+        private val TEXTURE_ID = withDefaultNamespace(
             "widget/slider"
         )
         private val HIGHLIGHTED_TEXTURE_ID =
-            Identifier.withDefaultNamespace("widget/slider_highlighted")
+            withDefaultNamespace("widget/slider_highlighted")
         private val HANDLE_TEXTURE_ID =
-            Identifier.withDefaultNamespace("widget/slider_handle")
+            withDefaultNamespace("widget/slider_handle")
         private val HANDLE_HIGHLIGHTED_TEXTURE_ID =
-            Identifier.withDefaultNamespace("widget/slider_handle_highlighted")
+            withDefaultNamespace("widget/slider_handle_highlighted")
     }
 }

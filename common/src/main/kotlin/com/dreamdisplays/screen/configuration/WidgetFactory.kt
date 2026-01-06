@@ -1,12 +1,19 @@
 package com.dreamdisplays.screen.configuration
 
 import com.dreamdisplays.Initializer
+import com.dreamdisplays.Initializer.MOD_ID
+import com.dreamdisplays.Initializer.config
 import com.dreamdisplays.screen.Manager
+import com.dreamdisplays.screen.Manager.saveScreenData
 import com.dreamdisplays.screen.widgets.Button
 import com.dreamdisplays.screen.widgets.Slider
 import com.dreamdisplays.screen.widgets.Toggle
 import net.minecraft.network.chat.Component
+import net.minecraft.network.chat.Component.literal
+import net.minecraft.network.chat.Component.nullToEmpty
+import net.minecraft.network.chat.Component.translatable
 import net.minecraft.resources.Identifier
+import net.minecraft.resources.Identifier.fromNamespaceAndPath
 import kotlin.math.floor
 import com.dreamdisplays.screen.Screen as DisplayScreen
 
@@ -18,11 +25,11 @@ object WidgetFactory {
     fun createVolumeSlider(screen: DisplayScreen): Slider {
         return object : Slider(
             0, 0, 0, 0,
-            Component.literal("${floor(screen.volume * 200).toInt()}%"),
+            literal("${floor(screen.volume * 200).toInt()}%"),
             screen.volume
         ) {
             override fun updateMessage() {
-                message = Component.literal("${floor(value * 200).toInt()}%")
+                message = literal("${floor(value * 200).toInt()}%")
             }
 
             override fun applyValue() {
@@ -34,13 +41,13 @@ object WidgetFactory {
     fun createVolumeResetButton(screen: DisplayScreen, volumeSlider: () -> Slider?): Button {
         return object : Button(
             0, 0, 0, 0, 64, 64,
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bri"), 2
+            fromNamespaceAndPath(MOD_ID, "bri"), 2
         ) {
             override fun onPress() {
                 screen.volume = 0.5
                 volumeSlider()?.let {
                     it.value = 0.5
-                    it.message = Component.literal("100%")
+                    it.message = literal("100%")
                 }
             }
         }
@@ -49,7 +56,7 @@ object WidgetFactory {
     fun createBackButton(screen: DisplayScreen): Button {
         return object : Button(
             0, 0, 0, 0, 64, 64,
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bbi"), 2
+            fromNamespaceAndPath(MOD_ID, "bbi"), 2
         ) {
             override fun onPress() {
                 screen.seekBackward()
@@ -60,7 +67,7 @@ object WidgetFactory {
     fun createForwardButton(screen: DisplayScreen): Button {
         return object : Button(
             0, 0, 0, 0, 64, 64,
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bfi"), 2
+            fromNamespaceAndPath(MOD_ID, "bfi"), 2
         ) {
             override fun onPress() {
                 screen.seekForward()
@@ -71,19 +78,19 @@ object WidgetFactory {
     fun createPauseButton(screen: DisplayScreen): Button {
         val button = object : Button(
             0, 0, 0, 0, 64, 64,
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bpi"), 2
+            fromNamespaceAndPath(MOD_ID, "bpi"), 2
         ) {
             override fun onPress() {
                 screen.setPaused(!screen.getPaused())
                 setIconTextureId(
-                    if (screen.getPaused()) Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bupi")
-                    else Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bpi")
+                    if (screen.getPaused()) fromNamespaceAndPath(MOD_ID, "bupi")
+                    else fromNamespaceAndPath(MOD_ID, "bpi")
                 )
             }
         }
         button.setIconTextureId(
-            if (screen.getPaused()) Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bupi")
-            else Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bpi")
+            if (screen.getPaused()) fromNamespaceAndPath(MOD_ID, "bupi")
+            else fromNamespaceAndPath(MOD_ID, "bpi")
         )
         return button
     }
@@ -91,17 +98,17 @@ object WidgetFactory {
     fun createRenderDistanceSlider(screen: DisplayScreen): Slider {
         return object : Slider(
             0, 0, 0, 0,
-            Component.nullToEmpty(screen.renderDistance.toString()),
+            nullToEmpty(screen.renderDistance.toString()),
             (screen.renderDistance - 24) / (128.0 - 24.0)
         ) {
             override fun updateMessage() {
-                message = Component.nullToEmpty(((value * (128 - 24) + 24).toInt()).toString())
+                message = nullToEmpty(((value * (128 - 24) + 24).toInt()).toString())
             }
 
             override fun applyValue() {
                 val newDistance = (value * (128 - 24) + 24).toInt()
                 screen.renderDistance = newDistance
-                Manager.saveScreenData(screen)
+                saveScreenData(screen)
             }
         }
     }
@@ -109,15 +116,15 @@ object WidgetFactory {
     fun createRenderDistanceResetButton(screen: DisplayScreen, renderDSlider: () -> Slider?): Button {
         return object : Button(
             0, 0, 0, 0, 64, 64,
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bri"), 2
+            fromNamespaceAndPath(MOD_ID, "bri"), 2
         ) {
             override fun onPress() {
-                screen.renderDistance = Initializer.config.defaultDistance
+                screen.renderDistance = config.defaultDistance
                 renderDSlider()?.let {
-                    it.value = (Initializer.config.defaultDistance - 24) / (128.0 - 24.0)
-                    it.message = Component.nullToEmpty(Initializer.config.defaultDistance.toString())
+                    it.value = (config.defaultDistance - 24) / (128.0 - 24.0)
+                    it.message = nullToEmpty(config.defaultDistance.toString())
                 }
-                Manager.saveScreenData(screen)
+                saveScreenData(screen)
             }
         }
     }
@@ -126,12 +133,12 @@ object WidgetFactory {
         val qualityList = screen.getQualityList()
         return object : Slider(
             0, 0, 0, 0,
-            Component.nullToEmpty("${screen.quality}p"),
+            nullToEmpty("${screen.quality}p"),
             fromQuality(screen.quality).toDouble() / qualityList.size.coerceAtLeast(1)
         ) {
             override fun updateMessage() {
                 val currentList = screen.getQualityList()
-                message = Component.nullToEmpty("${toQuality((value * currentList.size).toInt())}p")
+                message = nullToEmpty("${toQuality((value * currentList.size).toInt())}p")
             }
 
             override fun applyValue() {
@@ -149,14 +156,14 @@ object WidgetFactory {
     ): Button {
         return object : Button(
             0, 0, 0, 0, 64, 64,
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bri"), 2
+            fromNamespaceAndPath(MOD_ID, "bri"), 2
         ) {
             override fun onPress() {
                 val targetIndex = fromQuality("720")
                 screen.quality = toQuality(targetIndex).replace("p", "")
                 qualitySlider()?.let {
                     it.value = targetIndex.toDouble() / screen.getQualityList().size.coerceAtLeast(1)
-                    it.message = Component.nullToEmpty("${toQuality(targetIndex)}p")
+                    it.message = nullToEmpty("${toQuality(targetIndex)}p")
                 }
             }
         }
@@ -165,11 +172,11 @@ object WidgetFactory {
     fun createBrightnessSlider(screen: DisplayScreen): Slider {
         return object : Slider(
             0, 0, 0, 0,
-            Component.literal("${floor(screen.brightness * 100).toInt()}%"),
+            literal("${floor(screen.brightness * 100).toInt()}%"),
             screen.brightness / 2.0
         ) {
             override fun updateMessage() {
-                message = Component.literal("${floor(value * 200).toInt()}%")
+                message = literal("${floor(value * 200).toInt()}%")
             }
 
             override fun applyValue() {
@@ -181,13 +188,13 @@ object WidgetFactory {
     fun createBrightnessResetButton(screen: DisplayScreen, brightnessSlider: () -> Slider?): Button {
         return object : Button(
             0, 0, 0, 0, 64, 64,
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bri"), 2
+            fromNamespaceAndPath(MOD_ID, "bri"), 2
         ) {
             override fun onPress() {
                 screen.brightness = 1.0f
                 brightnessSlider()?.let {
                     it.value = 0.5
-                    it.message = Component.literal("100%")
+                    it.message = literal("100%")
                 }
             }
         }
@@ -196,12 +203,12 @@ object WidgetFactory {
     fun createSyncToggle(screen: DisplayScreen, syncResetGetter: () -> Button?): Toggle {
         return object : Toggle(
             0, 0, 0, 0,
-            Component.translatable(if (screen.isSync) "dreamdisplays.button.enabled" else "dreamdisplays.button.disabled"),
+            translatable(if (screen.isSync) "dreamdisplays.button.enabled" else "dreamdisplays.button.disabled"),
             screen.isSync
         ) {
             override fun updateMessage() {
                 message =
-                    Component.translatable(if (value) "dreamdisplays.button.enabled" else "dreamdisplays.button.disabled")
+                    translatable(if (value) "dreamdisplays.button.enabled" else "dreamdisplays.button.disabled")
             }
 
             override fun applyValue() {
@@ -218,7 +225,7 @@ object WidgetFactory {
     fun createSyncResetButton(screen: DisplayScreen, syncToggle: () -> Toggle?): Button {
         return object : Button(
             0, 0, 0, 0, 64, 64,
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bri"), 2
+            fromNamespaceAndPath(MOD_ID, "bri"), 2
         ) {
             override fun onPress() {
                 if (screen.owner) {

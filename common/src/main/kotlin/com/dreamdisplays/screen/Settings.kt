@@ -3,6 +3,8 @@ package com.dreamdisplays.screen
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import me.inotsleep.utils.logging.LoggingManager
+import me.inotsleep.utils.logging.LoggingManager.error
+import me.inotsleep.utils.logging.LoggingManager.info
 import org.jspecify.annotations.NullMarked
 import java.io.*
 import java.util.*
@@ -30,7 +32,7 @@ object Settings {
     fun load() {
         // Ensure directory exists
         if (!SETTINGS_DIR.exists() && !SETTINGS_DIR.mkdirs()) {
-            LoggingManager.error("Failed to create settings directory.")
+            error("Failed to create settings directory.")
             return
         }
 
@@ -48,7 +50,7 @@ object Settings {
                             val uuid = UUID.fromString(key)
                             displaySettings[uuid] = value
                         } catch (_: IllegalArgumentException) {
-                            LoggingManager.error("Invalid UUID in client display settings: $key")
+                            error("Invalid UUID in client display settings: $key")
                         }
                     }
                 }
@@ -56,7 +58,7 @@ object Settings {
         } catch (_: FileNotFoundException) {
             // File doesn't exist yet, that's fine
         } catch (e: IOException) {
-            LoggingManager.error("Failed to load client display settings", e)
+            error("Failed to load client display settings", e)
         }
     }
 
@@ -78,17 +80,17 @@ object Settings {
                             val uuid = UUID.fromString(key)
                             displays[uuid] = value
                         } catch (_: IllegalArgumentException) {
-                            LoggingManager.error("Invalid UUID in server displays: $key")
+                            error("Invalid UUID in server displays: $key")
                         }
                     }
                 }
                 serverDisplays[serverId] = displays
-                LoggingManager.info("Loaded ${displays.size} displays for server: $serverId")
+                info("Loaded ${displays.size} displays for server: $serverId")
             }
         } catch (_: FileNotFoundException) {
             serverDisplays[serverId] = HashMap()
         } catch (e: IOException) {
-            LoggingManager.error("Failed to load server displays for $serverId", e)
+            error("Failed to load server displays for $serverId", e)
             serverDisplays[serverId] = HashMap()
         }
     }
@@ -98,7 +100,7 @@ object Settings {
     fun save() {
         try {
             if (!SETTINGS_DIR.exists() && !SETTINGS_DIR.mkdirs()) {
-                LoggingManager.error("Failed to create settings directory.")
+                error("Failed to create settings directory.")
                 return
             }
 
@@ -112,7 +114,7 @@ object Settings {
                 GSON.toJson(toSave, writer)
             }
         } catch (e: IOException) {
-            LoggingManager.error("Failed to save client display settings", e)
+            error("Failed to save client display settings", e)
         }
     }
 
@@ -121,7 +123,7 @@ object Settings {
     fun saveServerDisplays(serverId: String) {
         try {
             if (!SETTINGS_DIR.exists() && !SETTINGS_DIR.mkdirs()) {
-                LoggingManager.error("Failed to create settings directory.")
+                error("Failed to create settings directory.")
                 return
             }
 
@@ -136,7 +138,7 @@ object Settings {
                 GSON.toJson(toSave, writer)
             }
         } catch (e: IOException) {
-            LoggingManager.error("Failed to save server displays for $serverId", e)
+            error("Failed to save server displays for $serverId", e)
         }
     }
 
@@ -204,7 +206,7 @@ object Settings {
         displaySettings.remove(displayUuid)
         save()
 
-        LoggingManager.info("Removed display from all saved data: $displayUuid")
+        info("Removed display from all saved data: $displayUuid")
     }
 
     // Client settings for a display (volume, quality, muted, brightness, paused)

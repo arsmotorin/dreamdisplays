@@ -24,7 +24,7 @@ object Converter {
         // Calculate scaling to maintain aspect ratio (cover mode)
         val scaleW = dstW.toDouble() / srcW
         val scaleH = dstH.toDouble() / srcH
-        val scale = Math.max(scaleW, scaleH) // Use larger scale to cover entire area
+        val scale = scaleW.coerceAtLeast(scaleH) // Use larger scale to cover entire area
         val scaledW = (srcW * scale + 0.5).toInt()
         val scaledH = (srcH * scale + 0.5).toInt()
 
@@ -41,12 +41,12 @@ object Converter {
         for (y in 0 until dstH) {
             val srcY = (((y - offsetY) * srcH) / scaledH.toDouble()).toInt()
 
-            if (srcY < 0 || srcY >= srcH) continue
+            if (srcY !in 0..<srcH) continue
 
             for (x in 0 until dstW) {
                 val srcX = (((x - offsetX) * srcW) / scaledW.toDouble()).toInt()
 
-                if (srcX >= 0 && srcX < srcW) {
+                if (srcX in 0..<srcW) {
                     // Copy 4 bytes (RGBA) from source to destination
                     val srcIdx = (srcY * srcW + srcX) * 4
                     val dstIdx = (y * dstW + x) * 4
