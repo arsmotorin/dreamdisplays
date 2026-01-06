@@ -31,7 +31,7 @@ class DisplayData(
     val pos2: Location,
     val width: Int,
     val height: Int,
-    val facing: BlockFace = BlockFace.NORTH
+    val facing: BlockFace = BlockFace.NORTH,
 ) {
     var url: String = ""
     var lang: String = ""

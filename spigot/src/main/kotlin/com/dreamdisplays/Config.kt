@@ -116,7 +116,7 @@ class Config(private val plugin: Main) {
 
     // Configuration sections
     data class LanguageSection(
-        val default_language: String = "en"
+        val default_language: String = "en",
     )
 
     data class SettingsSection(
@@ -125,7 +125,7 @@ class Config(private val plugin: Main) {
         val display: DisplayConfig = DisplayConfig(),
         val particles: Boolean = true,
         val particles_color: String = "#00FFFF",
-        val mod_detection_enabled: Boolean = true
+        val mod_detection_enabled: Boolean = true,
     ) {
         // Reports
         val webhookUrl get() = reports.webhook_url
@@ -161,13 +161,13 @@ class Config(private val plugin: Main) {
 
         data class ReportsConfig(
             val webhook_url: String = "",
-            val cooldown: Int = 15
+            val cooldown: Int = 15,
         )
 
         data class UpdatesConfig(
             val enabled: Boolean = true,
             val repo_name: String = "dreamdisplays",
-            val repo_owner: String = "arsmotorin"
+            val repo_owner: String = "arsmotorin",
         )
 
         data class DisplayConfig(
@@ -177,13 +177,13 @@ class Config(private val plugin: Main) {
             val min_height: Int = 1,
             val max_width: Int = 32,
             val max_height: Int = 24,
-            val max_render_distance: Double = 96.0
+            val max_render_distance: Double = 96.0,
         )
     }
 
     // Storage configuration
     data class StorageSection(
-        val storage: StorageConfig = StorageConfig()
+        val storage: StorageConfig = StorageConfig(),
     ) : StorageSettings() {
         init {
             this.host = storage.host
@@ -202,13 +202,13 @@ class Config(private val plugin: Main) {
             val database: String = "my_database",
             val password: String = "veryStrongPassword",
             val username: String = "username",
-            val table_prefix: String = ""
+            val table_prefix: String = "",
         )
     }
 
     // Permissions configuration
     data class PermissionsSection(
-        val permissions: PermissionsConfig = PermissionsConfig()
+        val permissions: PermissionsConfig = PermissionsConfig(),
     ) {
         val create get() = permissions.create
         val video get() = permissions.video
@@ -229,7 +229,7 @@ class Config(private val plugin: Main) {
             val reload: String = "dreamdisplays.reload",
             val updates: String = "dreamdisplays.updates",
             val help: String = "dreamdisplays.help",
-            val stats: String = "dreamdisplays.stats"
+            val stats: String = "dreamdisplays.stats",
         )
     }
 

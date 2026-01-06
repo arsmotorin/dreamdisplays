@@ -27,12 +27,16 @@ Plugin:
 
 Mod:
 
-- [x] Update dependencies
 - [x] Support Quilt
+- [x] Update dependencies
+- [x] Improve building workflow
+- [x] Cleanup codebase
 
 Plugin:
 
+- [x] Support Fabric servers ([#56](https://github.com/arsmotorin/dreamdisplays/issues/56))
 - [x] Fix display directions not being created properly in some cases
+- [x] Cleanup codebase
 
 # Version 1.3.2
 

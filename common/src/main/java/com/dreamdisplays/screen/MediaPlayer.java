@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 /**
  * Media player for streaming YouTube videos using GStreamer.
  * Handles video and audio playback, quality selection, volume control, and frame processing.
- *
+ * <p>
  * Integrates with Minecraft's rendering system to display video frames on in-game screens.
  */
 // TODO: replace with FFmpeg solution in version 2.0.0
@@ -45,6 +45,9 @@ public class MediaPlayer {
             Executors.newSingleThreadExecutor(r ->
                     new Thread(r, "MediaPlayer-init")
             );
+    private static final int SYNC_CHECK_INTERVAL = 100; // Check sync every 100 ticks (~5 seconds)
+    private static final long MAX_SYNC_DRIFT_NS = 500_000_000L; // 500ms max drift before resync
+    private static final long MIN_FRAME_INTERVAL_NS = 16_666_667L; // ~60fps max
     public static boolean captureSamples = true;
     private final String lang;
     // === PUBLIC API FIELDS ===============================================================
@@ -83,18 +86,13 @@ public class MediaPlayer {
     private volatile double brightness = 1.0;
     private volatile boolean frameReady = false;
     private int syncCheckCounter = 0;
-    private static final int SYNC_CHECK_INTERVAL = 100; // Check sync every 100 ticks (~5 seconds)
-    private static final long MAX_SYNC_DRIFT_NS = 500_000_000L; // 500ms max drift before resync
-
     // Buffer system
     private @Nullable ByteBuffer convertBuffer = null;
     private int convertBufferSize = 0;
     private @Nullable ByteBuffer scaleBuffer = null;
     private int scaleBufferSize = 0;
-
     // Frame rate limiting
     private volatile long lastFrameTime = 0;
-    private static final long MIN_FRAME_INTERVAL_NS = 16_666_667L; // ~60fps max
 
     // === CONSTRUCTOR =====================================================================
     public MediaPlayer(String youtubeUrl, String lang, Screen screen) {
@@ -132,27 +130,6 @@ public class MediaPlayer {
         result.flip();
         buf.unmap();
         return result;
-    }
-
-    private ByteBuffer convertToRGBA(
-            ByteBuffer srcBuffer,
-            int width,
-            int height
-    ) {
-        int size = width * height * 4;
-
-        // Reuse buffer if possible, otherwise allocate new one
-        if (convertBuffer == null || convertBufferSize < size) {
-            convertBuffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
-            convertBufferSize = size;
-        }
-
-        convertBuffer.clear();
-        srcBuffer.rewind();
-        convertBuffer.put(srcBuffer);
-        convertBuffer.flip();
-
-        return convertBuffer;
     }
 
     private static void applyBrightnessToBuffer(ByteBuffer buffer, double brightness) {
@@ -198,6 +175,27 @@ public class MediaPlayer {
             e.dispose();
         } catch (Exception ignore) {
         }
+    }
+
+    private ByteBuffer convertToRGBA(
+            ByteBuffer srcBuffer,
+            int width,
+            int height
+    ) {
+        int size = width * height * 4;
+
+        // Reuse buffer if possible, otherwise allocate new one
+        if (convertBuffer == null || convertBufferSize < size) {
+            convertBuffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
+            convertBufferSize = size;
+        }
+
+        convertBuffer.clear();
+        srcBuffer.rewind();
+        convertBuffer.put(srcBuffer);
+        convertBuffer.flip();
+
+        return convertBuffer;
     }
 
     // === PUBLIC API ======================================================================

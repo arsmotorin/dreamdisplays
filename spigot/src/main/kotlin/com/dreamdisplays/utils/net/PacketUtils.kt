@@ -41,7 +41,7 @@ object PacketUtils {
         url: String,
         lang: String,
         facing: BlockFace,
-        isSync: Boolean
+        isSync: Boolean,
     ) {
         runCatching {
             val packet = buildPacket { output ->

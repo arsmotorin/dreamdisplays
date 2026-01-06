@@ -3,9 +3,10 @@
 
 <div align="center"> <img src="https://i.imgur.com/wAndZVq.png" alt="Dream Displays"> </div>
 
-Download from [Modrinth](https://modrinth.com/plugin/dreamdisplays) or [CurseForge](https://www.curseforge.com/minecraft/mc-mods/dreamdisplays)!
+Download from [Modrinth](https://modrinth.com/plugin/dreamdisplays)
+or [CurseForge](https://www.curseforge.com/minecraft/mc-mods/dreamdisplays)!
 
-## Available for Fabric, NeoForge and popular server forks
+## Available for Fabric, NeoForge, Quilt and popular server forks
 
 Create interactive in-game displays that stream YouTube videos in real time, with smooth playback, configurable
 resolution and even with synchronization mode for all players on the server.

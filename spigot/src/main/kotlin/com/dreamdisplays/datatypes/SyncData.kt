@@ -20,5 +20,5 @@ data class SyncData(
     val isSync: Boolean,
     val currentState: Boolean,
     val currentTime: Long,
-    val limitTime: Long
+    val limitTime: Long,
 )

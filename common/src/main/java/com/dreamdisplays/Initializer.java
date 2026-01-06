@@ -44,7 +44,6 @@ public class Initializer {
     private static final AtomicReference<@Nullable ClientLevel> lastLevel =
             new AtomicReference<>(null);
     private static final AtomicBoolean wasFocused = new AtomicBoolean(false);
-    private static int unloadCheckTick = 0;
     public static Config config = new Config(new File("./config/" + MOD_ID));
     public static Thread timerThread = new Thread(() -> {
         int lastDistance = 64;
@@ -67,6 +66,7 @@ public class Initializer {
     public static boolean displaysEnabled = true;
     public static boolean isPremium = false;
     public static boolean isReportingEnabled = true;
+    private static int unloadCheckTick = 0;
     private static @Nullable Screen hoveredScreen = null;
     private static Mod mod;
 

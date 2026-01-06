@@ -13,7 +13,7 @@ object BukkitScheduler : AdapterScheduler {
         plugin: Plugin,
         delayTicks: Long,
         intervalTicks: Long,
-        task: Runnable
+        task: Runnable,
     ) {
         object : BukkitRunnable() {
             override fun run() = task.run()
