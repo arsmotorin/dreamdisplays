@@ -28,16 +28,6 @@
       "badges": [
         "library"
       ]
-    },
-    "quilt_loader": {
-      "id": "dreamdisplays",
-      "group": "dreamdisplays",
-      "provides": [
-        {
-          "id": "dreamdisplays",
-          "version": "${version}"
-        }
-      ]
     }
   },
   "icon": "assets/dreamdisplays/icon.png"

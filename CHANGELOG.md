@@ -1,4 +1,4 @@
-# Version 1.4.0
+# Version 1.6.0
 
 Mod:
 
@@ -13,7 +13,7 @@ Plugin:
 
 - [ ] Add config migrator from old versions of the plugin
 
-# Version 1.3.4
+# Version 1.5.0
 
 Mod:
 
@@ -23,11 +23,12 @@ Plugin:
 
 - [ ] No changes
 
-# Version 1.3.3
+# Version 1.4.0
 
 Mod:
 
 - [x] Update dependencies
+- [x] Support Quilt
 
 Plugin:
 

@@ -20,6 +20,8 @@ subprojects {
     repositories {
         mavenCentral()
         maven("https://maven.fabricmc.net/")
+        maven("https://maven.quiltmc.org/repository/release/")
+        maven("https://maven.quiltmc.org/repository/snapshot/")
         maven("https://repo.l0sty.ru/releases")
         maven("https://repo.papermc.io/repository/maven-public/")
         maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
