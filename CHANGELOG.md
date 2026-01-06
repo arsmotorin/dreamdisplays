@@ -1,9 +1,10 @@
-# Version 1.6.0
+# Version 1.5.0
 
 Mod:
 
 - [ ] Add spacial audio support
 - [ ] Support single-player mode ([#31](https://github.com/arsmotorin/dreamdisplays/issues/59))
+- [ ] Support Fabric servers ([#56](https://github.com/arsmotorin/dreamdisplays/issues/56))
 - [ ] Add toggle button for window focus
 - [ ] Add toggle button for video repeating
 - [ ] Add action bar messages when player looks at display
@@ -13,7 +14,7 @@ Plugin:
 
 - [ ] Add config migrator from old versions of the plugin
 
-# Version 1.5.0
+# Version 1.4.1
 
 Mod:
 
@@ -34,7 +35,6 @@ Mod:
 
 Plugin:
 
-- [x] Support Fabric servers ([#56](https://github.com/arsmotorin/dreamdisplays/issues/56))
 - [x] Fix display directions not being created properly in some cases
 - [x] Cleanup codebase
 
