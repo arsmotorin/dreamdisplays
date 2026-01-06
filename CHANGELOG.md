@@ -13,7 +13,7 @@ Plugin:
 
 - [ ] Add config migrator from old versions of the plugin
 
-# Version 1.3.3
+# Version 1.3.4
 
 Mod:
 
@@ -22,6 +22,16 @@ Mod:
 Plugin:
 
 - [ ] No changes
+
+# Version 1.3.3
+
+Mod:
+
+- [x] Update dependencies
+
+Plugin:
+
+- [x] Fix display directions not being created properly in some cases
 
 # Version 1.3.2
 

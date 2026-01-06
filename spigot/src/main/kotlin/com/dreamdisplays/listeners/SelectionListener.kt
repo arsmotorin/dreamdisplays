@@ -47,7 +47,7 @@ class SelectionListener(plugin: Main) : Listener {
         event.isCancelled = true
 
         when (event.action) {
-            LEFT_CLICK_BLOCK -> setFirstPoint(player, block.location, player.facing)
+            LEFT_CLICK_BLOCK -> setFirstPoint(player, block.location, event.blockFace)
             RIGHT_CLICK_BLOCK -> setSecondPoint(player, block.location)
             else -> {}
         }
