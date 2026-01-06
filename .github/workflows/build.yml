@@ -41,13 +41,24 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Configure Gradle HTTP settings
+        run: |
+          mkdir -p ~/.gradle
+          echo "systemProp.http.agent=Gradle/9.2.1 (GitHub Actions)" >> ~/.gradle/gradle.properties
+          echo "systemProp.https.agent=Gradle/9.2.1 (GitHub Actions)" >> ~/.gradle/gradle.properties
+
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
       - name: Build with Gradle
         run: ./gradlew build --no-daemon --parallel --build-cache
         env:
-          GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Xmx4G
+          GRADLE_OPTS: >-
+            -Dorg.gradle.daemon=false
+            -Dorg.gradle.parallel=true
+            -Dorg.gradle.caching=true
+            -Xmx4G
+            -Dhttp.agent=Gradle
 
       - name: Get version
         id: get_version

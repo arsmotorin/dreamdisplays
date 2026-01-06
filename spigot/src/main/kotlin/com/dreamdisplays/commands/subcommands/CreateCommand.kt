@@ -2,6 +2,7 @@ package com.dreamdisplays.commands.subcommands
 
 import com.dreamdisplays.Main.Companion.config
 import com.dreamdisplays.managers.DisplayManager
+import com.dreamdisplays.managers.DisplayManager.isOverlaps
 import com.dreamdisplays.managers.DisplayManager.register
 import com.dreamdisplays.managers.DisplayValidator.isValidDisplay
 import com.dreamdisplays.managers.DisplayValidator.sendErrorMessage
@@ -27,7 +28,7 @@ class CreateCommand : SubCommand {
             return
         }
 
-        if (DisplayManager.isOverlaps(sel)) {
+        if (isOverlaps(sel)) {
             sendMessage(player, "displayOverlap")
             return
         }

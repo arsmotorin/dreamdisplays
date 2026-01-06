@@ -2,6 +2,7 @@ package com.dreamdisplays.datatypes
 
 import com.dreamdisplays.managers.DisplayManager.getDisplayData
 import org.jspecify.annotations.NullMarked
+import java.lang.System.nanoTime
 import java.util.*
 
 /**
@@ -34,12 +35,12 @@ class StateData(private val id: UUID?) {
     fun update(packet: SyncData) {
         paused = packet.currentState
         lastReportedTime = packet.currentTime
-        lastReportedTimestamp = System.nanoTime()
+        lastReportedTimestamp = nanoTime()
         limitTime = packet.limitTime
     }
 
     fun createPacket(): SyncData {
-        val nanos = System.nanoTime()
+        val nanos = nanoTime()
         val currentTime = if (paused) {
             lastReportedTime
         } else {

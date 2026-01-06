@@ -8,6 +8,7 @@ import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
+import org.bukkit.Bukkit.getOfflinePlayer
 import org.bukkit.command.CommandSender
 
 class ListCommand : SubCommand {
@@ -25,7 +26,7 @@ class ListCommand : SubCommand {
         sendMessage(sender, "displayListHeader")
 
         displays.forEachIndexed { index, d ->
-            val owner = Bukkit.getOfflinePlayer(d.ownerId).name ?: "Unknown"
+            val owner = getOfflinePlayer(d.ownerId).name ?: "Unknown"
 
             val component = text("${index + 1}. Owner: $owner. Location: ")
                 .append(

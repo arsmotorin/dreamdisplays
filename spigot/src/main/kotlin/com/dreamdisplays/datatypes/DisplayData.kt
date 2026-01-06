@@ -2,6 +2,7 @@ package com.dreamdisplays.datatypes
 
 import org.bukkit.Location
 import org.bukkit.block.BlockFace
+import org.bukkit.block.BlockFace.NORTH
 import org.bukkit.util.BoundingBox
 import org.jspecify.annotations.NullMarked
 import java.util.*
@@ -31,7 +32,7 @@ class DisplayData(
     val pos2: Location,
     val width: Int,
     val height: Int,
-    val facing: BlockFace = BlockFace.NORTH,
+    val facing: BlockFace = NORTH,
 ) {
     var url: String = ""
     var lang: String = ""

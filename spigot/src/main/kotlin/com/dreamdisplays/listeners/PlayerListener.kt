@@ -4,7 +4,9 @@ import com.dreamdisplays.Main.Companion.config
 import com.dreamdisplays.Main.Companion.getInstance
 import com.dreamdisplays.managers.DisplayManager.getDisplays
 import com.dreamdisplays.managers.PlayerManager
+import com.dreamdisplays.managers.PlayerManager.getVersion
 import com.dreamdisplays.managers.PlayerManager.hasBeenNotifiedAboutModRequired
+import com.dreamdisplays.managers.PlayerManager.removeVersion
 import com.dreamdisplays.managers.PlayerManager.setModRequiredNotified
 import com.dreamdisplays.utils.Message.sendColoredMessage
 import org.bukkit.event.EventHandler
@@ -30,7 +32,7 @@ class PlayerListener : Listener {
         if (getDisplays().isEmpty()) return
 
         getInstance().server.scheduler.runTaskLater(getInstance(), Runnable {
-            if (PlayerManager.getVersion(player) == null && !hasBeenNotifiedAboutModRequired(player)) {
+            if (getVersion(player) == null && !hasBeenNotifiedAboutModRequired(player)) {
                 val message = config.messages["modRequired"]
                 sendColoredMessage(player, message)
                 setModRequiredNotified(player, true)
@@ -40,6 +42,6 @@ class PlayerListener : Listener {
 
     @EventHandler
     fun onPlayerLeave(event: PlayerQuitEvent) {
-        PlayerManager.removeVersion(event.getPlayer())
+        removeVersion(event.getPlayer())
     }
 }

@@ -5,7 +5,9 @@ import com.dreamdisplays.managers.DisplayManager.getReceivers
 import com.dreamdisplays.managers.DisplayManager.isContains
 import com.dreamdisplays.managers.DisplayManager.sendUpdate
 import com.dreamdisplays.utils.Message
+import com.dreamdisplays.utils.Message.sendMessage
 import com.dreamdisplays.utils.YouTubeUtils
+import com.dreamdisplays.utils.YouTubeUtils.extractVideoIdFromUri
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
@@ -17,7 +19,7 @@ class VideoCommand : SubCommand {
     override fun execute(sender: CommandSender, args: Array<String?>) {
         val player = (sender as? Player) ?: return
         if (args.size < 2) {
-            Message.sendMessage(player, "invalidURL")
+            sendMessage(player, "invalidURL")
             return
         }
 
@@ -29,12 +31,12 @@ class VideoCommand : SubCommand {
             data == null ||
             data.ownerId != player.uniqueId
         ) {
-            Message.sendMessage(player, "noDisplay")
+            sendMessage(player, "noDisplay")
             return
         }
 
-        val code = YouTubeUtils.extractVideoIdFromUri(args[1] ?: "")
-            ?: return Message.sendMessage(player, "invalidURL")
+        val code = extractVideoIdFromUri(args[1] ?: "")
+            ?: return sendMessage(player, "invalidURL")
 
         data.apply {
             url = "https://youtube.com/watch?v=$code"
@@ -44,6 +46,6 @@ class VideoCommand : SubCommand {
 
         sendUpdate(data, getReceivers(data))
 
-        Message.sendMessage(player, "settedURL")
+        sendMessage(player, "settedURL")
     }
 }

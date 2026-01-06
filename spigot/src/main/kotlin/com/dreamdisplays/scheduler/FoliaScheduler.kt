@@ -3,6 +3,7 @@ package com.dreamdisplays.scheduler
 import org.bukkit.plugin.Plugin
 import org.jspecify.annotations.NullMarked
 import java.lang.reflect.Proxy
+import java.lang.reflect.Proxy.newProxyInstance
 
 /**
  * A Folia implementation of the `AdapterScheduler` for scheduling asynchronous tasks.
@@ -24,7 +25,7 @@ object FoliaScheduler : AdapterScheduler {
         intervalTicks: Long,
         task: Runnable,
     ) {
-        val consumer = Proxy.newProxyInstance(
+        val consumer = newProxyInstance(
             consumerClass.classLoader,
             arrayOf(consumerClass)
         ) { _, method, _ ->
