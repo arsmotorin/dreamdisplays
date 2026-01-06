@@ -63,41 +63,10 @@ jobs:
           path: build/libs/*.jar
           if-no-files-found: warn
 
-  pre-release:
-    name: Pre-release
+  publish:
+    name: Publish
     runs-on: ubuntu-24.04
     needs: build
-    if: contains(needs.build.outputs.version, '-SNAPSHOT')
-    permissions:
-      contents: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-jars
-          path: build/libs
-
-      - name: Create pre-release
-        run: |
-          VERSION=${{ needs.build.outputs.version }}
-          TAG="v${VERSION}"
-
-          gh release create "$TAG" \
-            --title "$VERSION" \
-            --prerelease \
-            build/libs/dreamdisplays-*.jar \
-          || gh release upload "$TAG" build/libs/dreamdisplays-*.jar --clobber
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  release:
-    name: Release
-    runs-on: ubuntu-24.04
-    needs: build
-    if: "!contains(needs.build.outputs.version, '-SNAPSHOT')"
     permissions:
       contents: write
 
@@ -112,7 +81,24 @@ jobs:
           name: build-jars
           path: build/libs
 
+      # Snapshot versions
+      - name: Create pre-release
+        if: contains(needs.build.outputs.version, '-SNAPSHOT')
+        run: |
+          VERSION=${{ needs.build.outputs.version }}
+          TAG="v${VERSION}"
+
+          gh release create "$TAG" \
+            --title "$VERSION" \
+            --prerelease \
+            build/libs/dreamdisplays-*.jar \
+          || gh release upload "$TAG" build/libs/dreamdisplays-*.jar --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Beta versions
       - name: Extract changelogs
+        if: "!contains(needs.build.outputs.version, '-SNAPSHOT')"
         id: changelog
         run: |
           VERSION=${{ needs.build.outputs.version }}
@@ -133,6 +119,7 @@ jobs:
             | sed 's/^/- /' > plugin_changelog.md
 
       - name: Publish Fabric
+        if: "!contains(needs.build.outputs.version, '-SNAPSHOT')"
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           name: '[Fabric 1.21.11] Dream Displays ${{ needs.build.outputs.version }}'
@@ -149,7 +136,9 @@ jobs:
           curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
 
-          loaders: fabric
+          loaders: |
+            fabric
+            quilt
           game-versions: |
             1.21.11
 
@@ -157,6 +146,7 @@ jobs:
             fabric-api(required){modrinth:P7dR8mSH}{curseforge:306612}
 
       - name: Publish NeoForge
+        if: "!contains(needs.build.outputs.version, '-SNAPSHOT')"
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           name: '[NeoForge 1.21.11] Dream Displays ${{ needs.build.outputs.version }}'
@@ -178,6 +168,7 @@ jobs:
             1.21.11
 
       - name: Publish Spigot
+        if: "!contains(needs.build.outputs.version, '-SNAPSHOT')"
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           name: '[Spigot 1.21.x] Dream Displays ${{ needs.build.outputs.version }}'
@@ -213,6 +204,7 @@ jobs:
             1.21.11
 
       - name: Create GitHub Release
+        if: "!contains(needs.build.outputs.version, '-SNAPSHOT')"
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
