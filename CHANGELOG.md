@@ -1,4 +1,4 @@
-# Version 1.5.0
+# Version 1.6.0
 
 Mod:
 
@@ -14,7 +14,7 @@ Plugin:
 
 - [ ] Add config migrator from old versions of the plugin
 
-# Version 1.4.1
+# Version 1.5.0
 
 Mod:
 
