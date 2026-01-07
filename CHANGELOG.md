@@ -23,6 +23,8 @@ Mod:
 - [x] Rewrite main part of the mod in Kotlin
 - [x] Ignore &start_radio=x and &t=x parameters in YouTube links
 - [x] Fix NeoForge Gradle conflict while syncing with IntelliJ IDEA Gradle plugin
+- [x] Fix null-pointer exception when window focus tries to work on not initialized Minecraft
+- [x] Fix 
 
 Plugin:
 

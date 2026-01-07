@@ -2,7 +2,7 @@ package com.dreamdisplays
 
 import com.dreamdisplays.ModInitializer.config
 import com.dreamdisplays.screen.managers.ScreenManager.getScreens
-import net.minecraft.client.Minecraft.getInstance
+import net.minecraft.client.Minecraft
 import org.jspecify.annotations.NullMarked
 
 /**
@@ -16,9 +16,29 @@ class WindowFocuser : Thread("window-focus-mute-thread") {
         instance = this
     }
 
+    private fun getMinecraftInstanceSafe(): Minecraft? {
+        return try {
+            val instanceField = Minecraft::class.java.getDeclaredField("instance")
+            instanceField.isAccessible = true
+            instanceField.get(null) as? Minecraft
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     override fun run() {
         while (true) {
-            val client = getInstance()
+            val client = getMinecraftInstanceSafe()
+
+            if (client == null) {
+                try {
+                    sleep(250)
+                } catch (_: InterruptedException) {
+                    currentThread().interrupt()
+                    break
+                }
+                continue
+            }
 
             val focused = client.isWindowActive
 
