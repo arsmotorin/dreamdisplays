@@ -114,12 +114,22 @@ public class Initializer {
             String facing = packet.facing().toString();
 
             int maxX = x;
-            int maxY = y + height - 1;
+            int maxY = y;
             int maxZ = z;
 
             switch (facing) {
-                case "NORTH", "SOUTH" -> maxX += width - 1;
-                case "EAST", "WEST" -> maxZ += width - 1;
+                case "NORTH", "SOUTH" -> {
+                    maxX += width - 1;
+                    maxY += height - 1;
+                }
+                case "EAST", "WEST" -> {
+                    maxZ += width - 1;
+                    maxY += height - 1;
+                }
+                case "UP", "DOWN" -> {
+                    maxX += width - 1;
+                    maxZ += height - 1;
+                }
             }
 
             BlockPos playerPos = player.blockPosition();

@@ -44,7 +44,7 @@ object DisplayManager {
         val pos2 = data.pos2 ?: return false
         val selWorld = pos1.world
 
-        val region = calculateRegion(pos1, pos2)
+        val region = calculateRegion(pos1, pos2, data.getFace())
         val box = BoundingBox(
             region.minX.toDouble(),
             region.minY.toDouble(),

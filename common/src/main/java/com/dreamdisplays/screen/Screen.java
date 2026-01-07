@@ -224,12 +224,22 @@ public class Screen {
     // Checks if a given BlockPos is within the screen boundaries
     public boolean isInScreen(BlockPos pos) {
         int maxX = x;
-        int maxY = y + height - 1;
+        int maxY = y;
         int maxZ = z;
 
         switch (facing) {
-            case "NORTH", "SOUTH" -> maxX += width - 1;
-            default -> maxZ += width - 1;
+            case "NORTH", "SOUTH" -> {
+                maxX += width - 1;
+                maxY += height - 1;
+            }
+            case "EAST", "WEST" -> {
+                maxZ += width - 1;
+                maxY += height - 1;
+            }
+            case "UP", "DOWN" -> {
+                maxX += width - 1;
+                maxZ += height - 1;
+            }
         }
 
         return (
@@ -250,12 +260,22 @@ public class Screen {
     // Calculates the distance from a given BlockPos to the closest point on the screen
     public double getDistanceToScreen(BlockPos pos) {
         int maxX = x;
-        int maxY = y + height - 1;
+        int maxY = y;
         int maxZ = z;
 
         switch (facing) {
-            case "NORTH", "SOUTH" -> maxX += width - 1;
-            case "EAST", "WEST" -> maxZ += width - 1;
+            case "NORTH", "SOUTH" -> {
+                maxX += width - 1;
+                maxY += height - 1;
+            }
+            case "EAST", "WEST" -> {
+                maxZ += width - 1;
+                maxY += height - 1;
+            }
+            case "UP", "DOWN" -> {
+                maxX += width - 1;
+                maxZ += height - 1;
+            }
         }
 
         int clampedX = Math.min(Math.max(pos.getX(), x), maxX);

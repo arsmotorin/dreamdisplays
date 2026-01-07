@@ -20,7 +20,8 @@ Mod:
 
 - [ ] Rewrite entire mod in Kotlin
 - [x] Add video timeline
-- [ ] Support lying and ceiling displays
+- [x] Support lying and ceiling displays
+- [ ] Ignore &start_radio=x and &t=x parameters in YouTube links
 
 Plugin:
 

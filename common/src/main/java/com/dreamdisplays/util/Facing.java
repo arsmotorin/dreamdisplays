@@ -3,14 +3,16 @@ package com.dreamdisplays.util;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Enum representing the four cardinal facings.
+ * Enum representing the six possible facings (four cardinal directions + up/down).
  */
 @NullMarked
 public enum Facing {
     NORTH,
     EAST,
     SOUTH,
-    WEST;
+    WEST,
+    UP,
+    DOWN;
 
     public static Facing fromPacket(byte data) {
         if (

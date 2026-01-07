@@ -2,6 +2,7 @@ package com.dreamdisplays.utils
 
 import org.bukkit.Location
 import org.bukkit.World
+import org.bukkit.block.BlockFace
 import org.jspecify.annotations.NullMarked
 import kotlin.math.max
 import kotlin.math.min
@@ -11,7 +12,7 @@ import kotlin.math.min
  */
 @NullMarked
 object Region {
-    fun calculateRegion(pos1: Location, pos2: Location): RegionData {
+    fun calculateRegion(pos1: Location, pos2: Location, facing: BlockFace? = null): RegionData {
         val minX = min(pos1.blockX, pos2.blockX)
         val minY = min(pos1.blockY, pos2.blockY)
         val minZ = min(pos1.blockZ, pos2.blockZ)
@@ -21,15 +22,23 @@ object Region {
         val maxZ = max(pos1.blockZ, pos2.blockZ)
 
         val deltaX = maxX - minX + 1
+        val deltaY = maxY - minY + 1
         val deltaZ = maxZ - minZ + 1
-        val width = max(deltaX, deltaZ)
-        val height = maxY - minY + 1
+
+        val (width, height) = when (facing) {
+            BlockFace.UP, BlockFace.DOWN -> {
+                deltaX to deltaZ
+            }
+            else -> {
+                max(deltaX, deltaZ) to deltaY
+            }
+        }
 
         return RegionData(
             minX, minY, minZ,
             maxX, maxY, maxZ,
             width, height,
-            deltaX, deltaZ
+            deltaX, deltaY, deltaZ
         )
     }
 
@@ -55,6 +64,7 @@ object Region {
         val width: Int,
         val height: Int,
         val deltaX: Int,
+        val deltaY: Int,
         val deltaZ: Int,
     ) {
 

@@ -170,6 +170,8 @@ object PacketUtils {
         BlockFace.EAST -> 1
         BlockFace.SOUTH -> 2
         BlockFace.WEST -> 3
+        BlockFace.UP -> 4
+        BlockFace.DOWN -> 5
         else -> 0
     }
 

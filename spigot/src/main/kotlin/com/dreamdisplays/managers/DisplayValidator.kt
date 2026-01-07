@@ -3,6 +3,7 @@ package com.dreamdisplays.managers
 import com.dreamdisplays.Main.Companion.config
 import com.dreamdisplays.datatypes.SelectionData
 import com.dreamdisplays.utils.Message.sendColoredMessage
+import org.bukkit.block.BlockFace
 import org.bukkit.entity.Player
 
 /**
@@ -23,13 +24,29 @@ object DisplayValidator {
         val (minZ, maxZ) = minOf(pos1.blockZ, pos2.blockZ) to maxOf(pos1.blockZ, pos2.blockZ)
 
         val deltaX = maxX - minX + 1
+        val deltaY = maxY - minY + 1
         val deltaZ = maxZ - minZ + 1
-        val face = data.getFace()
 
-        if (deltaX != kotlin.math.abs(face.modX) && deltaZ != kotlin.math.abs(face.modZ)) return 2
+        if (deltaX == 1 && deltaY == 1 && deltaZ == 1) return 3
 
-        val width = maxOf(deltaX, deltaZ)
-        val height = maxY - minY + 1
+        val originalFace = data.getFace()
+        val (width, height, detectedFace) = when {
+            deltaY == 1 -> {
+                val face = if (originalFace == BlockFace.DOWN) BlockFace.DOWN else BlockFace.UP
+                Triple(maxOf(deltaX, deltaZ), minOf(deltaX, deltaZ), face)
+            }
+            deltaZ == 1 -> {
+                val face = if (originalFace == BlockFace.SOUTH) BlockFace.SOUTH else BlockFace.NORTH
+                Triple(deltaX, deltaY, face)
+            }
+            deltaX == 1 -> {
+                val face = if (originalFace == BlockFace.WEST) BlockFace.WEST else BlockFace.EAST
+                Triple(deltaZ, deltaY, face)
+            }
+            else -> return 2
+        }
+
+        data.setFace(detectedFace)
 
         if (height < config.settings.minHeight || width < config.settings.minWidth) return 3
         if (height > config.settings.maxHeight || width > config.settings.maxWidth) return 4

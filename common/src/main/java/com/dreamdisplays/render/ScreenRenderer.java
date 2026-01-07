@@ -47,26 +47,54 @@ public class ScreenRenderer {
             Tesselator tessellator
     ) {
         stack.pushPose();
-        moveForward(stack, screen.getFacing(), 0.008f);
 
-        switch (screen.getFacing()) {
+        String facing = screen.getFacing();
+        float width = screen.getWidth();
+        float height = screen.getHeight();
+
+        switch (facing) {
             case "NORTH":
-                moveHorizontal(stack, "NORTH", -(screen.getWidth()));
+                moveForward(stack, "NORTH", 0.008f);
+                moveHorizontal(stack, "NORTH", -width);
                 moveForward(stack, "NORTH", 1);
+                fixRotation(stack, facing);
+                stack.scale(width, height, 0);
                 break;
             case "SOUTH":
+                moveForward(stack, "SOUTH", 0.008f);
                 moveHorizontal(stack, "SOUTH", 1);
                 moveForward(stack, "SOUTH", 1);
+                fixRotation(stack, facing);
+                stack.scale(width, height, 0);
                 break;
             case "EAST":
-                moveHorizontal(stack, "EAST", -(screen.getWidth() - 1));
+                moveForward(stack, "EAST", 0.008f);
+                moveHorizontal(stack, "EAST", -(width - 1));
                 moveForward(stack, "EAST", 2);
+                fixRotation(stack, facing);
+                stack.scale(width, height, 0);
+                break;
+            case "WEST":
+                moveForward(stack, "WEST", 0.008f);
+                fixRotation(stack, facing);
+                stack.scale(width, height, 0);
+                break;
+            case "UP":
+                stack.translate(0, 1 + 0.008f, height);
+                stack.mulPose(new Quaternionf().rotationX((float) Math.toRadians(-90.0)));
+                stack.scale(width, height, 1);
+                break;
+            case "DOWN":
+                stack.translate(0, -0.008f, 0);
+                stack.mulPose(new Quaternionf().rotationX((float) Math.toRadians(90.0)));
+                stack.scale(width, height, 1);
+                break;
+            default:
+                moveForward(stack, facing, 0.008f);
+                fixRotation(stack, facing);
+                stack.scale(width, height, 0);
                 break;
         }
-
-        // Fix the rotation of the matrix stack based on the screen's facing direction
-        fixRotation(stack, screen.getFacing());
-        stack.scale(screen.getWidth(), screen.getHeight(), 0);
 
         // Render the screen texture or black square
         if (
@@ -104,6 +132,17 @@ public class ScreenRenderer {
                 );
                 stack.translate(-1, 0, 1);
                 break;
+            case "UP":
+                rotation = new Quaternionf().rotationX(
+                        (float) Math.toRadians(-90.0)
+                );
+                break;
+            case "DOWN":
+                rotation = new Quaternionf().rotationX(
+                        (float) Math.toRadians(90.0)
+                );
+                stack.translate(0, 1, 0);
+                break;
             default:
                 rotation = new Quaternionf();
                 stack.translate(-1, 0, 0);
@@ -128,6 +167,12 @@ public class ScreenRenderer {
             case "EAST":
                 stack.translate(amount, 0, 0);
                 break;
+            case "UP":
+                stack.translate(0, amount, 0);
+                break;
+            case "DOWN":
+                stack.translate(0, -amount, 0);
+                break;
             default:
                 stack.translate(0, 0, amount);
                 break;
@@ -149,6 +194,10 @@ public class ScreenRenderer {
                 break;
             case "EAST":
                 stack.translate(0, 0, -amount);
+                break;
+            case "UP":
+            case "DOWN":
+                stack.translate(amount, 0, 0);
                 break;
             default:
                 stack.translate(amount, 0, 0);
