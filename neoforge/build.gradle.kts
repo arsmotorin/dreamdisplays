@@ -2,6 +2,7 @@ plugins {
     id("net.neoforged.moddev")
     id("maven-publish")
     id("com.gradleup.shadow")
+    kotlin("jvm")
 }
 
 dependencies {

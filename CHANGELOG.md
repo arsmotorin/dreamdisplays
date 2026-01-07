@@ -18,15 +18,16 @@ Plugin:
 
 Mod:
 
-- [x] Rewrite entire mod in Kotlin
 - [x] Add video timeline
 - [x] Support lying and ceiling displays
-- [ ] Ignore &start_radio=x and &t=x parameters in YouTube links
+- [x] Rewrite main part of the mod in Kotlin
+- [x] Ignore &start_radio=x and &t=x parameters in YouTube links
 - [x] Fix NeoForge Gradle conflict while syncing with IntelliJ IDEA Gradle plugin
 
 Plugin:
 
-- [ ] No changes
+- [x] Support lying and ceiling displays
+- [x] Ignore &start_radio=x and &t=x parameters in YouTube links
 
 # Version 1.4.0
 

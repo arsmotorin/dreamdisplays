@@ -45,8 +45,8 @@ object Utils {
                 val path = uri.path
                 if (path != null && path.length > 1) {
                     var videoId = path.substring(1)
-                    // Remove any query parameters from the video ID
-                    videoId = videoId.split("[?#]".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0]
+                    // Remove any query parameters from the video ID (including #, ?, &)
+                    videoId = videoId.split("[?&#]".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0]
                     return videoId.ifEmpty { null }
                 }
             }
@@ -55,12 +55,15 @@ object Utils {
             if (host != null && host.contains("youtube.com")) {
                 val query = uri.query
 
-                // Extract video ID from v parameter
+                // Extract video ID from v parameter, ignoring start_radio, t, and other parameters
                 if (query != null) {
                     for (param in query.split("&".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
                         val pair = param.split("=".toRegex(), limit = 2).toTypedArray()
                         if (pair.size == 2 && pair[0] == "v") {
-                            return pair[1]
+                            // Clean the video ID from any fragments or additional characters
+                            var videoId = pair[1]
+                            videoId = videoId.split("[&#]".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0]
+                            return videoId.ifEmpty { null }
                         }
                     }
                 }
@@ -71,9 +74,9 @@ object Utils {
                     val pathSegments = path.split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
                     for (segment in pathSegments) {
                         if (!segment.isEmpty() && segment != "shorts") {
-                            // Remove any query parameters
+                            // Remove any query parameters and fragments
                             val videoId =
-                                segment.split("[?#]".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0]
+                                segment.split("[?&#]".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0]
                             return videoId.ifEmpty { null }
                         }
                     }

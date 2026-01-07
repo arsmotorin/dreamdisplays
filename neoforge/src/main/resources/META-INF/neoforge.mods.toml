@@ -3,7 +3,6 @@ loaderVersion = "[1,)"
 license = "LGPL-3.0"
 
 [[mods]]
-
 modId = "dreamdisplays"
 version = "${version}"
 displayName = "DreamDisplays"

@@ -8,15 +8,7 @@ import java.net.URI
  */
 @NullMarked
 object YouTubeUtils {
-
-    //    private val VIDEO_ID_REGEX = "(?<=([?&]v=))[^#&?]*".toRegex()
     private val SANITIZE_REGEX = "[^0-9A-Za-z+.-]".toRegex()
-
-//    fun extractVideoId(youtubeUrl: String): String? {
-//        extractVideoIdFromUri(youtubeUrl)?.let { return it }
-//
-//        return VIDEO_ID_REGEX.find(youtubeUrl)?.value
-//    }
 
     fun extractVideoIdFromUri(url: String): String? {
         return runCatching {
@@ -24,17 +16,24 @@ object YouTubeUtils {
 
             // Check youtube.com/watch?v=ID format
             uri.query?.let { query ->
-                parseQueryParameter(query, "v")?.let { return it }
+                parseQueryParameter(query, "v")?.let { videoId ->
+                    // Clean video ID from any fragments or extra characters
+                    return videoId.split("[&#]".toRegex())[0].takeIf { it.isNotEmpty() }
+                }
             }
 
             // Check youtu.be/ID format
             if (uri.host?.contains("youtu.be") == true) {
-                return uri.path?.trimStart('/')?.takeIf { it.isNotEmpty() }
+                return uri.path?.trimStart('/')
+                    ?.split("[?&#]".toRegex())?.get(0)
+                    ?.takeIf { it.isNotEmpty() }
             }
 
             // Check youtube.com/shorts/ID format
             if (uri.host?.contains("youtube.com") == true && uri.path?.contains("shorts") == true) {
                 return uri.path?.split("/")?.lastOrNull { it.isNotEmpty() }
+                    ?.split("[?&#]".toRegex())?.get(0)
+                    ?.takeIf { it.isNotEmpty() }
             }
 
             null
