@@ -28,6 +28,7 @@ object PacketUtils {
     private const val CHANNEL_PREMIUM = "dreamdisplays:premium"
     private const val CHANNEL_DISPLAY_ENABLED = "dreamdisplays:display_enabled"
     private const val CHANNEL_REPORT_ENABLED = "dreamdisplays:report_enabled"
+    private const val CHANNEL_CEILING_FLOOR_SUPPORT = "dreamdisplays:ceiling_floor_support"
 
     private val plugin: Main by lazy { Main.getInstance() }
 
@@ -44,21 +45,7 @@ object PacketUtils {
         isSync: Boolean,
     ) {
         runCatching {
-            // Filter out players with old mod version if display facing is ceiling or floor
-            val filteredPlayers = if (facing == BlockFace.UP || facing == BlockFace.DOWN) {
-                val minVersion = com.github.zafarkhaja.semver.Version.parse("1.5.0")
-                players.filterNotNull().filter { player ->
-                    val version = com.dreamdisplays.managers.PlayerManager.getVersion(player)
-                    version != null && (
-                        version >= minVersion ||
-                        version.toString() == "1.5.0-SNAPSHOT"
-                    )
-                }
-            } else {
-                players
-            }
-
-            if (filteredPlayers.isEmpty()) return
+            if (players.isEmpty()) return
 
             val packet = buildPacket { output ->
                 output.writeUUID(id)
@@ -74,7 +61,7 @@ object PacketUtils {
                 output.writeString(lang)
             }
 
-            sendPacket(filteredPlayers, CHANNEL_DISPLAY_INFO, packet)
+            sendPacket(players, CHANNEL_DISPLAY_INFO, packet)
         }.onFailure { error ->
             warn("Failed to send display info packet", error)
         }
@@ -120,6 +107,10 @@ object PacketUtils {
 
     fun sendReportEnabled(player: Player, isEnabled: Boolean) {
         sendBooleanPacket(player, CHANNEL_REPORT_ENABLED, isEnabled)
+    }
+
+    fun sendCeilingFloorSupport(player: Player, isSupported: Boolean) {
+        sendBooleanPacket(player, CHANNEL_CEILING_FLOOR_SUPPORT, isSupported)
     }
 
     private fun sendBooleanPacket(player: Player, channel: String, value: Boolean) {

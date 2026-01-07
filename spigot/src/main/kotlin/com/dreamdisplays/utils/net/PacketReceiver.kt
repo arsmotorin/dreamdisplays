@@ -18,6 +18,7 @@ import com.dreamdisplays.managers.StateManager.sendSyncPacket
 import com.dreamdisplays.utils.Message.sendColoredMessage
 import com.dreamdisplays.utils.Message.sendMessage
 import com.dreamdisplays.utils.YouTubeUtils.sanitize
+import com.dreamdisplays.utils.net.PacketUtils.sendCeilingFloorSupport
 import com.dreamdisplays.utils.net.PacketUtils.sendDisplayInfo
 import com.dreamdisplays.utils.net.PacketUtils.sendPremium
 import com.dreamdisplays.utils.net.PacketUtils.sendReportEnabled
@@ -125,11 +126,19 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
             config.settings.webhookUrl.isNotEmpty()
         )
 
+        // Send ceiling/floor support status based on client version
+        val version = sanitize(versionString)?.let { parse(it) }
+        val minVersion = parse("1.5.0")
+        val supportsAdvancedFacing = version != null && (
+            version >= minVersion ||
+            version.toString() == "1.5.0-SNAPSHOT"
+        )
+        sendCeilingFloorSupport(player, supportsAdvancedFacing)
+
         // Send all displays in the player's world
         sendAllDisplays(player)
 
         // Store version
-        val version = sanitize(versionString)?.let { parse(it) }
         setVersion(player, version)
     }
 

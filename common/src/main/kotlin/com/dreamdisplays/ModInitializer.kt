@@ -83,6 +83,9 @@ object ModInitializer {
     var isReportingEnabled = true
 
     @JvmField
+    var ceilingFloorSupported = false
+
+    @JvmField
     var unloadCheckTick: Int = 0
 
     private var hoveredScreen: DisplayScreen? = null
@@ -107,6 +110,11 @@ object ModInitializer {
     @JvmStatic
     fun onDisplayInfoPacket(packet: DisplayInfoPacket) {
         if (!displaysEnabled) return
+
+        // Ignore ceiling/floor displays if client doesn't support them
+        if (!ceilingFloorSupported && (packet.facing == Facing.UP || packet.facing == Facing.DOWN)) {
+            return
+        }
 
         if (ScreenManager.screens.containsKey(packet.uuid)) {
             val screen = ScreenManager.screens[packet.uuid]
@@ -163,8 +171,6 @@ object ModInitializer {
                 return
             }
         }
-
-        ScreenManager.unloadedScreens.remove(packet.uuid)
 
         createScreen(
             packet.uuid,
@@ -429,5 +435,10 @@ object ModInitializer {
     @JvmStatic
     fun onReportEnabledPacket(packet: ReportEnabledPacket) {
         isReportingEnabled = packet.enabled
+    }
+
+    @JvmStatic
+    fun onCeilingFloorSupportPacket(packet: com.dreamdisplays.net.s2c.CeilingFloorSupportPacket) {
+        ceilingFloorSupported = packet.supported
     }
 }

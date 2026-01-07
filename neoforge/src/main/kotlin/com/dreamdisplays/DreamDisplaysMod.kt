@@ -9,6 +9,7 @@ import com.dreamdisplays.net.common.VersionPacket
 import com.dreamdisplays.net.s2c.DisplayInfoPacket
 import com.dreamdisplays.net.s2c.PremiumPacket
 import com.dreamdisplays.net.s2c.ReportEnabledPacket
+import com.dreamdisplays.net.s2c.CeilingFloorSupportPacket
 import com.dreamdisplays.render.ScreenRenderer
 import com.dreamdisplays.screen.managers.ScreenManager
 import net.minecraft.client.Minecraft
@@ -63,6 +64,11 @@ class DreamDisplaysMod(modEventBus: IEventBus) : ModPacketSender {
             ReportEnabledPacket.PACKET_ID,
             ReportEnabledPacket.PACKET_CODEC
         ) { payload, _ -> ModInitializer.onReportEnabledPacket(payload) }
+
+        registrar.playToClient(
+            CeilingFloorSupportPacket.PACKET_ID,
+            CeilingFloorSupportPacket.PACKET_CODEC
+        ) { payload, _ -> ModInitializer.onCeilingFloorSupportPacket(payload) }
 
         registrar.playBidirectional(
             SyncPacket.PACKET_ID,

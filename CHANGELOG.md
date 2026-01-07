@@ -21,7 +21,8 @@ Mod:
 - [x] Add video timeline
 - [x] Support lying and ceiling displays (server must have 1.5.0 or newer plugin version for this feature to work)
 - [x] Rewrite main part of the mod in Kotlin
-- [x] Ignore `&start_radio=x` and `&t=x parameters` in YouTube links
+- [x] Ignore radio parameter in YouTube links
+- [x] Support timecodes in YouTube links
 - [x] Fix NeoForge Gradle conflict while syncing with IntelliJ IDEA Gradle plugin
 - [x] Fix null-pointer exception when window focus tries to work on not initialized Minecraft
 - [x] Fix client crash when server restarts while player is connected
@@ -29,7 +30,7 @@ Mod:
 Plugin:
 
 - [x] Support lying and ceiling displays (clients must have 1.5.0 or newer plugin version for this feature to work)
-- [x] Ignore &start_radio=x and &t=x parameters in YouTube links
+- [x] Support `&start_radio=x` and `&t=x` parameters when validating YouTube links
 
 # Version 1.4.0
 

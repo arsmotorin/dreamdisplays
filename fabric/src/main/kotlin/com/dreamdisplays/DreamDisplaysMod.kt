@@ -1,13 +1,7 @@
 package com.dreamdisplays
 
-import com.dreamdisplays.ModInitializer.onDeletePacket
-import com.dreamdisplays.ModInitializer.onDisplayEnabledPacket
 import com.dreamdisplays.ModInitializer.onDisplayInfoPacket
-import com.dreamdisplays.ModInitializer.onEndTick
 import com.dreamdisplays.ModInitializer.onModInit
-import com.dreamdisplays.ModInitializer.onPremiumPacket
-import com.dreamdisplays.ModInitializer.onReportEnabledPacket
-import com.dreamdisplays.ModInitializer.onSyncPacket
 import com.dreamdisplays.net.c2s.ReportPacket
 import com.dreamdisplays.net.c2s.RequestSyncPacket
 import com.dreamdisplays.net.common.DeletePacket
@@ -17,6 +11,7 @@ import com.dreamdisplays.net.common.VersionPacket
 import com.dreamdisplays.net.s2c.DisplayInfoPacket
 import com.dreamdisplays.net.s2c.PremiumPacket
 import com.dreamdisplays.net.s2c.ReportEnabledPacket
+import com.dreamdisplays.net.s2c.CeilingFloorSupportPacket
 import com.dreamdisplays.render.ScreenRenderer.render
 import com.dreamdisplays.screen.managers.ScreenManager.loadScreensForServer
 import com.dreamdisplays.screen.managers.ScreenManager.saveAllScreens
@@ -69,6 +64,11 @@ class DreamDisplaysMod : ClientModInitializer, ModPacketSender {
             ReportEnabledPacket.PACKET_CODEC
         )
 
+        playS2C().register(
+            CeilingFloorSupportPacket.PACKET_ID,
+            CeilingFloorSupportPacket.PACKET_CODEC
+        )
+
         playC2S().register(
             SyncPacket.PACKET_ID,
             SyncPacket.PACKET_CODEC
@@ -97,22 +97,26 @@ class DreamDisplaysMod : ClientModInitializer, ModPacketSender {
         ) { payload, _ -> onDisplayInfoPacket(payload) }
         registerGlobalReceiver(
             PremiumPacket.PACKET_ID
-        ) { payload, _ -> onPremiumPacket(payload) }
+        ) { payload, _ -> ModInitializer.onPremiumPacket(payload) }
         registerGlobalReceiver(
             DeletePacket.PACKET_ID
-        ) { deletePacket, _ -> onDeletePacket(deletePacket) }
+        ) { deletePacket, _ -> ModInitializer.onDeletePacket(deletePacket) }
 
         registerGlobalReceiver(
             DisplayEnabledPacket.PACKET_ID
-        ) { payload, _ -> onDisplayEnabledPacket(payload) }
+        ) { payload, _ -> ModInitializer.onDisplayEnabledPacket(payload) }
 
         registerGlobalReceiver(
             SyncPacket.PACKET_ID
-        ) { payload, _ -> onSyncPacket(payload) }
+        ) { payload, _ -> ModInitializer.onSyncPacket(payload) }
 
         registerGlobalReceiver(
             ReportEnabledPacket.PACKET_ID
-        ) { payload, _ -> onReportEnabledPacket(payload) }
+        ) { payload, _ -> ModInitializer.onReportEnabledPacket(payload) }
+
+        registerGlobalReceiver(
+            CeilingFloorSupportPacket.PACKET_ID
+        ) { payload, _ -> ModInitializer.onCeilingFloorSupportPacket(payload) }
 
         AFTER_ENTITIES.register(AfterEntities { context ->
             val minecraft = getInstance()
@@ -124,7 +128,7 @@ class DreamDisplaysMod : ClientModInitializer, ModPacketSender {
             render(matrices, camera)
         })
 
-        END_CLIENT_TICK.register(EndTick { onEndTick(it) })
+        END_CLIENT_TICK.register(EndTick { ModInitializer.onEndTick(it) })
 
         // Load displays when joining a world
         JOIN.register(Join { _, _, client ->

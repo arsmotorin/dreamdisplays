@@ -95,6 +95,35 @@ object Utils {
         return null
     }
 
+    // Extracts timecode (t parameter) from YouTube URL in seconds
+    @JvmStatic
+    fun extractTimecode(youtubeUrl: String): Int {
+        if (youtubeUrl.isEmpty()) {
+            return 0
+        }
+
+        try {
+            val uri = URI(youtubeUrl)
+            val query = uri.query
+
+            if (query != null) {
+                for (param in query.split("&".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
+                    val pair = param.split("=".toRegex(), limit = 2).toTypedArray()
+                    if (pair.size == 2 && pair[0] == "t") {
+                        return try {
+                            pair[1].toInt()
+                        } catch (_: NumberFormatException) {
+                            0
+                        }
+                    }
+                }
+            }
+        } catch (_: URISyntaxException) {
+        }
+
+        return 0
+    }
+
     @JvmStatic
     @Throws(IOException::class)
     fun readResource(resourcePath: String): String {

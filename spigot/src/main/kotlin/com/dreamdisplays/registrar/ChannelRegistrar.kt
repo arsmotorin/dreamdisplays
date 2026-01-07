@@ -22,7 +22,8 @@ object ChannelRegistrar {
         "dreamdisplays:display_info",
         "dreamdisplays:sync",
         "dreamdisplays:delete",
-        "dreamdisplays:report_enabled"
+        "dreamdisplays:report_enabled",
+        "dreamdisplays:ceiling_floor_support"
     )
 
     fun registerChannels(plugin: Main) {

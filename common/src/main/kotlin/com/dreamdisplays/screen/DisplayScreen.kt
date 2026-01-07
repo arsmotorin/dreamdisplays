@@ -129,6 +129,9 @@ class DisplayScreen(
 
         if (mediaPlayer != null) unregister()
 
+        // Extract timecode from URL (t parameter in seconds)
+        val timecodeSeconds = com.dreamdisplays.util.Utils.extractTimecode(videoUrl)
+
         // Load the video URL and language into the screen
         this.videoUrl = videoUrl
         this.lang = lang
@@ -145,6 +148,11 @@ class DisplayScreen(
             if (shouldBePaused) {
                 this.paused = true
                 mediaPlayer?.pause()
+            }
+            // Seek to timecode if specified in URL
+            if (timecodeSeconds > 0) {
+                val timecodeNanos = timecodeSeconds * 1_000_000_000L
+                mediaPlayer?.seekToFast(timecodeNanos)
             }
         }
 
