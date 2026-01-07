@@ -12,23 +12,23 @@ Mod:
 
 Plugin:
 
-- [ ] Add config migrator from old versions of the plugin
+- [ ] Add config migrator from ancient versions of the plugin
 
 # Version 1.5.0
 
 Mod:
 
 - [x] Add video timeline
-- [x] Support lying and ceiling displays
+- [x] Support lying and ceiling displays (server must have 1.5.0 or newer plugin version for this feature to work)
 - [x] Rewrite main part of the mod in Kotlin
-- [x] Ignore &start_radio=x and &t=x parameters in YouTube links
+- [x] Ignore `&start_radio=x` and `&t=x parameters` in YouTube links
 - [x] Fix NeoForge Gradle conflict while syncing with IntelliJ IDEA Gradle plugin
 - [x] Fix null-pointer exception when window focus tries to work on not initialized Minecraft
-- [x] Fix 
+- [x] Fix client crash when server restarts while player is connected
 
 Plugin:
 
-- [x] Support lying and ceiling displays
+- [x] Support lying and ceiling displays (clients must have 1.5.0 or newer plugin version for this feature to work)
 - [x] Ignore &start_radio=x and &t=x parameters in YouTube links
 
 # Version 1.4.0

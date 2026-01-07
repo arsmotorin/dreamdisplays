@@ -44,6 +44,22 @@ object PacketUtils {
         isSync: Boolean,
     ) {
         runCatching {
+            // Filter out players with old mod version if display facing is ceiling or floor
+            val filteredPlayers = if (facing == BlockFace.UP || facing == BlockFace.DOWN) {
+                val minVersion = com.github.zafarkhaja.semver.Version.parse("1.5.0")
+                players.filterNotNull().filter { player ->
+                    val version = com.dreamdisplays.managers.PlayerManager.getVersion(player)
+                    version != null && (
+                        version >= minVersion ||
+                        version.toString() == "1.5.0-SNAPSHOT"
+                    )
+                }
+            } else {
+                players
+            }
+
+            if (filteredPlayers.isEmpty()) return
+
             val packet = buildPacket { output ->
                 output.writeUUID(id)
                 output.writeUUID(ownerId)
@@ -58,7 +74,7 @@ object PacketUtils {
                 output.writeString(lang)
             }
 
-            sendPacket(players, CHANNEL_DISPLAY_INFO, packet)
+            sendPacket(filteredPlayers, CHANNEL_DISPLAY_INFO, packet)
         }.onFailure { error ->
             warn("Failed to send display info packet", error)
         }
