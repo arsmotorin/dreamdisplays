@@ -20,9 +20,10 @@ Mod:
 
 - [x] Add video timeline
 - [x] Support lying and ceiling displays (server must have 1.5.0 or newer plugin version)
+- [x] Support timecodes in YouTube links
+- [x] Make buttons smaller for better UI
 - [x] Rewrite main part of the mod in Kotlin
 - [x] Ignore radio parameter in YouTube links
-- [x] Support timecodes in YouTube links
 - [x] Fix NeoForge Gradle conflict while syncing with IntelliJ IDEA Gradle plugin
 - [x] Fix null-pointer exception when window focus tries to work on not initialized Minecraft
 - [x] Fix client crash when server restarts while player is connected

@@ -203,7 +203,7 @@ class ConfigurationManager private constructor() : Screen(Component.translatable
         super.render(guiGraphics, mouseX, mouseY, delta)
 
         val currentScreen = screen ?: return
-        val vCH = 25
+        val vCH = 21
 
         // Position delete and report buttons
         deleteButton?.let {
