@@ -144,15 +144,17 @@ class DisplayScreen(
         }
 
         waitForMFInit {
+            if (timecodeSeconds > 0) {
+                // Fucking GStreamer, what's wrong with you? Why do you start 10 seconds earlier than requested?..
+                val compensatedSeconds = timecodeSeconds + 10
+                val timecodeNanos = compensatedSeconds * 1_000_000_000L
+                setSavedTimeNanos(timecodeNanos)
+            }
+
             startVideo()
             if (shouldBePaused) {
                 this.paused = true
                 mediaPlayer?.pause()
-            }
-            // Seek to timecode if specified in URL
-            if (timecodeSeconds > 0) {
-                val timecodeNanos = timecodeSeconds * 1_000_000_000L
-                mediaPlayer?.seekToFast(timecodeNanos)
             }
         }
 

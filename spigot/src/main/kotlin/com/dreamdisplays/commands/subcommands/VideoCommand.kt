@@ -33,11 +33,16 @@ class VideoCommand : SubCommand {
             return
         }
 
-        val code = YouTubeUtils.extractVideoIdFromUri(args[1] ?: "")
-            ?: return Message.sendMessage(player, "invalidURL")
+        val inputUrl = args[1] ?: ""
+
+        // Validate URL by checking if we can extract video ID
+        if (YouTubeUtils.extractVideoIdFromUri(inputUrl) == null) {
+            return Message.sendMessage(player, "invalidURL")
+        }
 
         data.apply {
-            url = "https://youtube.com/watch?v=$code"
+            // Save the full URL with all parameters (including &t=)
+            url = inputUrl
             lang = args.getOrNull(2).orEmpty()
             isSync = false
         }

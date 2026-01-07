@@ -19,7 +19,7 @@ Plugin:
 Mod:
 
 - [x] Add video timeline
-- [x] Support lying and ceiling displays (server must have 1.5.0 or newer plugin version for this feature to work)
+- [x] Support lying and ceiling displays (server must have 1.5.0 or newer plugin version)
 - [x] Rewrite main part of the mod in Kotlin
 - [x] Ignore radio parameter in YouTube links
 - [x] Support timecodes in YouTube links
@@ -29,8 +29,8 @@ Mod:
 
 Plugin:
 
-- [x] Support lying and ceiling displays (clients must have 1.5.0 or newer plugin version for this feature to work)
-- [x] Support `&start_radio=x` and `&t=x` parameters when validating YouTube links
+- [x] Support lying and ceiling displays
+- [x] Support `&start_radio=x` and `&t=x` YouTube parameters
 
 # Version 1.4.0
 
