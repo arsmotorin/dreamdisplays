@@ -4,7 +4,7 @@
 fabricLoader = "0.18.4"
 fabricApi = "0.141.1+1.21.11"
 fabricMinecraft = "1.21.11"
-javatube = "6692a32"
+newpipeExtractor = "v0.24.8"
 utils = "1.4.10"
 gst1 = "1.4.0"
 jspecify = "1.0.0"
@@ -26,7 +26,7 @@ shadow = "9.3.0"
 fabricLoader = { module = "net.fabricmc:fabric-loader", version.ref = "fabricLoader" }
 fabricApi = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabricApi" }
 fabricMinecraft = { module = "com.mojang:minecraft", version.ref = "fabricMinecraft" }
-javatube = { module = "com.github.felipeucelli:javatube", version.ref = "javatube" }
+newpipeExtractor = { module = "com.github.TeamNewPipe:NewPipeExtractor", version.ref = "newpipeExtractor" }
 utils = { module = "me.inotsleep:utils", version.ref = "utils" }
 gst1 = { module = "org.freedesktop.gstreamer:gst1-java-core", version.ref = "gst1" }
 jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }

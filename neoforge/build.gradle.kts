@@ -8,6 +8,7 @@ plugins {
 dependencies {
     implementation(project(":common"))
     shadow(project(":common"))
+    shadow(libs.newpipeExtractor)
 }
 
 neoForge {
@@ -48,25 +49,17 @@ tasks.shadowJar {
     archiveBaseName = "dreamdisplays-neoforge"
     archiveClassifier = ""
     destinationDirectory.set(rootProject.layout.buildDirectory.dir("libs"))
-    dependencies {
-        include(project(":common"))
-        include(dependency("org.freedesktop.gstreamer:gst1-java-core"))
-        include(dependency("com.github.felipeucelli:javatube"))
-        include(dependency("org.json:json"))
-        include(dependency("me.inotsleep:utils"))
-        include(dependency("org.jetbrains.kotlin:kotlin-stdlib"))
-        include(dependency("org.jetbrains.kotlin:kotlin-stdlib-jdk8"))
-        include(dependency("org.jetbrains.kotlin:kotlin-stdlib-jdk7"))
-        include(dependency("org.jetbrains:annotations"))
-    }
+
     val prefix = "com.dreamdisplays.libs"
     listOf(
-        "com.github.felipeucelli.javatube",
         "me.inotsleep.utils",
         "org.freedesktop.gstreamer",
         "org.json",
+        "org.jsoup",
+        "org.mozilla",
         "kotlin",
-        "org.jetbrains.annotations"
+        "org.jetbrains.annotations",
+        "org.schabi.newpipe"
     ).forEach { pack ->
         relocate(pack, "$prefix.$pack")
     }

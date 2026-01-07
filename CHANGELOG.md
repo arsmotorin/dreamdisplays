@@ -19,6 +19,7 @@ Plugin:
 Mod:
 
 - [x] Add video timeline
+- [x] Smoother video playback and optimizations
 - [x] Support lying and ceiling displays (server must have 1.5.0 or newer plugin version)
 - [x] Support timecodes in YouTube links
 - [x] Make buttons smaller for better UI

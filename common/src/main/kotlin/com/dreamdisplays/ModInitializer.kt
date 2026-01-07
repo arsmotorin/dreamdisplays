@@ -49,23 +49,23 @@ object ModInitializer {
     @JvmField
     val config = ClientConfig(File("./config/$MOD_ID"))
 
-    @JvmField
-    val timerThread = Thread {
-        var lastDistance = 64
-        var isErrored = false
-        while (!isErrored) {
-            ScreenManager.getScreens().forEach { it.reloadQuality() }
-            if (config.defaultDistance != lastDistance) {
-                config.defaultDistance = lastDistance
-                config.save()
-            }
-            try {
-                Thread.sleep(2500)
-            } catch (_: InterruptedException) {
-                isErrored = true
-            }
-        }
-    }
+//    @JvmField
+//    val timerThread = Thread {
+//        var lastDistance = 64
+//        var isErrored = false
+//        while (!isErrored) {
+//            ScreenManager.getScreens().forEach { it.reloadQuality() }
+//            if (config.defaultDistance != lastDistance) {
+//                config.defaultDistance = lastDistance
+//                config.save()
+//            }
+//            try {
+//                Thread.sleep(2500)
+//            } catch (_: InterruptedException) {
+//                isErrored = true
+//            }
+//        }
+//    }
 
     @JvmField
     var isOnScreen = false
@@ -104,7 +104,7 @@ object ModInitializer {
         Init.init()
         instance.start()
 
-        timerThread.start()
+        // timerThread.start()
     }
 
     @JvmStatic
@@ -422,7 +422,7 @@ object ModInitializer {
     @JvmStatic
     fun onStop() {
         ScreenManager.saveAllScreens()
-        timerThread.interrupt()
+        // timerThread.interrupt()
         unloadAllDisplays()
         instance.interrupt()
     }

@@ -137,15 +137,18 @@ class DisplayScreen(
         this.lang = lang
         val shouldBePaused = this.paused
         runAsync {
-            mediaPlayer = MediaPlayer(videoUrl, lang.toString(), this)
-            val qualityInt = parseInt(this.quality.replace("p", ""))
-            textureWidth = ((width / height.toDouble()) * qualityInt).toInt()
-            textureHeight = qualityInt
+            try {
+                mediaPlayer = MediaPlayer(videoUrl, lang.toString(), this)
+                val qualityInt = parseInt(this.quality.replace("p", ""))
+                textureWidth = ((width / height.toDouble()) * qualityInt).toInt()
+                textureHeight = qualityInt
+            } catch (e: Throwable) {
+                e.printStackTrace()
+            }
         }
 
         waitForMFInit {
             if (timecodeSeconds > 0) {
-                // Fucking GStreamer, what's wrong with you? Why do you start 10 seconds earlier than requested?..
                 val compensatedSeconds = timecodeSeconds + 10
                 val timecodeNanos = compensatedSeconds * 1_000_000_000L
                 setSavedTimeNanos(timecodeNanos)
