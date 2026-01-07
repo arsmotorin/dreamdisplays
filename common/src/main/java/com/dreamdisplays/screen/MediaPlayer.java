@@ -1,6 +1,6 @@
 package com.dreamdisplays.screen;
 
-import com.dreamdisplays.Initializer;
+import com.dreamdisplays.ModInitializer;
 import com.github.felipeucelli.javatube.Stream;
 import com.github.felipeucelli.javatube.Youtube;
 import com.mojang.blaze3d.platform.NativeImage;
@@ -62,7 +62,7 @@ public class MediaPlayer {
                     new Thread(r, "MediaPlayer-frame")
             );
     private final AtomicBoolean terminated = new AtomicBoolean(false);
-    private final Screen screen;
+    private final DisplayScreen screen;
     private volatile double currentVolume;
     // === GST OBJECTS =====================================================================
     private volatile @Nullable Pipeline videoPipeline;
@@ -81,7 +81,7 @@ public class MediaPlayer {
     private volatile int preparedW = 0,
             preparedH = 0;
     private volatile double userVolume =
-            (Initializer.config.defaultDisplayVolume);
+            (ModInitializer.config.defaultDisplayVolume);
     private volatile double lastAttenuation = 1.0;
     private volatile double brightness = 1.0;
     private volatile boolean frameReady = false;
@@ -95,7 +95,7 @@ public class MediaPlayer {
     private volatile long lastFrameTime = 0;
 
     // === CONSTRUCTOR =====================================================================
-    public MediaPlayer(String youtubeUrl, String lang, Screen screen) {
+    public MediaPlayer(String youtubeUrl, String lang, DisplayScreen screen) {
         this.youtubeUrl = youtubeUrl;
         this.screen = screen;
         this.lang = lang;
@@ -324,7 +324,7 @@ public class MediaPlayer {
                 .filter(Objects::nonNull)
                 .map(r -> Integer.parseInt(r.replaceAll("\\D+", "")))
                 .distinct()
-                .filter(r -> r <= (Initializer.isPremium ? 2160 : 1080))
+                .filter(r -> r <= (ModInitializer.isPremium ? 2160 : 1080))
                 .sorted()
                 .collect(Collectors.toList());
     }
@@ -547,7 +547,7 @@ public class MediaPlayer {
         }
         scaleBuffer.clear();
 
-        Converter.scaleRGBA(
+        scaleRGBA(
                 converted,
                 currentFrameWidth,
                 currentFrameHeight,
@@ -767,11 +767,56 @@ public class MediaPlayer {
         }
     }
 
-    // === CONCURRENCY HELPERS =============================================================
-    private void safeExecute(Runnable action) {
+    // === HELPER METHODS ==================================================================
+    private static void scaleRGBA(
+            ByteBuffer srcBuffer,
+            int srcW,
+            int srcH,
+            ByteBuffer dstBuffer,
+            int dstW,
+            int dstH
+    ) {
+
+        if (srcW <= 0 || srcH <= 0 || dstW <= 0 || dstH <= 0) {
+            throw new IllegalArgumentException("Image dimensions must be positive");
+        }
+
+        double scaleW = (double) dstW / srcW;
+        double scaleH = (double) dstH / srcH;
+        double scale = Math.max(scaleW, scaleH);
+        int scaledW = (int) (srcW * scale + 0.5);
+        int scaledH = (int) (srcH * scale + 0.5);
+
+        int offsetX = (dstW - scaledW) / 2;
+        int offsetY = (dstH - scaledH) / 2;
+
+        for (int i = 0; i < dstW * dstH * 4; i++) {
+            dstBuffer.put(i, (byte) 0);
+        }
+
+        for (int y = 0; y < dstH; y++) {
+            int srcY = (int) (((y - offsetY) * srcH) / (double) scaledH);
+
+            if (srcY < 0 || srcY >= srcH) continue;
+
+            for (int x = 0; x < dstW; x++) {
+                int srcX = (int) (((x - offsetX) * srcW) / (double) scaledW);
+
+                if (srcX >= 0 && srcX < srcW) {
+                    int srcIdx = (srcY * srcW + srcX) * 4;
+                    int dstIdx = (y * dstW + x) * 4;
+
+                    int pixel = srcBuffer.getInt(srcIdx);
+                    dstBuffer.putInt(dstIdx, pixel);
+                }
+            }
+        }
+    }
+
+    private void safeExecute(Runnable r) {
         if (!gstExecutor.isShutdown()) {
             try {
-                gstExecutor.submit(action);
+                gstExecutor.submit(r);
             } catch (RejectedExecutionException ignored) {
             }
         }

@@ -1,16 +1,16 @@
 package com.dreamdisplays
 
-import com.dreamdisplays.net.c2s.Report
-import com.dreamdisplays.net.c2s.RequestSync
-import com.dreamdisplays.net.common.Delete
-import com.dreamdisplays.net.common.DisplayEnabled
-import com.dreamdisplays.net.common.Sync
-import com.dreamdisplays.net.common.Version
-import com.dreamdisplays.net.s2c.DisplayInfo
-import com.dreamdisplays.net.s2c.Premium
-import com.dreamdisplays.net.s2c.ReportEnabled
+import com.dreamdisplays.net.c2s.ReportPacket
+import com.dreamdisplays.net.c2s.RequestSyncPacket
+import com.dreamdisplays.net.common.DeletePacket
+import com.dreamdisplays.net.common.DisplayEnabledPacket
+import com.dreamdisplays.net.common.SyncPacket
+import com.dreamdisplays.net.common.VersionPacket
+import com.dreamdisplays.net.s2c.DisplayInfoPacket
+import com.dreamdisplays.net.s2c.PremiumPacket
+import com.dreamdisplays.net.s2c.ReportEnabledPacket
 import com.dreamdisplays.render.ScreenRenderer
-import com.dreamdisplays.screen.Manager
+import com.dreamdisplays.screen.managers.ScreenManager
 import net.minecraft.client.Minecraft
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.neoforged.api.distmarker.Dist
@@ -26,77 +26,81 @@ import org.jspecify.annotations.NullMarked
 
 @NullMarked
 @Mod(value = DreamDisplaysMod.MOD_ID, dist = [Dist.CLIENT])
-class DreamDisplaysMod(modEventBus: IEventBus) : com.dreamdisplays.Mod {
+class DreamDisplaysMod(modEventBus: IEventBus) : ModPacketSender {
 
     init {
-        Initializer.onModInit(this)
+        ModInitializer.onModInit(this)
         modEventBus.addListener(this::registerPayloads)
         NeoForge.EVENT_BUS.register(this)
     }
 
     fun registerPayloads(event: RegisterPayloadHandlersEvent) {
         val registrar = event.registrar(MOD_ID).optional().versioned("1")
-        registrar.playBidirectional(
-            Delete.PACKET_ID,
-            Delete.PACKET_CODEC,
-            { _, _ -> },
-            { clientPayload, _ -> Initializer.onDeletePacket(clientPayload) }
-        )
-        registrar.playToClient(
-            DisplayInfo.PACKET_ID,
-            DisplayInfo.PACKET_CODEC
-        ) { payload, _ -> Initializer.onDisplayInfoPacket(payload) }
-
-        registrar.playToClient(
-            Premium.PACKET_ID,
-            Premium.PACKET_CODEC
-        ) { payload, _ -> Initializer.onPremiumPacket(payload) }
-
-        registrar.playToClient(
-            DisplayEnabled.PACKET_ID,
-            DisplayEnabled.PACKET_CODEC
-        ) { payload, _ -> Initializer.onDisplayEnabledPacket(payload) }
-
-        registrar.playToClient(
-            ReportEnabled.PACKET_ID,
-            ReportEnabled.PACKET_CODEC
-        ) { payload, _ -> Initializer.onReportEnabledPacket(payload) }
 
         registrar.playBidirectional(
-            Sync.PACKET_ID,
-            Sync.PACKET_CODEC,
+            DeletePacket.PACKET_ID,
+            DeletePacket.PACKET_CODEC,
             { _, _ -> },
-            { clientPayload, _ -> Initializer.onSyncPacket(clientPayload) }
+            { clientPayload, _ -> ModInitializer.onDeletePacket(clientPayload) }
+        )
+
+        registrar.playToClient(
+            DisplayInfoPacket.PACKET_ID,
+            DisplayInfoPacket.PACKET_CODEC
+        ) { payload, _ -> ModInitializer.onDisplayInfoPacket(payload) }
+
+        registrar.playToClient(
+            PremiumPacket.PACKET_ID,
+            PremiumPacket.PACKET_CODEC
+        ) { payload, _ -> ModInitializer.onPremiumPacket(payload) }
+
+        registrar.playToClient(
+            DisplayEnabledPacket.PACKET_ID,
+            DisplayEnabledPacket.PACKET_CODEC
+        ) { payload, _ -> ModInitializer.onDisplayEnabledPacket(payload) }
+
+        registrar.playToClient(
+            ReportEnabledPacket.PACKET_ID,
+            ReportEnabledPacket.PACKET_CODEC
+        ) { payload, _ -> ModInitializer.onReportEnabledPacket(payload) }
+
+        registrar.playBidirectional(
+            SyncPacket.PACKET_ID,
+            SyncPacket.PACKET_CODEC,
+            { _, _ -> },
+            { clientPayload, _ -> ModInitializer.onSyncPacket(clientPayload) }
         )
 
         registrar.playToServer(
-            RequestSync.PACKET_ID,
-            RequestSync.PACKET_CODEC
+            RequestSyncPacket.PACKET_ID,
+            RequestSyncPacket.PACKET_CODEC
         ) { _, _ -> }
+
         registrar.playToServer(
-            Report.PACKET_ID,
-            Report.PACKET_CODEC
+            ReportPacket.PACKET_ID,
+            ReportPacket.PACKET_CODEC
         ) { _, _ -> }
+
         registrar.playToServer(
-            Version.PACKET_ID,
-            Version.PACKET_CODEC
+            VersionPacket.PACKET_ID,
+            VersionPacket.PACKET_CODEC
         ) { _, _ -> }
     }
 
     @SubscribeEvent
     fun onClientTick(event: ClientTickEvent.Post) {
-        Initializer.onEndTick(Minecraft.getInstance())
+        ModInitializer.onEndTick(Minecraft.getInstance())
     }
 
     @SubscribeEvent
     fun onClientStop(event: ClientPlayerNetworkEvent.LoggingOut) {
-        Manager.saveAllScreens()
-        Manager.unloadAll()
+        ScreenManager.saveAllScreens()
+        ScreenManager.unloadAllDisplays()
     }
 
     @SubscribeEvent
     fun onClientStopping(event: ClientPlayerNetworkEvent.LoggingOut) {
-        Initializer.onStop()
+        ModInitializer.onStop()
     }
 
     @SubscribeEvent
@@ -113,9 +117,12 @@ class DreamDisplaysMod(modEventBus: IEventBus) : com.dreamdisplays.Mod {
     fun onClientLogin(event: ClientPlayerNetworkEvent.LoggingIn) {
         val mc = Minecraft.getInstance()
         if (mc.level != null && mc.player != null) {
-            val serverId =
-                if (mc.hasSingleplayerServer()) "singleplayer" else (if (mc.currentServer != null) mc.currentServer!!.ip else "unknown")
-            Manager.loadScreensForServer(serverId)
+            val serverId = if (mc.hasSingleplayerServer()) {
+                "singleplayer"
+            } else {
+                mc.currentServer?.ip ?: "unknown"
+            }
+            ScreenManager.loadScreensForServer(serverId)
         }
     }
 

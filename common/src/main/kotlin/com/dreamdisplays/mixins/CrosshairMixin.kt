@@ -1,6 +1,6 @@
 package com.dreamdisplays.mixins
 
-import com.dreamdisplays.Initializer.isOnScreen
+import com.dreamdisplays.ModInitializer.isOnScreen
 import net.minecraft.client.gui.Gui
 import org.jspecify.annotations.NullMarked
 import org.spongepowered.asm.mixin.Mixin
@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
  */
 @Mixin(Gui::class)
 @NullMarked
-class Crosshair {
+class CrosshairMixin {
     @Inject(method = ["renderCrosshair"], at = [At("HEAD")], cancellable = true)
     fun renderCrosshair(
         ci: CallbackInfo,

@@ -1,6 +1,6 @@
 package com.dreamdisplays.net.s2c
 
-import com.dreamdisplays.net.common.createType
+import com.dreamdisplays.net.common.helpers.createType
 import com.dreamdisplays.util.Facing
 import com.dreamdisplays.util.Facing.Companion.fromPacket
 import net.minecraft.network.FriendlyByteBuf
@@ -11,7 +11,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload.Type
 import org.joml.Vector3i
 import java.util.*
 
-data class DisplayInfo(
+data class DisplayInfoPacket(
     val uuid: UUID,
     val ownerUuid: UUID,
     val pos: Vector3i,
@@ -26,10 +26,10 @@ data class DisplayInfo(
 
     companion object {
         @JvmField
-        val PACKET_ID: Type<DisplayInfo> = createType("display_info")
+        val PACKET_ID: Type<DisplayInfoPacket> = createType("display_info")
 
         @JvmField
-        val PACKET_CODEC: StreamCodec<FriendlyByteBuf, DisplayInfo> = of(
+        val PACKET_CODEC: StreamCodec<FriendlyByteBuf, DisplayInfoPacket> = of(
             { buf, packet ->
                 buf.writeUUID(packet.uuid)
                 buf.writeUUID(packet.ownerUuid)
@@ -44,7 +44,7 @@ data class DisplayInfo(
                 buf.writeUtf(packet.lang)
             },
             { buf ->
-                DisplayInfo(
+                DisplayInfoPacket(
                     buf.readUUID(),
                     buf.readUUID(),
                     Vector3i(

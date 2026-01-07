@@ -1,5 +1,6 @@
 package com.dreamdisplays.net.common
 
+import com.dreamdisplays.net.common.helpers.createType
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.codec.StreamCodec.*
@@ -7,7 +8,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload.Type
 import java.util.*
 
-data class Sync(
+data class SyncPacket(
     val uuid: UUID,
     val isSync: Boolean,
     val currentState: Boolean,
@@ -18,10 +19,10 @@ data class Sync(
 
     companion object {
         @JvmField
-        val PACKET_ID: Type<Sync> = createType("sync")
+        val PACKET_ID: Type<SyncPacket> = createType("sync")
 
         @JvmField
-        val PACKET_CODEC: StreamCodec<FriendlyByteBuf, Sync> = of(
+        val PACKET_CODEC: StreamCodec<FriendlyByteBuf, SyncPacket> = of(
             { buf, packet ->
                 buf.writeUUID(packet.uuid)
                 buf.writeBoolean(packet.isSync)
@@ -30,7 +31,7 @@ data class Sync(
                 buf.writeVarLong(packet.limitTime)
             },
             { buf ->
-                Sync(
+                SyncPacket(
                     buf.readUUID(),
                     buf.readBoolean(),
                     buf.readBoolean(),

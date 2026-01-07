@@ -1,4 +1,4 @@
-package com.dreamdisplays.screen
+package com.dreamdisplays.screen.managers
 
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
@@ -7,12 +7,13 @@ import me.inotsleep.utils.logging.LoggingManager.info
 import org.jspecify.annotations.NullMarked
 import java.io.*
 import java.util.*
+import kotlin.collections.iterator
 
 /**
  * Manages loading and saving of display settings and data.
  */
 @NullMarked
-object Settings {
+object SettingsManager {
     // Store settings per server
     private val SETTINGS_DIR = File("./config/dreamdisplays")
     private val GSON = GsonBuilder()

@@ -1,26 +1,26 @@
 package com.dreamdisplays
 
-import com.dreamdisplays.Initializer.onDeletePacket
-import com.dreamdisplays.Initializer.onDisplayEnabledPacket
-import com.dreamdisplays.Initializer.onDisplayInfoPacket
-import com.dreamdisplays.Initializer.onEndTick
-import com.dreamdisplays.Initializer.onModInit
-import com.dreamdisplays.Initializer.onPremiumPacket
-import com.dreamdisplays.Initializer.onReportEnabledPacket
-import com.dreamdisplays.Initializer.onSyncPacket
-import com.dreamdisplays.net.c2s.Report
-import com.dreamdisplays.net.c2s.RequestSync
-import com.dreamdisplays.net.common.Delete
-import com.dreamdisplays.net.common.DisplayEnabled
-import com.dreamdisplays.net.common.Sync
-import com.dreamdisplays.net.common.Version
-import com.dreamdisplays.net.s2c.DisplayInfo
-import com.dreamdisplays.net.s2c.Premium
-import com.dreamdisplays.net.s2c.ReportEnabled
+import com.dreamdisplays.ModInitializer.onDeletePacket
+import com.dreamdisplays.ModInitializer.onDisplayEnabledPacket
+import com.dreamdisplays.ModInitializer.onDisplayInfoPacket
+import com.dreamdisplays.ModInitializer.onEndTick
+import com.dreamdisplays.ModInitializer.onModInit
+import com.dreamdisplays.ModInitializer.onPremiumPacket
+import com.dreamdisplays.ModInitializer.onReportEnabledPacket
+import com.dreamdisplays.ModInitializer.onSyncPacket
+import com.dreamdisplays.net.c2s.ReportPacket
+import com.dreamdisplays.net.c2s.RequestSyncPacket
+import com.dreamdisplays.net.common.DeletePacket
+import com.dreamdisplays.net.common.DisplayEnabledPacket
+import com.dreamdisplays.net.common.SyncPacket
+import com.dreamdisplays.net.common.VersionPacket
+import com.dreamdisplays.net.s2c.DisplayInfoPacket
+import com.dreamdisplays.net.s2c.PremiumPacket
+import com.dreamdisplays.net.s2c.ReportEnabledPacket
 import com.dreamdisplays.render.ScreenRenderer.render
-import com.dreamdisplays.screen.Manager.loadScreensForServer
-import com.dreamdisplays.screen.Manager.saveAllScreens
-import com.dreamdisplays.screen.Manager.unloadAll
+import com.dreamdisplays.screen.managers.ScreenManager.loadScreensForServer
+import com.dreamdisplays.screen.managers.ScreenManager.saveAllScreens
+import com.dreamdisplays.screen.managers.ScreenManager.unloadAllDisplays
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.*
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.*
@@ -34,84 +34,84 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import org.jspecify.annotations.NullMarked
 
 @NullMarked
-class DreamDisplaysMod : ClientModInitializer, Mod {
+class DreamDisplaysMod : ClientModInitializer, ModPacketSender {
 
     override fun onInitializeClient() {
         onModInit(this)
 
         playS2C().register(
-            DisplayInfo.PACKET_ID,
-            DisplayInfo.PACKET_CODEC
+            DisplayInfoPacket.PACKET_ID,
+            DisplayInfoPacket.PACKET_CODEC
         )
 
         playS2C().register(
-            Sync.PACKET_ID,
-            Sync.PACKET_CODEC
+            SyncPacket.PACKET_ID,
+            SyncPacket.PACKET_CODEC
         )
 
         playS2C().register(
-            Premium.PACKET_ID,
-            Premium.PACKET_CODEC
+            PremiumPacket.PACKET_ID,
+            PremiumPacket.PACKET_CODEC
         )
 
         playS2C().register(
-            Delete.PACKET_ID,
-            Delete.PACKET_CODEC
+            DeletePacket.PACKET_ID,
+            DeletePacket.PACKET_CODEC
         )
 
         playS2C().register(
-            DisplayEnabled.PACKET_ID,
-            DisplayEnabled.PACKET_CODEC
+            DisplayEnabledPacket.PACKET_ID,
+            DisplayEnabledPacket.PACKET_CODEC
         )
 
         playS2C().register(
-            ReportEnabled.PACKET_ID,
-            ReportEnabled.PACKET_CODEC
+            ReportEnabledPacket.PACKET_ID,
+            ReportEnabledPacket.PACKET_CODEC
         )
 
         playC2S().register(
-            Sync.PACKET_ID,
-            Sync.PACKET_CODEC
+            SyncPacket.PACKET_ID,
+            SyncPacket.PACKET_CODEC
         )
 
         playC2S().register(
-            RequestSync.PACKET_ID,
-            RequestSync.PACKET_CODEC
+            RequestSyncPacket.PACKET_ID,
+            RequestSyncPacket.PACKET_CODEC
         )
 
         playC2S().register(
-            Delete.PACKET_ID,
-            Delete.PACKET_CODEC
+            DeletePacket.PACKET_ID,
+            DeletePacket.PACKET_CODEC
         )
         playC2S().register(
-            Report.PACKET_ID,
-            Report.PACKET_CODEC
+            ReportPacket.PACKET_ID,
+            ReportPacket.PACKET_CODEC
         )
         playC2S().register(
-            Version.PACKET_ID,
-            Version.PACKET_CODEC
+            VersionPacket.PACKET_ID,
+            VersionPacket.PACKET_CODEC
         )
 
         registerGlobalReceiver(
-            DisplayInfo.PACKET_ID
+            DisplayInfoPacket.PACKET_ID
         ) { payload, _ -> onDisplayInfoPacket(payload) }
         registerGlobalReceiver(
-            Premium.PACKET_ID
+            PremiumPacket.PACKET_ID
         ) { payload, _ -> onPremiumPacket(payload) }
         registerGlobalReceiver(
-            Delete.PACKET_ID
+            DeletePacket.PACKET_ID
         ) { deletePacket, _ -> onDeletePacket(deletePacket) }
 
         registerGlobalReceiver(
-            DisplayEnabled.PACKET_ID
+            DisplayEnabledPacket.PACKET_ID
         ) { payload, _ -> onDisplayEnabledPacket(payload) }
 
         registerGlobalReceiver(
-            Sync.PACKET_ID
+            SyncPacket.PACKET_ID
         ) { payload, _ -> onSyncPacket(payload) }
 
         registerGlobalReceiver(
-            ReportEnabled.PACKET_ID
+            ReportEnabledPacket.PACKET_ID
         ) { payload, _ -> onReportEnabledPacket(payload) }
 
         AFTER_ENTITIES.register(AfterEntities { context ->
@@ -139,8 +139,8 @@ class DreamDisplaysMod : ClientModInitializer, Mod {
 
         DISCONNECT.register(Disconnect { _, _ ->
             saveAllScreens()
-            unloadAll()
-            Initializer.onStop()
+            unloadAllDisplays()
+            ModInitializer.onStop()
         })
     }
 

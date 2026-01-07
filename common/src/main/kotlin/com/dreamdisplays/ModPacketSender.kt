@@ -7,6 +7,6 @@ import org.jspecify.annotations.NullMarked
  * Sender of custom packets for the mod.
  */
 @NullMarked
-interface Mod {
+interface ModPacketSender {
     fun sendPacket(packet: CustomPacketPayload)
 }

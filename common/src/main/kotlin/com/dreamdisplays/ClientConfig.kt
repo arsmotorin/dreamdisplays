@@ -10,7 +10,7 @@ import java.lang.System.setProperty
  * Client configuration settings.
  */
 @NullMarked
-class Config(baseDir: File) : AbstractConfig(baseDir, "config.yml") {
+class ClientConfig(baseDir: File) : AbstractConfig(baseDir, "config.yml") {
 
     @JvmField
     @Path("mute-on-alt-tab")

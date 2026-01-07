@@ -1,7 +1,7 @@
 package com.dreamdisplays.render
 
-import com.dreamdisplays.screen.Manager.getScreens
-import com.dreamdisplays.screen.Screen
+import com.dreamdisplays.screen.managers.ScreenManager.getScreens
+import com.dreamdisplays.screen.DisplayScreen
 import com.mojang.blaze3d.vertex.DefaultVertexFormat.BLOCK
 import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.blaze3d.vertex.Tesselator
@@ -38,7 +38,7 @@ object ScreenRenderer {
     }
 
     private fun renderScreenTexture(
-        screen: Screen,
+        screen: DisplayScreen,
         stack: PoseStack,
         tessellator: Tesselator,
     ) {

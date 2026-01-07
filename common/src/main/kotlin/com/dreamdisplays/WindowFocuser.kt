@@ -1,7 +1,7 @@
 package com.dreamdisplays
 
-import com.dreamdisplays.Initializer.config
-import com.dreamdisplays.screen.Manager.getScreens
+import com.dreamdisplays.ModInitializer.config
+import com.dreamdisplays.screen.managers.ScreenManager.getScreens
 import net.minecraft.client.Minecraft.getInstance
 import org.jspecify.annotations.NullMarked
 
@@ -9,7 +9,7 @@ import org.jspecify.annotations.NullMarked
  * A background thread that mutes/unmutes screens based on window focus.
  */
 @NullMarked
-class Focuser : Thread("window-focus-mute-thread") {
+class WindowFocuser : Thread("window-focus-mute-thread") {
 
     init {
         isDaemon = true
@@ -42,6 +42,6 @@ class Focuser : Thread("window-focus-mute-thread") {
 
     companion object {
         @JvmField
-        var instance: Focuser = Focuser()
+        var instance: WindowFocuser = WindowFocuser()
     }
 }

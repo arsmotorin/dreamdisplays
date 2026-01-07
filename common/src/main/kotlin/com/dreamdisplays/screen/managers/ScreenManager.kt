@@ -1,8 +1,6 @@
-package com.dreamdisplays.screen
+package com.dreamdisplays.screen.managers
 
-import com.dreamdisplays.screen.Settings.FullDisplayData
-import com.dreamdisplays.screen.Settings.getDisplayData
-import com.dreamdisplays.screen.Settings.getSettings
+import com.dreamdisplays.screen.DisplayScreen
 import me.inotsleep.utils.logging.LoggingManager
 import org.jspecify.annotations.NullMarked
 import java.util.*
@@ -12,33 +10,33 @@ import java.util.concurrent.ConcurrentHashMap
  * Manager for all screen displays.
  */
 @NullMarked
-object Manager {
+object ScreenManager {
 
     @JvmField
-    val screens: ConcurrentHashMap<UUID, Screen> = ConcurrentHashMap()
+    val screens: ConcurrentHashMap<UUID, DisplayScreen> = ConcurrentHashMap()
 
     // Cache of unloaded displays
     @JvmField
-    val unloadedScreens: ConcurrentHashMap<UUID, FullDisplayData> = ConcurrentHashMap()
+    val unloadedScreens: ConcurrentHashMap<UUID, SettingsManager.FullDisplayData> = ConcurrentHashMap()
 
     @JvmStatic
-    fun getScreens(): Collection<Screen> {
+    fun getScreens(): Collection<DisplayScreen> {
         return screens.values
     }
 
     @JvmStatic
-    fun registerScreen(screen: Screen) {
+    fun registerScreen(screen: DisplayScreen) {
         if (screens.containsKey(screen.uuid)) {
             val old = screens[screen.uuid]
             old?.unregister()
         }
 
-        val clientSettings = getSettings(screen.uuid)
+        val clientSettings = SettingsManager.getSettings(screen.uuid)
         screen.volume = clientSettings.volume.toDouble()
         screen.quality = clientSettings.quality
         screen.muted = clientSettings.muted
 
-        val savedData = getDisplayData(screen.uuid)
+        val savedData = SettingsManager.getDisplayData(screen.uuid)
         if (savedData != null) {
             screen.renderDistance = savedData.renderDistance
             screen.setSavedTimeNanos(savedData.currentTimeNanos)
@@ -51,13 +49,13 @@ object Manager {
     }
 
     @JvmStatic
-    fun unregisterScreen(screen: Screen) {
+    fun unregisterScreen(screen: DisplayScreen) {
         // Cache the display data before unregistering
         val videoUrl = screen.videoUrl
         val lang = screen.lang
         val ownerUuid = screen.ownerUuid
 
-        val data = FullDisplayData(
+        val data = SettingsManager.FullDisplayData(
             screen.uuid,
             screen.getPos().x,
             screen.getPos().y,
@@ -82,7 +80,7 @@ object Manager {
     }
 
     @JvmStatic
-    fun unloadAll() {
+    fun unloadAllDisplays() {
         for (screen in screens.values) {
             screen.unregister()
         }
@@ -93,8 +91,8 @@ object Manager {
 
     // Save screen data to persistent storage
     @JvmStatic
-    fun saveScreenData(screen: Screen) {
-        val data = FullDisplayData(
+    fun saveScreenData(screen: DisplayScreen) {
+        val data = SettingsManager.FullDisplayData(
             screen.uuid,
             screen.getPos().x,
             screen.getPos().y,
@@ -113,7 +111,7 @@ object Manager {
             screen.getCurrentTimeNanos()
         )
 
-        Settings.saveDisplayData(screen.uuid, data)
+        SettingsManager.saveDisplayData(screen.uuid, data)
     }
 
     // Load displays from persistent storage for a server
@@ -121,7 +119,7 @@ object Manager {
     // Local cache is used only for client preferences (volume, quality, muted).
     @JvmStatic
     fun loadScreensForServer(serverId: String) {
-        Settings.loadServerDisplays(serverId)
+        SettingsManager.loadServerDisplays(serverId)
         LoggingManager.info("Initialized display settings storage for server: $serverId")
         // Displays will be received from server via Info packets
     }

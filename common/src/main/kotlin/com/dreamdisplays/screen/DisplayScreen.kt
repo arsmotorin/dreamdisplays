@@ -1,12 +1,14 @@
 package com.dreamdisplays.screen
 
-import com.dreamdisplays.Initializer.MOD_ID
-import com.dreamdisplays.Initializer.config
-import com.dreamdisplays.Initializer.sendPacket
-import com.dreamdisplays.net.c2s.RequestSync
-import com.dreamdisplays.net.common.Sync
-import com.dreamdisplays.net.s2c.DisplayInfo
-import com.dreamdisplays.screen.Settings.updateSettings
+import com.dreamdisplays.ModInitializer.MOD_ID
+import com.dreamdisplays.ModInitializer.config
+import com.dreamdisplays.ModInitializer.sendPacket
+import com.dreamdisplays.net.c2s.RequestSyncPacket
+import com.dreamdisplays.net.common.SyncPacket
+import com.dreamdisplays.net.s2c.DisplayInfoPacket
+import com.dreamdisplays.screen.managers.SettingsManager.updateSettings
+import com.dreamdisplays.screen.managers.ConfigurationManager
+import com.dreamdisplays.screen.managers.SettingsManager
 import net.minecraft.client.Minecraft
 import net.minecraft.client.Minecraft.getInstance
 import net.minecraft.client.renderer.RenderPipelines.SOLID_BLOCK
@@ -31,7 +33,7 @@ import kotlin.math.sqrt
  * Represents a video display screen in the game world.
  */
 @NullMarked
-class Screen(
+class DisplayScreen(
     val uuid: UUID,
     val ownerUuid: UUID,
     private var x: Int,
@@ -103,7 +105,7 @@ class Screen(
                 (ownerUuid.toString() == getInstance().player!!.uuid.toString())
 
         // Load saved settings for this display
-        val savedSettings = Settings.getSettings(uuid)
+        val savedSettings = SettingsManager.getSettings(uuid)
         val savedVolume = savedSettings.volume.toDouble()
         val savedQuality = savedSettings.quality
         val savedBrightness = savedSettings.brightness
@@ -150,7 +152,7 @@ class Screen(
     }
 
     // Updates the screen data based on a DisplayInfoPacket
-    fun updateData(packet: DisplayInfo) {
+    fun updateData(packet: DisplayInfoPacket) {
         this.x = packet.pos.x
         this.y = packet.pos.y
         this.z = packet.pos.z
@@ -175,11 +177,11 @@ class Screen(
 
     // Sends a RequestSyncPacket to the server to request synchronization data
     private fun sendRequestSyncPacket() {
-        sendPacket(RequestSync(uuid))
+        sendPacket(RequestSyncPacket(uuid))
     }
 
     // Updates the screen data based on a SyncPacket
-    fun updateData(packet: Sync) {
+    fun updateData(packet: SyncPacket) {
         isSync = packet.isSync
         if (!isSync) return
 
@@ -397,8 +399,8 @@ class Screen(
         // Schedule texture cleanup on render thread to avoid "Rendersystem called from wrong thread" error
         val minecraft = getMinecraft()
 
-            if (minecraft.screen is Configuration) {
-            val displayConfScreen = minecraft.screen as Configuration
+            if (minecraft.screen is ConfigurationManager) {
+            val displayConfScreen = minecraft.screen as ConfigurationManager
             if (displayConfScreen.screen === this) displayConfScreen.onClose()
         }
     }
@@ -460,7 +462,7 @@ class Screen(
     fun sendSync() {
         if (mediaPlayer != null) {
             sendPacket(
-                Sync(
+                SyncPacket(
                     uuid,
                     isSync,
                     paused,
