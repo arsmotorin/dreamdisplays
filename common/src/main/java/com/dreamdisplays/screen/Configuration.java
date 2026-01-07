@@ -1,8 +1,8 @@
 package com.dreamdisplays.screen;
 
 import com.dreamdisplays.Initializer;
-import com.dreamdisplays.net.Packets.Delete;
-import com.dreamdisplays.net.Packets.Report;
+import com.dreamdisplays.net.common.Delete;
+import com.dreamdisplays.net.c2s.Report;
 import com.dreamdisplays.screen.widgets.Button;
 import com.dreamdisplays.screen.widgets.Slider;
 import com.dreamdisplays.screen.widgets.Timeline;
@@ -351,6 +351,7 @@ public class Configuration extends Screen {
             @Override
             public void onPress() {
                 screen.setVolume(0.5f);
+                assert volume != null;
                 volume.value = 0.5;
                 volume.setMessage(Component.literal("100%"));
             }
@@ -425,10 +426,10 @@ public class Configuration extends Screen {
         ) {
             @Override
             public void onPress() {
-                Settings.removeDisplay(screen.getUUID());
+                Settings.removeDisplay(screen.getUuid());
                 Manager.unregisterScreen(screen);
 
-                Initializer.sendPacket(new Delete(screen.getUUID()));
+                Initializer.sendPacket(new Delete(screen.getUuid()));
                 onClose();
             }
         };
@@ -447,7 +448,7 @@ public class Configuration extends Screen {
         ) {
             @Override
             public void onPress() {
-                Initializer.sendPacket(new Report(screen.getUUID()));
+                Initializer.sendPacket(new Report(screen.getUuid()));
                 onClose();
             }
         };
@@ -807,6 +808,7 @@ public class Configuration extends Screen {
         );
 
         // Tooltip
+        assert renderD != null;
         List<Component> renderDTooltip = List.of(
                 Component.translatable(
                         "dreamdisplays.button.render-distance.tooltip.1"
@@ -888,6 +890,7 @@ public class Configuration extends Screen {
 
         // Add warning if quality is 1080p or higher
         if (Integer.parseInt(screen.getQuality()) >= 1080) {
+            assert qualityTooltip != null;
             qualityTooltip.add(
                     Component.translatable(
                             "dreamdisplays.button.quality.tooltip.5"
@@ -995,6 +998,7 @@ public class Configuration extends Screen {
                 font.lineHeight,
                 renderDTooltip
         );
+        assert qualityTooltip != null;
         renderTooltipIfHovered(
                 guiGraphics,
                 mouseX,

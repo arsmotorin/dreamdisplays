@@ -1,7 +1,7 @@
 plugins {
-    id("net.neoforged.moddev") version libs.versions.moddev
+    id("net.neoforged.moddev")
     id("maven-publish")
-    id("com.gradleup.shadow") version libs.versions.shadow
+    id("com.gradleup.shadow")
 }
 
 dependencies {
@@ -53,6 +53,10 @@ tasks.shadowJar {
         include(dependency("com.github.felipeucelli:javatube"))
         include(dependency("org.json:json"))
         include(dependency("me.inotsleep:utils"))
+        include(dependency("org.jetbrains.kotlin:kotlin-stdlib"))
+        include(dependency("org.jetbrains.kotlin:kotlin-stdlib-jdk8"))
+        include(dependency("org.jetbrains.kotlin:kotlin-stdlib-jdk7"))
+        include(dependency("org.jetbrains:annotations"))
     }
     val prefix = "com.dreamdisplays.libs"
     listOf(
@@ -60,6 +64,8 @@ tasks.shadowJar {
         "me.inotsleep.utils",
         "org.freedesktop.gstreamer",
         "org.json",
+        "kotlin",
+        "org.jetbrains.annotations"
     ).forEach { pack ->
         relocate(pack, "$prefix.$pack")
     }
