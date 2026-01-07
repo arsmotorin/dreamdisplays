@@ -314,9 +314,12 @@ class DisplayScreen(
 
     // Sets video volume
     fun setVideoVolume(volume: Float) {
-        mediaPlayer?.setVolume(volume.toDouble())
+        try {
+            mediaPlayer?.setVolume(volume.toDouble())
+        } catch (_: Exception) {
+            // Ignore errors if MediaPlayer is stopped or in invalid state (e.g., during server restart)
+        }
     }
-
 
     // Returns list of available video qualities
     fun getQualityList(): List<Int> {
@@ -425,8 +428,12 @@ class DisplayScreen(
         if (muted == status) return
         muted = status
 
-        setVideoVolume(if (!status) volume.toFloat() else 0f)
-        updateSettings(uuid, volume.toFloat(), quality, brightness, muted, paused)
+        try {
+            setVideoVolume(if (!status) volume.toFloat() else 0f)
+            updateSettings(uuid, volume.toFloat(), quality, brightness, muted, paused)
+        } catch (_: Exception) {
+            // Ignore errors if mediaPlayer is stopped or in invalid state (e.g., during server restart)
+        }
     }
 
 

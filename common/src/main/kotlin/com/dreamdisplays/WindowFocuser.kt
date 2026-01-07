@@ -22,7 +22,7 @@ class WindowFocuser : Thread("window-focus-mute-thread") {
             instanceField.isAccessible = true
             instanceField.get(null) as? Minecraft
         } catch (_: Exception) {
-            null
+            null // Minecraft instance isn't initialized yet
         }
     }
 
@@ -40,17 +40,28 @@ class WindowFocuser : Thread("window-focus-mute-thread") {
                 continue
             }
 
-            val focused = client.isWindowActive
+            try {
+                val focused = client.isWindowActive
 
-            if (config.muteOnAltTab) {
-                for (screen in getScreens()) {
-                    screen.mute(!focused)
+                if (config.muteOnAltTab) {
+                    val screensList = try {
+                        getScreens().toList()
+                    } catch (_: Exception) {
+                        emptyList()
+                    }
+
+                    for (screen in screensList) {
+                        try {
+                            screen.mute(!focused)
+                        } catch (_: Exception) {
+                            // Server is probably restarting, ignore
+                        }
+                    }
                 }
+            } catch (_: Exception) {
+                // Ignore exceptions to prevent thread from dying
             }
 
-            // TODO: rewrite this logic
-            // Potential issue: if user alt-tabs while a screen is loading and server
-            // restarts, crash may occur due.
             try {
                 sleep(250)
             } catch (_: InterruptedException) {
