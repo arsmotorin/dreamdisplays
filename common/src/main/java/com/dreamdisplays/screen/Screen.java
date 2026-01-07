@@ -510,6 +510,13 @@ public class Screen {
         return 0;
     }
 
+    public long getDurationNanos() {
+        if (mediaPlayer != null) {
+            return mediaPlayer.getDuration();
+        }
+        return 0;
+    }
+
     public int getRenderDistance() {
         return renderDistance;
     }

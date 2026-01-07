@@ -5,6 +5,7 @@ import com.dreamdisplays.net.Packets.Delete;
 import com.dreamdisplays.net.Packets.Report;
 import com.dreamdisplays.screen.widgets.Button;
 import com.dreamdisplays.screen.widgets.Slider;
+import com.dreamdisplays.screen.widgets.Timeline;
 import com.dreamdisplays.screen.widgets.Toggle;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -54,6 +55,9 @@ public class Configuration extends Screen {
 
     @Nullable
     Button pauseButton = null;
+
+    @Nullable
+    Timeline timeline = null;
 
     @Nullable
     Button renderDReset = null;
@@ -176,6 +180,21 @@ public class Configuration extends Screen {
                         ? Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bupi")
                         : Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bpi")
         );
+
+        timeline = new Timeline(
+                0,
+                0,
+                0,
+                0,
+                screen::getCurrentTimeNanos,
+                screen::getDurationNanos
+        ) {
+            @Override
+            protected void onSeek(long nanos) {
+                screen.seekVideoTo(nanos);
+                if (screen.owner && screen.isSync) screen.sendSync();
+            }
+        };
 
         renderD = new Slider(
                 0,
@@ -460,6 +479,7 @@ public class Configuration extends Screen {
         if (volume != null) addRenderableWidget(volume);
         addRenderableWidget(backButton);
         addRenderableWidget(forwardButton);
+        if (timeline != null) addRenderableWidget(timeline);
         addRenderableWidget(pauseButton);
         addRenderableWidget(renderD);
         addRenderableWidget(quality);
@@ -548,6 +568,9 @@ public class Configuration extends Screen {
             }
             if (pauseButton != null) {
                 pauseButton.active = false;
+            }
+            if (timeline != null) {
+                timeline.active = false;
             }
             if (renderDReset != null) {
                 renderDReset.active = false;
@@ -692,6 +715,17 @@ public class Configuration extends Screen {
             forwardButton.setHeight(vCH);
             forwardButton.setWidth(vCH);
             forwardButton.active = !(screen.isSync && !screen.owner);
+        }
+
+        // Timeline slider between forward button and pause button
+        if (timeline != null) {
+            int timelineX = this.width / 2 - maxSW / 2 + (vCH + 5) * 2;
+            int timelineWidth = maxSW - (vCH + 5) * 2 - vCH - 5;
+            timeline.setX(timelineX);
+            timeline.setY(cY);
+            timeline.setHeight(vCH);
+            timeline.setWidth(timelineWidth);
+            timeline.active = !(screen.isSync && !screen.owner);
         }
 
         if (pauseButton != null) {

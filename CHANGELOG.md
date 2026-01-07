@@ -19,6 +19,8 @@ Plugin:
 Mod:
 
 - [ ] Rewrite entire mod in Kotlin
+- [x] Add video timeline
+- [ ] Support lying and ceiling displays
 
 Plugin:
 
