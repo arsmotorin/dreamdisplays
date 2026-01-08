@@ -38,6 +38,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import static java.lang.Math.*;
+
 @NullMarked
 public class MediaPlayer {
 
@@ -68,7 +70,6 @@ public class MediaPlayer {
     private volatile int currentFrameWidth = 0;
     private volatile int currentFrameHeight = 0;
     private volatile @Nullable ByteBuffer preparedBuffer;
-    private volatile int lastTexW = 0, lastTexH = 0;
     private volatile int preparedW = 0, preparedH = 0;
     private volatile double userVolume = ModInitializer.config.defaultDisplayVolume;
     private volatile double lastAttenuation = 1.0;
@@ -186,7 +187,7 @@ public class MediaPlayer {
 
             int targetQuality = Integer.parseInt(screen.getQuality().replace("p", ""));
             Optional<VideoStream> videoOpt = videoStreams.stream()
-                    .min(Comparator.comparingInt(vs -> Math.abs(parseQuality(vs.getResolution()) - targetQuality)));
+                    .min(Comparator.comparingInt(vs -> abs(parseQuality(vs.getResolution()) - targetQuality)));
 
             if (videoOpt.isEmpty()) {
                 videoOpt = Optional.of(videoStreams.get(0));
@@ -276,7 +277,7 @@ public class MediaPlayer {
                 }
             });
         });
-        bus.connect((Bus.STATE_CHANGED) (src, old, cur, pend) -> LoggingManager.info("[MediaPlayer AUDIO] State: " + old + " -> " + cur));
+        bus.connect((src, old, cur, pend) -> LoggingManager.info("[MediaPlayer AUDIO] State: " + old + " -> " + cur));
 
         LoggingManager.info("[MediaPlayer] Audio pipeline built");
         return p;
@@ -321,7 +322,6 @@ public class MediaPlayer {
         }
         lastFrameTime = now;
 
-        LoggingManager.info("[MediaPlayer] Submitting frame preparation task");
         try {
             frameExecutor.submit(this::prepareBuffer);
         } catch (RejectedExecutionException ignored) {
@@ -329,41 +329,111 @@ public class MediaPlayer {
         }
     }
 
+//    private void prepareBuffer() {
+//        int targetW = screen.textureWidth;
+//        int targetH = screen.textureHeight;
+//        if (targetW == 0 || targetH == 0 || currentFrameBuffer == null) return;
+//
+//        ByteBuffer converted = convertToRGBA(currentFrameBuffer, currentFrameWidth, currentFrameHeight);
+//
+//        if (currentFrameWidth == targetW && currentFrameHeight == targetH) {
+//            applyBrightnessToBuffer(converted, brightness);
+//            preparedBuffer = converted;
+//            preparedW = targetW;
+//            preparedH = targetH;
+//            frameReady = true;
+//            Minecraft.getInstance().execute(screen::fitTexture);
+//            LoggingManager.info("[MediaPlayer] Frame ready (no scaling needed)");
+//            return;
+//        }
+//
+//        int scaleSize = targetW * targetH * 4;
+//        if (scaleBuffer == null || scaleBufferSize < scaleSize) {
+//            scaleBuffer = ByteBuffer.allocateDirect(scaleSize).order(ByteOrder.nativeOrder());
+//            scaleBufferSize = scaleSize;
+//        }
+//        scaleBuffer.clear();
+//
+//        scaleRGBA(converted, currentFrameWidth, currentFrameHeight, scaleBuffer, targetW, targetH);
+//
+//        applyBrightnessToBuffer(scaleBuffer, brightness);
+//        preparedBuffer = scaleBuffer;
+//        preparedW = targetW;
+//        preparedH = targetH;
+//        frameReady = true;
+//        Minecraft.getInstance().execute(screen::fitTexture);
+//    }
+
     private void prepareBuffer() {
-        LoggingManager.info("[MediaPlayer] Preparing buffer for texture update");
+        // long startNs = System.nanoTime();
+
         int targetW = screen.textureWidth;
         int targetH = screen.textureHeight;
         if (targetW == 0 || targetH == 0 || currentFrameBuffer == null) return;
 
-        ByteBuffer converted = convertToRGBA(currentFrameBuffer, currentFrameWidth, currentFrameHeight);
+        boolean needsScaling = currentFrameWidth != targetW || currentFrameHeight != targetH;
+        int bufferSize = targetW * targetH * 4;
 
-        if (currentFrameWidth == targetW && currentFrameHeight == targetH) {
-            applyBrightnessToBuffer(converted, brightness);
-            preparedBuffer = converted;
-            preparedW = targetW;
-            preparedH = targetH;
-            frameReady = true;
-            Minecraft.getInstance().execute(screen::fitTexture);
-            LoggingManager.info("[MediaPlayer] Frame ready (no scaling needed)");
-            return;
+        if (needsScaling) {
+            if (scaleBuffer == null || scaleBufferSize < bufferSize) {
+                scaleBuffer = ByteBuffer.allocateDirect(bufferSize).order(ByteOrder.nativeOrder());
+                scaleBufferSize = bufferSize;
+            }
+
+            scaleRGBA(currentFrameBuffer, currentFrameWidth, currentFrameHeight,
+                    scaleBuffer, targetW, targetH, brightness);
+
+            preparedBuffer = scaleBuffer;
+        } else {
+            if (convertBuffer == null || convertBufferSize < bufferSize) {
+                convertBuffer = ByteBuffer.allocateDirect(bufferSize).order(ByteOrder.nativeOrder());
+                convertBufferSize = bufferSize;
+            }
+
+            currentFrameBuffer.rewind();
+            convertBuffer.clear();
+
+            if (abs(brightness - 1.0) < 1e-5) {
+                copy(currentFrameBuffer, convertBuffer, bufferSize);
+            } else {
+                applyBrightnessToBuffer(currentFrameBuffer, convertBuffer, bufferSize, brightness);
+            }
+
+            preparedBuffer = convertBuffer;
         }
 
-        int scaleSize = targetW * targetH * 4;
-        if (scaleBuffer == null || scaleBufferSize < scaleSize) {
-            scaleBuffer = ByteBuffer.allocateDirect(scaleSize).order(ByteOrder.nativeOrder());
-            scaleBufferSize = scaleSize;
-        }
-        scaleBuffer.clear();
-
-        scaleRGBA(converted, currentFrameWidth, currentFrameHeight, scaleBuffer, targetW, targetH);
-
-        applyBrightnessToBuffer(scaleBuffer, brightness);
-        preparedBuffer = scaleBuffer;
         preparedW = targetW;
         preparedH = targetH;
         frameReady = true;
+
+        // long elapsedNs = System.nanoTime() - startNs;
+        // LoggingManager.info("[MediaPlayer] prepareBuffer: " + elapsedNs + "ns");
+
         Minecraft.getInstance().execute(screen::fitTexture);
-        LoggingManager.info("[MediaPlayer] Frame ready (after scaling)");
+    }
+
+    private static void copy(ByteBuffer src, ByteBuffer dst, int bytes) {
+        int longs = bytes >>> 3;
+        int ints = (bytes & 7) >>> 2;
+        int remaining = bytes & 3;
+
+        // Copy 8 bytes at a time
+        for (int i = 0; i < longs; i++) {
+            dst.putLong(src.getLong());
+        }
+
+        // Copy 4 bytes at a time
+        for (int i = 0; i < ints; i++) {
+            dst.putInt(src.getInt());
+        }
+
+        // Copy remaining bytes
+        for (int i = 0; i < remaining; i++) {
+            dst.put(src.get());
+        }
+
+        // Flip the destination buffer for reading
+        dst.flip();
     }
 
     private static ByteBuffer sampleToBuffer(Sample sample) {
@@ -388,75 +458,267 @@ public class MediaPlayer {
         return result;
     }
 
-    private static void applyBrightnessToBuffer(ByteBuffer buffer, double brightness) {
-        if (Math.abs(brightness - 1.0) < 1e-5) return;
+    private static void applyBrightnessToBuffer(ByteBuffer src, ByteBuffer dst, int bytes, double brightness) {
+        int pixels = bytes >>> 2;
+        int brightFixed = (int)(brightness * 256.0);
 
-        buffer.rewind();
-        while (buffer.remaining() >= 4) {
-            int r = buffer.get() & 0xFF;
-            int g = buffer.get() & 0xFF;
-            int b = buffer.get() & 0xFF;
-            byte a = buffer.get();
+        int pairs = pixels >>> 1;
+        int odd = pixels & 1;
+        if (brightness < 1.0) {
+            // Process 2 pixels per iteration when possible
+            for (int i = 0; i < pairs; i++) {
+                // Pixel 1
+                int rgba1 = src.getInt();
+                int r1 = (((rgba1 >>> 24) & 0xFF) * brightFixed) >>> 8;
+                int g1 = (((rgba1 >>> 16) & 0xFF) * brightFixed) >>> 8;
+                int b1 = (((rgba1 >>> 8) & 0xFF) * brightFixed) >>> 8;
+                int a1 = rgba1 & 0xFF;
 
-            r = (int) Math.min(255, r * brightness);
-            g = (int) Math.min(255, g * brightness);
-            b = (int) Math.min(255, b * brightness);
+                // Pixel 2
+                int rgba2 = src.getInt();
+                int r2 = (((rgba2 >>> 24) & 0xFF) * brightFixed) >>> 8;
+                int g2 = (((rgba2 >>> 16) & 0xFF) * brightFixed) >>> 8;
+                int b2 = (((rgba2 >>> 8) & 0xFF) * brightFixed) >>> 8;
+                int a2 = rgba2 & 0xFF;
 
-            buffer.position(buffer.position() - 4);
-            buffer.put((byte) r);
-            buffer.put((byte) g);
-            buffer.put((byte) b);
-            buffer.put(a);
+                // Write both pixels
+                dst.putInt((r1 << 24) | (g1 << 16) | (b1 << 8) | a1);
+                dst.putInt((r2 << 24) | (g2 << 16) | (b2 << 8) | a2);
+            }
+
+            // Handle odd pixel
+            if (odd != 0) {
+                int rgba = src.getInt();
+                int r = (((rgba >>> 24) & 0xFF) * brightFixed) >>> 8;
+                int g = (((rgba >>> 16) & 0xFF) * brightFixed) >>> 8;
+                int b = (((rgba >>> 8) & 0xFF) * brightFixed) >>> 8;
+                int a = rgba & 0xFF;
+                dst.putInt((r << 24) | (g << 16) | (b << 8) | a);
+            }
+        } else {
+
+            for (int i = 0; i < pairs; i++) {
+                // Pixel 1
+                int rgba1 = src.getInt();
+                int r1 = min(255, (((rgba1 >>> 24) & 0xFF) * brightFixed) >>> 8);
+                int g1 = min(255, (((rgba1 >>> 16) & 0xFF) * brightFixed) >>> 8);
+                int b1 = min(255, (((rgba1 >>> 8) & 0xFF) * brightFixed) >>> 8);
+                int a1 = rgba1 & 0xFF;
+
+                // Pixel 2
+                int rgba2 = src.getInt();
+                int r2 = min(255, (((rgba2 >>> 24) & 0xFF) * brightFixed) >>> 8);
+                int g2 = min(255, (((rgba2 >>> 16) & 0xFF) * brightFixed) >>> 8);
+                int b2 = min(255, (((rgba2 >>> 8) & 0xFF) * brightFixed) >>> 8);
+                int a2 = rgba2 & 0xFF;
+
+                // Write both pixels
+                dst.putInt((r1 << 24) | (g1 << 16) | (b1 << 8) | a1);
+                dst.putInt((r2 << 24) | (g2 << 16) | (b2 << 8) | a2);
+            }
+
+            // Handle odd pixel
+            if (odd != 0) {
+                int rgba = src.getInt();
+                int r = min(255, (((rgba >>> 24) & 0xFF) * brightFixed) >>> 8);
+                int g = min(255, (((rgba >>> 16) & 0xFF) * brightFixed) >>> 8);
+                int b = min(255, (((rgba >>> 8) & 0xFF) * brightFixed) >>> 8);
+                int a = rgba & 0xFF;
+                dst.putInt((r << 24) | (g << 16) | (b << 8) | a);
+            }
         }
-        buffer.flip();
+
+        dst.flip();
     }
 
-    private ByteBuffer convertToRGBA(ByteBuffer srcBuffer, int width, int height) {
-        int size = width * height * 4;
-
-        if (convertBuffer == null || convertBufferSize < size) {
-            convertBuffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
-            convertBufferSize = size;
-        }
-
-        convertBuffer.clear();
-        srcBuffer.rewind();
-        convertBuffer.put(srcBuffer);
-        convertBuffer.flip();
-
-        return convertBuffer;
-    }
-
-    private static void scaleRGBA(ByteBuffer srcBuffer, int srcW, int srcH, ByteBuffer dstBuffer, int dstW, int dstH) {
-        if (srcW <= 0 || srcH <= 0 || dstW <= 0 || dstH <= 0) {
-            throw new IllegalArgumentException("Image dimensions must be positive");
-        }
-
+    private static void scaleRGBA(ByteBuffer src, int srcW, int srcH, ByteBuffer dst, int dstW, int dstH, double brightness) {
+        // Calculate scaling factors
         double scaleW = (double) dstW / srcW;
         double scaleH = (double) dstH / srcH;
-        double scale = Math.max(scaleW, scaleH);
+
+        // Take the larger scale to ensure the image fills the dst buffer
+        double scale = max(scaleW, scaleH);
+
+        // Calculate the scaled dimensions of the source image
         int scaledW = (int) (srcW * scale + 0.5);
         int scaledH = (int) (srcH * scale + 0.5);
 
-        int offsetX = (dstW - scaledW) / 2;
-        int offsetY = (dstH - scaledH) / 2;
+        // Calculate offsets to center the image in the dst buffer
+        int offsetX = (dstW - scaledW) >>> 1;
+        int offsetY = (dstH - scaledH) >>> 1;
 
-        for (int i = 0; i < dstW * dstH * 4; i++) {
-            dstBuffer.put(i, (byte) 0);
+        // Precompute inverse scaling factors in fixed-point 16.16 format
+        // int offsetX = (dstW - scaledW) / 2;
+        // int offsetY = (dstH - scaledH) / 2;
+        int invScaleWFixed = (int)((srcW << 16) / (double) scaledW);
+        int invScaleHFixed = (int)((srcH << 16) / (double) scaledH);
+
+        // Determine if brightness adjustment is needed
+        boolean applyBright = abs(brightness - 1.0) >= 1e-5;
+        // Precompute brightness in fixed-point 8.8 format
+        int brightFixed = (int)(brightness * 256);
+
+        // Prepare dst buffer: clear to black with transparency
+        int totalBytes = dstW * dstH * 4;    // Total bytes in dst buffer
+        int longs = totalBytes >>> 3;        // Total longs (8 bytes each)
+        int remaining = totalBytes & 7;      // Remaining bytes after longs
+
+        dst.clear();    // Set position to 0
+        for (int i = 0; i < longs; i++) {
+            dst.putLong(0L);    // Set 8 bytes to 0 (black pixel)
         }
+        for (int i = 0; i < remaining; i++) {
+            dst.put((byte) 0);    // Set remaining bytes to 0
+        }
+        dst.clear();    // Reset position for writing
 
-        for (int y = 0; y < dstH; y++) {
-            int srcY = (int) (((y - offsetY) * srcH) / (double) scaledH);
-            if (srcY < 0 || srcY >= srcH) continue;
+        // Precompute row byte sizes
+        int srcWBytes = srcW << 2;    // srcW * 4
+        int dstWBytes = dstW << 2;    // dstW * 4
 
-            for (int x = 0; x < dstW; x++) {
-                int srcX = (int) (((x - offsetX) * srcW) / (double) scaledW);
-                if (srcX >= 0 && srcX < srcW) {
-                    int srcIdx = (srcY * srcW + srcX) * 4;
-                    int dstIdx = (y * dstW + x) * 4;
+        // No brightness adjustment needed
+        if (!applyBright) {
+            // 4 pixels per iteration
+            for (int y = 0; y < dstH; y++) {
+                // Calculate corresponding srcY
+                int srcY = (((y - offsetY) * invScaleHFixed) >>> 16);
+                if (srcY >= srcH) continue; // Skip if out of bounds
+                // TODO: should we also check srcY < 0?
 
-                    int pixel = srcBuffer.getInt(srcIdx);
-                    dstBuffer.putInt(dstIdx, pixel);
+                int srcRowBase = srcY * srcWBytes;    // Address start of row in src buffer
+                int dstRowBase = y * dstWBytes;       // Address start of row in dst buffer
+
+                int x = 0;
+                int xLimit = dstW - 3;
+
+                // 4 pixels at a time
+                for (; x < xLimit; x += 4) {
+                    // Check for their coordinates in source image
+                    int srcX0 = (((x     - offsetX) * invScaleWFixed) >>> 16);
+                    int srcX1 = (((x + 1 - offsetX) * invScaleWFixed) >>> 16);
+                    int srcX2 = (((x + 2 - offsetX) * invScaleWFixed) >>> 16);
+                    int srcX3 = (((x + 3 - offsetX) * invScaleWFixed) >>> 16);
+
+                    // Copy pixels if within bounds
+                    if (srcX0 < srcW) {
+                        dst.putInt(dstRowBase + (x << 2), src.getInt(srcRowBase + (srcX0 << 2)));
+                    }
+                    if (srcX1 <= srcW) {
+                        dst.putInt(dstRowBase + ((x + 1) << 2), src.getInt(srcRowBase + (srcX1 << 2)));
+                    }
+                    if (srcX2 < srcW) {
+                        dst.putInt(dstRowBase + ((x + 2) << 2), src.getInt(srcRowBase + (srcX2 << 2)));
+                    }
+                    if (srcX3 < srcW) {
+                        dst.putInt(dstRowBase + ((x + 3) << 2), src.getInt(srcRowBase + (srcX3 << 2)));
+                    }
+                }
+
+                // Single pixels remaining
+                for (; x < dstW; x++) {
+                    int srcX = (((x - offsetX) * invScaleWFixed) >>> 16);
+                    if (srcX < srcW) {
+                        dst.putInt(dstRowBase + (x << 2), src.getInt(srcRowBase + (srcX << 2)));
+                    }
+                }
+            }
+            // If brightness < 1.0 (darkening)
+        } else if (brightness < 1.0) {
+            for (int y = 0; y < dstH; y++) {
+                // int srcY = (int) (((y - offsetY) * srcH) / (double) scaledH);
+                // if (srcY < 0 || srcY >= srcH) continue;
+                int srcY = (((y - offsetY) * invScaleHFixed) >>> 16);
+                if (srcY >= srcH) continue;
+
+                int srcRowBase = srcY * srcWBytes;
+                int dstRowBase = y * dstWBytes;
+
+                int x = 0;
+                int xLimit = dstW - 1;
+
+                for (; x < xLimit; x += 2) {
+                    int srcX0 = (((x     - offsetX) * invScaleWFixed) >>> 16);
+                    int srcX1 = (((x + 1 - offsetX) * invScaleWFixed) >>> 16);
+
+                    // 2 pixels at a time
+                    if (srcX0 < srcW) {
+                        int rgba = src.getInt(srcRowBase + (srcX0 << 2));
+                        int r = (((rgba >>> 24) & 0xFF) * brightFixed) >>> 8;
+                        int g = (((rgba >>> 16) & 0xFF) * brightFixed) >>> 8;
+                        int b = (((rgba >>>  8) & 0xFF) * brightFixed) >>> 8;
+                        int a = rgba & 0xFF;
+                        dst.putInt(dstRowBase + (x << 2), (r << 24) | (g << 16) | (b << 8) | a);
+                    }
+
+                    if (srcX1 < srcW) {
+                        int rgba = src.getInt(srcRowBase + (srcX1 << 2));
+                        int r = (((rgba >>> 24) & 0xFF) * brightFixed) >>> 8;
+                        int g = (((rgba >>> 16) & 0xFF) * brightFixed) >>> 8;
+                        int b = (((rgba >>>  8) & 0xFF) * brightFixed) >>> 8;
+                        int a = rgba & 0xFF;
+                        dst.putInt(dstRowBase + ((x + 1) << 2), (r << 24) | (g << 16) | (b << 8) | a);
+                    }
+                }
+
+                // Single pixel remaining
+                for (; x < dstW; x++) {
+                    int srcX = (((x - offsetX) * invScaleWFixed) >>> 16);
+                    if (srcX < srcW) {
+                        int rgba = src.getInt(srcRowBase + (srcX << 2));
+                        int r = (((rgba >>> 24) & 0xFF) * brightFixed) >>> 8;
+                        int g = (((rgba >>> 16) & 0xFF) * brightFixed) >>> 8;
+                        int b = (((rgba >>>  8) & 0xFF) * brightFixed) >>> 8;
+                        int a = rgba & 0xFF;
+                        dst.putInt(dstRowBase + (x << 2), (r << 24) | (g << 16) | (b << 8) | a);
+                    }
+                }
+            }
+        } else {
+            for (int y = 0; y < dstH; y++) {
+                int srcY = (((y - offsetY) * invScaleHFixed) >>> 16);
+                if (srcY >= srcH) continue;
+
+                int srcRowBase = srcY * srcWBytes;
+                int dstRowBase = y * dstWBytes;
+
+                int x = 0;
+                int xLimit = dstW - 1;
+
+                for (; x < xLimit; x += 2) {
+                    int srcX0 = (((x     - offsetX) * invScaleWFixed) >>> 16);
+                    int srcX1 = (((x + 1 - offsetX) * invScaleWFixed) >>> 16);
+
+                    // 2 pixels at a time
+                    if (srcX0 < srcW) {
+                        int rgba = src.getInt(srcRowBase + (srcX0 << 2));
+                        int r = min(255, (((rgba >>> 24) & 0xFF) * brightFixed) >>> 8);
+                        int g = min(255, (((rgba >>> 16) & 0xFF) * brightFixed) >>> 8);
+                        int b = min(255, (((rgba >>>  8) & 0xFF) * brightFixed) >>> 8);
+                        int a = rgba & 0xFF;
+                        dst.putInt(dstRowBase + (x << 2), (r << 24) | (g << 16) | (b << 8) | a);
+                    }
+
+                    if (srcX1 < srcW) {
+                        int rgba = src.getInt(srcRowBase + (srcX1 << 2));
+                        int r = min(255, (((rgba >>> 24) & 0xFF) * brightFixed) >>> 8);
+                        int g = min(255, (((rgba >>> 16) & 0xFF) * brightFixed) >>> 8);
+                        int b = min(255, (((rgba >>>  8) & 0xFF) * brightFixed) >>> 8);
+                        int a = rgba & 0xFF;
+                        dst.putInt(dstRowBase + ((x + 1) << 2), (r << 24) | (g << 16) | (b << 8) | a);
+                    }
+                }
+
+                // Single pixel remaining
+                for (; x < dstW; x++) {
+                    int srcX = (((x - offsetX) * invScaleWFixed) >>> 16);
+                    if (srcX < srcW) {
+                        int rgba = src.getInt(srcRowBase + (srcX << 2));
+                        int r = min(255, (((rgba >>> 24) & 0xFF) * brightFixed) >>> 8);
+                        int g = min(255, (((rgba >>> 16) & 0xFF) * brightFixed) >>> 8);
+                        int b = min(255, (((rgba >>>  8) & 0xFF) * brightFixed) >>> 8);
+                        int a = rgba & 0xFF;
+                        dst.putInt(dstRowBase + (x << 2), (r << 24) | (g << 16) | (b << 8) | a);
+                    }
                 }
             }
         }
@@ -481,33 +743,28 @@ public class MediaPlayer {
     }
 
     public void play() {
-        LoggingManager.info("[MediaPlayer] play() called");
         safeExecute(this::doPlay);
     }
 
     public void pause() {
-        LoggingManager.info("[MediaPlayer] pause() called");
         safeExecute(this::doPause);
     }
 
     public void seekTo(long nanos, boolean b) {
-        LoggingManager.info("[MediaPlayer] seekTo(" + nanos + ", " + b + ") called");
         safeExecute(() -> doSeek(nanos, b));
     }
 
     public void seekToFast(long nanos) {
-        LoggingManager.info("[MediaPlayer] seekToFast(" + nanos + ") called");
         safeExecute(() -> doSeekFast(nanos));
     }
 
     public void seekRelative(double s) {
-        LoggingManager.info("[MediaPlayer] seekRelative(" + s + "s) called");
         safeExecute(() -> {
             if (!initialized) return;
             long cur = audioPipeline.queryPosition(Format.TIME);
-            long tgt = Math.max(0, cur + (long) (s * 1e9));
-            long dur = Math.max(0, audioPipeline.queryDuration(Format.TIME) - 1);
-            doSeek(Math.min(tgt, dur), true);
+            long tgt = max(0, cur + (long) (s * 1e9));
+            long dur = max(0, audioPipeline.queryDuration(Format.TIME) - 1);
+            doSeek(min(tgt, dur), true);
         });
     }
 
@@ -524,7 +781,6 @@ public class MediaPlayer {
     }
 
     public void stop() {
-        LoggingManager.info("[MediaPlayer] stop() called");
         if (terminated.getAndSet(true)) return;
         safeExecute(() -> {
             doStop();
@@ -534,15 +790,13 @@ public class MediaPlayer {
     }
 
     public void setVolume(double volume) {
-        LoggingManager.info("[MediaPlayer] setVolume(" + volume + ") called");
-        userVolume = Math.max(0, Math.min(2, volume));
+        userVolume = max(0, min(2, volume));
         currentVolume = userVolume * lastAttenuation;
         safeExecute(this::applyVolume);
     }
 
     public void setBrightness(double brightness) {
-        LoggingManager.info("[MediaPlayer] setBrightness(" + brightness + ") called");
-        this.brightness = Math.max(0, Math.min(2, brightness));
+        this.brightness = max(0, min(2, brightness));
     }
 
     public boolean textureFilled() {
@@ -550,33 +804,33 @@ public class MediaPlayer {
     }
 
     public void updateFrame(GpuTexture texture) {
-        if (!frameReady || preparedBuffer == null) return;
+        if (!frameReady) return;
 
-        LoggingManager.info("[MediaPlayer] Updating texture with frame " + preparedW + "x" + preparedH);
+        // long startNs = System.nanoTime();
 
-        int w = screen.textureWidth, h = screen.textureHeight;
-        if (w != preparedW || h != preparedH) return;
+        // Quick validation
+        ByteBuffer buf = preparedBuffer;
+        if (buf == null) return;
 
-        var encoder = RenderSystem.getDevice().createCommandEncoder();
+        int w = preparedW;
+        int h = preparedH;
 
-        preparedBuffer.rewind();
+        if (w != screen.textureWidth || h != screen.textureHeight) return;
 
-        int expectedSize = w * h * 4;
-        if (preparedBuffer.remaining() < expectedSize) {
-            LoggingManager.error("Buffer underrun: expected " + expectedSize + " bytes, but only " + preparedBuffer.remaining() + " remaining");
-            return;
-        }
+        buf.rewind();
 
-        if (w != lastTexW || h != lastTexH) {
-            lastTexW = w;
-            lastTexH = h;
-        }
-
+        // Direct write without intermediate checks
         if (!texture.isClosed()) {
-            encoder.writeToTexture(texture, preparedBuffer, NativeImage.Format.RGBA, 0, 0, 0, 0, texture.getWidth(0), texture.getHeight(0));
+            RenderSystem.getDevice()
+                    .createCommandEncoder()
+                    .writeToTexture(texture, buf, NativeImage.Format.RGBA,
+                            0, 0, 0, 0, w, h);
         }
 
         frameReady = false;
+
+        // long elapsedNs = System.nanoTime() - startNs;
+        // LoggingManager.info("[MediaPlayer] updateFrame: " + elapsedNs + "ns");
     }
 
     public List<Integer> getAvailableQualities() {
@@ -584,17 +838,10 @@ public class MediaPlayer {
     }
 
     public void setQuality(String quality) {
-        LoggingManager.info("[MediaPlayer] setQuality(" + quality + ") called");
         safeExecute(() -> changeQuality(quality));
     }
 
     private void doPlay() {
-        if (!initialized) {
-            LoggingManager.warn("[MediaPlayer] doPlay called but not initialized");
-            return;
-        }
-        LoggingManager.info("[MediaPlayer] Executing play");
-
         long audioPos = audioPipeline.queryPosition(Format.TIME);
 
         audioPipeline.pause();
@@ -622,13 +869,11 @@ public class MediaPlayer {
 
     private void doPause() {
         if (!initialized) return;
-        LoggingManager.info("[MediaPlayer] Executing pause");
         if (videoPipeline != null) videoPipeline.pause();
         if (audioPipeline != null) audioPipeline.pause();
     }
 
     private void doStop() {
-        LoggingManager.info("[MediaPlayer] Executing stop");
         safeStopAndDispose(videoPipeline);
         safeStopAndDispose(audioPipeline);
         videoPipeline = null;
@@ -637,7 +882,6 @@ public class MediaPlayer {
 
     private void doSeek(long nanos, boolean b) {
         if (!initialized) return;
-        LoggingManager.info("[MediaPlayer] Executing seek to " + nanos + " ns");
         EnumSet<SeekFlags> flags = EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE);
         audioPipeline.pause();
         if (videoPipeline != null) videoPipeline.pause();
@@ -652,7 +896,6 @@ public class MediaPlayer {
 
     private void doSeekFast(long nanos) {
         if (!initialized) return;
-        LoggingManager.info("[MediaPlayer] Executing fast seek to " + nanos + " ns");
         EnumSet<SeekFlags> flags = EnumSet.of(SeekFlags.FLUSH, SeekFlags.KEY_UNIT);
         audioPipeline.pause();
         if (videoPipeline != null) videoPipeline.pause();
@@ -665,7 +908,6 @@ public class MediaPlayer {
 
     private void applyVolume() {
         if (!initialized) return;
-        LoggingManager.info("[MediaPlayer] Applying volume " + currentVolume);
         Element v = audioPipeline.getElementByName("volumeElement");
         if (v != null) v.set("volume", 1);
         Element a = audioPipeline.getElementByName("ampElement");
@@ -682,14 +924,6 @@ public class MediaPlayer {
             return;
         }
 
-        // If the desired quality is the same as current, skip
-        if (target == lastQuality) {
-            LoggingManager.info("[MediaPlayer] Quality already " + target + "p, skipping change");
-            return;
-        }
-
-        LoggingManager.info("[MediaPlayer] Attempting to change quality to " + target + "p");
-
         try {
             String videoId = com.dreamdisplays.util.Utils.extractVideoId(youtubeUrl);
             String cleanUrl = "https://www.youtube.com/watch?v=" + videoId;
@@ -697,21 +931,14 @@ public class MediaPlayer {
             StreamInfo info = StreamInfo.getInfo(ServiceList.YouTube.getStreamExtractor(cleanUrl));
             List<VideoStream> videoStreams = info.getVideoStreams();
 
-            // Cecck if exact quality is available
-            boolean hasExactQuality = videoStreams.stream()
-                    .anyMatch(vs -> parseQuality(vs.getResolution()) == target);
-
-            if (!hasExactQuality) {
-                LoggingManager.info("[MediaPlayer] No exact " + target + "p stream available, keeping current quality");
-                return;
-            }
+            // Check if exact match exists
+            videoStreams.stream().anyMatch(vs -> parseQuality(vs.getResolution()) == target);
 
             // Look for the best matching stream
             Optional<VideoStream> best = videoStreams.stream()
-                    .min(Comparator.comparingInt(vs -> Math.abs(parseQuality(vs.getResolution()) - target)));
+                    .min(Comparator.comparingInt(vs -> abs(parseQuality(vs.getResolution()) - target)));
 
             if (best.isEmpty() || best.get().getUrl().equals(currentVideoUrl)) {
-                LoggingManager.info("[MediaPlayer] Best stream is the same as current, no change needed");
                 lastQuality = target;
                 return;
             }
@@ -745,8 +972,6 @@ public class MediaPlayer {
             videoPipeline = newVid;
             currentVideoUrl = best.get().getUrl();
             lastQuality = parseQuality(best.get().getResolution());
-
-            LoggingManager.info("[MediaPlayer] Quality changed successfully to " + lastQuality + "p");
         } catch (Exception e) {
             LoggingManager.error("[MediaPlayer] Failed to change quality", e);
         }
@@ -756,8 +981,8 @@ public class MediaPlayer {
         if (!initialized) return;
 
         double dist = screen.getDistanceToScreen(playerPos);
-        double attenuation = Math.pow(1.0 - Math.min(1.0, dist / maxRadius), 2);
-        if (Math.abs(attenuation - lastAttenuation) > 1e-5) {
+        double attenuation = pow(1.0 - min(1.0, dist / maxRadius), 2);
+        if (abs(attenuation - lastAttenuation) > 1e-5) {
             lastAttenuation = attenuation;
             currentVolume = userVolume * attenuation;
             LoggingManager.info("[MediaPlayer] Distance attenuation: " + currentVolume);
@@ -773,6 +998,7 @@ public class MediaPlayer {
         }
     }
 
+    // TODO: remove that shitty drift in the future
     private void checkAndFixSync() {
         if (!initialized || videoPipeline == null || audioPipeline == null) return;
         if (screen.getPaused()) return;
@@ -780,7 +1006,7 @@ public class MediaPlayer {
         try {
             long audioPos = audioPipeline.queryPosition(Format.TIME);
             long videoPos = videoPipeline.queryPosition(Format.TIME);
-            long drift = Math.abs(audioPos - videoPos);
+            long drift = abs(audioPos - videoPos);
 
             if (drift > MAX_SYNC_DRIFT_NS) {
                 LoggingManager.info("[MediaPlayer] Sync drift " + drift + " ns - resyncing video to audio");
