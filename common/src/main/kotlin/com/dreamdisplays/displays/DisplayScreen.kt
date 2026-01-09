@@ -97,7 +97,11 @@ class DisplayScreen(
         private set
 
     init {
-        owner = getInstance().player != null && (ownerUuid.toString() == getInstance().player!!.uuid.toString())
+        owner = try {
+            getInstance().player != null && (ownerUuid.toString() == getInstance().player!!.uuid.toString())
+        } catch (_: Exception) {
+            false
+        }
 
         val settings = SettingsManager.getSettings(uuid)
 
@@ -115,6 +119,12 @@ class DisplayScreen(
     // Loads a video from a given URL and language
     fun loadVideo(videoUrl: String, lang: String?) {
         if (videoUrl == "") return
+
+        try {
+            getInstance()
+        } catch (_: Exception) {
+            return
+        }
 
         if (mediaPlayer != null) unregister()
 
@@ -165,8 +175,12 @@ class DisplayScreen(
         this.height = packet.height
         this.isSync = packet.isSync
 
-        owner = getInstance().player != null &&
-                (packet.ownerUuid.toString() == getInstance().player!!.uuid.toString())
+        owner = try {
+            getInstance().player != null &&
+                    (packet.ownerUuid.toString() == getInstance().player!!.uuid.toString())
+        } catch (_: Exception) {
+            false
+        }
 
         if (videoUrl != packet.url || lang != packet.lang) {
             this.paused = false
