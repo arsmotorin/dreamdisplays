@@ -312,7 +312,7 @@ class DisplayScreen(
     // Sets video volume
     fun setVideoVolume(volume: Float) {
         try {
-            if (mediaPlayer != null) MediaPlayerControls.setVolume(mediaPlayer!!, volume.toDouble())
+            if (mediaPlayer != null) MediaPlayerControls.setVolume(mediaPlayer!!, (volume * 2).toDouble())
         } catch (_: Exception) {
             // Ignore errors if MediaPlayer is stopped or in invalid state (e.g., during server restart)
         }
