@@ -23,6 +23,7 @@ Mod:
 - [x] Add video timeline
 - [x] Support lying and ceiling displays (server must have 1.5.0 or newer plugin version)
 - [x] Support timecodes in YouTube links
+- [ ] Add Spanish, French and Italian translations
 - [x] Make buttons smaller for better UI
 - [x] Rewrite main part of the mod in Kotlin
 - [x] Ignore radio parameter in YouTube links
@@ -31,6 +32,8 @@ Mod:
 - [x] Fix client crash when server restarts while player is connected
 - [ ] Change channel from Beta to Release
 - [ ] Update wiki with new features
+- [x] Handle failed config gracefully
+- [ ] Add Kolyakot33 as a contributor
 
 Plugin:
 

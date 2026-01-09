@@ -1,7 +1,7 @@
 name: DreamDisplays
 version: '${version}'
 authors: [ arsmotorin, INotSleep, Toffikk ]
-description: 'Plugin for Dream Displays mod.'
+description: 'Plugin for the Dream Displays mod.'
 main: com.dreamdisplays.Main
 api-version: '1.21'
 folia-supported: true
