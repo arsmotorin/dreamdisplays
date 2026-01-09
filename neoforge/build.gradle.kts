@@ -63,4 +63,14 @@ tasks.shadowJar {
     ).forEach { pack ->
         relocate(pack, "$prefix.$pack")
     }
+    exclude("**/*.so")
+    exclude("**/*.dll")
+    exclude("**/*.dylib")
+    exclude("**/*.a")
+    exclude("**/*.lib")
+    exclude("org/bytedeco/**/*.properties")
+    exclude("org/bytedeco/**/linux/**")
+    exclude("org/bytedeco/**/windows/**")
+    exclude("org/bytedeco/**/macosx/**")
+    exclude("org/bytedeco/**/android/**")
 }

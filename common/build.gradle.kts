@@ -5,6 +5,9 @@ plugins {
 
 dependencies {
     api(libs.gst1)
+    implementation(libs.javacpp)
+    implementation(libs.ffmpeg)
+    implementation(libs.javacv)
     api(libs.utils)
     api(libs.newpipeExtractor)
     api(libs.jspecify)

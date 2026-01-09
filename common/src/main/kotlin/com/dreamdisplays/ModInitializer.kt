@@ -1,7 +1,6 @@
 package com.dreamdisplays
 
 import com.dreamdisplays.WindowFocuser.Companion.instance
-import com.dreamdisplays.downloader.Init
 import com.dreamdisplays.net.common.DeletePacket
 import com.dreamdisplays.net.common.DisplayEnabledPacket
 import com.dreamdisplays.net.common.SyncPacket
@@ -83,7 +82,6 @@ object ModInitializer {
         // Load client display settings
         SettingsManager.load()
 
-        Init.init()
         instance.start()
 
         // timerThread.start()
