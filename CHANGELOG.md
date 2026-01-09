@@ -25,11 +25,13 @@ Mod:
 - [x] Support timecodes in YouTube links
 - [ ] Add Spanish, French and Italian translations
 - [x] Make buttons smaller for better UI
+- [x] Link volume attenuation to display render distance
 - [x] Rewrite main part of the mod in Kotlin
 - [x] Ignore radio parameter in YouTube links
 - [x] Fix NeoForge Gradle conflict while syncing with IntelliJ IDEA Gradle plugin
 - [x] Fix null-pointer exception when window focus tries to work on not initialized Minecraft
 - [x] Fix client crash when server restarts while player is connected
+- [x] Fix volume amplification not working properly (de-facto 100% was 50%)
 - [ ] Change channel from Beta to Release
 - [ ] Update wiki with new features
 - [x] Handle failed config gracefully

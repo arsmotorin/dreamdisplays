@@ -513,7 +513,7 @@ class DisplayScreen(
     }
 
     fun tick(pos: BlockPos) {
-        if (mediaPlayer != null) MediaPlayerControls.tick(mediaPlayer!!, pos, config.defaultDistance.toDouble())
+        if (mediaPlayer != null) MediaPlayerControls.tick(mediaPlayer!!, pos, renderDistance.toDouble())
     }
 
     fun afterSeek() {
