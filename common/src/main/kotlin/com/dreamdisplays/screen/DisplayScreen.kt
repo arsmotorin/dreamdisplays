@@ -9,6 +9,7 @@ import com.dreamdisplays.net.s2c.DisplayInfoPacket
 import com.dreamdisplays.screen.managers.ConfigurationManager
 import com.dreamdisplays.screen.managers.SettingsManager
 import com.dreamdisplays.screen.managers.SettingsManager.updateSettings
+import com.dreamdisplays.screen.mediaplayer.MediaPlayer
 import net.minecraft.client.Minecraft
 import net.minecraft.client.Minecraft.getInstance
 import net.minecraft.client.renderer.RenderPipelines.SOLID_BLOCK
@@ -32,6 +33,7 @@ import kotlin.math.sqrt
 /**
  * Represents a video display screen in the game world.
  */
+// TODO: this class is getting too big, consider modularizing
 @NullMarked
 class DisplayScreen(
     val uuid: UUID,

@@ -10,7 +10,7 @@ import com.dreamdisplays.net.s2c.CeilingFloorSupportPacket
 import com.dreamdisplays.net.s2c.DisplayInfoPacket
 import com.dreamdisplays.net.s2c.PremiumPacket
 import com.dreamdisplays.net.s2c.ReportEnabledPacket
-import com.dreamdisplays.render.ScreenRenderer
+import com.dreamdisplays.screen.DisplayScreenRenderer
 import com.dreamdisplays.screen.managers.ScreenManager
 import net.minecraft.client.Minecraft
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
@@ -116,7 +116,7 @@ class DreamDisplaysMod(modEventBus: IEventBus) : ModPacketSender {
 
         val poseStack = event.poseStack
         val camera = mc.gameRenderer.mainCamera
-        ScreenRenderer.render(poseStack, camera)
+        DisplayScreenRenderer.render(poseStack, camera)
     }
 
     @SubscribeEvent

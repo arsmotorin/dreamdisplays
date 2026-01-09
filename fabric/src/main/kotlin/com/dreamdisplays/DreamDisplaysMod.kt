@@ -12,7 +12,7 @@ import com.dreamdisplays.net.s2c.CeilingFloorSupportPacket
 import com.dreamdisplays.net.s2c.DisplayInfoPacket
 import com.dreamdisplays.net.s2c.PremiumPacket
 import com.dreamdisplays.net.s2c.ReportEnabledPacket
-import com.dreamdisplays.render.ScreenRenderer.render
+import com.dreamdisplays.screen.DisplayScreenRenderer.render
 import com.dreamdisplays.screen.managers.ScreenManager.loadScreensForServer
 import com.dreamdisplays.screen.managers.ScreenManager.saveAllScreens
 import com.dreamdisplays.screen.managers.ScreenManager.unloadAllDisplays

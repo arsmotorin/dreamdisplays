@@ -1,11 +1,10 @@
-package com.dreamdisplays.render
+package com.dreamdisplays.screen
 
-import com.dreamdisplays.screen.DisplayScreen
-import com.dreamdisplays.screen.managers.ScreenManager.getScreens
-import com.mojang.blaze3d.vertex.DefaultVertexFormat.BLOCK
+import com.dreamdisplays.screen.managers.ScreenManager
+import com.mojang.blaze3d.vertex.DefaultVertexFormat
 import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.blaze3d.vertex.Tesselator
-import com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS
+import com.mojang.blaze3d.vertex.VertexFormat
 import net.minecraft.client.Camera
 import net.minecraft.client.renderer.rendertype.RenderType
 import net.minecraft.world.phys.Vec3
@@ -16,10 +15,10 @@ import org.jspecify.annotations.NullMarked
  * Renders screens in the world relative to the camera position.
  */
 @NullMarked
-object ScreenRenderer {
+object DisplayScreenRenderer {
     fun render(stack: PoseStack, camera: Camera) {
         val cameraPos = camera.position()
-        for (screen in getScreens()) {
+        for (screen in ScreenManager.getScreens()) {
             if (screen.texture == null) screen.createTexture()
 
             stack.pushPose()
@@ -101,8 +100,8 @@ object ScreenRenderer {
     private fun drawQuad(stack: PoseStack, tessellator: Tesselator, type: RenderType, colorVal: Int) {
         val pose = stack.last().pose()
         val builder = tessellator.begin(
-            QUADS,
-            BLOCK
+            VertexFormat.Mode.QUADS,
+            DefaultVertexFormat.BLOCK
         )
 
         builder
