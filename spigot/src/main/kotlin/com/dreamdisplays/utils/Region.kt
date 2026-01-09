@@ -29,6 +29,7 @@ object Region {
             BlockFace.UP, BlockFace.DOWN -> {
                 deltaX to deltaZ
             }
+
             else -> {
                 max(deltaX, deltaZ) to deltaY
             }

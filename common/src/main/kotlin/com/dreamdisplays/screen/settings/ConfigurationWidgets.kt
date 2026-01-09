@@ -3,8 +3,8 @@ package com.dreamdisplays.screen.settings
 import com.dreamdisplays.ModInitializer
 import com.dreamdisplays.net.c2s.ReportPacket
 import com.dreamdisplays.net.common.DeletePacket
-import com.dreamdisplays.screen.managers.ScreenManager
 import com.dreamdisplays.screen.DisplayScreen
+import com.dreamdisplays.screen.managers.ScreenManager
 import com.dreamdisplays.screen.managers.SettingsManager
 import com.dreamdisplays.screen.settings.util.QualityConverter
 import com.dreamdisplays.screen.settings.widgets.Button

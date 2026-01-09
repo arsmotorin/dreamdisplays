@@ -1,13 +1,10 @@
 package com.dreamdisplays.util
 
-import net.minecraft.client.Minecraft
 import net.minecraft.client.Minecraft.getInstance
 import net.minecraft.world.level.ClipContext
 import net.minecraft.world.level.ClipContext.Block
 import net.minecraft.world.level.ClipContext.Fluid
 import net.minecraft.world.phys.BlockHitResult
-import net.minecraft.world.phys.HitResult
-import net.minecraft.world.phys.HitResult.Type
 import net.minecraft.world.phys.HitResult.Type.BLOCK
 import org.jspecify.annotations.NullMarked
 

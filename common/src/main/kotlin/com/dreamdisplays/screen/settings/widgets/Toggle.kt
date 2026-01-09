@@ -23,7 +23,7 @@ abstract class Toggle(
     width: Int,
     height: Int,
     message: Component,
-    var value: Boolean
+    var value: Boolean,
 ) : AbstractWidget(x, y, width, height, message) {
     private var dValue: Double
     private var sliderFocused = false
@@ -55,7 +55,7 @@ abstract class Toggle(
         guiGraphics: GuiGraphics,
         mouseX: Int,
         mouseY: Int,
-        partialTick: Float
+        partialTick: Float,
     ) {
         guiGraphics.blitSprite(
             RenderPipelines.GUI_TEXTURED,
@@ -76,7 +76,7 @@ abstract class Toggle(
         val i = if (this.active) 16777215 else 10526880
         val message = this.getMessage()
             .copy()
-            .withStyle( { style: Style? -> style!!.withColor(i) })
+            .withStyle({ style: Style? -> style!!.withColor(i) })
         this.renderScrollingStringOverContents(
             guiGraphics.textRendererForWidget(
                 this,

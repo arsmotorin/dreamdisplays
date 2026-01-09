@@ -1,7 +1,7 @@
 package com.dreamdisplays.render
 
-import com.dreamdisplays.screen.managers.ScreenManager.getScreens
 import com.dreamdisplays.screen.DisplayScreen
+import com.dreamdisplays.screen.managers.ScreenManager.getScreens
 import com.mojang.blaze3d.vertex.DefaultVertexFormat.BLOCK
 import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.blaze3d.vertex.Tesselator
@@ -63,30 +63,36 @@ object ScreenRenderer {
                 stack.mulPose(Quaternionf().rotationY(Math.toRadians(180.0).toFloat()))
                 stack.scale(width, height, 0f)
             }
+
             "SOUTH" -> {
                 stack.translate(0f, 0f, 1.008f)
                 stack.scale(width, height, 0f)
             }
+
             "EAST" -> {
                 stack.translate(1.008f, 0f, width)
                 stack.mulPose(Quaternionf().rotationY(Math.toRadians(90.0).toFloat()))
                 stack.scale(width, height, 0f)
             }
+
             "WEST" -> {
                 stack.translate(-0.008f, 0f, 0f)
                 stack.mulPose(Quaternionf().rotationY(Math.toRadians(-90.0).toFloat()))
                 stack.scale(width, height, 0f)
             }
+
             "UP" -> {
                 stack.translate(0f, 1f + 0.008f, height)
                 stack.mulPose(Quaternionf().rotationX(Math.toRadians(-90.0).toFloat()))
                 stack.scale(width, height, 1f)
             }
+
             "DOWN" -> {
                 stack.translate(0f, -0.008f, 0f)
                 stack.mulPose(Quaternionf().rotationX(Math.toRadians(90.0).toFloat()))
                 stack.scale(width, height, 1f)
             }
+
             else -> {
                 stack.translate(-1f, 0f, 0.008f)
                 stack.scale(width, height, 0f)

@@ -26,7 +26,7 @@ abstract class Slider(
     width: Int,
     height: Int,
     message: Component,
-    var value: Double
+    var value: Double,
 ) : AbstractWidget(x, y, width, height, message) {
     private var sliderFocused = false
 
@@ -68,7 +68,7 @@ abstract class Slider(
         graphics: GuiGraphics,
         mouseX: Int,
         mouseY: Int,
-        partialTick: Float
+        partialTick: Float,
     ) {
         graphics.blitSprite(
             RenderPipelines.GUI_TEXTURED,

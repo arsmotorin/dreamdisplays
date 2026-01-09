@@ -130,9 +130,9 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
         val version = sanitize(versionString)?.let { parse(it) }
         val minVersion = parse("1.5.0")
         val supportsAdvancedFacing = version != null && (
-            version >= minVersion ||
-            version.toString() == "1.5.0-SNAPSHOT"
-        )
+                version >= minVersion ||
+                        version.toString() == "1.5.0-SNAPSHOT"
+                )
         sendCeilingFloorSupport(player, supportsAdvancedFacing)
 
         // Send all displays in the player's world

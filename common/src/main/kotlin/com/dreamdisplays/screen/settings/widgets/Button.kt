@@ -25,7 +25,7 @@ abstract class Button(
     private val iconWidth: Int,
     private val iconHeight: Int,
     private var iconTextureId: Identifier,
-    private val margin: Int
+    private val margin: Int,
 ) : AbstractWidget(x, y, width, height, Component.empty()) {
     private var setSprites: WidgetSprites? = null
 
@@ -51,7 +51,7 @@ abstract class Button(
         guiGraphics: GuiGraphics,
         mouseX: Int,
         mouseY: Int,
-        partialTick: Float
+        partialTick: Float,
     ) {
         guiGraphics.blitSprite(
             RenderPipelines.GUI_TEXTURED,

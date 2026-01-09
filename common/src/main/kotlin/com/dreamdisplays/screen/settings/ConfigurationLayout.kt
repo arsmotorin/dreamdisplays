@@ -16,7 +16,7 @@ object ConfigurationLayout {
         maxSW: Int,
         cY: Int,
         slider: AbstractWidget,
-        resetButton: Button
+        resetButton: Button,
     ) {
         slider.x = screenWidth / 2 + maxSW / 2 - 80 - vCH - 5
         slider.y = cY
@@ -33,7 +33,7 @@ object ConfigurationLayout {
         maxWidth: Int,
         maxHeight: Int,
         videoWidth: Int,
-        videoHeight: Int
+        videoHeight: Int,
     ): Pair<Int, Int> {
         var width = maxWidth
         val height = kotlin.math.min(

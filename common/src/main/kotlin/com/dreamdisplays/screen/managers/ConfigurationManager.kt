@@ -79,7 +79,8 @@ class ConfigurationManager private constructor() : Screen(Component.translatable
                 val resetButtonField = it.javaClass.getDeclaredField("resetButton")
                 resetButtonField.isAccessible = true
                 resetButtonField.set(it, syncReset)
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+            }
         }
 
         deleteButton = ConfigurationWidgets.createDeleteButton(currentScreen) { onClose() }
@@ -129,7 +130,7 @@ class ConfigurationManager private constructor() : Screen(Component.translatable
         elementY: Int,
         elementWidth: Int,
         elementHeight: Int,
-        tooltip: List<Component>
+        tooltip: List<Component>,
     ) {
         if (mouseX >= elementX && mouseX <= elementX + elementWidth &&
             mouseY >= elementY && mouseY <= elementY + elementHeight
@@ -145,8 +146,10 @@ class ConfigurationManager private constructor() : Screen(Component.translatable
 
     private fun renderErrorScreen(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, delta: Float) {
         // Disable all widgets when error occurs
-        listOf(volume, renderD, quality, sync, backButton, forwardButton,
-               pauseButton, timeline, renderDReset, qualityReset, volumeReset, syncReset)
+        listOf(
+            volume, renderD, quality, sync, backButton, forwardButton,
+            pauseButton, timeline, renderDReset, qualityReset, volumeReset, syncReset
+        )
             .forEach { it?.active = false }
 
         val errorComponents = ConfigurationTooltips.createErrorComponents()
@@ -198,7 +201,7 @@ class ConfigurationManager private constructor() : Screen(Component.translatable
         guiGraphics: GuiGraphics,
         mouseX: Int,
         mouseY: Int,
-        delta: Float
+        delta: Float,
     ) {
         super.render(guiGraphics, mouseX, mouseY, delta)
 
@@ -326,7 +329,7 @@ class ConfigurationManager private constructor() : Screen(Component.translatable
         startY: Int,
         maxSW: Int,
         vCH: Int,
-        currentScreen: DisplayScreen
+        currentScreen: DisplayScreen,
     ): Int {
         var currentY = startY
 
@@ -341,8 +344,10 @@ class ConfigurationManager private constructor() : Screen(Component.translatable
                 guiGraphics.drawString(font, volumeText, textX, textY, -0x1, true)
 
                 val tooltip = ConfigurationTooltips.createVolumeTooltip(vol.value)
-                renderTooltipIfHovered(guiGraphics, mouseX, mouseY, textX, textY,
-                    font.width(volumeText), font.lineHeight, tooltip)
+                renderTooltipIfHovered(
+                    guiGraphics, mouseX, mouseY, textX, textY,
+                    font.width(volumeText), font.lineHeight, tooltip
+                )
 
                 currentY += 5 + vCH
             }
@@ -359,8 +364,10 @@ class ConfigurationManager private constructor() : Screen(Component.translatable
                 guiGraphics.drawString(font, text, textX, textY, -0x1, true)
 
                 val tooltip = ConfigurationTooltips.createRenderDistanceTooltip((rd.value * (128 - 24) + 24).toInt())
-                renderTooltipIfHovered(guiGraphics, mouseX, mouseY, textX, textY,
-                    font.width(text), font.lineHeight, tooltip)
+                renderTooltipIfHovered(
+                    guiGraphics, mouseX, mouseY, textX, textY,
+                    font.width(text), font.lineHeight, tooltip
+                )
 
                 currentY += 5 + vCH
             }
@@ -376,11 +383,16 @@ class ConfigurationManager private constructor() : Screen(Component.translatable
                 val textY = currentY + vCH / 2 - font.lineHeight / 2
                 guiGraphics.drawString(font, text, textX, textY, -0x1, true)
 
-                val currentQuality = QualityConverter.toQuality((qual.value * currentScreen.getQualityList().size).toInt(), currentScreen)
+                val currentQuality = QualityConverter.toQuality(
+                    (qual.value * currentScreen.getQualityList().size).toInt(),
+                    currentScreen
+                )
                 val isHighQuality = currentScreen.quality.toInt() >= 1080
                 val tooltip = ConfigurationTooltips.createQualityTooltip(currentQuality, isHighQuality)
-                renderTooltipIfHovered(guiGraphics, mouseX, mouseY, textX, textY,
-                    font.width(text), font.lineHeight, tooltip)
+                renderTooltipIfHovered(
+                    guiGraphics, mouseX, mouseY, textX, textY,
+                    font.width(text), font.lineHeight, tooltip
+                )
 
                 currentY += 5 + vCH
             }
@@ -397,8 +409,10 @@ class ConfigurationManager private constructor() : Screen(Component.translatable
                 guiGraphics.drawString(font, text, textX, textY, -0x1, true)
 
                 val tooltip = ConfigurationTooltips.createBrightnessTooltip(floor(bright.value * 200).toInt())
-                renderTooltipIfHovered(guiGraphics, mouseX, mouseY, textX, textY,
-                    font.width(text), font.lineHeight, tooltip)
+                renderTooltipIfHovered(
+                    guiGraphics, mouseX, mouseY, textX, textY,
+                    font.width(text), font.lineHeight, tooltip
+                )
 
                 currentY += 15 + vCH
             }
@@ -415,8 +429,10 @@ class ConfigurationManager private constructor() : Screen(Component.translatable
                 guiGraphics.drawString(font, text, textX, textY, -0x1, true)
 
                 val tooltip = ConfigurationTooltips.createSyncTooltip(syncToggle.value)
-                renderTooltipIfHovered(guiGraphics, mouseX, mouseY, textX, textY,
-                    font.width(text), font.lineHeight, tooltip)
+                renderTooltipIfHovered(
+                    guiGraphics, mouseX, mouseY, textX, textY,
+                    font.width(text), font.lineHeight, tooltip
+                )
             }
         }
 
@@ -449,7 +465,7 @@ class ConfigurationManager private constructor() : Screen(Component.translatable
         x: Int,
         y: Int,
         w: Int,
-        h: Int
+        h: Int,
     ) {
         val currentScreen = screen ?: return
 

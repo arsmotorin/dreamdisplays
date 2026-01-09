@@ -52,14 +52,13 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
-import kotlin.text.contains
-import kotlin.text.replace
-import kotlin.text.substring
-import kotlin.text.toInt
-import kotlin.text.toRegex
 
 @NullMarked
-class MediaPlayer(private val youtubeUrl: kotlin.String, private val lang: kotlin.String, private val screen: DisplayScreen) {
+class MediaPlayer(
+    private val youtubeUrl: kotlin.String,
+    private val lang: kotlin.String,
+    private val screen: DisplayScreen,
+) {
     private val gstExecutor: ExecutorService =
         Executors.newSingleThreadExecutor { r: Runnable? -> Thread(r, "MediaPlayer-gst") }
     private val frameExecutor: ExecutorService =
@@ -68,54 +67,38 @@ class MediaPlayer(private val youtubeUrl: kotlin.String, private val lang: kotli
 
     @Volatile
     private var currentVolume = 0.0
-
     @Volatile
     private var videoPipeline: Pipeline? = null
-
     @Volatile
     private var audioPipeline: Pipeline? = null
-
     @Volatile
     var availableQualities: MutableList<Int>? = null
-
     @Volatile
     private var currentVideoUrl: String? = null
-
     @Volatile
     private var currentAudioUrl: String? = null
-
     @Volatile
     var isInitialized: Boolean = false
         private set
     private var lastQuality = 0
-
     @Volatile
     private var currentFrameBuffer: ByteBuffer? = null
-
     @Volatile
     private var currentFrameWidth = 0
-
     @Volatile
     private var currentFrameHeight = 0
-
     @Volatile
     private var preparedBuffer: ByteBuffer? = null
-
     @Volatile
     private var preparedW = 0
-
     @Volatile
     private var preparedH = 0
-
     @Volatile
     private var userVolume = ModInitializer.config.defaultDisplayVolume
-
     @Volatile
     private var lastAttenuation = 1.0
-
     @Volatile
     private var brightness = 1.0
-
     @Volatile
     private var frameReady = false
     private var syncCheckCounter = 0
@@ -123,7 +106,6 @@ class MediaPlayer(private val youtubeUrl: kotlin.String, private val lang: kotli
     private var convertBufferSize = 0
     private var scaleBuffer: ByteBuffer? = null
     private var scaleBufferSize = 0
-
     @Volatile
     private var lastFrameTime: Long = 0
 
@@ -389,40 +371,6 @@ class MediaPlayer(private val youtubeUrl: kotlin.String, private val lang: kotli
         }
     }
 
-    //    private void prepareBuffer() {
-    //        int targetW = screen.textureWidth;
-    //        int targetH = screen.textureHeight;
-    //        if (targetW == 0 || targetH == 0 || currentFrameBuffer == null) return;
-    //
-    //        ByteBuffer converted = convertToRGBA(currentFrameBuffer, currentFrameWidth, currentFrameHeight);
-    //
-    //        if (currentFrameWidth == targetW && currentFrameHeight == targetH) {
-    //            applyBrightnessToBuffer(converted, brightness);
-    //            preparedBuffer = converted;
-    //            preparedW = targetW;
-    //            preparedH = targetH;
-    //            frameReady = true;
-    //            Minecraft.getInstance().execute(screen::fitTexture);
-    //            LoggingManager.info("[MediaPlayer] Frame ready (no scaling needed)");
-    //            return;
-    //        }
-    //
-    //        int scaleSize = targetW * targetH * 4;
-    //        if (scaleBuffer == null || scaleBufferSize < scaleSize) {
-    //            scaleBuffer = ByteBuffer.allocateDirect(scaleSize).order(ByteOrder.nativeOrder());
-    //            scaleBufferSize = scaleSize;
-    //        }
-    //        scaleBuffer.clear();
-    //
-    //        scaleRGBA(converted, currentFrameWidth, currentFrameHeight, scaleBuffer, targetW, targetH);
-    //
-    //        applyBrightnessToBuffer(scaleBuffer, brightness);
-    //        preparedBuffer = scaleBuffer;
-    //        preparedW = targetW;
-    //        preparedH = targetH;
-    //        frameReady = true;
-    //        Minecraft.getInstance().execute(screen::fitTexture);
-    //    }
     private fun prepareBuffer() {
         // long startNs = System.nanoTime();
 
@@ -896,7 +844,7 @@ class MediaPlayer(private val youtubeUrl: kotlin.String, private val lang: kotli
             dst: ByteBuffer,
             dstW: Int,
             dstH: Int,
-            brightness: Double
+            brightness: Double,
         ) {
             // Calculate scaling factors
             val scaleW = dstW.toDouble() / srcW

@@ -26,7 +26,7 @@ abstract class Timeline(
     width: Int,
     height: Int,
     private val currentTimeSupplier: LongSupplier,
-    private val durationSupplier: LongSupplier
+    private val durationSupplier: LongSupplier,
 ) : AbstractWidget(x, y, width, height, Component.empty()) {
     private var sliderFocused = false
 
@@ -75,7 +75,7 @@ abstract class Timeline(
         graphics: GuiGraphics,
         mouseX: Int,
         mouseY: Int,
-        partialTick: Float
+        partialTick: Float,
     ) {
         val value = this.currentValue
 
@@ -104,7 +104,7 @@ abstract class Timeline(
 
         val textColor = if (this.active) 16777215 else 10526880
         val styledMessage = message.copy()
-            .withStyle( { style: Style? -> style!!.withColor(textColor) })
+            .withStyle({ style: Style? -> style!!.withColor(textColor) })
         this.renderScrollingStringOverContents(
             graphics.textRendererForWidget(
                 this,

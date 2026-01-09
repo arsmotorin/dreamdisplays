@@ -6,9 +6,9 @@ import com.dreamdisplays.ModInitializer.sendPacket
 import com.dreamdisplays.net.c2s.RequestSyncPacket
 import com.dreamdisplays.net.common.SyncPacket
 import com.dreamdisplays.net.s2c.DisplayInfoPacket
-import com.dreamdisplays.screen.managers.SettingsManager.updateSettings
 import com.dreamdisplays.screen.managers.ConfigurationManager
 import com.dreamdisplays.screen.managers.SettingsManager
+import com.dreamdisplays.screen.managers.SettingsManager.updateSettings
 import net.minecraft.client.Minecraft
 import net.minecraft.client.Minecraft.getInstance
 import net.minecraft.client.renderer.RenderPipelines.SOLID_BLOCK
@@ -46,18 +46,25 @@ class DisplayScreen(
 ) {
     @JvmField
     var owner: Boolean = false
+
     @JvmField
     var errored: Boolean = false
+
     @JvmField
     var muted: Boolean = false
+
     @JvmField
     var texture: DynamicTexture? = null
+
     @JvmField
     var textureId: Identifier? = null
+
     @JvmField
     var renderType: RenderType? = null
+
     @JvmField
     var textureWidth: Int = 0
+
     @JvmField
     var textureHeight: Int = 0
 
@@ -217,11 +224,6 @@ class DisplayScreen(
 
     fun reloadTexture() {
         this.createTexture()
-    }
-
-    // Reloads the video quality
-    fun reloadQuality() {
-        mediaPlayer?.setQuality(quality)
     }
 
     // Checks if a given BlockPos is within the screen boundaries
@@ -415,7 +417,7 @@ class DisplayScreen(
         // Schedule texture cleanup on render thread to avoid "Rendersystem called from wrong thread" error
         val minecraft = getMinecraft()
 
-            if (minecraft.screen is ConfigurationManager) {
+        if (minecraft.screen is ConfigurationManager) {
             val displayConfScreen = minecraft.screen as ConfigurationManager
             if (displayConfScreen.screen === this) displayConfScreen.onClose()
         }

@@ -35,14 +35,17 @@ object DisplayValidator {
                 val face = if (originalFace == BlockFace.DOWN) BlockFace.DOWN else BlockFace.UP
                 Triple(maxOf(deltaX, deltaZ), minOf(deltaX, deltaZ), face)
             }
+
             deltaZ == 1 -> {
                 val face = if (originalFace == BlockFace.SOUTH) BlockFace.SOUTH else BlockFace.NORTH
                 Triple(deltaX, deltaY, face)
             }
+
             deltaX == 1 -> {
                 val face = if (originalFace == BlockFace.WEST) BlockFace.WEST else BlockFace.EAST
                 Triple(deltaZ, deltaY, face)
             }
+
             else -> return 2
         }
 

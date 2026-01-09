@@ -7,7 +7,6 @@ import me.inotsleep.utils.logging.LoggingManager.info
 import org.jspecify.annotations.NullMarked
 import java.io.*
 import java.util.*
-import kotlin.collections.iterator
 
 /**
  * Manages loading and saving of display settings and data.
@@ -213,12 +212,16 @@ object SettingsManager {
     class DisplaySettings {
         @JvmField
         var volume: Float = 0.5f
+
         @JvmField
         var quality: String = "720"
+
         @JvmField
         var brightness: Float = 1.0f
+
         @JvmField
         var muted: Boolean = false
+
         @JvmField
         var paused: Boolean = true
     }

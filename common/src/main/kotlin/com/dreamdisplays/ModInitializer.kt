@@ -8,11 +8,11 @@ import com.dreamdisplays.net.common.VersionPacket
 import com.dreamdisplays.net.s2c.DisplayInfoPacket
 import com.dreamdisplays.net.s2c.PremiumPacket
 import com.dreamdisplays.net.s2c.ReportEnabledPacket
-import com.dreamdisplays.screen.managers.ScreenManager
 import com.dreamdisplays.screen.DisplayScreen
+import com.dreamdisplays.screen.managers.ConfigurationManager
+import com.dreamdisplays.screen.managers.ScreenManager
 import com.dreamdisplays.screen.managers.ScreenManager.unloadAllDisplays
 import com.dreamdisplays.screen.managers.SettingsManager
-import com.dreamdisplays.screen.managers.ConfigurationManager
 import com.dreamdisplays.util.Facing
 import com.dreamdisplays.util.RayCasting
 import com.dreamdisplays.util.Utils
