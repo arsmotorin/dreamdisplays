@@ -11,10 +11,7 @@ data class VersionPacket(val version: String) : CustomPacketPayload {
     override fun type(): Type<out CustomPacketPayload> = PACKET_ID
 
     companion object {
-        @JvmField
         val PACKET_ID: Type<VersionPacket> = createType("version")
-
-        @JvmField
         val PACKET_CODEC: StreamCodec<FriendlyByteBuf, VersionPacket> = of(
             { buf, packet -> buf.writeUtf(packet.version) },
             { buf -> VersionPacket(buf.readUtf()) }

@@ -42,30 +42,15 @@ class DisplayScreen(
     private var facing: String,
     private var width: Int,
     private var height: Int,
-    @JvmField var isSync: Boolean,
+    var isSync: Boolean,
 ) {
-    @JvmField
     var owner: Boolean = false
-
-    @JvmField
     var errored: Boolean = false
-
-    @JvmField
     var muted: Boolean = false
-
-    @JvmField
     var texture: DynamicTexture? = null
-
-    @JvmField
     var textureId: Identifier? = null
-
-    @JvmField
     var renderType: RenderType? = null
-
-    @JvmField
     var textureWidth: Int = 0
-
-    @JvmField
     var textureHeight: Int = 0
 
     var volume: Double = 0.0

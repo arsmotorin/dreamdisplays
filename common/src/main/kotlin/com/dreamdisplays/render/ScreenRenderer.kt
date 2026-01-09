@@ -17,8 +17,6 @@ import org.jspecify.annotations.NullMarked
  */
 @NullMarked
 object ScreenRenderer {
-
-    @JvmStatic
     fun render(stack: PoseStack, camera: Camera) {
         val cameraPos = camera.position()
         for (screen in getScreens()) {

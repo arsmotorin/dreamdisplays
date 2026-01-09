@@ -16,7 +16,6 @@ import java.util.regex.Pattern
 object Utils {
 
     // Detects the current operating system platform
-    @JvmStatic
     fun detectPlatform(): String {
         val os = System.getProperty("os.name").lowercase(Locale.ENGLISH)
         if (os.contains("win")) {
@@ -30,7 +29,6 @@ object Utils {
     }
 
     // Extracts video ID from various YouTube URL formats
-    @JvmStatic
     fun extractVideoId(youtubeUrl: String): String? {
         if (youtubeUrl.isEmpty()) {
             return null
@@ -96,7 +94,6 @@ object Utils {
     }
 
     // Extracts timecode (t parameter) from YouTube URL in seconds
-    @JvmStatic
     fun extractTimecode(youtubeUrl: String): Int {
         if (youtubeUrl.isEmpty()) {
             return 0
@@ -124,7 +121,6 @@ object Utils {
         return 0
     }
 
-    @JvmStatic
     @Throws(IOException::class)
     fun readResource(resourcePath: String): String {
         Utils::class.java.getResourceAsStream(resourcePath).use { `in` ->
@@ -146,7 +142,6 @@ object Utils {
     }
 
     // Reads the mod version from the appropriate metadata file
-    @JvmStatic
     fun getModVersion(): String {
         // Fabric
         try {

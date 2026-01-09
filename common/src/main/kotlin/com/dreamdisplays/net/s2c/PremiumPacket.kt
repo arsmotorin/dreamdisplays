@@ -11,10 +11,7 @@ data class PremiumPacket(val premium: Boolean) : CustomPacketPayload {
     override fun type(): Type<out CustomPacketPayload> = PACKET_ID
 
     companion object {
-        @JvmField
         val PACKET_ID: Type<PremiumPacket> = createType("premium")
-
-        @JvmField
         val PACKET_CODEC: StreamCodec<FriendlyByteBuf, PremiumPacket> = of(
             { buf, packet -> buf.writeBoolean(packet.premium) },
             { buf -> PremiumPacket(buf.readBoolean()) }

@@ -25,10 +25,7 @@ data class DisplayInfoPacket(
     override fun type(): Type<out CustomPacketPayload> = PACKET_ID
 
     companion object {
-        @JvmField
         val PACKET_ID: Type<DisplayInfoPacket> = createType("display_info")
-
-        @JvmField
         val PACKET_CODEC: StreamCodec<FriendlyByteBuf, DisplayInfoPacket> = of(
             { buf, packet ->
                 buf.writeUUID(packet.uuid)

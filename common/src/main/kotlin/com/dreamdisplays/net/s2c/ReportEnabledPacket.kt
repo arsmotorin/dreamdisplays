@@ -11,10 +11,7 @@ data class ReportEnabledPacket(val enabled: Boolean) : CustomPacketPayload {
     override fun type(): Type<out CustomPacketPayload> = PACKET_ID
 
     companion object {
-        @JvmField
         val PACKET_ID: Type<ReportEnabledPacket> = createType("report_enabled")
-
-        @JvmField
         val PACKET_CODEC: StreamCodec<FriendlyByteBuf, ReportEnabledPacket> = of(
             { buf, packet -> buf.writeBoolean(packet.enabled) },
             { buf -> ReportEnabledPacket(buf.readBoolean()) }

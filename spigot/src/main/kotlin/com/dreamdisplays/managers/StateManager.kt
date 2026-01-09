@@ -15,8 +15,6 @@ import java.util.*
 @NullMarked
 object StateManager {
     private val playStates: MutableMap<UUID?, StateData> = HashMap()
-
-    @JvmStatic
     fun processSyncPacket(packet: SyncData, player: Player) {
         val data = getDisplayData(packet.id)
         if (data != null) data.isSync = packet.isSync
@@ -41,7 +39,6 @@ object StateManager {
         PacketUtils.sendSync(receivers.filter { it.uniqueId != player.uniqueId }.toMutableList(), packet)
     }
 
-    @JvmStatic
     fun sendSyncPacket(id: UUID?, player: Player?) {
         val state = playStates[id] ?: return
 

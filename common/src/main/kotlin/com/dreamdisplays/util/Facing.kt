@@ -19,7 +19,6 @@ enum class Facing {
     }
 
     companion object {
-        @JvmStatic
         fun Byte.fromPacket(): Facing {
             if (this < 0 || this >= entries.size) throw IllegalArgumentException("Invalid facing ID: $this")
             return entries[toInt()]

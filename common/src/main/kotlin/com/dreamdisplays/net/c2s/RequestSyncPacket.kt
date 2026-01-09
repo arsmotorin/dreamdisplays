@@ -12,10 +12,7 @@ data class RequestSyncPacket(val uuid: UUID) : CustomPacketPayload {
     override fun type(): Type<out CustomPacketPayload> = PACKET_ID
 
     companion object {
-        @JvmField
         val PACKET_ID: Type<RequestSyncPacket> = createType("req_sync")
-
-        @JvmField
         val PACKET_CODEC: StreamCodec<FriendlyByteBuf, RequestSyncPacket> = of(
             { buf, packet -> buf.writeUUID(packet.uuid) },
             { buf -> RequestSyncPacket(buf.readUUID()) }

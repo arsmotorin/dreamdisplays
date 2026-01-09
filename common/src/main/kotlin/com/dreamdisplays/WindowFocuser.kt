@@ -72,7 +72,6 @@ class WindowFocuser : Thread("window-focus-mute-thread") {
     }
 
     companion object {
-        @JvmField
         var instance: WindowFocuser = WindowFocuser()
     }
 }

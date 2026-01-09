@@ -28,7 +28,6 @@ object DisplayManager {
     private val displays: MutableMap<UUID, DisplayData> = mutableMapOf()
     private val reportTime: MutableMap<UUID, Long> = mutableMapOf()
 
-    @JvmStatic
     fun getDisplayData(id: UUID?): DisplayData? = displays[id]
 
     fun getDisplays(): List<DisplayData> = displays.values.toList()
@@ -130,7 +129,6 @@ object DisplayManager {
         displays.remove(displayData.id)
     }
 
-    @JvmStatic
     fun delete(id: UUID, player: Player) {
         val displayData = displays[id] ?: return
 
@@ -142,7 +140,6 @@ object DisplayManager {
         delete(displayData)
     }
 
-    @JvmStatic
     fun report(id: UUID, player: Player) {
         val displayData = displays[id] ?: return
         val lastReport = reportTime.getOrPut(id) { 0L }

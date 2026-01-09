@@ -13,8 +13,6 @@ import org.jspecify.annotations.NullMarked
  */
 @NullMarked
 object RayCasting {
-
-    @JvmStatic
     fun rCBlock(maxDistance: Double): BlockHitResult? {
         val minecraft = getInstance()
         val player = minecraft.player

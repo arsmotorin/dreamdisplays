@@ -45,34 +45,18 @@ object ModInitializer {
     private val lastLevel = AtomicReference<ClientLevel?>(null)
     private val wasFocused = AtomicBoolean(false)
 
-    @JvmField
     val config = ClientConfig(File("./config/$MOD_ID"))
-
-    @JvmField
     var isOnScreen = false
-
-    @JvmField
     var focusMode = false
-
-    @JvmField
     var displaysEnabled = true
-
-    @JvmField
     var isPremium = false
-
-    @JvmField
     var isReportingEnabled = true
-
-    @JvmField
     var ceilingFloorSupported = false
-
-    @JvmField
     var unloadCheckTick: Int = 0
 
     private var hoveredScreen: DisplayScreen? = null
     private lateinit var mod: ModPacketSender
 
-    @JvmStatic
     fun onModInit(dreamDisplaysMod: ModPacketSender) {
         mod = dreamDisplaysMod
         setLogger(getLogger(MOD_ID))
@@ -83,11 +67,8 @@ object ModInitializer {
         SettingsManager.load()
 
         instance.start()
-
-        // timerThread.start()
     }
 
-    @JvmStatic
     fun onDisplayInfoPacket(packet: DisplayInfoPacket) {
         if (!displaysEnabled) return
 
@@ -165,14 +146,12 @@ object ModInitializer {
         )
     }
 
-    @JvmStatic
     fun onDisplayEnabledPacket(packet: DisplayEnabledPacket) {
         displaysEnabled = packet.enabled
         config.displaysEnabled = packet.enabled
         config.save()
     }
 
-    @JvmStatic
     fun createScreen(
         uuid: UUID,
         ownerUuid: UUID,
@@ -204,7 +183,6 @@ object ModInitializer {
         if (code != "") screen.loadVideo(code, lang)
     }
 
-    @JvmStatic
     fun onSyncPacket(packet: SyncPacket) {
         if (!ScreenManager.screens.containsKey(packet.uuid)) return
         val screen = ScreenManager.screens[packet.uuid]
@@ -247,7 +225,6 @@ object ModInitializer {
         }
     }
 
-    @JvmStatic
     fun onEndTick(minecraft: Minecraft) {
         val level = minecraft.level
         if (level != null && minecraft.currentServer != null) {
@@ -379,12 +356,10 @@ object ModInitializer {
         hoveredScreen?.let { ConfigurationManager.open(it) }
     }
 
-    @JvmStatic
     fun sendPacket(packet: CustomPacketPayload) {
         mod.sendPacket(packet)
     }
 
-    @JvmStatic
     fun onDeletePacket(packet: DeletePacket) {
         val screen = ScreenManager.screens[packet.uuid]
         if (screen != null) {
@@ -399,25 +374,20 @@ object ModInitializer {
         )
     }
 
-    @JvmStatic
     fun onStop() {
         ScreenManager.saveAllScreens()
-        // timerThread.interrupt()
         unloadAllDisplays()
         instance.interrupt()
     }
 
-    @JvmStatic
     fun onPremiumPacket(packet: PremiumPacket) {
         isPremium = packet.premium
     }
 
-    @JvmStatic
     fun onReportEnabledPacket(packet: ReportEnabledPacket) {
         isReportingEnabled = packet.enabled
     }
 
-    @JvmStatic
     fun onCeilingFloorSupportPacket(packet: com.dreamdisplays.net.s2c.CeilingFloorSupportPacket) {
         ceilingFloorSupported = packet.supported
     }

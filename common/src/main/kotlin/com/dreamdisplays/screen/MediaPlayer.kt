@@ -67,38 +67,54 @@ class MediaPlayer(
 
     @Volatile
     private var currentVolume = 0.0
+
     @Volatile
     private var videoPipeline: Pipeline? = null
+
     @Volatile
     private var audioPipeline: Pipeline? = null
+
     @Volatile
     var availableQualities: MutableList<Int>? = null
+
     @Volatile
     private var currentVideoUrl: String? = null
+
     @Volatile
     private var currentAudioUrl: String? = null
+
     @Volatile
     var isInitialized: Boolean = false
         private set
     private var lastQuality = 0
+
     @Volatile
     private var currentFrameBuffer: ByteBuffer? = null
+
     @Volatile
     private var currentFrameWidth = 0
+
     @Volatile
     private var currentFrameHeight = 0
+
     @Volatile
     private var preparedBuffer: ByteBuffer? = null
+
     @Volatile
     private var preparedW = 0
+
     @Volatile
     private var preparedH = 0
+
     @Volatile
     private var userVolume = ModInitializer.config.defaultDisplayVolume
+
     @Volatile
     private var lastAttenuation = 1.0
+
     @Volatile
     private var brightness = 1.0
+
     @Volatile
     private var frameReady = false
     private var syncCheckCounter = 0
@@ -106,6 +122,7 @@ class MediaPlayer(
     private var convertBufferSize = 0
     private var scaleBuffer: ByteBuffer? = null
     private var scaleBufferSize = 0
+
     @Volatile
     private var lastFrameTime: Long = 0
 

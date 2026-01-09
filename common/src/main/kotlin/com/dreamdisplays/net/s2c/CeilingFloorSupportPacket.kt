@@ -11,10 +11,7 @@ data class CeilingFloorSupportPacket(val supported: Boolean) : CustomPacketPaylo
     override fun type(): Type<out CustomPacketPayload> = PACKET_ID
 
     companion object {
-        @JvmField
         val PACKET_ID: Type<CeilingFloorSupportPacket> = createType("ceiling_floor_support")
-
-        @JvmField
         val PACKET_CODEC: StreamCodec<FriendlyByteBuf, CeilingFloorSupportPacket> = of(
             { buf, packet -> buf.writeBoolean(packet.supported) },
             { buf -> CeilingFloorSupportPacket(buf.readBoolean()) }

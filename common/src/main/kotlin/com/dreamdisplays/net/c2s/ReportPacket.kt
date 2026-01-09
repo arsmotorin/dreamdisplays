@@ -12,10 +12,7 @@ data class ReportPacket(val uuid: UUID) : CustomPacketPayload {
     override fun type(): Type<out CustomPacketPayload> = PACKET_ID
 
     companion object {
-        @JvmField
         val PACKET_ID: Type<ReportPacket> = createType("report")
-
-        @JvmField
         val PACKET_CODEC: StreamCodec<FriendlyByteBuf, ReportPacket> = of(
             { buf, packet -> buf.writeUUID(packet.uuid) },
             { buf -> ReportPacket(buf.readUUID()) }

@@ -27,7 +27,6 @@ object SettingsManager {
     private var currentServerId: String? = null
 
     // Load settings from disk
-    @JvmStatic
     fun load() {
         // Ensure directory exists
         if (!SETTINGS_DIR.exists() && !SETTINGS_DIR.mkdirs()) {
@@ -62,7 +61,6 @@ object SettingsManager {
     }
 
     // Load server-specific display data
-    @JvmStatic
     fun loadServerDisplays(serverId: String) {
         currentServerId = serverId
         val serverFile = File(SETTINGS_DIR, "server-$serverId-displays.json")
@@ -95,7 +93,6 @@ object SettingsManager {
     }
 
     // Save all client settings to disk
-    @JvmStatic
     fun save() {
         try {
             if (!SETTINGS_DIR.exists() && !SETTINGS_DIR.mkdirs()) {
@@ -118,7 +115,6 @@ object SettingsManager {
     }
 
     // Save server-specific displays to disk
-    @JvmStatic
     fun saveServerDisplays(serverId: String) {
         try {
             if (!SETTINGS_DIR.exists() && !SETTINGS_DIR.mkdirs()) {
@@ -142,13 +138,11 @@ object SettingsManager {
     }
 
     // Get client display settings
-    @JvmStatic
     fun getSettings(displayUuid: UUID): DisplaySettings {
         return displaySettings.computeIfAbsent(displayUuid) { DisplaySettings() }
     }
 
     // Update client display settings
-    @JvmStatic
     fun updateSettings(
         displayUuid: UUID,
         volume: Float,
@@ -167,14 +161,12 @@ object SettingsManager {
     }
 
     // Get full display data for a server
-    @JvmStatic
     fun getDisplayData(displayUuid: UUID): FullDisplayData? {
         if (currentServerId == null) return null
         return serverDisplays.getOrDefault(currentServerId, HashMap())[displayUuid]
     }
 
     // Save full display data
-    @JvmStatic
     fun saveDisplayData(displayUuid: UUID, data: FullDisplayData) {
         if (currentServerId == null) return
 
@@ -183,7 +175,6 @@ object SettingsManager {
     }
 
     // Remove display from all servers and client settings
-    @JvmStatic
     fun removeDisplay(displayUuid: UUID) {
         // Remove from server-specific display data
         for (displays in serverDisplays.values) {
@@ -210,39 +201,30 @@ object SettingsManager {
 
     // Client settings for a display (volume, quality, muted, brightness, paused)
     class DisplaySettings {
-        @JvmField
         var volume: Float = 0.5f
-
-        @JvmField
         var quality: String = "720"
-
-        @JvmField
         var brightness: Float = 1.0f
-
-        @JvmField
         var muted: Boolean = false
-
-        @JvmField
         var paused: Boolean = true
     }
 
     // Full display data (stored per server)
     class FullDisplayData(
-        @JvmField var uuid: UUID,
-        @JvmField var x: Int,
-        @JvmField var y: Int,
-        @JvmField var z: Int,
-        @JvmField var facing: String,
-        @JvmField var width: Int,
-        @JvmField var height: Int,
-        @JvmField var videoUrl: String,
-        @JvmField var lang: String?,
-        @JvmField var volume: Float,
-        @JvmField var quality: String,
-        @JvmField var muted: Boolean,
-        @JvmField var isSync: Boolean,
-        @JvmField var ownerUuid: UUID,
-        @JvmField var renderDistance: Int = 64,
-        @JvmField var currentTimeNanos: Long = 0,
+        var uuid: UUID,
+        var x: Int,
+        var y: Int,
+        var z: Int,
+        var facing: String,
+        var width: Int,
+        var height: Int,
+        var videoUrl: String,
+        var lang: String?,
+        var volume: Float,
+        var quality: String,
+        var muted: Boolean,
+        var isSync: Boolean,
+        var ownerUuid: UUID,
+        var renderDistance: Int = 64,
+        var currentTimeNanos: Long = 0,
     )
 }

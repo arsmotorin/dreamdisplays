@@ -18,10 +18,7 @@ data class SyncPacket(
     override fun type(): Type<out CustomPacketPayload> = PACKET_ID
 
     companion object {
-        @JvmField
         val PACKET_ID: Type<SyncPacket> = createType("sync")
-
-        @JvmField
         val PACKET_CODEC: StreamCodec<FriendlyByteBuf, SyncPacket> = of(
             { buf, packet ->
                 buf.writeUUID(packet.uuid)

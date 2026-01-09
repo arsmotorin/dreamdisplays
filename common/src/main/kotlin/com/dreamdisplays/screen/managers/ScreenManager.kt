@@ -11,20 +11,14 @@ import java.util.concurrent.ConcurrentHashMap
  */
 @NullMarked
 object ScreenManager {
-
-    @JvmField
     val screens: ConcurrentHashMap<UUID, DisplayScreen> = ConcurrentHashMap()
 
     // Cache of unloaded displays
-    @JvmField
     val unloadedScreens: ConcurrentHashMap<UUID, SettingsManager.FullDisplayData> = ConcurrentHashMap()
-
-    @JvmStatic
     fun getScreens(): Collection<DisplayScreen> {
         return screens.values
     }
 
-    @JvmStatic
     fun registerScreen(screen: DisplayScreen) {
         if (screens.containsKey(screen.uuid)) {
             val old = screens[screen.uuid]
@@ -48,7 +42,6 @@ object ScreenManager {
         saveScreenData(screen)
     }
 
-    @JvmStatic
     fun unregisterScreen(screen: DisplayScreen) {
         // Cache the display data before unregistering
         val videoUrl = screen.videoUrl
@@ -79,7 +72,6 @@ object ScreenManager {
         screen.unregister()
     }
 
-    @JvmStatic
     fun unloadAllDisplays() {
         for (screen in screens.values) {
             screen.unregister()
@@ -90,7 +82,6 @@ object ScreenManager {
     }
 
     // Save screen data to persistent storage
-    @JvmStatic
     fun saveScreenData(screen: DisplayScreen) {
         val data = SettingsManager.FullDisplayData(
             screen.uuid,
@@ -117,7 +108,6 @@ object ScreenManager {
     // Load displays from persistent storage for a server
     // Actual display data comes from the server via Info packets.
     // Local cache is used only for client preferences (volume, quality, muted).
-    @JvmStatic
     fun loadScreensForServer(serverId: String) {
         SettingsManager.loadServerDisplays(serverId)
         LoggingManager.info("Initialized display settings storage for server: $serverId")
@@ -125,7 +115,6 @@ object ScreenManager {
     }
 
     // Save all screens to persistent storage for current server
-    @JvmStatic
     fun saveAllScreens() {
         for (screen in screens.values) {
             saveScreenData(screen)
