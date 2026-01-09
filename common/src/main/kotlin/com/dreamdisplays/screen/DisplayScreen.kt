@@ -337,7 +337,7 @@ class DisplayScreen(
     // Returns list of available video qualities
     fun getQualityList(): List<Int> {
         if (mediaPlayer == null) return emptyList()
-        return mediaPlayer!!.availableQualities
+        return mediaPlayer!!.availableQualities!!
     }
 
 
