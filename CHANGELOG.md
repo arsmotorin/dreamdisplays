@@ -33,7 +33,7 @@ Mod:
 - [ ] Change channel from Beta to Release
 - [ ] Update wiki with new features
 - [x] Handle failed config gracefully
-- [ ] Add Kolyakot33 as a contributor
+- [x] Add Kolyakot33 as a contributor
 
 Plugin:
 
