@@ -7,7 +7,7 @@ import com.mojang.blaze3d.textures.GpuTexture
 
 object FrameManager {
     fun textureFilled(bp: BufferPreparator): Boolean {
-        return bp.frameReady && bp.preparedBuffer != null && bp.preparedBuffer!!.remaining() > 0
+        return bp.hasInitialFrame
     }
 
     fun updateFrame(bp: BufferPreparator, texture: GpuTexture) {

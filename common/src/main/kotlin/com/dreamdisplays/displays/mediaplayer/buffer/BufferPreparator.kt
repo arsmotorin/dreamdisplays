@@ -15,6 +15,7 @@ import java.util.concurrent.RejectedExecutionException
 import kotlin.math.abs
 
 class BufferPreparator(val mp: MediaPlayer) {
+    val bufferLock = Any()
     internal var convertBuffer: ByteBuffer? = null
     internal var convertBufferSize = 0
     internal var scaleBuffer: ByteBuffer? = null
@@ -28,9 +29,10 @@ class BufferPreparator(val mp: MediaPlayer) {
     internal var preparedW = 0
     internal var preparedH = 0
     internal var frameReady = false
+    internal var hasInitialFrame = false
 
     fun prepareBufferAsync() {
-        if (currentFrameBuffer == null) return
+        synchronized(bufferLock) { if (currentFrameBuffer == null) return }
 
         val now = System.nanoTime()
         if (now - lastFrameTime < MediaPlayerControls.MIN_FRAME_INTERVAL_NS) {
@@ -47,54 +49,58 @@ class BufferPreparator(val mp: MediaPlayer) {
     }
 
     private fun prepareBuffer() {
-        // long startNs = System.nanoTime();
+        synchronized(bufferLock) {
+            // long startNs = System.nanoTime();
 
-        val targetW = mp.display.textureWidth
-        val targetH = mp.display.textureHeight
-        if (targetW == 0 || targetH == 0 || currentFrameBuffer == null) return
+            val targetW = mp.display.textureWidth
+            val targetH = mp.display.textureHeight
+            if (targetW == 0 || targetH == 0 || currentFrameBuffer == null) return
 
-        val needsScaling = currentFrameWidth != targetW || currentFrameHeight != targetH
-        val bufferSize = targetW * targetH * 4
+            val needsScaling = currentFrameWidth != targetW || currentFrameHeight != targetH
+            val bufferSize = targetW * targetH * 4
 
-        if (needsScaling) {
-            if (scaleBuffer == null || scaleBufferSize < bufferSize) {
-                scaleBuffer = ByteBuffer.allocateDirect(bufferSize).order(ByteOrder.nativeOrder())
-                scaleBufferSize = bufferSize
-            }
+            if (needsScaling) {
+                if (scaleBuffer == null || scaleBufferSize < bufferSize) {
+                    scaleBuffer = ByteBuffer.allocateDirect(bufferSize).order(ByteOrder.nativeOrder())
+                    scaleBufferSize = bufferSize
+                }
 
-            Scaler.Companion.scaleRGBA(
-                currentFrameBuffer!!, currentFrameWidth, currentFrameHeight,
-                scaleBuffer!!, targetW, targetH, MediaPlayerControls.brightness
-            )
-
-            preparedBuffer = scaleBuffer
-        } else {
-            if (convertBuffer == null || convertBufferSize < bufferSize) {
-                convertBuffer = ByteBuffer.allocateDirect(bufferSize).order(ByteOrder.nativeOrder())
-                convertBufferSize = bufferSize
-            }
-
-            currentFrameBuffer!!.rewind()
-            convertBuffer!!.clear()
-
-            if (abs(MediaPlayerControls.brightness - 1.0) < 1e-5) {
-                Buffer.Companion.copyBuffer(currentFrameBuffer!!, convertBuffer!!, bufferSize)
-            } else {
-                BrightManager.Companion.applyBrightnessToBuffer(currentFrameBuffer!!, convertBuffer!!, bufferSize,
-                    MediaPlayerControls.brightness
+                Scaler.scaleRGBA(
+                    currentFrameBuffer!!, currentFrameWidth, currentFrameHeight,
+                    scaleBuffer!!, targetW, targetH, MediaPlayerControls.brightness
                 )
+
+                preparedBuffer = scaleBuffer
+            } else {
+                if (convertBuffer == null || convertBufferSize < bufferSize) {
+                    convertBuffer = ByteBuffer.allocateDirect(bufferSize).order(ByteOrder.nativeOrder())
+                    convertBufferSize = bufferSize
+                }
+
+                currentFrameBuffer!!.rewind()
+                convertBuffer!!.clear()
+
+                if (abs(MediaPlayerControls.brightness - 1.0) < 1e-5) {
+                    Buffer.copyBuffer(currentFrameBuffer!!, convertBuffer!!, bufferSize)
+                } else {
+                    BrightManager.applyBrightnessToBuffer(
+                        currentFrameBuffer!!, convertBuffer!!, bufferSize,
+                        MediaPlayerControls.brightness
+                    )
+                }
+
+                preparedBuffer = convertBuffer
             }
 
-            preparedBuffer = convertBuffer
+            preparedW = targetW
+            preparedH = targetH
+            frameReady = true
+            hasInitialFrame = true
+
+            // long elapsedNs = System.nanoTime() - startNs;
+            // LoggingManager.info("[MediaPlayer] prepareBuffer: " + elapsedNs + "ns");
+            Minecraft.getInstance().execute { mp.display.fitTexture() }
         }
-
-        preparedW = targetW
-        preparedH = targetH
-        frameReady = true
-
-        // long elapsedNs = System.nanoTime() - startNs;
-        // LoggingManager.info("[MediaPlayer] prepareBuffer: " + elapsedNs + "ns");
-        Minecraft.getInstance().execute { mp.display.fitTexture() }
     }
 
     fun configureVideoSink(sink: AppSink) {
@@ -113,9 +119,13 @@ class BufferPreparator(val mp: MediaPlayer) {
                 val st = s.caps.getStructure(0)
                 val w = st.getInteger("width")
                 val h = st.getInteger("height")
-                currentFrameWidth = w
-                currentFrameHeight = h
-                currentFrameBuffer = Buffer.Companion.sampleToBuffer(s)
+                val newBuffer = Buffer.sampleToBuffer(s)
+
+                synchronized(bufferLock) {
+                    currentFrameWidth = w
+                    currentFrameHeight = h
+                    currentFrameBuffer = newBuffer
+                }
                 prepareBufferAsync()
             } catch (e: Exception) {
                 LoggingManager.error("[MediaPlayer] Error in NEW_SAMPLE handler", e)
