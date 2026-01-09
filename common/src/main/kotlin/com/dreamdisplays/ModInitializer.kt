@@ -8,14 +8,14 @@ import com.dreamdisplays.net.common.VersionPacket
 import com.dreamdisplays.net.s2c.DisplayInfoPacket
 import com.dreamdisplays.net.s2c.PremiumPacket
 import com.dreamdisplays.net.s2c.ReportEnabledPacket
-import com.dreamdisplays.screen.DisplayScreen
-import com.dreamdisplays.screen.managers.ConfigurationManager
-import com.dreamdisplays.screen.managers.ScreenManager
-import com.dreamdisplays.screen.managers.ScreenManager.unloadAllDisplays
-import com.dreamdisplays.screen.managers.SettingsManager
-import com.dreamdisplays.util.Facing
-import com.dreamdisplays.util.RayCasting
-import com.dreamdisplays.util.Utils
+import com.dreamdisplays.displays.DisplayScreen
+import com.dreamdisplays.displays.managers.ConfigurationManager
+import com.dreamdisplays.displays.managers.DisplayManager
+import com.dreamdisplays.displays.managers.DisplayManager.unloadAllDisplays
+import com.dreamdisplays.displays.managers.SettingsManager
+import com.dreamdisplays.utils.Facing
+import com.dreamdisplays.utils.RayCasting
+import com.dreamdisplays.utils.Utils
 import me.inotsleep.utils.logging.LoggingManager.*
 import net.minecraft.client.Minecraft
 import net.minecraft.client.multiplayer.ClientLevel
@@ -46,7 +46,7 @@ object ModInitializer {
     private val wasFocused = AtomicBoolean(false)
 
     val config = ClientConfig(File("./config/$MOD_ID"))
-    var isOnScreen = false
+    var isOnDisplay = false
     var focusMode = false
     var displaysEnabled = true
     var isPremium = false
@@ -54,7 +54,7 @@ object ModInitializer {
     var ceilingFloorSupported = false
     var unloadCheckTick: Int = 0
 
-    private var hoveredScreen: DisplayScreen? = null
+    private var hoveredDisplay: DisplayScreen? = null
     private lateinit var mod: ModPacketSender
 
     fun onModInit(dreamDisplaysMod: ModPacketSender) {
@@ -77,9 +77,9 @@ object ModInitializer {
             return
         }
 
-        if (ScreenManager.screens.containsKey(packet.uuid)) {
-            val screen = ScreenManager.screens[packet.uuid]
-            screen?.updateData(packet)
+        if (DisplayManager.displays.containsKey(packet.uuid)) {
+            val display = DisplayManager.displays[packet.uuid]
+            display?.updateData(packet)
             return
         }
 
@@ -90,7 +90,6 @@ object ModInitializer {
             val savedData = SettingsManager.getDisplayData(packet.uuid)
             val renderDistance = savedData?.renderDistance ?: config.defaultDistance
 
-            // Screen.getDistanceToScreen()
             val x = packet.pos.x
             val y = packet.pos.y
             val z = packet.pos.z
@@ -133,7 +132,7 @@ object ModInitializer {
             }
         }
 
-        createScreen(
+        createDisplay(
             packet.uuid,
             packet.ownerUuid,
             packet.pos,
@@ -152,7 +151,7 @@ object ModInitializer {
         config.save()
     }
 
-    fun createScreen(
+    fun createDisplay(
         uuid: UUID,
         ownerUuid: UUID,
         pos: Vector3i,
@@ -163,7 +162,7 @@ object ModInitializer {
         lang: String,
         isSync: Boolean,
     ) {
-        val screen = DisplayScreen(
+        val display = DisplayScreen(
             uuid,
             ownerUuid,
             pos.x,
@@ -177,21 +176,21 @@ object ModInitializer {
 
         val savedData = SettingsManager.getDisplayData(uuid)
         val renderDistance = savedData?.renderDistance ?: config.defaultDistance
-        screen.renderDistance = renderDistance
+        display.renderDistance = renderDistance
 
-        ScreenManager.registerScreen(screen)
-        if (code != "") screen.loadVideo(code, lang)
+        DisplayManager.registerDisplay(display)
+        if (code != "") display.loadVideo(code, lang)
     }
 
     fun onSyncPacket(packet: SyncPacket) {
-        if (!ScreenManager.screens.containsKey(packet.uuid)) return
-        val screen = ScreenManager.screens[packet.uuid]
-        screen?.updateData(packet)
+        if (!DisplayManager.displays.containsKey(packet.uuid)) return
+        val display = DisplayManager.displays[packet.uuid]
+        display?.updateData(packet)
     }
 
-    // Restore a screen from cached data (when player enters render distance)
-    private fun restoreScreen(data: SettingsManager.FullDisplayData) {
-        val screen = DisplayScreen(
+    // Restore a display from cached data (when player enters render distance)
+    private fun restoreDisplay(data: SettingsManager.FullDisplayData) {
+        val display = DisplayScreen(
             data.uuid,
             data.ownerUuid,
             data.x,
@@ -203,16 +202,16 @@ object ModInitializer {
             data.isSync
         )
 
-        screen.renderDistance = data.renderDistance
-        screen.setSavedTimeNanos(data.currentTimeNanos)
-        screen.volume = data.volume.toDouble()
-        screen.quality = data.quality
-        screen.muted = data.muted
+        display.renderDistance = data.renderDistance
+        display.setSavedTimeNanos(data.currentTimeNanos)
+        display.volume = data.volume.toDouble()
+        display.quality = data.quality
+        display.muted = data.muted
 
-        ScreenManager.screens[screen.uuid] = screen
+        DisplayManager.displays[display.uuid] = display
 
         if (data.videoUrl.isNotEmpty()) {
-            screen.loadVideo(data.videoUrl, data.lang)
+            display.loadVideo(data.videoUrl, data.lang)
         }
     }
 
@@ -237,7 +236,7 @@ object ModInitializer {
                 lastLevel.set(level)
 
                 unloadAllDisplays()
-                hoveredScreen = null
+                hoveredDisplay = null
 
                 checkVersionAndSendPacket()
             }
@@ -247,27 +246,26 @@ object ModInitializer {
             if (wasInMultiplayer.get()) {
                 wasInMultiplayer.set(false)
                 unloadAllDisplays()
-                hoveredScreen = null
+                hoveredDisplay = null
                 lastLevel.set(null)
                 return
             }
         }
 
         val result = RayCasting.rCBlock(64.0)
-        hoveredScreen = null
-        isOnScreen = false
+        hoveredDisplay = null
+        isOnDisplay = false
         val player = minecraft.player ?: return
 
         unloadCheckTick++
-        if (unloadCheckTick >= 10 && displaysEnabled && ScreenManager.unloadedScreens.isNotEmpty()) {
+        if (unloadCheckTick >= 10 && displaysEnabled && DisplayManager.unloadedDisplays.isNotEmpty()) {
             unloadCheckTick = 0
-            // Collect screens to restore first to avoid ConcurrentModificationException
+            // Collect displays to restore first to avoid ConcurrentModificationException
             val toRestore = ArrayList<SettingsManager.FullDisplayData>()
 
-            for (data in ScreenManager.unloadedScreens.values) {
+            for (data in DisplayManager.unloadedDisplays.values) {
                 if (data.videoUrl.isEmpty()) continue
 
-                // Screen.getDistanceToScreen
                 var maxX = data.x
                 val maxY = data.y + data.height - 1
                 var maxZ = data.z
@@ -293,32 +291,32 @@ object ModInitializer {
 
             // Now restore outside the iteration
             for (data in toRestore) {
-                ScreenManager.unloadedScreens.remove(data.uuid)
-                restoreScreen(data)
+                DisplayManager.unloadedDisplays.remove(data.uuid)
+                restoreDisplay(data)
             }
         }
 
-        for (screen in ScreenManager.getScreens()) {
-            val displayRenderDistance = screen.renderDistance.toDouble()
+        for (display in DisplayManager.getDisplays()) {
+            val displayRenderDistance = display.renderDistance.toDouble()
 
             if (
                 displayRenderDistance <
-                screen.getDistanceToScreen(player.blockPosition()) ||
+                display.getDistanceToDisplay(player.blockPosition()) ||
                 !displaysEnabled
             ) {
-                ScreenManager.saveScreenData(screen)
-                ScreenManager.unregisterScreen(screen)
-                if (hoveredScreen == screen) {
-                    hoveredScreen = null
-                    isOnScreen = false
+                DisplayManager.saveDisplayData(display)
+                DisplayManager.unregisterDisplay(display)
+                if (hoveredDisplay == display) {
+                    hoveredDisplay = null
+                    isOnDisplay = false
                 }
             } else {
-                if (result != null && screen.isInScreen(result.blockPos)) {
-                    hoveredScreen = screen
-                    isOnScreen = true
+                if (result != null && display.isInDisplay(result.blockPos)) {
+                    hoveredDisplay = display
+                    isOnDisplay = true
                 }
 
-                screen.tick(player.blockPosition())
+                display.tick(player.blockPosition())
             }
         }
 
@@ -333,7 +331,7 @@ object ModInitializer {
 
         wasPressed[0] = pressed
 
-        if (focusMode && hoveredScreen != null) {
+        if (focusMode && hoveredDisplay != null) {
             player.addEffect(
                 MobEffectInstance(
                     MobEffects.BLINDNESS,
@@ -353,7 +351,7 @@ object ModInitializer {
     }
 
     private fun checkAndOpenScreen() {
-        hoveredScreen?.let { ConfigurationManager.open(it) }
+        hoveredDisplay?.let { ConfigurationManager.open(it) }
     }
 
     fun sendPacket(packet: CustomPacketPayload) {
@@ -361,12 +359,12 @@ object ModInitializer {
     }
 
     fun onDeletePacket(packet: DeletePacket) {
-        val screen = ScreenManager.screens[packet.uuid]
-        if (screen != null) {
-            ScreenManager.unregisterScreen(screen)
+        val display = DisplayManager.displays[packet.uuid]
+        if (display != null) {
+            DisplayManager.unregisterDisplay(display)
         }
 
-        ScreenManager.unloadedScreens.remove(packet.uuid)
+        DisplayManager.unloadedDisplays.remove(packet.uuid)
 
         SettingsManager.removeDisplay(packet.uuid)
         info(
@@ -375,7 +373,7 @@ object ModInitializer {
     }
 
     fun onStop() {
-        ScreenManager.saveAllScreens()
+        DisplayManager.saveAllDisplays()
         unloadAllDisplays()
         instance.interrupt()
     }

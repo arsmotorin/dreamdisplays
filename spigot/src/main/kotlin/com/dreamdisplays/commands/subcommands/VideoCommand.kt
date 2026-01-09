@@ -5,7 +5,7 @@ import com.dreamdisplays.managers.DisplayManager.getReceivers
 import com.dreamdisplays.managers.DisplayManager.isContains
 import com.dreamdisplays.managers.DisplayManager.sendUpdate
 import com.dreamdisplays.utils.Message
-import com.dreamdisplays.utils.YouTubeUtils
+import com.dreamdisplays.utils.YouTube
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
@@ -36,7 +36,7 @@ class VideoCommand : SubCommand {
         val inputUrl = args[1] ?: ""
 
         // Validate URL by checking if we can extract video ID
-        if (YouTubeUtils.extractVideoIdFromUri(inputUrl) == null) {
+        if (YouTube.extractVideoIdFromUri(inputUrl) == null) {
             return Message.sendMessage(player, "invalidURL")
         }
 

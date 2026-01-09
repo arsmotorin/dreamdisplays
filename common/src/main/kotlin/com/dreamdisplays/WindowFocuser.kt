@@ -1,12 +1,12 @@
 package com.dreamdisplays
 
 import com.dreamdisplays.ModInitializer.config
-import com.dreamdisplays.screen.managers.ScreenManager.getScreens
+import com.dreamdisplays.displays.managers.DisplayManager.getDisplays
 import net.minecraft.client.Minecraft
 import org.jspecify.annotations.NullMarked
 
 /**
- * A background thread that mutes/unmutes screens based on window focus.
+ * A background thread that mutes/unmutes displays based on window focus.
  */
 @NullMarked
 class WindowFocuser : Thread("window-focus-mute-thread") {
@@ -44,15 +44,15 @@ class WindowFocuser : Thread("window-focus-mute-thread") {
                 val focused = client.isWindowActive
 
                 if (config.muteOnAltTab) {
-                    val screensList = try {
-                        getScreens().toList()
+                    val displaysList = try {
+                        getDisplays().toList()
                     } catch (_: Exception) {
                         emptyList()
                     }
 
-                    for (screen in screensList) {
+                    for (display in displaysList) {
                         try {
-                            screen.mute(!focused)
+                            display.mute(!focused)
                         } catch (_: Exception) {
                             // Server is probably restarting, ignore
                         }

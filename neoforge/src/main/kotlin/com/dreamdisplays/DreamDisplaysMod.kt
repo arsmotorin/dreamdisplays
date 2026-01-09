@@ -10,8 +10,8 @@ import com.dreamdisplays.net.s2c.CeilingFloorSupportPacket
 import com.dreamdisplays.net.s2c.DisplayInfoPacket
 import com.dreamdisplays.net.s2c.PremiumPacket
 import com.dreamdisplays.net.s2c.ReportEnabledPacket
-import com.dreamdisplays.screen.DisplayScreenRenderer
-import com.dreamdisplays.screen.managers.ScreenManager
+import com.dreamdisplays.displays.renderer.DisplayRenderer
+import com.dreamdisplays.displays.managers.DisplayManager
 import net.minecraft.client.Minecraft
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.neoforged.api.distmarker.Dist
@@ -100,8 +100,8 @@ class DreamDisplaysMod(modEventBus: IEventBus) : ModPacketSender {
 
     @SubscribeEvent
     fun onClientStop(event: ClientPlayerNetworkEvent.LoggingOut) {
-        ScreenManager.saveAllScreens()
-        ScreenManager.unloadAllDisplays()
+        DisplayManager.saveAllDisplays()
+        DisplayManager.unloadAllDisplays()
     }
 
     @SubscribeEvent
@@ -116,7 +116,7 @@ class DreamDisplaysMod(modEventBus: IEventBus) : ModPacketSender {
 
         val poseStack = event.poseStack
         val camera = mc.gameRenderer.mainCamera
-        DisplayScreenRenderer.render(poseStack, camera)
+        DisplayRenderer.render(poseStack, camera)
     }
 
     @SubscribeEvent
@@ -128,7 +128,7 @@ class DreamDisplaysMod(modEventBus: IEventBus) : ModPacketSender {
             } else {
                 mc.currentServer?.ip ?: "unknown"
             }
-            ScreenManager.loadScreensForServer(serverId)
+            DisplayManager.loadDisplaysForServer(serverId)
         }
     }
 

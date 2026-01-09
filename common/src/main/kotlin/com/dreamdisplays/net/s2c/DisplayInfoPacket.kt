@@ -1,8 +1,8 @@
 package com.dreamdisplays.net.s2c
 
 import com.dreamdisplays.net.common.helpers.createType
-import com.dreamdisplays.util.Facing
-import com.dreamdisplays.util.Facing.Companion.fromPacket
+import com.dreamdisplays.utils.Facing
+import com.dreamdisplays.utils.Facing.Companion.fromPacket
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.codec.StreamCodec.of

@@ -12,10 +12,10 @@ import com.dreamdisplays.net.s2c.CeilingFloorSupportPacket
 import com.dreamdisplays.net.s2c.DisplayInfoPacket
 import com.dreamdisplays.net.s2c.PremiumPacket
 import com.dreamdisplays.net.s2c.ReportEnabledPacket
-import com.dreamdisplays.screen.DisplayScreenRenderer.render
-import com.dreamdisplays.screen.managers.ScreenManager.loadScreensForServer
-import com.dreamdisplays.screen.managers.ScreenManager.saveAllScreens
-import com.dreamdisplays.screen.managers.ScreenManager.unloadAllDisplays
+import com.dreamdisplays.displays.renderer.DisplayRenderer.render
+import com.dreamdisplays.displays.managers.DisplayManager.loadDisplaysForServer
+import com.dreamdisplays.displays.managers.DisplayManager.saveAllDisplays
+import com.dreamdisplays.displays.managers.DisplayManager.unloadAllDisplays
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.*
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.*
@@ -137,12 +137,12 @@ class DreamDisplaysMod : ClientModInitializer, ModPacketSender {
                 // TODO: add support for singleplayer in the future.
                 val serverId =
                     if (client.hasSingleplayerServer()) "singleplayer" else (if (client.currentServer != null) client.currentServer!!.ip else "unknown")
-                loadScreensForServer(serverId)
+                loadDisplaysForServer(serverId)
             }
         })
 
         DISCONNECT.register(Disconnect { _, _ ->
-            saveAllScreens()
+            saveAllDisplays()
             unloadAllDisplays()
             ModInitializer.onStop()
         })
