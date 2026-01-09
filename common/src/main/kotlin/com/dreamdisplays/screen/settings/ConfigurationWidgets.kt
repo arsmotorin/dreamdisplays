@@ -246,10 +246,6 @@ object ConfigurationWidgets {
                     screen.waitForMFInit { screen.sendSync() }
                 }
             }
-
-            fun setSyncResetButton(button: Button) {
-                resetButton = button
-            }
         }
     }
 

@@ -40,13 +40,13 @@ object YouTubeUtils {
         }.getOrNull()
     }
 
-    private fun parseQueryParameter(query: String, paramName: String): String? {
+    private fun parseQueryParameter(query: String, string: String): String? {
         return query.split("&")
             .firstNotNullOfOrNull { param ->
                 val (key, value) = param.split("=", limit = 2)
                     .takeIf { it.size == 2 } ?: return@firstNotNullOfOrNull null
 
-                if (key == paramName) value else null
+                if (key == "v") value else null
             }
     }
 

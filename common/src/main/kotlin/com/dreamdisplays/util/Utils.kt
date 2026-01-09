@@ -6,7 +6,6 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.net.URI
 import java.net.URISyntaxException
-import java.util.*
 import java.util.regex.Pattern
 
 /**
@@ -14,20 +13,6 @@ import java.util.regex.Pattern
  */
 @NullMarked
 object Utils {
-
-    // Detects the current operating system platform
-    fun detectPlatform(): String {
-        val os = System.getProperty("os.name").lowercase(Locale.ENGLISH)
-        if (os.contains("win")) {
-            return "windows"
-        } else if (os.contains("mac")) {
-            return "macos"
-        } else if (os.contains("nux") || os.contains("nix") || os.contains("aix")) {
-            return "linux"
-        }
-        throw UnsupportedOperationException("Unsupported OS: $os")
-    }
-
     // Extracts video ID from various YouTube URL formats
     fun extractVideoId(youtubeUrl: String): String? {
         if (youtubeUrl.isEmpty()) {
@@ -49,7 +34,7 @@ object Utils {
                 }
             }
 
-            // Handle youtube.com URLs
+            // Handle YouTube.com URLs
             if (host != null && host.contains("youtube.com")) {
                 val query = uri.query
 

@@ -6,11 +6,12 @@ import com.mojang.blaze3d.platform.NativeImage
 import com.mojang.blaze3d.systems.RenderSystem
 import com.mojang.blaze3d.textures.GpuTexture
 import me.inotsleep.utils.logging.LoggingManager
+import me.inotsleep.utils.logging.LoggingManager.error
+import me.inotsleep.utils.logging.LoggingManager.info
 import net.minecraft.client.Minecraft
 import net.minecraft.core.BlockPos
 import org.freedesktop.gstreamer.*
 import org.freedesktop.gstreamer.Bus.ERROR
-import org.freedesktop.gstreamer.Bus.STATE_CHANGED
 import org.freedesktop.gstreamer.elements.AppSink
 import org.freedesktop.gstreamer.elements.AppSink.NEW_SAMPLE
 import org.freedesktop.gstreamer.event.SeekFlags
@@ -35,7 +36,6 @@ import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
-import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 import java.util.function.ToIntFunction
@@ -127,15 +127,15 @@ class MediaPlayer(
     private var lastFrameTime: Long = 0
 
     init {
-        LoggingManager.info("[MediaPlayer] Creating new instance for URL: " + youtubeUrl)
+        info("[MediaPlayer] Creating new instance for URL: $youtubeUrl")
         Gst.init("MediaPlayer")
-        INIT_EXECUTOR.submit(Runnable { this.initialize() })
+        INIT_EXECUTOR.submit { this.initialize() }
     }
 
     private fun initialize() {
-        LoggingManager.info("[MediaPlayer] === START INITIALIZATION ===")
+        info("[MediaPlayer] === START INITIALIZATION ===")
         try {
-            LoggingManager.info("[MediaPlayer] Initializing NewPipe with custom Downloader")
+            info("[MediaPlayer] Initializing NewPipe with custom Downloader")
             NewPipe.init(object : Downloader() {
                 @Throws(IOException::class)
                 override fun execute(request: Request): Response {
@@ -144,7 +144,7 @@ class MediaPlayer(
                     val headers = request.headers()
                     val data = request.dataToSend()
 
-                    LoggingManager.info("[MediaPlayer Downloader] Request: " + method + " " + url)
+                    info("[MediaPlayer Downloader] Request: $method $url")
 
                     val u = URI.create(url).toURL()
                     val conn = u.openConnection() as HttpURLConnection
@@ -172,7 +172,7 @@ class MediaPlayer(
 
                     conn.connect()
                     val code = conn.getResponseCode()
-                    val `is` = if (code >= 400) conn.getErrorStream() else conn.getInputStream()
+                    val `is` = if (code >= 400) conn.errorStream else conn.getInputStream()
 
                     var body = ""
                     if (`is` != null) {
@@ -181,149 +181,150 @@ class MediaPlayer(
                         }
                     }
 
-                    LoggingManager.info("[MediaPlayer Downloader] Response: " + code + " for " + url)
+                    info("[MediaPlayer Downloader] Response: $code for $url")
                     if (body.length > 500) {
-                        LoggingManager.info("[MediaPlayer Downloader] Body preview: " + body.substring(0, 500) + "...")
+                        info("[MediaPlayer Downloader] Body preview: " + body.substring(0, 500) + "...")
                     } else {
-                        LoggingManager.info("[MediaPlayer Downloader] Body: " + body)
+                        info("[MediaPlayer Downloader] Body: $body")
                     }
 
-                    return Response(code, conn.getResponseMessage(), conn.getHeaderFields(), body, url)
+                    return Response(code, conn.getResponseMessage(), conn.headerFields, body, url)
                 }
             })
 
-            NewPipe.setPreferredLocalization(Localization(lang.toString(), lang.uppercase(Locale.getDefault())))
-            LoggingManager.info("[MediaPlayer] Preferred localization set to: " + lang)
+            NewPipe.setPreferredLocalization(Localization(lang, lang.uppercase(Locale.getDefault())))
+            info("[MediaPlayer] Preferred localization set to: $lang")
 
-            val videoId = extractVideoId(youtubeUrl.toString())
+            val videoId = extractVideoId(youtubeUrl)
             if (videoId.isNullOrEmpty()) {
-                LoggingManager.error("[MediaPlayer] FAILED to extract video ID from: " + youtubeUrl)
+                error("[MediaPlayer] FAILED to extract video ID from: $youtubeUrl")
                 return
             }
-            LoggingManager.info("[MediaPlayer] Extracted video ID: " + videoId)
+            info("[MediaPlayer] Extracted video ID: $videoId")
 
-            val cleanUrl = "https://www.youtube.com/watch?v=" + videoId
-            LoggingManager.info("[MediaPlayer] Fetching StreamInfo from: " + cleanUrl)
+            val cleanUrl = "https://www.youtube.com/watch?v=$videoId"
+            info("[MediaPlayer] Fetching StreamInfo from: $cleanUrl")
 
             val info = StreamInfo.getInfo(ServiceList.YouTube.getStreamExtractor(cleanUrl))
-            LoggingManager.info("[MediaPlayer] StreamInfo fetched. Title: " + info.getName() + " | Duration: " + info.getDuration() + "s")
+            info("[MediaPlayer] StreamInfo fetched. Title: " + info.name + " | Duration: " + info.duration + "s")
 
-            val videoStreams = info.getVideoStreams()
-            val audioStreams = info.getAudioStreams()
+            val videoStreams = info.videoStreams
+            val audioStreams = info.audioStreams
 
-            LoggingManager.info("[MediaPlayer] Video streams count: " + videoStreams.size)
-            LoggingManager.info("[MediaPlayer] Audio streams count: " + audioStreams.size)
+            info("[MediaPlayer] Video streams count: " + videoStreams.size)
+            info("[MediaPlayer] Audio streams count: " + audioStreams.size)
 
-            videoStreams.forEach(Consumer { vs: VideoStream? -> LoggingManager.info("[MediaPlayer] Video: " + vs!!.getResolution() + " " + vs.getFormat() + " URL: " + vs.getUrl()) })
+            videoStreams.forEach(Consumer { vs: VideoStream? -> info("[MediaPlayer] Video: " + vs!!.getResolution() + " " + vs.format + " URL: " + vs.url) })
             audioStreams.forEach(Consumer { `as`: AudioStream? ->
-                LoggingManager.info(
-                    "[MediaPlayer] Audio: " + `as`!!.getFormat() + " locale: " + (if (`as`.getAudioLocale() != null) `as`.getAudioLocale()!!
-                        .getLanguage() else "null") + " URL: " + `as`.getUrl()
+                info(
+                    "[MediaPlayer] Audio: " + `as`!!.format + " locale: " + (if (`as`.audioLocale != null) `as`.audioLocale!!
+                        .language else "null") + " URL: " + `as`.url
                 )
             })
 
             if (videoStreams.isEmpty() || audioStreams.isEmpty()) {
-                LoggingManager.error("[MediaPlayer] No streams available!")
+                error("[MediaPlayer] No streams available!")
                 return
             }
 
             availableQualities = videoStreams
+                .asSequence()
                 .mapNotNull { parseQuality(it.resolution) }
                 .distinct()
                 .filter { it <= if (ModInitializer.isPremium) 2160 else 1080 }
                 .sorted()
                 .toMutableList()
 
-            LoggingManager.info("[MediaPlayer] Available qualities: " + availableQualities)
+            info("[MediaPlayer] Available qualities: $availableQualities")
 
             val targetQuality = screen.quality.replace("p", "").toInt()
             var videoOpt = videoStreams.stream()
                 .min(Comparator.comparingInt<VideoStream>(ToIntFunction { vs: VideoStream -> abs(parseQuality(vs.getResolution()) - targetQuality) }))
 
-            if (videoOpt.isEmpty()) {
-                videoOpt = Optional.of<VideoStream>(videoStreams.get(0))
+            if (videoOpt.isEmpty) {
+                videoOpt = Optional.of<VideoStream>(videoStreams[0])
                 LoggingManager.warn("[MediaPlayer] No close quality match, using first video stream")
             }
 
             var audioOpt = audioStreams.stream()
                 .filter { `as`: AudioStream ->
-                    `as`.getAudioLocale() != null && `as`.getAudioLocale()!!.getLanguage().contains(lang)
+                    `as`.audioLocale != null && `as`.audioLocale!!.language.contains(lang)
                 }
                 .findFirst()
 
-            if (audioOpt.isEmpty()) {
-                audioOpt = Optional.of<AudioStream>(audioStreams.get(audioStreams.size - 1))
+            if (audioOpt.isEmpty) {
+                audioOpt = Optional.of<AudioStream>(audioStreams[audioStreams.size - 1])
                 LoggingManager.warn("[MediaPlayer] No audio in preferred language, using last one")
             }
 
-            currentVideoUrl = videoOpt.get().getUrl() as String?
-            currentAudioUrl = audioOpt.get().getUrl() as String?
+            currentVideoUrl = videoOpt.get().url as String?
+            currentAudioUrl = audioOpt.get().url as String?
             lastQuality = parseQuality(videoOpt.get().getResolution())
 
-            LoggingManager.info("[MediaPlayer] Selected video URL: " + currentVideoUrl)
-            LoggingManager.info("[MediaPlayer] Selected audio URL: " + currentAudioUrl)
+            info("[MediaPlayer] Selected video URL: $currentVideoUrl")
+            info("[MediaPlayer] Selected audio URL: $currentAudioUrl")
 
             audioPipeline = buildAudioPipeline(currentAudioUrl!!)
             videoPipeline = buildVideoPipeline(currentVideoUrl!!.toString())
 
             if (videoPipeline == null || audioPipeline == null) {
-                LoggingManager.error("[MediaPlayer] One or both pipelines failed to build")
+                error("[MediaPlayer] One or both pipelines failed to build")
                 return
             }
 
             this.isInitialized = true
-            LoggingManager.info("[MediaPlayer] === INITIALIZATION SUCCESSFUL ===")
+            info("[MediaPlayer] === INITIALIZATION SUCCESSFUL ===")
         } catch (e: Exception) {
-            LoggingManager.error("[MediaPlayer] === INITIALIZATION FAILED ===", e)
+            error("[MediaPlayer] === INITIALIZATION FAILED ===", e)
         }
     }
 
     private fun buildVideoPipeline(uri: kotlin.String): Pipeline? {
-        LoggingManager.info("[MediaPlayer] Building VIDEO pipeline for: " + uri)
+        info("[MediaPlayer] Building VIDEO pipeline for: $uri")
         val desc = String.join(
             " ",
-            "souphttpsrc location=\"" + uri + "\"",
+            "souphttpsrc location=\"$uri\"",
             "! typefind name=typefinder",
             "! decodebin ! videoconvert ! video/x-raw,format=RGBA ! appsink name=videosink sync=false"
         )
-        LoggingManager.info("[MediaPlayer] Universal video pipeline desc: " + desc)
+        info("[MediaPlayer] Universal video pipeline desc: $desc")
 
         val p = Gst.parseLaunch(desc) as Pipeline?
         if (p == null) {
-            LoggingManager.error("[MediaPlayer] Gst.parseLaunch returned null for universal video pipeline")
+            error("[MediaPlayer] Gst.parseLaunch returned null for universal video pipeline")
             return null
         }
 
         configureVideoSink((p.getElementByName("videosink") as AppSink?)!!)
         p.pause()
 
-        val bus = p.getBus()
-        bus.connect(ERROR { src: GstObject?, code: Int, msg: kotlin.String? -> LoggingManager.error("[MediaPlayer VIDEO ERROR] " + src!!.getName() + ": " + msg) })
-        bus.connect(Bus.EOS { src: GstObject? -> LoggingManager.info("[MediaPlayer VIDEO] EOS") })
-        bus.connect(STATE_CHANGED { src: GstObject?, old: State?, cur: State?, pend: State? -> LoggingManager.info("[MediaPlayer VIDEO] State: " + old + " -> " + cur) })
+        val bus = p.bus
+        bus.connect(ERROR { src: GstObject?, _: Int, msg: kotlin.String? -> error("[MediaPlayer VIDEO ERROR] " + src!!.name + ": " + msg) })
+        bus.connect(Bus.EOS { _: GstObject? -> info("[MediaPlayer VIDEO] EOS") })
+        bus.connect { _: GstObject?, old: State?, cur: State?, _: State? -> info("[MediaPlayer VIDEO] State: $old -> $cur") }
 
-        LoggingManager.info("[MediaPlayer] Universal video pipeline built and paused")
+        info("[MediaPlayer] Universal video pipeline built and paused")
         return p
     }
 
     private fun buildAudioPipeline(uri: String): Pipeline? {
-        LoggingManager.info("[MediaPlayer] Building AUDIO pipeline for: " + uri)
+        info("[MediaPlayer] Building AUDIO pipeline for: $uri")
         val desc = "souphttpsrc location=\"" + uri + "\" ! decodebin ! audioconvert ! audioresample " +
                 "! volume name=volumeElement volume=1 ! audioamplify name=ampElement amplification=" + currentVolume +
                 " ! autoaudiosink"
-        LoggingManager.info("[MediaPlayer] Audio pipeline desc: " + desc)
+        info("[MediaPlayer] Audio pipeline desc: $desc")
 
         val p = Gst.parseLaunch(desc) as Pipeline?
         if (p == null) {
-            LoggingManager.error("[MediaPlayer] Gst.parseLaunch returned null for audio pipeline")
+            error("[MediaPlayer] Gst.parseLaunch returned null for audio pipeline")
             return null
         }
 
-        val bus = p.getBus()
-        bus.connect(ERROR { src: GstObject?, code: Int, msg: kotlin.String? -> LoggingManager.error("[MediaPlayer AUDIO ERROR] " + src!!.getName() + ": " + msg) })
-        bus.connect(Bus.EOS { src: GstObject? ->
-            LoggingManager.info("[MediaPlayer AUDIO] EOS - looping")
-            safeExecute(Runnable {
+        val bus = p.bus
+        bus.connect(ERROR { src: GstObject?, _: Int, msg: kotlin.String? -> error("[MediaPlayer AUDIO ERROR] " + src!!.name + ": " + msg) })
+        bus.connect(Bus.EOS { _: GstObject? ->
+            info("[MediaPlayer AUDIO] EOS - looping")
+            safeExecute {
                 audioPipeline!!.seekSimple(Format.TIME, EnumSet.of<SeekFlags>(SeekFlags.FLUSH, SeekFlags.ACCURATE), 0L)
                 audioPipeline!!.play()
                 if (videoPipeline != null) {
@@ -334,16 +335,16 @@ class MediaPlayer(
                     )
                     videoPipeline!!.play()
                 }
-            })
+            }
         })
-        bus.connect(STATE_CHANGED { src: GstObject?, old: State?, cur: State?, pend: State? -> LoggingManager.info("[MediaPlayer AUDIO] State: $old -> $cur") })
+        bus.connect { _: GstObject?, old: State?, cur: State?, _: State? -> info("[MediaPlayer AUDIO] State: $old -> $cur") }
 
-        LoggingManager.info("[MediaPlayer] Audio pipeline built")
+        info("[MediaPlayer] Audio pipeline built")
         return p
     }
 
     private fun configureVideoSink(sink: AppSink) {
-        LoggingManager.info("[MediaPlayer] Configuring AppSink")
+        info("[MediaPlayer] Configuring AppSink")
         sink.set("emit-signals", true)
         sink.set("sync", true)
         sink.set("max-buffers", 1)
@@ -355,7 +356,7 @@ class MediaPlayer(
                 return@NEW_SAMPLE FlowReturn.OK
             }
             try {
-                val st = s.getCaps().getStructure(0)
+                val st = s.caps.getStructure(0)
                 val w = st.getInteger("width")
                 val h = st.getInteger("height")
                 currentFrameWidth = w
@@ -363,7 +364,7 @@ class MediaPlayer(
                 currentFrameBuffer = sampleToBuffer(s)
                 prepareBufferAsync()
             } catch (e: Exception) {
-                LoggingManager.error("[MediaPlayer] Error in NEW_SAMPLE handler", e)
+                error("[MediaPlayer] Error in NEW_SAMPLE handler", e)
             } finally {
                 s.dispose()
             }
@@ -376,14 +377,14 @@ class MediaPlayer(
 
         val now = System.nanoTime()
         if (now - lastFrameTime < MIN_FRAME_INTERVAL_NS) {
-            LoggingManager.info("[MediaPlayer] Frame skipped (rate limit)")
+            info("[MediaPlayer] Frame skipped (rate limit)")
             return
         }
         lastFrameTime = now
 
         try {
-            frameExecutor.submit(Runnable { this.prepareBuffer() })
-        } catch (ignored: RejectedExecutionException) {
+            frameExecutor.submit { this.prepareBuffer() }
+        } catch (_: RejectedExecutionException) {
             LoggingManager.warn("[MediaPlayer] Frame task rejected")
         }
     }
@@ -404,7 +405,7 @@ class MediaPlayer(
                 scaleBufferSize = bufferSize
             }
 
-            Companion.scaleRGBA(
+            scaleRGBA(
                 currentFrameBuffer!!, currentFrameWidth, currentFrameHeight,
                 scaleBuffer!!, targetW, targetH, brightness
             )
@@ -420,9 +421,9 @@ class MediaPlayer(
             convertBuffer!!.clear()
 
             if (abs(brightness - 1.0) < 1e-5) {
-                Companion.copy(currentFrameBuffer!!, convertBuffer!!, bufferSize)
+                copy(currentFrameBuffer!!, convertBuffer!!, bufferSize)
             } else {
-                Companion.applyBrightnessToBuffer(currentFrameBuffer!!, convertBuffer!!, bufferSize, brightness)
+                applyBrightnessToBuffer(currentFrameBuffer!!, convertBuffer!!, bufferSize, brightness)
             }
 
             preparedBuffer = convertBuffer
@@ -434,31 +435,31 @@ class MediaPlayer(
 
         // long elapsedNs = System.nanoTime() - startNs;
         // LoggingManager.info("[MediaPlayer] prepareBuffer: " + elapsedNs + "ns");
-        Minecraft.getInstance().execute(Runnable { screen.fitTexture() })
+        Minecraft.getInstance().execute { screen.fitTexture() }
     }
 
     private fun parseQuality(resolution: kotlin.String): Int {
-        try {
-            return resolution.replace("\\D+".toRegex(), "").toInt()
-        } catch (e: Exception) {
-            return Int.Companion.MAX_VALUE
+        return try {
+            resolution.replace("\\D+".toRegex(), "").toInt()
+        } catch (_: Exception) {
+            Int.MAX_VALUE
         }
     }
 
     fun play() {
-        safeExecute(Runnable { this.doPlay() })
+        safeExecute { this.doPlay() }
     }
 
     fun pause() {
-        safeExecute(Runnable { this.doPause() })
+        safeExecute { this.doPause() }
     }
 
     fun seekTo(nanos: Long, b: Boolean) {
-        safeExecute(Runnable { doSeek(nanos, b) })
+        safeExecute { doSeek(nanos, b) }
     }
 
     fun seekToFast(nanos: Long) {
-        safeExecute(Runnable { doSeekFast(nanos) })
+        safeExecute { doSeekFast(nanos) }
     }
 
     fun seekRelative(s: Double) {
@@ -479,17 +480,17 @@ class MediaPlayer(
 
     fun stop() {
         if (terminated.getAndSet(true)) return
-        safeExecute(Runnable {
+        safeExecute {
             doStop()
             gstExecutor.shutdown()
             frameExecutor.shutdown()
-        })
+        }
     }
 
     fun setVolume(volume: Double) {
         userVolume = max(0.0, min(2.0, volume))
         currentVolume = userVolume * lastAttenuation
-        safeExecute(Runnable { this.applyVolume() })
+        safeExecute { this.applyVolume() }
     }
 
     fun setBrightness(brightness: Double) {
@@ -506,8 +507,7 @@ class MediaPlayer(
         // long startNs = System.nanoTime();
 
         // Quick validation
-        val buf = preparedBuffer
-        if (buf == null) return
+        val buf = preparedBuffer ?: return
 
         val w = preparedW
         val h = preparedH
@@ -517,7 +517,7 @@ class MediaPlayer(
         buf.rewind()
 
         // Direct write without intermediate checks
-        if (!texture.isClosed()) {
+        if (!texture.isClosed) {
             RenderSystem.getDevice()
                 .createCommandEncoder()
                 .writeToTexture(
@@ -533,7 +533,7 @@ class MediaPlayer(
     }
 
     fun setQuality(quality: kotlin.String) {
-        safeExecute(Runnable { changeQuality(quality) })
+        safeExecute { changeQuality(quality) }
     }
 
     private fun doPlay() {
@@ -542,8 +542,8 @@ class MediaPlayer(
         audioPipeline!!.pause()
         if (videoPipeline != null) videoPipeline!!.pause()
 
-        audioPipeline!!.getState()
-        if (videoPipeline != null) videoPipeline!!.getState()
+        audioPipeline!!.state
+        if (videoPipeline != null) videoPipeline!!.state
 
         if (videoPipeline != null && audioPos > 0) {
             videoPipeline!!.seekSimple(
@@ -551,7 +551,7 @@ class MediaPlayer(
                 EnumSet.of<SeekFlags>(SeekFlags.FLUSH, SeekFlags.ACCURATE),
                 audioPos
             )
-            videoPipeline!!.getState()
+            videoPipeline!!.state
         }
 
         val audioClock = audioPipeline!!.clock
@@ -586,7 +586,7 @@ class MediaPlayer(
         if (videoPipeline != null) videoPipeline!!.pause()
         if (videoPipeline != null) videoPipeline!!.seekSimple(Format.TIME, flags, nanos)
         audioPipeline!!.seekSimple(Format.TIME, flags, nanos)
-        if (videoPipeline != null) videoPipeline!!.getState()
+        if (videoPipeline != null) videoPipeline!!.state
         audioPipeline!!.play()
         if (videoPipeline != null && !screen.getPaused()) videoPipeline!!.play()
 
@@ -654,10 +654,10 @@ class MediaPlayer(
             val clock = audioPipeline!!.clock
             if (clock != null) {
                 newVid?.clock = clock
-                newVid?.baseTime = audioPipeline!!.getBaseTime()
+                newVid?.baseTime = audioPipeline!!.baseTime
             }
             newVid?.pause()
-            newVid?.getState()
+            newVid?.state
 
             val flags = EnumSet.of<SeekFlags>(SeekFlags.FLUSH, SeekFlags.ACCURATE)
             audioPipeline!!.seekSimple(Format.TIME, flags, pos)
@@ -669,10 +669,10 @@ class MediaPlayer(
             }
 
             videoPipeline = newVid
-            currentVideoUrl = best.get().getUrl() as String?
+            currentVideoUrl = best.get().url as String?
             lastQuality = parseQuality(best.get().getResolution())
         } catch (e: Exception) {
-            LoggingManager.error("[MediaPlayer] Failed to change quality", e)
+            error("[MediaPlayer] Failed to change quality", e)
         }
     }
 
@@ -684,15 +684,15 @@ class MediaPlayer(
         if (abs(attenuation - lastAttenuation) > 1e-5) {
             lastAttenuation = attenuation
             currentVolume = userVolume * attenuation
-            LoggingManager.info("[MediaPlayer] Distance attenuation: " + currentVolume)
-            safeExecute(Runnable { this.applyVolume() })
+            info("[MediaPlayer] Distance attenuation: $currentVolume")
+            safeExecute { this.applyVolume() }
         }
 
         if (!screen.getPaused()) {
             syncCheckCounter++
             if (syncCheckCounter >= SYNC_CHECK_INTERVAL) {
                 syncCheckCounter = 0
-                safeExecute(Runnable { this.checkAndFixSync() })
+                safeExecute { this.checkAndFixSync() }
             }
         }
     }
@@ -708,29 +708,29 @@ class MediaPlayer(
             val drift = abs(audioPos - videoPos)
 
             if (drift > MAX_SYNC_DRIFT_NS) {
-                LoggingManager.info("[MediaPlayer] Sync drift " + drift + " ns - resyncing video to audio")
+                info("[MediaPlayer] Sync drift $drift ns - resyncing video to audio")
                 videoPipeline!!.seekSimple(
                     Format.TIME,
                     EnumSet.of<SeekFlags>(SeekFlags.FLUSH, SeekFlags.ACCURATE),
                     audioPos
                 )
             }
-        } catch (ignored: Exception) {
+        } catch (_: Exception) {
         }
     }
 
     private fun safeExecute(r: Runnable) {
-        if (!gstExecutor.isShutdown()) {
+        if (!gstExecutor.isShutdown) {
             try {
                 gstExecutor.submit(r)
-            } catch (ignored: RejectedExecutionException) {
+            } catch (_: RejectedExecutionException) {
             }
         }
     }
 
     companion object {
         private val INIT_EXECUTOR: ExecutorService =
-            Executors.newSingleThreadExecutor(ThreadFactory { r: Runnable? -> Thread(r, "MediaPlayer-init") })
+            Executors.newSingleThreadExecutor { r: Runnable? -> Thread(r, "MediaPlayer-init") }
         private const val SYNC_CHECK_INTERVAL = 100
         private const val MAX_SYNC_DRIFT_NS = 500000000L
         private const val MIN_FRAME_INTERVAL_NS = 16666667L
@@ -761,7 +761,7 @@ class MediaPlayer(
         }
 
         private fun sampleToBuffer(sample: Sample): ByteBuffer {
-            val buf = sample.getBuffer()
+            val buf = sample.buffer
             val bb = buf.map(false)
 
             if (bb.order() == ByteOrder.nativeOrder()) {
@@ -1065,7 +1065,7 @@ class MediaPlayer(
         private fun safeStopAndDispose(e: Element?) {
             if (e == null) return
             try {
-                e.setState(State.NULL)
+                e.state = State.NULL
             } catch (_: Exception) {
             }
             try {

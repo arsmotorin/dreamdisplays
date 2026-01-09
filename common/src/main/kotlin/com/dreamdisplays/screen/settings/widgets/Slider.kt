@@ -14,7 +14,6 @@ import net.minecraft.network.chat.Style
 import net.minecraft.resources.Identifier
 import net.minecraft.util.Mth
 import org.jspecify.annotations.NullMarked
-import java.util.function.UnaryOperator
 
 /**
  * A button widget that we use in display configuration GUI.
@@ -31,7 +30,7 @@ abstract class Slider(
     private var sliderFocused = false
 
     private val texture: Identifier
-        get() = if (this.isFocused() && !this.sliderFocused)
+        get() = if (this.isFocused && !this.sliderFocused)
             HIGHLIGHTED_TEXTURE_ID
         else
             TEXTURE_ID
@@ -49,7 +48,7 @@ abstract class Slider(
     public override fun updateWidgetNarration(builder: NarrationElementOutput) {
         builder.add(NarratedElementType.TITLE, this.createNarrationMessage())
         if (this.active) {
-            if (this.isFocused()) {
+            if (this.isFocused) {
                 builder.add(
                     NarratedElementType.USAGE,
                     Component.translatable("narration.slider.usage.focused")
@@ -89,7 +88,7 @@ abstract class Slider(
         val i = if (this.active) 16777215 else 10526880
         val message = this.getMessage()
             .copy()
-            .withStyle(UnaryOperator { style: Style? -> style!!.withColor(i) })
+            .withStyle { style: Style? -> style!!.withColor(i) }
         this.renderScrollingStringOverContents(
             graphics.textRendererForWidget(
                 this,
@@ -97,7 +96,7 @@ abstract class Slider(
             ),
             message,
             2
-        ) // , i | Mth.ceil(this.alpha * 255.0F) << 24
+        )
     }
 
     override fun onClick(event: MouseButtonEvent, doubleClick: Boolean) {

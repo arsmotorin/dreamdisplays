@@ -2,7 +2,6 @@ package com.dreamdisplays.screen.settings
 
 import net.minecraft.ChatFormatting
 import net.minecraft.network.chat.Component
-import net.minecraft.network.chat.MutableComponent
 import net.minecraft.network.chat.Style
 import org.jspecify.annotations.NullMarked
 
@@ -62,7 +61,7 @@ object ConfigurationTooltips {
 
     fun createQualityTooltip(currentQuality: String, isHighQuality: Boolean): MutableList<Component> {
         val tooltip = ArrayList<Component>(
-            listOf<MutableComponent>(
+            listOf(
                 Component.translatable(
                     "dreamdisplays.button.quality.tooltip.1"
                 ).withStyle { style: Style? ->

@@ -1,3 +1,5 @@
+@file:Suppress("NonJavaMixin")
+
 package com.dreamdisplays.mixins
 
 import com.dreamdisplays.ModInitializer.isOnScreen

@@ -19,7 +19,6 @@ object Outliner {
         val world: org.bukkit.World,
     )
 
-    // Show outline for a player between two positions
     fun showOutline(player: Player, pos1: Location, pos2: Location) {
         val world = pos1.world ?: return
 
@@ -33,104 +32,43 @@ object Outliner {
         val box = BoundingBox(minX, minY, minZ, maxX, maxY, maxZ)
         activeOutlines[player.uniqueId] = OutlineData(box, world)
 
-        // Draw the outline using particles
         drawOutlineBox(player, box, world)
     }
 
-    // Draw the outline box using particles
     private fun drawOutlineBox(player: Player, box: BoundingBox, world: org.bukkit.World) {
         val color = org.bukkit.Color.fromRGB(0, 255, 255)
-
-        // Bottom rectangle
-        drawLine(
-            player,
-            Location(world, box.minX, box.minY, box.minZ),
-            Location(world, box.maxX, box.minY, box.minZ),
-            color
-        )
-        drawLine(
-            player,
-            Location(world, box.maxX, box.minY, box.minZ),
-            Location(world, box.maxX, box.minY, box.maxZ),
-            color
-        )
-        drawLine(
-            player,
-            Location(world, box.maxX, box.minY, box.maxZ),
-            Location(world, box.minX, box.minY, box.maxZ),
-            color
-        )
-        drawLine(
-            player,
-            Location(world, box.minX, box.minY, box.maxZ),
-            Location(world, box.minX, box.minY, box.minZ),
-            color
-        )
-
-        // Top rectangle
-        drawLine(
-            player,
-            Location(world, box.minX, box.maxY, box.minZ),
-            Location(world, box.maxX, box.maxY, box.minZ),
-            color
-        )
-        drawLine(
-            player,
-            Location(world, box.maxX, box.maxY, box.minZ),
-            Location(world, box.maxX, box.maxY, box.maxZ),
-            color
-        )
-        drawLine(
-            player,
-            Location(world, box.maxX, box.maxY, box.maxZ),
-            Location(world, box.minX, box.maxY, box.maxZ),
-            color
-        )
-        drawLine(
-            player,
-            Location(world, box.minX, box.maxY, box.maxZ),
-            Location(world, box.minX, box.maxY, box.minZ),
-            color
-        )
-
-        // Vertical edges
-        drawLine(
-            player,
-            Location(world, box.minX, box.minY, box.minZ),
-            Location(world, box.minX, box.maxY, box.minZ),
-            color
-        )
-        drawLine(
-            player,
-            Location(world, box.maxX, box.minY, box.minZ),
-            Location(world, box.maxX, box.maxY, box.minZ),
-            color
-        )
-        drawLine(
-            player,
-            Location(world, box.maxX, box.minY, box.maxZ),
-            Location(world, box.maxX, box.maxY, box.maxZ),
-            color
-        )
-        drawLine(
-            player,
-            Location(world, box.minX, box.minY, box.maxZ),
-            Location(world, box.minX, box.maxY, box.maxZ),
-            color
-        )
-    }
-
-    // Draw a line of particles between two locations
-    private fun drawLine(player: Player, from: Location, to: Location, color: org.bukkit.Color) {
-        val distance = from.distance(to)
-        val particles = (distance * 2).toInt()
-
-        if (particles <= 0) return
-
         val dustOptions = org.bukkit.Particle.DustOptions(color, 0.5f)
 
-        for (i in 0..particles) {
-            val t = i / particles.toDouble()
+        // 8 angles of the bounding box
+        val corners = listOf(
+            Location(world, box.minX, box.minY, box.minZ),
+            Location(world, box.maxX, box.minY, box.minZ),
+            Location(world, box.maxX, box.minY, box.maxZ),
+            Location(world, box.minX, box.minY, box.maxZ),
+            Location(world, box.minX, box.maxY, box.minZ),
+            Location(world, box.maxX, box.maxY, box.minZ),
+            Location(world, box.maxX, box.maxY, box.maxZ),
+            Location(world, box.minX, box.maxY, box.maxZ)
+        )
+
+        // Edges between the corners
+        val edges = listOf(
+            0 to 1, 1 to 2, 2 to 3, 3 to 0,    // Bottom
+            4 to 5, 5 to 6, 6 to 7, 7 to 4,    // Top
+            0 to 4, 1 to 5, 2 to 6, 3 to 7     // Sides
+        )
+
+        for ((fromIdx, toIdx) in edges) {
+            drawLine(player, corners[fromIdx], corners[toIdx], dustOptions)
+        }
+    }
+
+    private fun drawLine(player: Player, from: Location, to: Location, dustOptions: org.bukkit.Particle.DustOptions) {
+        val distance = from.distance(to)
+        val steps = (distance * 2).toInt().coerceAtLeast(1)
+
+        for (i in 0..steps) {
+            val t = i / steps.toDouble()
             val x = from.x + (to.x - from.x) * t
             val y = from.y + (to.y - from.y) * t
             val z = from.z + (to.z - from.z) * t
