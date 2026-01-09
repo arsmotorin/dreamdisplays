@@ -126,8 +126,11 @@ object MediaPlayerControls {
     fun stop(mp: MediaPlayer) {
         if (terminated.getAndSet(true)) return
         safeExecute(mp) {
-            GStreamer.Companion.safeStopAndDispose(mp.videoPipeline)
-            GStreamer.Companion.safeStopAndDispose(mp.audioPipeline)
+            mp.audioPipeline?.pause()
+            mp.audioPipeline?.let { AudioPipeline.applyVolume(it, 0.0) }
+            mp.videoPipeline?.pause()
+            GStreamer.safeStopAndDispose(mp.videoPipeline)
+            GStreamer.safeStopAndDispose(mp.audioPipeline)
             mp.videoPipeline = null
             mp.audioPipeline = null
             mp.gstExecutor.shutdown()
