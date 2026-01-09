@@ -39,6 +39,7 @@ Plugin:
 
 - [x] Support lying and ceiling displays
 - [x] Support `&start_radio=x` and `&t=x` YouTube parameters
+- [x] Add protection against fire spread and burning for flammable display blocks
 
 # Version 1.4.0
 

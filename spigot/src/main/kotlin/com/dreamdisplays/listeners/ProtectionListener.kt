@@ -8,9 +8,12 @@ import org.bukkit.event.Cancellable
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
+import org.bukkit.event.block.BlockBurnEvent
 import org.bukkit.event.block.BlockPistonExtendEvent
 import org.bukkit.event.block.BlockPistonRetractEvent
+import org.bukkit.event.block.BlockSpreadEvent
 import org.bukkit.event.entity.EntityExplodeEvent
+import org.bukkit.Material
 
 /**
  * Listener for protecting display areas from modifications.
@@ -47,7 +50,7 @@ class ProtectionListener : Listener {
     }
 
     // Problem: location is in a protected area
-    // Solution: cancel the event
+    // Solution: cancel the event entirely
     private fun cancelIfProtected(loc: Location, event: Cancellable) {
         if (isLocationProtected(loc)) event.isCancelled = true
     }
@@ -57,6 +60,17 @@ class ProtectionListener : Listener {
     private fun isLocationProtected(loc: Location): Boolean =
         isContains(loc) != null || isLocationSelected(loc)
 
-    // TODO: add protection for other events like fire spread (if admin has set flammable material for displays)
-    // and fluid flow (but I'm not sure if it's in general necessary)
+    // Problem: fire is trying to burn a block in a protected area
+    // Solution: cancel event entirely
+    @EventHandler
+    fun onBlockBurn(event: BlockBurnEvent) = cancelIfProtected(event.block.location, event)
+
+    // Problem: fire is trying to spread to a block in a protected area
+    // Solution: cancel event entirely
+    @EventHandler
+    fun onBlockSpread(event: BlockSpreadEvent) {
+        if (event.newState.type == Material.FIRE && isLocationProtected(event.block.location)) {
+            event.isCancelled = true
+        }
+    }
 }
