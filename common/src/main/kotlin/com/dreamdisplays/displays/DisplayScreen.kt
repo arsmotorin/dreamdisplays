@@ -320,8 +320,9 @@ class DisplayScreen(
 
     // Returns list of available video qualities
     fun getQualityList(): List<Int> {
-        if (mediaPlayer == null) return emptyList()
-        return mediaPlayer!!.availableQualities!!
+        val list = mediaPlayer?.availableQualities
+        if (list.isNullOrEmpty()) return listOf(360)
+        return list.toList()
     }
 
 
