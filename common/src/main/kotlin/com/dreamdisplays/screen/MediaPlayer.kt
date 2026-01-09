@@ -687,36 +687,6 @@ class MediaPlayer(
             info("[MediaPlayer] Distance attenuation: $currentVolume")
             safeExecute { this.applyVolume() }
         }
-
-        if (!screen.getPaused()) {
-            syncCheckCounter++
-            if (syncCheckCounter >= SYNC_CHECK_INTERVAL) {
-                syncCheckCounter = 0
-                safeExecute { this.checkAndFixSync() }
-            }
-        }
-    }
-
-    // TODO: remove that shitty drift in the future
-    private fun checkAndFixSync() {
-        if (!this.isInitialized || videoPipeline == null || audioPipeline == null) return
-        if (screen.getPaused()) return
-
-        try {
-            val audioPos = audioPipeline!!.queryPosition(Format.TIME)
-            val videoPos = videoPipeline!!.queryPosition(Format.TIME)
-            val drift = abs(audioPos - videoPos)
-
-            if (drift > MAX_SYNC_DRIFT_NS) {
-                info("[MediaPlayer] Sync drift $drift ns - resyncing video to audio")
-                videoPipeline!!.seekSimple(
-                    Format.TIME,
-                    EnumSet.of<SeekFlags>(SeekFlags.FLUSH, SeekFlags.ACCURATE),
-                    audioPos
-                )
-            }
-        } catch (_: Exception) {
-        }
     }
 
     private fun safeExecute(r: Runnable) {
