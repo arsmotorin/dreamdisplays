@@ -5,6 +5,10 @@ description: 'Plugin for Dream Displays mod.'
 main: com.dreamdisplays.Main
 api-version: '1.21'
 folia-supported: true
+commands:
+  display:
+    description: Main command for Dream Displays
+    usage: /display <subcommand>
 permissions:
   dreamdisplays.create:
     default: true

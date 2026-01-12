@@ -1,9 +1,7 @@
 package com.dreamdisplays.commands
 
-import com.dreamdisplays.Main.Companion.getInstance
 import com.dreamdisplays.commands.subcommands.*
 import com.dreamdisplays.utils.Message.sendMessage
-import me.inotsleep.utils.AbstractCommand
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -14,13 +12,11 @@ import org.jspecify.annotations.NullMarked
  * Main command handler for the `/display` command.
  * Handles sub-commands and tab completion.
  * @constructor Creates a new DisplayCommand instance.
- * @see AbstractCommand
  * @see CommandExecutor
  * @see TabCompleter
  */
 @NullMarked
 class DisplayCommand :
-    AbstractCommand(getInstance().name, "display"),
     CommandExecutor,
     TabCompleter {
 
@@ -38,7 +34,7 @@ class DisplayCommand :
     ).associateBy { it.name }
 
     // Command execution logic
-    override fun toExecute(sender: CommandSender, label: String?, args: Array<String?>) {
+    fun toExecute(sender: CommandSender, label: String?, args: Array<String?>) {
         if (args.isEmpty()) {
             subCommands["help"]?.execute(sender, args)
             return
@@ -58,7 +54,7 @@ class DisplayCommand :
     }
 
     // Tab completer logic
-    override fun complete(sender: CommandSender, args: Array<String?>): MutableList<String?> {
+    fun complete(sender: CommandSender, args: Array<String?>): MutableList<String?> {
         if (args.size != 1) return mutableListOf()
 
         return subCommands.values

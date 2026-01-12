@@ -32,6 +32,7 @@ Mod:
 - [x] Fix null-pointer exception when window focus tries to work on not initialized Minecraft
 - [x] Fix client crash when server restarts while player is connected
 - [x] Fix volume amplification not working properly (de-facto 100% was 50%)
+- [ ] Replace INotSleep utils library with own implementation
 - [ ] Change channel from Beta to Release
 - [ ] Update wiki with new features
 - [x] Handle failed config gracefully
@@ -41,6 +42,7 @@ Plugin:
 - [x] Support lying and ceiling displays
 - [x] Support `&start_radio=x` and `&t=x` YouTube parameters
 - [x] Add protection against fire spread and burning for flammable display blocks
+- [ ] Replace INotSleep utils library with own implementation
 
 # Version 1.4.1
 
@@ -53,6 +55,7 @@ Mod:
 Plugin:
 
 - [x] Fix Bukkit/Spigot server support
+- [x] Fix selection visualizer for Folia servers
 - [x] Add Kolyakot33 as a contributor
 
 # Version 1.4.0
