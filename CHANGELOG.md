@@ -1,4 +1,4 @@
-# Version 1.5.0
+# Version 1.6.0
 
 Mod:
 
@@ -12,17 +12,47 @@ Mod:
 
 Plugin:
 
-- [ ] Add config migrator from old versions of the plugin
+- [ ] Add config migrator from ancient versions of the plugin
+
+# Version 1.5.0
+
+Mod:
+
+- [ ] Switch from GStreamer to FFmpeg for video decoding
+- [x] Smoother video playback and optimizations
+- [x] Add video timeline
+- [x] Support lying and ceiling displays (server must have 1.5.0 or newer plugin version)
+- [x] Support timecodes in YouTube links
+- [ ] Add Spanish, French and Italian translations
+- [x] Make buttons smaller for better UI
+- [x] Link volume attenuation to display render distance
+- [x] Rewrite main part of the mod in Kotlin
+- [x] Ignore radio parameter in YouTube links
+- [x] Fix NeoForge Gradle conflict while syncing with IntelliJ IDEA Gradle plugin
+- [x] Fix null-pointer exception when window focus tries to work on not initialized Minecraft
+- [x] Fix client crash when server restarts while player is connected
+- [x] Fix volume amplification not working properly (de-facto 100% was 50%)
+- [ ] Change channel from Beta to Release
+- [ ] Update wiki with new features
+- [x] Handle failed config gracefully
+
+Plugin:
+
+- [x] Support lying and ceiling displays
+- [x] Support `&start_radio=x` and `&t=x` YouTube parameters
+- [x] Add protection against fire spread and burning for flammable display blocks
 
 # Version 1.4.1
 
 Mod:
 
-- [ ] Rewrite entire mod in Kotlin
+- [x] Fix releasing snapshots when pull requesting
+- [x] Add Kolyakot33 as a contributor
 
 Plugin:
 
-- [ ] No changes
+- [x] Fix Bukkit/Spigot server support
+- [x] Add Kolyakot33 as a contributor
 
 # Version 1.4.0
 
