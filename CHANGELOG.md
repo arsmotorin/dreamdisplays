@@ -48,6 +48,7 @@ Mod:
 
 - [x] Fix releasing snapshots when pull requesting
 - [x] Add Kolyakot33 as a contributor
+- [x] Cleanup codebase
 
 Plugin:
 
