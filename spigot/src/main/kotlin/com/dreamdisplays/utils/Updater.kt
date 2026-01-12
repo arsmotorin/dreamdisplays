@@ -17,7 +17,7 @@ object Updater {
 
     fun checkForUpdates(repoOwner: String, repoName: String) {
         try {
-            val releases = GitHubFetcher.fetchReleases(repoOwner, repoName)
+            val releases = GitHub.fetchReleases(repoOwner, repoName)
 
             if (releases.isEmpty()) {
                 warn("No releases found on GitHub. This may be due to network issues or API problems.")

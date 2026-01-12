@@ -5,7 +5,7 @@ import com.dreamdisplays.managers.DisplayManager.getReceivers
 import com.dreamdisplays.managers.DisplayManager.isContains
 import com.dreamdisplays.managers.DisplayManager.sendUpdate
 import com.dreamdisplays.utils.Message
-import com.dreamdisplays.utils.YouTubeUtils
+import com.dreamdisplays.utils.YouTube
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 
@@ -33,11 +33,16 @@ class VideoCommand : SubCommand {
             return
         }
 
-        val code = YouTubeUtils.extractVideoIdFromUri(args[1] ?: "")
-            ?: return Message.sendMessage(player, "invalidURL")
+        val inputUrl = args[1] ?: ""
+
+        // Validate URL by checking if we can extract video ID
+        if (YouTube.extractVideoIdFromUri(inputUrl) == null) {
+            return Message.sendMessage(player, "invalidURL")
+        }
 
         data.apply {
-            url = "https://youtube.com/watch?v=$code"
+            // Save the full URL with all parameters (including &t=)
+            url = inputUrl
             lang = args.getOrNull(2).orEmpty()
             isSync = false
         }

@@ -1,12 +1,14 @@
 plugins {
-    id("net.neoforged.moddev") version libs.versions.moddev
+    id("net.neoforged.moddev")
     id("maven-publish")
-    id("com.gradleup.shadow") version libs.versions.shadow
+    id("com.gradleup.shadow")
+    kotlin("jvm")
 }
 
 dependencies {
     implementation(project(":common"))
     shadow(project(":common"))
+    shadow(libs.newpipeExtractor)
 }
 
 neoForge {
@@ -47,20 +49,28 @@ tasks.shadowJar {
     archiveBaseName = "dreamdisplays-neoforge"
     archiveClassifier = ""
     destinationDirectory.set(rootProject.layout.buildDirectory.dir("libs"))
-    dependencies {
-        include(project(":common"))
-        include(dependency("org.freedesktop.gstreamer:gst1-java-core"))
-        include(dependency("com.github.felipeucelli:javatube"))
-        include(dependency("org.json:json"))
-        include(dependency("me.inotsleep:utils"))
-    }
+
     val prefix = "com.dreamdisplays.libs"
     listOf(
-        "com.github.felipeucelli.javatube",
         "me.inotsleep.utils",
         "org.freedesktop.gstreamer",
         "org.json",
+        "org.jsoup",
+        "org.mozilla",
+        "kotlin",
+        "org.jetbrains.annotations",
+        "org.schabi.newpipe"
     ).forEach { pack ->
         relocate(pack, "$prefix.$pack")
     }
+    exclude("**/*.so")
+    exclude("**/*.dll")
+    exclude("**/*.dylib")
+    exclude("**/*.a")
+    exclude("**/*.lib")
+    exclude("org/bytedeco/**/*.properties")
+    exclude("org/bytedeco/**/linux/**")
+    exclude("org/bytedeco/**/windows/**")
+    exclude("org/bytedeco/**/macosx/**")
+    exclude("org/bytedeco/**/android/**")
 }

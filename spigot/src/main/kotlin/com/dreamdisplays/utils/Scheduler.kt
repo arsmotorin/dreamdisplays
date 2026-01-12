@@ -1,6 +1,6 @@
 package com.dreamdisplays.utils
 
-import com.dreamdisplays.utils.PlatformUtils.isFolia
+import com.dreamdisplays.utils.Platform.isFolia
 import org.bukkit.plugin.Plugin
 import org.bukkit.scheduler.BukkitRunnable
 import org.jspecify.annotations.NullMarked

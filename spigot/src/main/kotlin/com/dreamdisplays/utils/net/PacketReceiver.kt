@@ -17,10 +17,11 @@ import com.dreamdisplays.managers.StateManager.processSyncPacket
 import com.dreamdisplays.managers.StateManager.sendSyncPacket
 import com.dreamdisplays.utils.Message.sendColoredMessage
 import com.dreamdisplays.utils.Message.sendMessage
-import com.dreamdisplays.utils.YouTubeUtils.sanitize
-import com.dreamdisplays.utils.net.PacketUtils.sendDisplayInfo
-import com.dreamdisplays.utils.net.PacketUtils.sendPremium
-import com.dreamdisplays.utils.net.PacketUtils.sendReportEnabled
+import com.dreamdisplays.utils.YouTube.sanitize
+import com.dreamdisplays.utils.net.Utils.sendCeilingFloorSupport
+import com.dreamdisplays.utils.net.Utils.sendDisplayInfo
+import com.dreamdisplays.utils.net.Utils.sendPremium
+import com.dreamdisplays.utils.net.Utils.sendReportEnabled
 import com.github.zafarkhaja.semver.Version
 import com.github.zafarkhaja.semver.Version.parse
 import com.google.gson.Gson
@@ -125,11 +126,19 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
             config.settings.webhookUrl.isNotEmpty()
         )
 
+        // Send ceiling/floor support status based on client version
+        val version = sanitize(versionString)?.let { parse(it) }
+        val minVersion = parse("1.5.0")
+        val supportsAdvancedFacing = version != null && (
+                version >= minVersion ||
+                        version.toString() == "1.5.0-SNAPSHOT"
+                )
+        sendCeilingFloorSupport(player, supportsAdvancedFacing)
+
         // Send all displays in the player's world
         sendAllDisplays(player)
 
         // Store version
-        val version = sanitize(versionString)?.let { parse(it) }
         setVersion(player, version)
     }
 
@@ -239,7 +248,7 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
     }
 
     // Extension functions for DataInputStream to read custom data types
-    private fun DataInputStream.readUUID() = PacketUtils.run { readUUID() }
-    private fun DataInputStream.readVarInt() = PacketUtils.run { readVarInt() }
-    private fun DataInputStream.readVarLong() = PacketUtils.run { readVarLong() }
+    private fun DataInputStream.readUUID() = Utils.run { readUUID() }
+    private fun DataInputStream.readVarInt() = Utils.run { readVarInt() }
+    private fun DataInputStream.readVarLong() = Utils.run { readVarLong() }
 }

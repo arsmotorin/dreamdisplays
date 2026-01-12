@@ -1,4 +1,4 @@
-# Code of сonduct
+# Code of conduct
 
 We pledge to keep this community welcoming, respectful, and harassment-free.
 

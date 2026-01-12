@@ -1,9 +1,10 @@
 import net.fabricmc.loom.task.RemapJarTask
 
 plugins {
-    id("net.fabricmc.fabric-loom-remap") version libs.versions.loom // remove remap in 26.1
+    id("net.fabricmc.fabric-loom-remap")
     id("maven-publish")
-    id("com.gradleup.shadow") version libs.versions.shadow
+    id("com.gradleup.shadow")
+    kotlin("jvm")
 }
 
 loom {
@@ -19,6 +20,7 @@ dependencies {
     modImplementation(libs.fabricLoader)
     modImplementation(libs.fabricApi)
     shadow(project(":common"))
+    shadow(libs.newpipeExtractor)
 }
 
 tasks.processResources {
@@ -56,21 +58,26 @@ tasks.withType<RemapJarTask>().configureEach {
 }
 
 tasks.shadowJar {
-    configurations = listOf(project.configurations.getByName("shadow"))
-    dependencies {
-        include(project(":common"))
-        include(dependency("org.freedesktop.gstreamer:gst1-java-core"))
-        include(dependency("com.github.felipeucelli:javatube"))
-        include(dependency("org.json:json"))
-        include(dependency("me.inotsleep:utils"))
-    }
+    configurations = listOf(project.configurations.shadow.get())
     val prefix = "com.dreamdisplays.libs"
     listOf(
-        "com.github.felipeucelli.javatube",
         "me.inotsleep.utils",
         "org.freedesktop.gstreamer",
         "org.json",
+        "kotlin",
+        "org.jetbrains.annotations",
+        "org.schabi.newpipe"
     ).forEach { pack ->
         relocate(pack, "$prefix.$pack")
     }
+    exclude("**/*.so")
+    exclude("**/*.dll")
+    exclude("**/*.dylib")
+    exclude("**/*.a")
+    exclude("**/*.lib")
+    exclude("org/bytedeco/**/*.properties")
+    exclude("org/bytedeco/**/linux/**")
+    exclude("org/bytedeco/**/windows/**")
+    exclude("org/bytedeco/**/macosx/**")
+    exclude("org/bytedeco/**/android/**")
 }

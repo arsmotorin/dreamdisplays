@@ -53,7 +53,7 @@ class SelectionData(player: Player) {
         val p2 = pos2!!
         val f = face!!
 
-        val region = calculateRegion(p1, p2)
+        val region = calculateRegion(p1, p2, f)
         val dPos1 = region.getMinLocation(p1.world)
         val dPos2 = region.getMaxLocation(p1.world)
 

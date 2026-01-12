@@ -54,6 +54,7 @@
   },
   "newPluginVersion": "&7D |&f גרסה חדשה של תוסף Dream Displays (%s) זמינה! אנא עדכן את התוסף בשרת!",
   "configReloaded": "&7D | &fDream Displays נטען מחדש!",
+    "configReloadFailed": "&7D |&f לא ניתן לטעון מחדש את Dream Displays. אנא בדוק את הקונסולה לשגיאות",
   "noDisplaysFound": "&7D |&f לא נמצאו תצוגות",
   "displayListHeader": "&7D |&f תצוגות:",
   "displayListEntry": "&7D |&f {0}. בעלים: {1}, מיקום: [{2}, {3}, {4}], URL: {5}",

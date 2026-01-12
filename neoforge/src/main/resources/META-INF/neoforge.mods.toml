@@ -3,12 +3,11 @@ loaderVersion = "[1,)"
 license = "LGPL-3.0"
 
 [[mods]]
-
 modId = "dreamdisplays"
 version = "${version}"
 displayName = "DreamDisplays"
 logoFile = "assets/dreamdisplays/icon.png"
-authors = "arsmotorin, INotSleep, Toffikk"
+authors = "arsmotorin, INotSleep, Kolyakot33, Toffikk"
 description = "Create in-game screens to stream videos on any Minecraft server."
 
 [[mixins]]

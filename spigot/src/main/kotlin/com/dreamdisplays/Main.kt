@@ -1,10 +1,10 @@
 package com.dreamdisplays
 
 import com.dreamdisplays.managers.StorageManager
-import com.dreamdisplays.registrar.ChannelRegistrar.registerChannels
-import com.dreamdisplays.registrar.CommandRegistrar.registerCommands
-import com.dreamdisplays.registrar.ListenerRegistrar.registerListeners
-import com.dreamdisplays.registrar.SchedulerRegistrar.runRepeatingTasks
+import com.dreamdisplays.registrars.ChannelRegistrar.registerChannels
+import com.dreamdisplays.registrars.CommandRegistrar.registerCommands
+import com.dreamdisplays.registrars.ListenerRegistrar.registerListeners
+import com.dreamdisplays.registrars.SchedulerRegistrar.runRepeatingTasks
 import com.github.zafarkhaja.semver.Version
 import me.inotsleep.utils.AbstractPlugin
 import me.inotsleep.utils.logging.LoggingManager.log

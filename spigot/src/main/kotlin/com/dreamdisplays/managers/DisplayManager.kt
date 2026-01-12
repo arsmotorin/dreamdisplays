@@ -9,8 +9,8 @@ import com.dreamdisplays.utils.Region.calculateRegion
 import com.dreamdisplays.utils.Reporter.sendReport
 import com.dreamdisplays.utils.Scheduler.runAsync
 import com.dreamdisplays.utils.Scheduler.runSync
-import com.dreamdisplays.utils.net.PacketUtils
-import com.dreamdisplays.utils.net.PacketUtils.sendDelete
+import com.dreamdisplays.utils.net.Utils
+import com.dreamdisplays.utils.net.Utils.sendDelete
 import org.bukkit.Bukkit.getOfflinePlayer
 import org.bukkit.Location
 import org.bukkit.entity.Player
@@ -28,7 +28,6 @@ object DisplayManager {
     private val displays: MutableMap<UUID, DisplayData> = mutableMapOf()
     private val reportTime: MutableMap<UUID, Long> = mutableMapOf()
 
-    @JvmStatic
     fun getDisplayData(id: UUID?): DisplayData? = displays[id]
 
     fun getDisplays(): List<DisplayData> = displays.values.toList()
@@ -44,7 +43,7 @@ object DisplayManager {
         val pos2 = data.pos2 ?: return false
         val selWorld = pos1.world
 
-        val region = calculateRegion(pos1, pos2)
+        val region = calculateRegion(pos1, pos2, data.getFace())
         val box = BoundingBox(
             region.minX.toDouble(),
             region.minY.toDouble(),
@@ -106,7 +105,7 @@ object DisplayManager {
 
     fun sendUpdate(display: DisplayData, players: List<Player>) {
         @Suppress("UNCHECKED_CAST")
-        PacketUtils.sendDisplayInfo(
+        Utils.sendDisplayInfo(
             players as MutableList<Player?>,
             display.id,
             display.ownerId,
@@ -130,7 +129,6 @@ object DisplayManager {
         displays.remove(displayData.id)
     }
 
-    @JvmStatic
     fun delete(id: UUID, player: Player) {
         val displayData = displays[id] ?: return
 
@@ -142,7 +140,6 @@ object DisplayManager {
         delete(displayData)
     }
 
-    @JvmStatic
     fun report(id: UUID, player: Player) {
         val displayData = displays[id] ?: return
         val lastReport = reportTime.getOrPut(id) { 0L }
