@@ -19,12 +19,13 @@ max_width = 32
 max_height = 24
 
 # Particle effects for selection visualization
-# Note that it doesn't work on Folia
+# Note that it doesn't work on Folia for now
 particles = true
 particles_color = "#00FFFF"
 
 # Mod detection notifications
 # Players without Dream Displays will be asked to install it
+# Note that it doesn't work on Folia for now
 mod_detection_enabled = true
 
 # Update notifications

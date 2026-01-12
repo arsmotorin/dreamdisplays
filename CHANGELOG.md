@@ -56,6 +56,7 @@ Plugin:
 
 - [x] Fix Bukkit/Spigot server support
 - [x] Fix selection visualizer for Folia servers
+- [x] Temporary disabled mod detection for Folia servers due to Folia scheduler problems
 - [x] Add Kolyakot33 as a contributor
 
 # Version 1.4.0

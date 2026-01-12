@@ -7,6 +7,7 @@ import com.dreamdisplays.managers.PlayerManager
 import com.dreamdisplays.managers.PlayerManager.hasBeenNotifiedAboutModRequired
 import com.dreamdisplays.managers.PlayerManager.setModRequiredNotified
 import com.dreamdisplays.utils.Message.sendColoredMessage
+import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
@@ -28,6 +29,12 @@ class PlayerListener : Listener {
         val player = event.player
         if (!config.settings.modDetectionEnabled) return
         if (getDisplays().isEmpty()) return
+
+        if (Bukkit.getServer().name.contains("Folia", ignoreCase = true)) {
+            // Temporarily disable mod detection on Folia due to scheduler issues
+            // TODO: implement a Folia-compatible solution
+            return
+        }
 
         getInstance().server.scheduler.runTaskLater(getInstance(), Runnable {
             if (PlayerManager.getVersion(player) == null && !hasBeenNotifiedAboutModRequired(player)) {
