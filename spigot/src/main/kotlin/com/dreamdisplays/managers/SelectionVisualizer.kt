@@ -4,7 +4,7 @@ import com.dreamdisplays.Main
 import com.dreamdisplays.Main.Companion.config
 import com.dreamdisplays.managers.SelectionManager.selectionPoints
 import com.dreamdisplays.utils.Outliner.showOutline
-import org.bukkit.Bukkit.getPlayer
+import org.bukkit.Bukkit
 import org.bukkit.scheduler.BukkitRunnable
 
 /**
@@ -13,12 +13,13 @@ import org.bukkit.scheduler.BukkitRunnable
 object SelectionVisualizer {
     fun startParticleTask(plugin: Main) {
         if (!config.settings.particlesEnabled) return
+        if (Bukkit.getServer().name.contains("Folia", ignoreCase = true)) return
 
         object : BukkitRunnable() {
             override fun run() {
                 selectionPoints.values.forEach { it.drawBox() }
                 selectionPoints.forEach { (playerId, sel) ->
-                    getPlayer(playerId)?.let { player ->
+                    Bukkit.getPlayer(playerId)?.let { player ->
                         if (sel.isReady && sel.pos1 != null && sel.pos2 != null)
                             showOutline(player, sel.pos1!!, sel.pos2!!)
                     }
