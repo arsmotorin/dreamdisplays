@@ -8,7 +8,6 @@ Mod:
 - [ ] Add toggle button for window focus
 - [ ] Add toggle button for video repeating
 - [ ] Add action bar messages when player looks at display
-- [ ] Support natives
 
 Plugin:
 
@@ -28,21 +27,29 @@ Mod:
 - [x] Link volume attenuation to display render distance
 - [x] Rewrite main part of the mod in Kotlin
 - [x] Ignore radio parameter in YouTube links
-- [x] Fix NeoForge Gradle conflict while syncing with IntelliJ IDEA Gradle plugin
-- [x] Fix null-pointer exception when window focus tries to work on not initialized Minecraft
-- [x] Fix client crash when server restarts while player is connected
-- [x] Fix volume amplification not working properly (de-facto 100% was 50%)
 - [ ] Replace INotSleep utils library with own implementation
 - [ ] Change channel from Beta to Release
 - [ ] Update wiki with new features
-- [x] Handle failed config gracefully
 
 Plugin:
 
 - [x] Support lying and ceiling displays
 - [x] Support `&start_radio=x` and `&t=x` YouTube parameters
 - [x] Add protection against fire spread and burning for flammable display blocks
+
+# Version 1.4.2
+
+Mod:
+
 - [ ] Replace INotSleep utils library with own implementation
+- [ ] Fix NeoForge Gradle conflict while syncing with IntelliJ IDEA Gradle plugin
+- [ ] Fix null-pointer exception when window focus tries to work on not initialized Minecraft
+- [ ] Fix client crash when server restarts while player is connected
+- [ ] Fix volume amplification not working properly (de-facto 100% was 50%)
+
+Plugin:
+
+- [ ] Handle failed config gracefully
 
 # Version 1.4.1
 
