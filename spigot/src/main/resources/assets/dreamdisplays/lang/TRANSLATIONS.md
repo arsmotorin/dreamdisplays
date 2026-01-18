@@ -8,16 +8,16 @@ request!
 
 ## Translated Languages
 
-| Language   | Code | Author         |
-|------------|------|----------------|
-| English    | en   | arsmotorin     |
-| Polish     | pl   | arsmotorin     |
-| Russian    | ru   | arsmotorin     |
-| Ukrainian  | uk   | arsmotorin     |
-| German     | de   | arsmotorin, AI |
-| Czech      | cs   | Suppleer       |
-| Belarusian | be   | fosterrrrrr    |
-| Hebrew     | he   | Petro1t, AI    |
+| Language   | Code | Author          |
+|------------|------|-----------------|
+| English    | en   | arsmotorin      |
+| Polish     | pl   | arsmotorin      |
+| Russian    | ru   | arsmotorin      |
+| Ukrainian  | uk   | arsmotorin      |
+| German     | de   | arsmotorin, AI  |
+| Czech      | cs   | Suppleer        |
+| Belarusian | be   | fosterrrrrr, AI |
+| Hebrew     | he   | Petro1t, AI     |
 
 ## Planned Languages
 

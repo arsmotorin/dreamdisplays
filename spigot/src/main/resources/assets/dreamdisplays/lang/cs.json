@@ -54,6 +54,7 @@
   },
   "newPluginVersion": "&7D |&f Nová verze pluginu Dream Displays (%s) je k dispozici! Aktualizujte prosím plugin na serveru!",
   "configReloaded": "&7D | &fDream Displays byl znovu načten!",
+  "configReloadFailed": "&7D |&f Nepodařilo se znovu načíst Dream Displays. Zkontrolujte prosím konzoli kvůli chybám",
   "noDisplaysFound": "&7D |&f Žádné displeje nenalezeny",
   "displayListHeader": "&7D |&f Displeje:",
   "displayListEntry": "&7D |&f {0}. Vlastník: {1}, Umístění: [{2}, {3}, {4}], URL: {5}",

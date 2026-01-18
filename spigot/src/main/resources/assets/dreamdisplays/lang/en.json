@@ -54,6 +54,7 @@
   },
   "newPluginVersion": "&7D |&f New version of Dream Displays plugin (%s) is available! Please update the server plugin!",
   "configReloaded": "&7D | &fDream Displays has been reloaded!",
+  "configReloadFailed": "&7D |&f Failed to reload Dream Displays. Please check the console for errors",
   "noDisplaysFound": "&7D |&f No displays found",
   "displayListHeader": "&7D |&f Displays:",
   "displayListEntry": "&7D |&f {0}. Owner: {1}, Location: [{2}, {3}, {4}], URL: {5}",

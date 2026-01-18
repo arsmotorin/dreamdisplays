@@ -52,6 +52,7 @@
   },
   "newPluginVersion": "&7D |&f Доступна новая версия плагина Dream Displays (%s)! Пожалуйста, обновите плагин на сервере!",
   "configReloaded": "&7D | &fDream Displays перезагружен!",
+  "configReloadFailed": "&7D |&f Не удалось перезагрузить Dream Displays. Пожалуйста, проверьте консоль на наличие ошибок",
   "noDisplaysFound": "&7D |&f Дисплеи не найдены",
   "displayListHeader": "&7D |&f Дисплеи:",
   "displayListEntry": "&7D |&f {0}. Владелец: {1}, Расположение: [{2}, {3}, {4}], URL: {5}",
