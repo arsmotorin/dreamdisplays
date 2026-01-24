@@ -28,6 +28,10 @@ Mod:
 - [x] Rewrite main part of the mod in Kotlin
 - [x] Ignore radio parameter in YouTube links
 - [ ] Replace INotSleep utils library with own implementation
+- [x] Fix NeoForge Gradle conflict while syncing with IntelliJ IDEA Gradle plugin
+- [x] Fix null-pointer exception when window focus tries to work on not initialized Minecraft
+- [x] Fix client crash when server restarts while player is connected
+- [x] Fix volume amplification not working properly (de-facto 100% was 50%)
 - [ ] Change channel from Beta to Release
 - [ ] Update wiki with new features
 
@@ -41,15 +45,14 @@ Plugin:
 
 Mod:
 
-- [ ] Replace INotSleep utils library with own implementation
-- [ ] Fix NeoForge Gradle conflict while syncing with IntelliJ IDEA Gradle plugin
-- [ ] Fix null-pointer exception when window focus tries to work on not initialized Minecraft
-- [ ] Fix client crash when server restarts while player is connected
-- [ ] Fix volume amplification not working properly (de-facto 100% was 50%)
+- [x] Update dependencies
+- [x] Fix remaining displays when world resets
 
 Plugin:
 
-- [ ] Handle failed config gracefully
+- [x] Fix remaining displays when world resets
+- [x] Fix floating displays without base material
+- [x] Handle failed config gracefully
 
 # Version 1.4.1
 

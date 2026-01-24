@@ -1,36 +1,43 @@
 # https://fabricmc.net/develop/
 
 [versions]
-fabricLoader = "0.18.4"
-fabricApi = "0.141.1+1.21.11"
-fabricMinecraft = "1.21.11"
-javatube = "6692a32"
+# Common
+jspecify = "1.0.0"
 utils = "1.4.10"
 gst1 = "1.4.0"
-jspecify = "1.0.0"
+javatube = "6692a32"
+
+# Plugin versions
+loom = "1.15.0-alpha.30"
+moddev = "2.0.137"
+shadow = "9.3.1"
+
+# Fabric
+fabricLoader = "0.18.4"
+fabricApi = "0.141.2+1.21.11"
+fabricMinecraft = "1.21.11"
+quiltLoader = "0.30.0-beta.0"
+
+# NeoForge
+neoforge = "21.11.25-beta"
+
+# Spigot
 adventure = "4.26.1"
 adventurePlatform = "4.4.1"
 
-quiltLoader = "0.30.0-beta.0"
-
-neoforge = "21.11.25-beta"
-
-# Plugin versions
-loom = "1.15.0-alpha.25"
-moddev = "2.0.137"
-shadow = "9.3.0"
-
-[plugins]
-
 [libraries]
+# Common
+jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
+utils = { module = "me.inotsleep:utils", version.ref = "utils" }
+gst1 = { module = "org.freedesktop.gstreamer:gst1-java-core", version.ref = "gst1" }
+javatube = { module = "com.github.felipeucelli:javatube", version.ref = "javatube" }
+
+# Fabric
 fabricLoader = { module = "net.fabricmc:fabric-loader", version.ref = "fabricLoader" }
 fabricApi = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabricApi" }
 fabricMinecraft = { module = "com.mojang:minecraft", version.ref = "fabricMinecraft" }
-javatube = { module = "com.github.felipeucelli:javatube", version.ref = "javatube" }
-utils = { module = "me.inotsleep:utils", version.ref = "utils" }
-gst1 = { module = "org.freedesktop.gstreamer:gst1-java-core", version.ref = "gst1" }
-jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
+quiltLoader = { module = "org.quiltmc:quilt-loader", version.ref = "quiltLoader" }
+
+# Spigot
 adventure = { module = "net.kyori:adventure-api", version.ref = "adventure" }
 adventurePlatform = { module = "net.kyori:adventure-platform-bukkit", version.ref = "adventurePlatform" }
-
-quiltLoader = { module = "org.quiltmc:quilt-loader", version.ref = "quiltLoader" }
