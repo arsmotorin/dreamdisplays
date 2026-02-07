@@ -48,12 +48,14 @@ Mod:
 - [x] Update dependencies
 - [x] Fix remaining displays when world resets
 - [x] Fix floating displays without base material
+- [x] Remove unnecessary warnings and logs
 
 Plugin:
 
 - [x] Fix remaining displays when world resets
 - [x] Fix floating displays without base material
 - [x] Handle failed config gracefully
+- [x] Remove unnecessary warnings and logs
 
 # Version 1.4.1
 

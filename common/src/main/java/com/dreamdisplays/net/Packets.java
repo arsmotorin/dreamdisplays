@@ -9,6 +9,8 @@ import net.minecraft.resources.Identifier;
 import org.joml.Vector3i;
 import org.jspecify.annotations.NullMarked;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -201,6 +203,32 @@ public final class Packets {
                 StreamCodec.of(
                         (buf, packet) -> buf.writeBoolean(packet.enabled),
                         buf -> new ReportEnabled(buf.readBoolean())
+                );
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return PACKET_ID;
+        }
+    }
+
+    public record ClearCache(List<UUID> displayUuids) implements CustomPacketPayload {
+        public static final Type<ClearCache> PACKET_ID = createType("clear_cache");
+        public static final StreamCodec<FriendlyByteBuf, ClearCache> PACKET_CODEC =
+                StreamCodec.of(
+                        (buf, packet) -> {
+                            buf.writeVarInt(packet.displayUuids.size());
+                            for (UUID uuid : packet.displayUuids) {
+                                buf.writeUUID(uuid);
+                            }
+                        },
+                        buf -> {
+                            int size = buf.readVarInt();
+                            List<UUID> uuids = new ArrayList<>(size);
+                            for (int i = 0; i < size; i++) {
+                                uuids.add(buf.readUUID());
+                            }
+                            return new ClearCache(uuids);
+                        }
                 );
 
         @Override

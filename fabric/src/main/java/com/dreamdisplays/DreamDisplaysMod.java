@@ -53,6 +53,11 @@ public class DreamDisplaysMod implements ClientModInitializer, Mod {
                 ReportEnabled.PACKET_CODEC
         );
 
+        PayloadTypeRegistry.playS2C().register(
+                ClearCache.PACKET_ID,
+                ClearCache.PACKET_CODEC
+        );
+
         PayloadTypeRegistry.playC2S().register(
                 Sync.PACKET_ID,
                 Sync.PACKET_CODEC
@@ -102,6 +107,11 @@ public class DreamDisplaysMod implements ClientModInitializer, Mod {
         ClientPlayNetworking.registerGlobalReceiver(
                 ReportEnabled.PACKET_ID,
                 (payload, unused) -> Initializer.onReportEnabledPacket(payload)
+        );
+
+        ClientPlayNetworking.registerGlobalReceiver(
+                ClearCache.PACKET_ID,
+                (payload, unused) -> Initializer.onClearCachePacket(payload)
         );
 
         WorldRenderEvents.AFTER_ENTITIES.register(context -> {

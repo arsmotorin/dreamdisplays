@@ -2,11 +2,13 @@ package com.dreamdisplays.listeners
 
 import com.dreamdisplays.Main.Companion.config
 import com.dreamdisplays.Main.Companion.getInstance
+import com.dreamdisplays.managers.DisplayManager
 import com.dreamdisplays.managers.DisplayManager.getDisplays
 import com.dreamdisplays.managers.PlayerManager
 import com.dreamdisplays.managers.PlayerManager.hasBeenNotifiedAboutModRequired
 import com.dreamdisplays.managers.PlayerManager.setModRequiredNotified
 import com.dreamdisplays.utils.Message.sendColoredMessage
+import com.dreamdisplays.utils.net.PacketUtils
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -24,9 +26,26 @@ import org.jspecify.annotations.NullMarked
  */
 @NullMarked
 class PlayerListener : Listener {
+
+    private var hasValidatedWorld = false
+
     @EventHandler
     fun onPlayerJoin(event: PlayerJoinEvent) {
         val player = event.player
+
+        // Validate displays
+        if (!hasValidatedWorld && getDisplays().isNotEmpty()) {
+            hasValidatedWorld = true
+            getInstance().server.scheduler.runTaskLater(getInstance(), Runnable {
+                val removedDisplayUuids = DisplayManager.validateDisplaysAndCleanup()
+                if (removedDisplayUuids.isNotEmpty()) {
+                    val onlinePlayers = Bukkit.getOnlinePlayers().toMutableList()
+                    @Suppress("UNCHECKED_CAST")
+                    PacketUtils.sendClearCache(onlinePlayers, removedDisplayUuids)
+                }
+            }, 40L)
+        }
+
         if (!config.settings.modDetectionEnabled) return
         if (getDisplays().isEmpty()) return
 

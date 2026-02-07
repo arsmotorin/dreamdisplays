@@ -131,13 +131,8 @@ object DisplayManager {
     }
 
     @JvmStatic
-    fun delete(id: UUID, player: Player) {
+    fun delete(id: UUID) {
         val displayData = displays[id] ?: return
-
-        if (displayData.ownerId != player.uniqueId) {
-            getInstance().logger.warning("Player ${player.name} sent delete packet while not owner!")
-            return
-        }
 
         delete(displayData)
     }
@@ -175,5 +170,56 @@ object DisplayManager {
 
     fun save(saveDisplay: Consumer<DisplayData>) {
         displays.values.forEach(saveDisplay)
+    }
+
+    fun validateDisplaysAndCleanup(): List<UUID> {
+        val baseMaterial = config.settings.baseMaterial
+        val invalidDisplays = mutableListOf<DisplayData>()
+
+        displays.values.forEach { display ->
+            val world = display.pos1.world
+            if (world == null) {
+                invalidDisplays.add(display)
+                return@forEach
+            }
+
+            // Check all blocks in the display area for at least one base material block
+            var hasBaseMaterial = false
+            val minX = display.box.minX.toInt()
+            val minY = display.box.minY.toInt()
+            val minZ = display.box.minZ.toInt()
+            val maxX = display.box.maxX.toInt()
+            val maxY = display.box.maxY.toInt()
+            val maxZ = display.box.maxZ.toInt()
+
+            outerLoop@ for (x in minX until maxX) {
+                for (y in minY until maxY) {
+                    for (z in minZ until maxZ) {
+                        if (world.getBlockAt(x, y, z).type == baseMaterial) {
+                            hasBaseMaterial = true
+                            break@outerLoop
+                        }
+                    }
+                }
+            }
+
+            if (!hasBaseMaterial) {
+                invalidDisplays.add(display)
+            }
+        }
+
+        // Remove invalid displays and collect their UUIDs
+        val removedUuids = mutableListOf<UUID>()
+        if (invalidDisplays.isNotEmpty()) {
+            invalidDisplays.forEach { display ->
+                runAsync {
+                    getInstance().storage.deleteDisplay(display)
+                }
+                displays.remove(display.id)
+                removedUuids.add(display.id)
+            }
+        }
+
+        return removedUuids
     }
 }

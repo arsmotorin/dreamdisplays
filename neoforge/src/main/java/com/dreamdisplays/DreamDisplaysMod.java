@@ -67,6 +67,12 @@ public class DreamDisplaysMod implements com.dreamdisplays.Mod {
                 (payload, ctx) -> Initializer.onReportEnabledPacket(payload)
         );
 
+        registrar.playToClient(
+                ClearCache.PACKET_ID,
+                ClearCache.PACKET_CODEC,
+                (payload, ctx) -> Initializer.onClearCachePacket(payload)
+        );
+
         registrar.playBidirectional(
                 Sync.PACKET_ID,
                 Sync.PACKET_CODEC,

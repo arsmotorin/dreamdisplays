@@ -122,9 +122,6 @@ public class Manager {
     // Local cache is used only for client preferences (volume, quality, muted).
     public static void loadScreensForServer(String serverId) {
         Settings.loadServerDisplays(serverId);
-        LoggingManager.info(
-                "Initialized display settings storage for server: " + serverId
-        );
         // Displays will be received from server via Info packets
     }
 

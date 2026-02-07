@@ -78,7 +78,7 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
 
     private fun handleDelete(player: Player, message: ByteArray) {
         readUUIDPacket(message)?.let { displayId ->
-            delete(displayId, player)
+            delete(displayId)
             sendMessage(player, "displayDeleted")
         }
     }

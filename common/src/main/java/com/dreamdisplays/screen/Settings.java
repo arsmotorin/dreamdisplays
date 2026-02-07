@@ -259,10 +259,6 @@ public class Settings {
         // Also remove from client display settings (volume, quality, muted)
         displaySettings.remove(displayUuid);
         save();
-
-        LoggingManager.info(
-                "Removed display from all saved data: " + displayUuid
-        );
     }
 
     // Client settings for a display (volume, quality, muted, brightness, paused)

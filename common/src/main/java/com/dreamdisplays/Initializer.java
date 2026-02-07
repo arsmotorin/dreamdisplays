@@ -401,4 +401,18 @@ public class Initializer {
     public static void onReportEnabledPacket(ReportEnabled packet) {
         isReportingEnabled = packet.enabled();
     }
+
+    public static void onClearCachePacket(ClearCache packet) {
+        // Remove specific displays from active screens and cache
+        for (UUID displayUuid : packet.displayUuids()) {
+            Screen screen = Manager.screens.get(displayUuid);
+            if (screen != null) {
+                screen.unregister();
+                Manager.screens.remove(displayUuid);
+            }
+
+            // Remove from persistent storage
+            Settings.removeDisplay(displayUuid);
+        }
+    }
 }

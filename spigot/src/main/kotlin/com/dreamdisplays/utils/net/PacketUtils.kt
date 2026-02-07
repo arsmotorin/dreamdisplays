@@ -28,6 +28,7 @@ object PacketUtils {
     private const val CHANNEL_PREMIUM = "dreamdisplays:premium"
     private const val CHANNEL_DISPLAY_ENABLED = "dreamdisplays:display_enabled"
     private const val CHANNEL_REPORT_ENABLED = "dreamdisplays:report_enabled"
+    private const val CHANNEL_CLEAR_CACHE = "dreamdisplays:clear_cache"
 
     private val plugin: Main by lazy { Main.getInstance() }
 
@@ -104,6 +105,23 @@ object PacketUtils {
 
     fun sendReportEnabled(player: Player, isEnabled: Boolean) {
         sendBooleanPacket(player, CHANNEL_REPORT_ENABLED, isEnabled)
+    }
+
+    fun sendClearCache(players: List<Player?>, displayUuids: List<UUID>) {
+        if (displayUuids.isEmpty()) return
+
+        runCatching {
+            val packet = buildPacket { output ->
+                output.writeVarInt(displayUuids.size)
+                displayUuids.forEach { uuid ->
+                    output.writeUUID(uuid)
+                }
+            }
+
+            sendPacket(players, CHANNEL_CLEAR_CACHE, packet)
+        }.onFailure { error ->
+            warn("Failed to send clear cache packet", error)
+        }
     }
 
     private fun sendBooleanPacket(player: Player, channel: String, value: Boolean) {
