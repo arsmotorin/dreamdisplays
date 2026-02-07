@@ -47,6 +47,7 @@ Mod:
 
 - [x] Update dependencies
 - [x] Fix remaining displays when world resets
+- [x] Fix floating displays without base material
 
 Plugin:
 
