@@ -49,12 +49,14 @@ Mod:
 - [x] Update dependencies
 - [x] Improve media player initialization handling and quality parsing
 - [x] Use thread-safe `ConcurrentHashMap` for display management
+- [x] Improved display sync stability
 
 Plugin:
 
 - [x] Add permission and validation checks for display deletion
 - [x] Better config mapping
 - [x] Improved display sync stability
+- [x] Fixed scheduler timing mismatch between Bukkit and Folia
 
 # Version 1.4.2
 

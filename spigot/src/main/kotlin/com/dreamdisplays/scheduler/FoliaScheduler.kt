@@ -9,6 +9,7 @@ import java.lang.reflect.Proxy
  */
 @NullMarked
 object FoliaScheduler : AdapterScheduler {
+    private const val TICK_MILLIS = 50L
 
     private val asyncScheduler = Class.forName("org.bukkit.Bukkit")
         .getMethod("getAsyncScheduler").invoke(null)
@@ -24,6 +25,9 @@ object FoliaScheduler : AdapterScheduler {
         intervalTicks: Long,
         task: Runnable,
     ) {
+        val delayMillis = delayTicks.coerceAtLeast(0L) * TICK_MILLIS
+        val intervalMillis = intervalTicks.coerceAtLeast(1L) * TICK_MILLIS
+
         val consumer = Proxy.newProxyInstance(
             consumerClass.classLoader,
             arrayOf(consumerClass)
@@ -43,8 +47,8 @@ object FoliaScheduler : AdapterScheduler {
             asyncScheduler,
             plugin,
             consumer,
-            delayTicks,
-            intervalTicks,
+            delayMillis,
+            intervalMillis,
             milliseconds
         )
     }
