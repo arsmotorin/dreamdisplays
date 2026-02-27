@@ -123,9 +123,6 @@ class Config(private val plugin: Main) {
         val reports: ReportsConfig = ReportsConfig(),
         val updates: UpdatesConfig = UpdatesConfig(),
         val display: DisplayConfig = DisplayConfig(),
-        val particles: Boolean = true,
-        val particles_color: String = "#00FFFF",
-        val mod_detection_enabled: Boolean = true,
     ) {
         // Reports
         val webhookUrl get() = reports.webhook_url
@@ -134,18 +131,18 @@ class Config(private val plugin: Main) {
         // Updates
         val repoName get() = updates.repo_name
         val repoOwner get() = updates.repo_owner
-        val updatesEnabled get() = updates.enabled
+        val updatesEnabled get() = display.updates && updates.enabled
 
         // Materials
         lateinit var selectionMaterial: Material
         lateinit var baseMaterial: Material
 
         // Particles
-        val particlesEnabled get() = particles
+        val particlesEnabled get() = display.particles
         val particleRenderDelay = 2
 
         // Mod detection
-        val modDetectionEnabled get() = mod_detection_enabled
+        val modDetectionEnabled get() = display.mod_detection_enabled
 
         // Display
         val minWidth get() = display.min_width
@@ -173,6 +170,10 @@ class Config(private val plugin: Main) {
         data class DisplayConfig(
             val selection_material: String = "DIAMOND_AXE",
             val base_material: String = "BLACK_CONCRETE",
+            val updates: Boolean = true,
+            val particles: Boolean = true,
+            val particles_color: String = "#00FFFF",
+            val mod_detection_enabled: Boolean = true,
             val min_width: Int = 1,
             val min_height: Int = 1,
             val max_width: Int = 32,
@@ -236,11 +237,14 @@ class Config(private val plugin: Main) {
     fun getMessageForPlayer(player: Player?, key: String): Any? {
         val locale = player?.locale ?: "en_us"
         val langCode = mapLocaleToLang(locale)
-        return languages[langCode]?.get(key) ?: messages[key]
+        val defaultLangCode = mapLocaleToLang(language.default_language)
+        return languages[langCode]?.get(key)
+            ?: languages[defaultLangCode]?.get(key)
+            ?: messages[key]
     }
 
     private fun mapLocaleToLang(locale: String): String {
-        return when (locale.lowercase()) {
+        return when (val normalized = locale.lowercase()) {
             "ru_ru" -> "ru"
             "uk_ua" -> "uk"
             "pl_pl" -> "pl"
@@ -248,7 +252,7 @@ class Config(private val plugin: Main) {
             "cs_cz" -> "cs"
             "be_by" -> "be"
             "he_il" -> "he"
-            else -> "en"
+            else -> normalized.substringBefore('_').substringBefore('-').ifEmpty { "en" }
         }
     }
 
