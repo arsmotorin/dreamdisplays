@@ -54,6 +54,7 @@ Mod:
 Plugin:
 
 - [x] Improved `/display video` URL parsing: now accepts direct video IDs and more YouTube link formats (watch/shorts/embed/live/youtu.be).
+- [x] Add paginated display listing with improved formatting
 - [x] Improved tab-completion: now it's case-insensitive
 - [x] Language suggestions for `/display video` when typing language parameter
 - [x] Add permission and validation checks for display deletion
