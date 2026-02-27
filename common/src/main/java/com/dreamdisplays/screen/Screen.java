@@ -4,6 +4,7 @@ import com.dreamdisplays.Initializer;
 import com.dreamdisplays.net.Packets.Info;
 import com.dreamdisplays.net.Packets.RequestSync;
 import com.dreamdisplays.net.Packets.Sync;
+import me.inotsleep.utils.logging.LoggingManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
@@ -27,6 +28,9 @@ import java.util.concurrent.CompletableFuture;
 @NullMarked
 public class Screen {
 
+    private static final int DEFAULT_QUALITY = 720;
+    private static final int INIT_WAIT_TIMEOUT_MS = 30_000;
+    private static final int INIT_WAIT_INTERVAL_MS = 100;
     private final UUID uuid;
     private final UUID ownerUuid;
     public boolean owner;
@@ -122,7 +126,7 @@ public class Screen {
         boolean shouldBePaused = this.paused;
         CompletableFuture.runAsync(() -> {
             mediaPlayer = new MediaPlayer(videoUrl, lang, this);
-            int qualityInt = Integer.parseInt(this.quality.replace("p", ""));
+            int qualityInt = parseQualityOrDefault();
             textureWidth = (int) ((width / (double) height) * qualityInt);
             textureHeight = qualityInt;
         });
@@ -462,7 +466,7 @@ public class Screen {
 
     // Creates a new texture for the screen based on its dimensions and quality
     public void createTexture() {
-        int qualityInt = Integer.parseInt(this.quality.replace("p", ""));
+        int qualityInt = parseQualityOrDefault();
         textureWidth = (int) ((width / (double) height) * qualityInt);
         textureHeight = qualityInt;
 
@@ -535,17 +539,40 @@ public class Screen {
     }
 
     public void waitForMFInit(Runnable action) {
-        new Thread(() -> {
-            while (mediaPlayer == null || !mediaPlayer.isInitialized()) {
+        Thread initWaitThread = new Thread(() -> {
+            int attempts = INIT_WAIT_TIMEOUT_MS / INIT_WAIT_INTERVAL_MS;
+            while (attempts-- > 0) {
+                MediaPlayer currentPlayer = mediaPlayer;
+                if (currentPlayer != null && currentPlayer.isInitialized()) {
+                    action.run();
+                    return;
+                }
+                if (errored) return;
                 try {
-                    Thread.sleep(100); // TODO: this is ugly
+                    Thread.sleep(INIT_WAIT_INTERVAL_MS);
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    Thread.currentThread().interrupt();
+                    return;
                 }
             }
-            action.run();
-        })
-                .start();
+            LoggingManager.warn(
+                    "Timed out waiting for media initialization for display " + uuid
+            );
+        }, "Screen-wait-init-" + uuid);
+        initWaitThread.setDaemon(true);
+        initWaitThread.start();
+    }
+
+    private int parseQualityOrDefault() {
+        try {
+            int parsed = Integer.parseInt(this.quality.replace("p", ""));
+            return parsed > 0 ? parsed : DEFAULT_QUALITY;
+        } catch (NumberFormatException e) {
+            LoggingManager.warn(
+                    "Invalid quality value '" + quality + "' for display " + uuid + ", using " + DEFAULT_QUALITY + "p"
+            );
+            return DEFAULT_QUALITY;
+        }
     }
 
     public @Nullable String getVideoUrl() {

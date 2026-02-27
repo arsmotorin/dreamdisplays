@@ -165,6 +165,17 @@ public class MediaPlayer {
         }
     }
 
+    private static int parseQualityValue(String raw, int fallback) {
+        if (raw == null) return fallback;
+        try {
+            String digits = raw.replaceAll("\\D+", "");
+            if (digits.isEmpty()) return fallback;
+            return Integer.parseInt(digits);
+        } catch (Exception e) {
+            return fallback;
+        }
+    }
+
     private static void safeStopAndDispose(@Nullable Element e) {
         if (e == null) return;
         try {
@@ -217,23 +228,26 @@ public class MediaPlayer {
 
     public void seekRelative(double s) {
         safeExecute(() -> {
-            if (!initialized) return;
-            long cur = audioPipeline.queryPosition(Format.TIME);
+            Pipeline audio = audioPipeline;
+            if (!initialized || audio == null) return;
+            long cur = audio.queryPosition(Format.TIME);
             long tgt = Math.max(0, cur + (long) (s * 1e9));
             long dur = Math.max(
                     0,
-                    audioPipeline.queryDuration(Format.TIME) - 1
+                    audio.queryDuration(Format.TIME) - 1
             );
             doSeek(Math.min(tgt, dur), true);
         });
     }
 
     public long getCurrentTime() {
-        return initialized ? audioPipeline.queryPosition(Format.TIME) : 0;
+        Pipeline audio = audioPipeline;
+        return initialized && audio != null ? audio.queryPosition(Format.TIME) : 0;
     }
 
     public long getDuration() {
-        return initialized ? audioPipeline.queryDuration(Format.TIME) : 0;
+        Pipeline audio = audioPipeline;
+        return initialized && audio != null ? audio.queryDuration(Format.TIME) : 0;
     }
 
     public boolean isInitialized() {
@@ -322,7 +336,8 @@ public class MediaPlayer {
                 .stream()
                 .map(Stream::getResolution)
                 .filter(Objects::nonNull)
-                .map(r -> Integer.parseInt(r.replaceAll("\\D+", "")))
+                .map(r -> parseQualityValue(r, Integer.MAX_VALUE))
+                .filter(r -> r != Integer.MAX_VALUE)
                 .distinct()
                 .filter(r -> r <= (Initializer.isPremium ? 2160 : 1080))
                 .sorted()
@@ -344,6 +359,7 @@ public class MediaPlayer {
                 LoggingManager.error(
                         "Could not extract video ID from URL: " + youtubeUrl
                 );
+                screen.errored = true;
                 return;
             }
 
@@ -361,8 +377,9 @@ public class MediaPlayer {
                     .filter(s -> MIME_VIDEO.equals(s.getMimeType()))
                     .toList();
 
+            int requestedQuality = parseQualityValue(screen.getQuality(), 720);
             Optional<Stream> videoOpt = pickVideo(
-                    Integer.parseInt(screen.getQuality().replace("p", ""))
+                    requestedQuality
             ).or(() -> availableVideoStreams.stream().findFirst());
             Optional<Stream> audioOpt = audioS
                     .stream()
@@ -384,7 +401,7 @@ public class MediaPlayer {
             }
             if (videoOpt.isEmpty() || audioOpt.isEmpty()) {
                 LoggingManager.error("No streams available");
-
+                screen.errored = true;
                 return;
             }
 
@@ -398,6 +415,7 @@ public class MediaPlayer {
             initialized = true;
         } catch (Exception e) {
             LoggingManager.error("Failed to initialize MediaPlayer ", e);
+            screen.errored = true;
         }
     }
 
@@ -611,6 +629,10 @@ public class MediaPlayer {
     }
 
     private void doStop() {
+        initialized = false;
+        frameReady = false;
+        preparedBuffer = null;
+        currentFrameBuffer = null;
         safeStopAndDispose(videoPipeline);
         safeStopAndDispose(audioPipeline);
         videoPipeline = null;
@@ -658,10 +680,11 @@ public class MediaPlayer {
     }
 
     private void applyVolume() {
-        if (!initialized) return;
-        Element v = audioPipeline.getElementByName("volumeElement");
+        Pipeline audio = audioPipeline;
+        if (!initialized || audio == null) return;
+        Element v = audio.getElementByName("volumeElement");
         if (v != null) v.set("volume", 1);
-        Element a = audioPipeline.getElementByName("ampElement");
+        Element a = audio.getElementByName("ampElement");
         if (a != null) a.set("amplification", currentVolume);
     }
 
@@ -677,6 +700,9 @@ public class MediaPlayer {
 
     private void changeQuality(String desired) {
         if (!initialized || availableVideoStreams == null) return;
+        Pipeline audio = audioPipeline;
+        Stream current = currentVideoStream;
+        if (audio == null || current == null) return;
         int target;
         try {
             target = Integer.parseInt(desired.replaceAll("\\D+", ""));
@@ -689,20 +715,20 @@ public class MediaPlayer {
         Optional<Stream> best = pickVideo(target);
         if (best.isEmpty()) return;
         Stream chosen = best.get();
-        if (chosen.getUrl().equals(currentVideoStream.getUrl())) return;
+        if (chosen.getUrl().equals(current.getUrl())) return;
 
-        long pos = audioPipeline.queryPosition(Format.TIME);
-        audioPipeline.pause();
+        long pos = audio.queryPosition(Format.TIME);
+        audio.pause();
 
         safeStopAndDispose(videoPipeline);
 
         Pipeline newVid = buildVideoPipeline(chosen.getUrl());
 
         // Get the clock from audio pipeline and use it for video
-        Clock clock = audioPipeline.getClock();
+        Clock clock = audio.getClock();
         if (clock != null) {
             newVid.setClock(clock);
-            newVid.setBaseTime(audioPipeline.getBaseTime());
+            newVid.setBaseTime(audio.getBaseTime());
         }
         newVid.pause();
 
@@ -713,11 +739,11 @@ public class MediaPlayer {
                 SeekFlags.FLUSH,
                 SeekFlags.ACCURATE
         );
-        audioPipeline.seekSimple(Format.TIME, flags, pos);
+        audio.seekSimple(Format.TIME, flags, pos);
         newVid.seekSimple(Format.TIME, flags, pos);
 
         if (!screen.getPaused()) {
-            audioPipeline.play();
+            audio.play();
             newVid.play();
         }
 
