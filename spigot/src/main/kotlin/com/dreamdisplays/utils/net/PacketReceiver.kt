@@ -5,6 +5,7 @@ import com.dreamdisplays.Main.Companion.config
 import com.dreamdisplays.Main.Companion.modVersion
 import com.dreamdisplays.datatypes.SyncData
 import com.dreamdisplays.managers.DisplayManager.delete
+import com.dreamdisplays.managers.DisplayManager.getDisplayData
 import com.dreamdisplays.managers.DisplayManager.getDisplays
 import com.dreamdisplays.managers.DisplayManager.report
 import com.dreamdisplays.managers.PlayerManager.hasBeenNotifiedAboutModUpdate
@@ -41,6 +42,7 @@ import java.util.*
 class PacketReceiver(private val plugin: Main) : PluginMessageListener {
 
     private val gson by lazy { Gson() }
+    private val maxVersionBytes = 128
 
     override fun onPluginMessageReceived(channel: String, player: Player, message: ByteArray) {
         when (channel) {
@@ -78,6 +80,16 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
 
     private fun handleDelete(player: Player, message: ByteArray) {
         readUUIDPacket(message)?.let { displayId ->
+            val displayData = getDisplayData(displayId)
+                ?: return@let sendMessage(player, "noDisplay")
+
+            if (displayData.ownerId != player.uniqueId &&
+                !player.hasPermission(config.permissions.delete)
+            ) {
+                sendMessage(player, "displayCommandMissingPermission")
+                return@let
+            }
+
             delete(displayId)
             sendMessage(player, "displayDeleted")
         }
@@ -129,12 +141,12 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
         sendAllDisplays(player)
 
         // Store version
-        val version = sanitize(versionString)?.let { parse(it) }
+        val version = parseVersionOrNull(versionString)
         setVersion(player, version)
     }
 
     private fun checkForUpdates(player: Player, versionString: String) {
-        val userVersion = parse(versionString)
+        val userVersion = parseVersionOrNull(versionString) ?: return
 
         // Check for mod update
         checkModUpdate(player, userVersion)
@@ -166,8 +178,8 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
             return
         }
 
-        val currentVersion = parse(currentVersionString)
-        val latestVersion = parse(latestPluginVersion)
+        val currentVersion = runCatching { parse(currentVersionString) }.getOrNull() ?: return
+        val latestVersion = runCatching { parse(latestPluginVersion) }.getOrNull() ?: return
 
         if (currentVersion < latestVersion) {
             sendPluginUpdateMessage(player, latestPluginVersion)
@@ -195,7 +207,8 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
     }
 
     private fun sendPluginUpdateMessage(player: Player, version: String) {
-        val template = config.messages["newPluginVersion"] as String
+        val template = config.messages["newPluginVersion"] as? String
+            ?: "A new plugin version is available: %s"
         val message = String.format(template, version)
         sendColoredMessage(player, message)
     }
@@ -232,10 +245,21 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
     private fun readVersionString(message: ByteArray): String {
         return DataInputStream(ByteArrayInputStream(message)).use { input ->
             val length = input.readVarInt()
+            require(length in 1..maxVersionBytes) {
+                "Invalid version packet length: $length"
+            }
+            require(length <= input.available()) {
+                "Invalid version packet size: declared=$length available=${input.available()}"
+            }
             val data = ByteArray(length)
-            input.read(data, 0, length)
+            input.readFully(data)
             String(data, 0, length)
         }
+    }
+
+    private fun parseVersionOrNull(raw: String): Version? {
+        val sanitized = sanitize(raw)?.takeIf { it.isNotEmpty() } ?: return null
+        return runCatching { parse(sanitized) }.getOrNull()
     }
 
     // Extension functions for DataInputStream to read custom data types
