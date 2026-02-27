@@ -8,7 +8,7 @@ gst1 = "1.4.0"
 javatube = "6692a32"
 
 # Plugin versions
-loom = "1.15.0-alpha.30"
+loom = "1.16.0-alpha.9"
 moddev = "2.0.137"
 shadow = "9.3.1"
 
@@ -16,7 +16,7 @@ shadow = "9.3.1"
 fabricLoader = "0.18.4"
 fabricApi = "0.141.3+1.21.11"
 fabricMinecraft = "1.21.11"
-quiltLoader = "0.30.0-beta.0"
+quiltLoader = "0.30.0-beta.3"
 
 # NeoForge
 neoforge = "21.11.38-beta"
