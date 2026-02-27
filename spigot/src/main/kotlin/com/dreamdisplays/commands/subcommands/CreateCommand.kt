@@ -14,6 +14,7 @@ class CreateCommand : SubCommand {
 
     override val name = "create"
     override val permission = config.permissions.create
+    override val playerOnly = true
 
     override fun execute(sender: CommandSender, args: Array<String?>) {
         val player = (sender as? Player) ?: return

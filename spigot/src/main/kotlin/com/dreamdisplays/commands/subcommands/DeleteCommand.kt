@@ -11,6 +11,7 @@ class DeleteCommand : SubCommand {
 
     override val name = "delete"
     override val permission = config.permissions.delete
+    override val playerOnly = true
 
     override fun execute(sender: CommandSender, args: Array<String?>) {
         val player = (sender as? Player) ?: return

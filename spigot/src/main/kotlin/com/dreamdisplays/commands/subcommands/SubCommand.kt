@@ -18,6 +18,7 @@ import org.bukkit.command.CommandSender
 interface SubCommand {
     val name: String
     val permission: String?
+    val playerOnly: Boolean get() = false
     fun execute(sender: CommandSender, args: Array<String?>)
     fun complete(sender: CommandSender, args: Array<String?>): List<String> = emptyList()
 }

@@ -92,6 +92,7 @@
   "display.already-enabled": "&7D |&f Дисплеи уже включены",
   "displayWrongCommand": "&7D |&f Вы ввели что-то неправильно!",
   "displayCommandMissingPermission": "&7D |&f У вас нет разрешения на использование этой команды!",
+  "commandPlayersOnly": "&7D |&f Эту команду может использовать только игрок в игре",
   "displayStatsHeader": "&7D |&f Статистика использования мода:",
   "displayStatsEntry": "&7D |&f Версия %s: %d игроков",
   "displayStatsTotal": "&7D |&f Всего игроков с модом: %d",

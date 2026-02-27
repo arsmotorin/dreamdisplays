@@ -11,6 +11,7 @@ class OffCommand : SubCommand {
 
     override val name = "off"
     override val permission: String? = null
+    override val playerOnly = true
 
     override fun execute(sender: CommandSender, args: Array<String?>) {
         val player = (sender as? Player) ?: return

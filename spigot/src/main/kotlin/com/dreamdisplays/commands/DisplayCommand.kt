@@ -6,6 +6,7 @@ import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.command.TabCompleter
+import org.bukkit.entity.Player
 import org.jspecify.annotations.NullMarked
 
 /**
@@ -43,6 +44,11 @@ class DisplayCommand :
         val sub = subCommands[args[0]?.lowercase()]
             ?: return sendMessage(sender, "displayWrongCommand")
 
+        if (sub.playerOnly && sender !is Player) {
+            sendMessage(sender, "commandPlayersOnly")
+            return
+        }
+
         sub.permission?.let { perm ->
             if (!sender.hasPermission(perm)) {
                 sendMessage(sender, "displayCommandMissingPermission")
@@ -61,6 +67,7 @@ class DisplayCommand :
             val prefix = args[0].orEmpty().lowercase()
             return subCommands.values
                 .asSequence()
+                .filter { !it.playerOnly || sender is Player }
                 .filter { (it.permission == null) || sender.hasPermission(it.permission ?: "") }
                 .map { it.name }
                 .filter { it.lowercase().startsWith(prefix) }
@@ -69,6 +76,9 @@ class DisplayCommand :
         }
 
         val sub = subCommands[args[0]?.lowercase()] ?: return mutableListOf()
+        if (sub.playerOnly && sender !is Player) {
+            return mutableListOf()
+        }
         if (sub.permission != null && !sender.hasPermission(sub.permission ?: "")) {
             return mutableListOf()
         }

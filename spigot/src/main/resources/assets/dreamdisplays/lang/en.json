@@ -12,6 +12,7 @@
   "selectionClear": "&7D |&f Selection has been cleared!",
   "displayWrongCommand": "&7D |&f You entered something wrong!",
   "displayCommandMissingPermission": "&7D |&f You don't have permission to use this command!",
+  "commandPlayersOnly": "&7D |&f This command can only be used by a player in-game",
   "successfulCreation": "&7D |&f Display has been created! Now focus on it and type /display video <youtube_url> [lang] to set a video",
   "noDisplay": "&7D |&f Display has not been found!",
   "settedURL": "&7D |&f Video has been loaded!",

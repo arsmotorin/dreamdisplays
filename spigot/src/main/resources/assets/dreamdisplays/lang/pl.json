@@ -92,6 +92,7 @@
   "display.already-enabled": "&7D |&f Wyświetlacze są już włączone",
   "displayWrongCommand": "&7D |&f Wprowadziłeś coś nieprawidłowego!",
   "displayCommandMissingPermission": "&7D |&f Nie masz uprawnień do użycia tego polecenia!",
+  "commandPlayersOnly": "&7D |&f Tego polecenia może użyć tylko gracz w grze",
   "displayStatsHeader": "&7D |&f Statystyki użycia modu:",
   "displayStatsEntry": "&7D |&f Wersja %s: %d graczy",
   "displayStatsTotal": "&7D |&f Łącznie graczy z modem: %d",

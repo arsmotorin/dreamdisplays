@@ -14,6 +14,7 @@ class VideoCommand : SubCommand {
 
     override val name = "video"
     override val permission = Main.config.permissions.video
+    override val playerOnly = true
 
     override fun execute(sender: CommandSender, args: Array<String?>) {
         val player = (sender as? Player) ?: return

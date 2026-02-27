@@ -58,6 +58,7 @@ Plugin:
 - [x] Add permission and validation checks for display deletion
 - [x] Better config mapping
 - [x] Improved display sync stability
+- [x] Player-only `/display` subcommands now return a clear console message instead of failing silently
 - [x] Fixed scheduler timing mismatch between Bukkit and Folia
 
 # Version 1.4.2

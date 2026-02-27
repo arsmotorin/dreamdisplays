@@ -12,6 +12,7 @@
   "selectionClear": "&7D |&f הבחירה נמחקה!",
   "displayWrongCommand": "&7D |&f הקלדת משהו לא נכון!",
   "displayCommandMissingPermission": "&7D |&f אין לך הרשאה להשתמש בפקודה זו!",
+  "commandPlayersOnly": "&7D |&f פקודה זו ניתנת לשימוש רק על ידי שחקן בתוך המשחק",
   "successfulCreation": "&7D |&f התצוגה נוצרה! כעת התרכז בה והקלד /display video <youtube_url> [lang] כדי להגדיר וידאו",
   "noDisplay": "&7D |&f התצוגה לא נמצאה!",
   "settedURL": "&7D |&f הוידאו נטען!",
