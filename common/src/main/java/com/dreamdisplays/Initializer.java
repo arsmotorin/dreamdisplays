@@ -46,21 +46,17 @@ public class Initializer {
     private static final AtomicBoolean wasFocused = new AtomicBoolean(false);
     public static Config config = new Config(new File("./config/" + MOD_ID));
     public static Thread timerThread = new Thread(() -> {
-        int lastDistance = 64;
-        boolean isErrored = false;
-        while (!isErrored) {
+        boolean running = true;
+        while (running) {
             Manager.getScreens().forEach(Screen::reloadQuality);
-            if (config.defaultDistance != lastDistance) {
-                config.defaultDistance = lastDistance;
-                config.save();
-            }
             try {
                 Thread.sleep(2500);
             } catch (InterruptedException e) {
-                isErrored = true;
+                Thread.currentThread().interrupt();
+                running = false;
             }
         }
-    });
+    }, "dreamdisplays-quality-refresh");
     public static boolean isOnScreen = false;
     public static boolean focusMode = false;
     public static boolean displaysEnabled = true;
