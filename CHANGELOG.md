@@ -54,7 +54,7 @@ Plugin:
 
 - [x] Add permission and validation checks for display deletion
 - [x] Better config mapping
-- [x]
+- [x] Improved display sync stability
 
 # Version 1.4.2
 

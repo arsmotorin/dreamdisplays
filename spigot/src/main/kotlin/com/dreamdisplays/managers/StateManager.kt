@@ -14,36 +14,44 @@ import java.util.*
  */
 @NullMarked
 object StateManager {
-    private val playStates: MutableMap<UUID?, StateData> = HashMap()
+    private val playStates: MutableMap<UUID, StateData> = HashMap()
 
     @JvmStatic
     fun processSyncPacket(packet: SyncData, player: Player) {
-        val data = getDisplayData(packet.id)
+        val displayId = packet.id ?: return
+        val data = getDisplayData(displayId)
         if (data != null) data.isSync = packet.isSync
 
         if (!packet.isSync) {
-            playStates.remove(packet.id)
+            playStates.remove(displayId)
             return
         }
 
-        if (data == null) return
+        if (data == null) {
+            playStates.remove(displayId)
+            return
+        }
 
         if (data.ownerId != player.uniqueId) {
             return
         }
 
-        val state = playStates.computeIfAbsent(packet.id) { id: UUID? -> StateData(id) }
+        val state = playStates.computeIfAbsent(displayId) { id -> StateData(id) }
         state.update(packet)
         data.duration = packet.limitTime
 
         val receivers = getReceivers(data)
 
-        PacketUtils.sendSync(receivers.filter { it.uniqueId != player.uniqueId }.toMutableList(), packet)
+        PacketUtils.sendSync(
+            receivers.filter { it.uniqueId != player.uniqueId }.toMutableList(),
+            packet.copy(id = displayId)
+        )
     }
 
     @JvmStatic
     fun sendSyncPacket(id: UUID?, player: Player?) {
-        val state = playStates[id] ?: return
+        val displayId = id ?: return
+        val state = playStates[displayId] ?: return
 
         val packet = state.createPacket()
         PacketUtils.sendSync(mutableListOf(player), packet)

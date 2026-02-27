@@ -20,11 +20,8 @@ import java.util.*
  *
  */
 @NullMarked
-class StateData(private val id: UUID?) {
-    // TODO: handle null id gracefully in the future
-    // check(id != null) { "ID cannot be null" }
-    // check(getDisplayData(id) != null) { "Display data not found for id: $id" }
-    var displayData: DisplayData = getDisplayData(id)!!
+class StateData(private val id: UUID) {
+    private var displayData: DisplayData? = getDisplayData(id)
 
     private var paused = false
     private var lastReportedTime: Long = 0
@@ -46,7 +43,11 @@ class StateData(private val id: UUID?) {
             lastReportedTime + (nanos - lastReportedTimestamp)
         }
 
-        if (limitTime == 0L) displayData.duration?.let { limitTime = it }
+        if (limitTime == 0L) {
+            val currentDisplay = getDisplayData(id) ?: displayData
+            displayData = currentDisplay
+            currentDisplay?.duration?.let { limitTime = it }
+        }
 
         val time = if (limitTime > 0) currentTime % limitTime else currentTime
         return SyncData(id, true, paused, time, limitTime)
