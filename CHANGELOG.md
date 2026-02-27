@@ -41,6 +41,22 @@ Plugin:
 - [x] Support `&start_radio=x` and `&t=x` YouTube parameters
 - [x] Add protection against fire spread and burning for flammable display blocks
 
+# Version 1.4.4
+
+Mod:
+
+- [ ] No changes
+
+Plugin:
+
+- [ ] Add `/display info` command for quick display information
+- [ ] Add `/display list` filters (`mine`, `world <name>`, `owner <name>`, `sync`)
+- [ ] Improve `/display video` error feedback (separate invalid URL/not owner/wrong target block)
+- [ ] Add total value output to `/display stats`
+- [ ] Add admin target mode for `/display on|off <player>`
+- [ ] Improve `/display reload` output with what was reloaded
+- [ ] Add `/display cleanup` command
+
 # Version 1.4.3
 
 Mod:
