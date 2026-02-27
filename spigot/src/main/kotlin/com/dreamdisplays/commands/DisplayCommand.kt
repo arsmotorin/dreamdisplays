@@ -31,7 +31,7 @@ class DisplayCommand :
         OnCommand(),
         OffCommand(),
         HelpCommand()
-    ).associateBy { it.name }
+    ).associateBy { it.name.lowercase() }
 
     // Command execution logic
     fun toExecute(sender: CommandSender, label: String?, args: Array<String?>) {
@@ -40,7 +40,7 @@ class DisplayCommand :
             return
         }
 
-        val sub = subCommands[args[0]]
+        val sub = subCommands[args[0]?.lowercase()]
             ?: return sendMessage(sender, "displayWrongCommand")
 
         sub.permission?.let { perm ->
@@ -55,11 +55,29 @@ class DisplayCommand :
 
     // Tab completer logic
     fun complete(sender: CommandSender, args: Array<String?>): MutableList<String?> {
-        if (args.size != 1) return mutableListOf()
+        if (args.isEmpty()) return mutableListOf()
 
-        return subCommands.values
-            .filter { (it.permission == null) || sender.hasPermission(it.permission ?: "") }
-            .map { it.name }
+        if (args.size == 1) {
+            val prefix = args[0].orEmpty().lowercase()
+            return subCommands.values
+                .asSequence()
+                .filter { (it.permission == null) || sender.hasPermission(it.permission ?: "") }
+                .map { it.name }
+                .filter { it.lowercase().startsWith(prefix) }
+                .sorted()
+                .toMutableList()
+        }
+
+        val sub = subCommands[args[0]?.lowercase()] ?: return mutableListOf()
+        if (sub.permission != null && !sender.hasPermission(sub.permission ?: "")) {
+            return mutableListOf()
+        }
+
+        val prefix = args.last().orEmpty().lowercase()
+        return sub.complete(sender, args)
+            .asSequence()
+            .filter { it.lowercase().startsWith(prefix) }
+            .sorted()
             .toMutableList()
     }
 

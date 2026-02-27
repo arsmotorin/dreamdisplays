@@ -19,4 +19,5 @@ interface SubCommand {
     val name: String
     val permission: String?
     fun execute(sender: CommandSender, args: Array<String?>)
+    fun complete(sender: CommandSender, args: Array<String?>): List<String> = emptyList()
 }

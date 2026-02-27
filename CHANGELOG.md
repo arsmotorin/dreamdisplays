@@ -53,6 +53,8 @@ Mod:
 
 Plugin:
 
+- [x] Improved tab-completion: now it's case-insensitive
+- [x] Language suggestions for `/display video` when typing language parameter
 - [x] Add permission and validation checks for display deletion
 - [x] Better config mapping
 - [x] Improved display sync stability

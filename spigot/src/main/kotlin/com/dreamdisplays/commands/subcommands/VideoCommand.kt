@@ -8,6 +8,7 @@ import com.dreamdisplays.utils.Message
 import com.dreamdisplays.utils.YouTubeUtils
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
+import java.util.Locale
 
 class VideoCommand : SubCommand {
 
@@ -38,12 +39,52 @@ class VideoCommand : SubCommand {
 
         data.apply {
             url = "https://youtube.com/watch?v=$code"
-            lang = args.getOrNull(2).orEmpty()
+            lang = normalizeLangCode(args.getOrNull(2).orEmpty())
             isSync = false
         }
 
         sendUpdate(data, getReceivers(data))
 
         Message.sendMessage(player, "settedURL")
+    }
+
+    override fun complete(sender: CommandSender, args: Array<String?>): List<String> {
+        if (args.size == 3) {
+            return languageSuggestions
+        }
+        return emptyList()
+    }
+
+    private fun normalizeLangCode(raw: String): String {
+        val base = raw.trim()
+            .lowercase(Locale.ROOT)
+            .replace('-', '_')
+            .substringBefore('_')
+
+        return when (base) {
+            "ua" -> "uk"
+            else -> base
+        }
+    }
+
+    companion object {
+        private val languageSuggestions: List<String> by lazy {
+            val fromJavaLocales = Locale.getAvailableLocales()
+                .asSequence()
+                .map { it.language.lowercase(Locale.ROOT) }
+
+            val fromPlugin = Main.config.languages.keys
+                .asSequence()
+                .map { it.trim().lowercase(Locale.ROOT).replace('-', '_').substringBefore('_') }
+
+            return@lazy (fromJavaLocales + fromPlugin)
+                .filter { it.matches(Regex("^[a-z]{2}$")) }
+                .map { code ->
+                    if (code == "uk") "ua" else code
+                }
+                .distinct()
+                .sorted()
+                .toList()
+        }
     }
 }
