@@ -18,6 +18,7 @@ import org.bukkit.util.BoundingBox
 import org.jspecify.annotations.NullMarked
 import java.lang.System.currentTimeMillis
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Consumer
 
 /**
@@ -25,8 +26,8 @@ import java.util.function.Consumer
  */
 @NullMarked
 object DisplayManager {
-    private val displays: MutableMap<UUID, DisplayData> = mutableMapOf()
-    private val reportTime: MutableMap<UUID, Long> = mutableMapOf()
+    private val displays: MutableMap<UUID, DisplayData> = ConcurrentHashMap()
+    private val reportTime: MutableMap<UUID, Long> = ConcurrentHashMap()
 
     @JvmStatic
     fun getDisplayData(id: UUID?): DisplayData? = displays[id]

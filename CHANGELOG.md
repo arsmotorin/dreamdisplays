@@ -41,6 +41,21 @@ Plugin:
 - [x] Support `&start_radio=x` and `&t=x` YouTube parameters
 - [x] Add protection against fire spread and burning for flammable display blocks
 
+# Version 1.4.3
+
+Mod:
+
+- [x] Update concurrency settings in build workflow
+- [x] Update dependencies
+- [x] Improve media player initialization handling and quality parsing
+- [x] Use thread-safe `ConcurrentHashMap` for display management
+
+Plugin:
+
+- [x] Add permission and validation checks for display deletion
+- [x] Better config mapping
+- [x]
+
 # Version 1.4.2
 
 Mod:
