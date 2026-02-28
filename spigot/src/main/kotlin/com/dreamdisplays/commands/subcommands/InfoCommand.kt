@@ -10,7 +10,7 @@ import org.bukkit.entity.Player
 
 class InfoCommand : SubCommand {
     override val name = "info"
-    override val permission = Main.config.permissions.list
+    override val permission = Main.config.permissions.info
     override val playerOnly = true
 
     override fun execute(sender: CommandSender, args: Array<String?>) {

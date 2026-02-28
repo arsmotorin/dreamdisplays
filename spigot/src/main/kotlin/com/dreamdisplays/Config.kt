@@ -213,6 +213,7 @@ class Config(private val plugin: Main) {
     ) {
         val create get() = permissions.create
         val video get() = permissions.video
+        val info get() = permissions.info
         val premium get() = permissions.premium
         val delete get() = permissions.delete
         val list get() = permissions.list
@@ -224,6 +225,7 @@ class Config(private val plugin: Main) {
         data class PermissionsConfig(
             val create: String = "dreamdisplays.create",
             val video: String = "dreamdisplays.video",
+            val info: String = "dreamdisplays.info",
             val premium: String = "group.premium",
             val delete: String = "dreamdisplays.delete",
             val list: String = "dreamdisplays.list",

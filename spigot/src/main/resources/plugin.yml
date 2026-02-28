@@ -14,3 +14,5 @@ permissions:
     default: true
   dreamdisplays.video:
     default: true
+  dreamdisplays.info:
+    default: true

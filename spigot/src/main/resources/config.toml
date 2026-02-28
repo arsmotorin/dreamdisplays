@@ -53,6 +53,7 @@ table_prefix = ""
 # Permission nodes
 create = "dreamdisplays.create"      # Default: everyone
 video = "dreamdisplays.video"        # Default: everyone
+info = "dreamdisplays.info"          # Default: everyone
 help = "dreamdisplays.help"          # Default: everyone
 list = "dreamdisplays.list"          # Default: op
 stats = "dreamdisplays.stats"        # Default: op
