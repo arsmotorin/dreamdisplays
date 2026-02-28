@@ -14,13 +14,24 @@ class StatsCommand : SubCommand {
 
     override fun execute(sender: CommandSender, args: Array<String?>) {
         val versions = getVersions()
-        val counts = versions.values.filterNotNull().groupingBy { it }.eachCount()
+        val counts = versions.values
+            .filterNotNull()
+            .groupingBy { it }
+            .eachCount()
+            .toSortedMap()
 
         sendMessage(sender, "displayStatsHeader")
 
         for ((version, count) in counts) {
-            val msg = config.getMessageForPlayer(sender as? Player, "displayStatsEntry")
-            sendColoredMessage(sender, String.format(msg as String, version, count))
+            sendColoredMessage(sender, format(sender, "displayStatsEntry", version, count))
         }
+
+        val total = counts.values.sum()
+        sendColoredMessage(sender, format(sender, "displayStatsTotal", total))
+    }
+
+    private fun format(sender: CommandSender, key: String, vararg values: Any): String {
+        val template = config.getMessageForPlayer(sender as? Player, key) as? String ?: key
+        return runCatching { String.format(template, *values) }.getOrElse { template }
     }
 }

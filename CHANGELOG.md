@@ -53,10 +53,9 @@ Plugin:
 - [x] Add `/display list` filters (`mine`, `world <name>`, `owner <name>`, `sync`)
 - [x] Add translation for `/display list` command
 - [ ] Improve `/display video` error feedback (separate invalid URL/not owner/wrong target block)
-- [ ] Add total value output to `/display stats`
+- [x] Add total value output to `/display stats`
 - [ ] Add admin target mode for `/display on|off <player>`
 - [ ] Improve `/display reload` output with what was reloaded
-- [ ] Add `/display cleanup` command
 
 # Version 1.4.3
 
