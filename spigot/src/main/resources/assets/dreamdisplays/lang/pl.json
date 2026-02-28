@@ -14,6 +14,8 @@
   "noDisplay": "&7D |&f Wyświetlacz nie został znaleziony!",
   "settedURL": "&7D |&f Wideo załadowane!",
   "invalidURL": "&7D |&f Twój link jest nieprawidłowy! Proszę użyć prawidłowego linku YouTube",
+  "displayVideoWrongTargetBlock": "&7D |&f Aby użyć tej komendy, musisz patrzeć na blok wyświetlacza!",
+  "displayVideoNotOwner": "&7D |&f Nie jesteś właścicielem tego wyświetlacza!",
   "reportTooQuickly": "&7D |&f Wysyłasz raporty zbyt szybko! Poczekaj przed wysłaniem innego raportu",
   "reportSent": "&7D |&f Raport wysłany!",
   "reportFailed": "&7D |&f Nie udało się wysłać zgłoszenia. Spróbuj ponownie później.",

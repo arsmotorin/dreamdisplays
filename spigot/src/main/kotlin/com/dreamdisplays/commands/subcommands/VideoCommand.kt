@@ -23,20 +23,26 @@ class VideoCommand : SubCommand {
             return
         }
 
-        val block = player.getTargetBlock(null, 32)
-        val data = isContains(block.location)
+        val code = YouTubeUtils.extractVideoIdFromUri(args[1] ?: "")
+            ?: return Message.sendMessage(player, "invalidURL")
 
-        if (
-            block.type != Main.config.settings.baseMaterial ||
-            data == null ||
-            data.ownerId != player.uniqueId
-        ) {
+        val block = player.getTargetBlock(null, 32)
+
+        if (block.type != Main.config.settings.baseMaterial) {
+            Message.sendMessage(player, "displayVideoWrongTargetBlock")
+            return
+        }
+
+        val data = isContains(block.location)
+        if (data == null) {
             Message.sendMessage(player, "noDisplay")
             return
         }
 
-        val code = YouTubeUtils.extractVideoIdFromUri(args[1] ?: "")
-            ?: return Message.sendMessage(player, "invalidURL")
+        if (data.ownerId != player.uniqueId) {
+            Message.sendMessage(player, "displayVideoNotOwner")
+            return
+        }
 
         data.apply {
             url = "https://youtube.com/watch?v=$code"

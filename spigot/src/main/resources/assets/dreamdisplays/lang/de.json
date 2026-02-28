@@ -17,6 +17,8 @@
   "noDisplay": "&7D |&f Display wurde nicht gefunden!",
   "settedURL": "&7D |&f Video wurde geladen!",
   "invalidURL": "&7D |&f Deine URL ist ungültig! Bitte verwende einen gültigen YouTube-Link",
+  "displayVideoWrongTargetBlock": "&7D |&f Du musst auf einen Display-Block schauen, um diesen Befehl zu nutzen!",
+  "displayVideoNotOwner": "&7D |&f Du bist nicht der Besitzer dieses Displays!",
   "reportTooQuickly": "&7D |&f Du sendest Berichte zu schnell! Warte bitte, bevor du einen weiteren sendest",
   "reportSent": "&7D |&f Bericht wurde gesendet!",
   "reportFailed": "&7D |&f Fehler beim Senden des Berichts. Bitte versuchen Sie es später erneut.",
