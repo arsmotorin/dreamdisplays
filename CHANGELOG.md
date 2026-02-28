@@ -51,7 +51,7 @@ Plugin:
 
 - [x] Add `/display info` command for quick display information
 - [ ] Add `/display list` filters (`mine`, `world <name>`, `owner <name>`, `sync`)
-- [ ] Add translation for `/display list` command
+- [x] Add translation for `/display list` command
 - [ ] Improve `/display video` error feedback (separate invalid URL/not owner/wrong target block)
 - [ ] Add total value output to `/display stats`
 - [ ] Add admin target mode for `/display on|off <player>`

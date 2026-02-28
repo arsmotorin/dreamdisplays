@@ -56,6 +56,13 @@
   "noDisplaysFound": "&7D |&f Дисплеи не найдены",
   "displayListHeader": "&7D |&f Дисплеи:",
   "displayListEntry": "&7D |&f {0}. Владелец: {1}, Расположение: [{2}, {3}, {4}], URL: {5}",
+  "displayListPageLine": "&7D |&7 страница=&f{0}/{1} &8| &7всего=&f{2}",
+  "displayListDetails": " &8| &7мир=&f{0} &8| &7размер=&f{1}x{2} &8| &7синхр=&f{3} &8| &7id=&f{4}",
+  "displayListUnknownOwner": "Неизвестно",
+  "displayListUnknownWorld": "неизвестно",
+  "displayListUnavailableUrl": "Н/Д",
+  "displayListTpButton": " [ТП]",
+  "displayListUrlButton": " [URL]",
   "modRequired": {
     "text": "",
     "extra": [

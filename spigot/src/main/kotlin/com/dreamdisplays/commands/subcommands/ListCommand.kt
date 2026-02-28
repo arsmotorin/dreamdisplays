@@ -18,7 +18,6 @@ import kotlin.math.max
 class ListCommand : SubCommand {
     private companion object {
         const val PAGE_SIZE = 10
-        const val DEFAULT_LIST_ENTRY_TEMPLATE = "&7D |&f {0}. Owner: {1}, Location: [{2}, {3}, {4}], URL: {5}"
         val LEGACY_SERIALIZER: LegacyComponentSerializer = LegacyComponentSerializer.legacyAmpersand()
     }
 
@@ -29,7 +28,7 @@ class ListCommand : SubCommand {
         val displays = getDisplays()
             .sortedWith(
                 compareBy<DisplayData>(
-                    { it.pos1.world?.name ?: "~unknown" },
+                    { it.pos1.world?.name ?: "" },
                     { it.pos1.blockX },
                     { it.pos1.blockY },
                     { it.pos1.blockZ },
@@ -55,19 +54,24 @@ class ListCommand : SubCommand {
         sendMessage(sender, "displayListHeader")
         sendColoredMessage(
             sender,
-            "&7D |&7 Page &f$page&7/&f$totalPages &7| Total: &f${displays.size}"
+            msgf(
+                sender,
+                "displayListPageLine",
+                page.toString(),
+                totalPages.toString(),
+                displays.size.toString()
+            )
         )
 
         pageDisplays.forEachIndexed { localIndex, d ->
             val index = startIndex + localIndex + 1
-            val owner = Bukkit.getOfflinePlayer(d.ownerId).name ?: "Unknown"
-            val worldName = d.pos1.world?.name ?: "unknown"
+            val owner = Bukkit.getOfflinePlayer(d.ownerId).name ?: msg(sender, "displayListUnknownOwner")
+            val worldName = d.pos1.world?.name ?: msg(sender, "displayListUnknownWorld")
             val idShort = d.id.toString().substring(0, 8)
-            val url = d.url.ifBlank { "N/A" }
-            val template = Main.config.getMessageForPlayer(sender as? Player, "displayListEntry") as? String
-                ?: DEFAULT_LIST_ENTRY_TEMPLATE
-            val baseLine = applyPlaceholders(
-                template,
+            val url = d.url.ifBlank { msg(sender, "displayListUnavailableUrl") }
+            val baseLine = msgf(
+                sender,
+                "displayListEntry",
                 index.toString(),
                 owner,
                 d.pos1.blockX.toString(),
@@ -75,7 +79,15 @@ class ListCommand : SubCommand {
                 d.pos1.blockZ.toString(),
                 url
             )
-            val details = " &8| &7world=&f$worldName &8| &7size=&f${d.width}x${d.height} &8| &7sync=&f${d.isSync} &8| &7id=&f$idShort"
+            val details = msgf(
+                sender,
+                "displayListDetails",
+                worldName,
+                d.width.toString(),
+                d.height.toString(),
+                d.isSync.toString(),
+                idShort
+            )
             val fullLine = baseLine + details
 
             if (sender !is Player) {
@@ -85,7 +97,7 @@ class ListCommand : SubCommand {
 
             val component = LEGACY_SERIALIZER.deserialize(fullLine)
                 .append(
-                    text(" [TP]")
+                    text(msg(sender, "displayListTpButton"))
                         .color(NamedTextColor.GREEN)
                         .clickEvent(
                             ClickEvent.runCommand(
@@ -98,7 +110,7 @@ class ListCommand : SubCommand {
                 component
             } else {
                 component.append(
-                    text(" [URL]").color(NamedTextColor.RED)
+                    text(msg(sender, "displayListUrlButton")).color(NamedTextColor.RED)
                         .clickEvent(ClickEvent.openUrl(d.url))
                 )
             }
@@ -119,5 +131,13 @@ class ListCommand : SubCommand {
             result = result.replace("{$index}", value)
         }
         return result
+    }
+
+    private fun msg(sender: CommandSender, key: String): String {
+        return Main.config.getMessageForPlayer(sender as? Player, key) as? String ?: key
+    }
+
+    private fun msgf(sender: CommandSender, key: String, vararg values: String): String {
+        return applyPlaceholders(msg(sender, key), *values)
     }
 }

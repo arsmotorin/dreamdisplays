@@ -56,6 +56,13 @@
   "noDisplaysFound": "&7D |&f Дисплеї не знайдені",
   "displayListHeader": "&7D |&f Дисплеї:",
   "displayListEntry": "&7D |&f {0}. Власник: {1}, Розташування: [{2}, {3}, {4}], URL: {5}",
+  "displayListPageLine": "&7D |&7 сторінка=&f{0}/{1} &8| &7всього=&f{2}",
+  "displayListDetails": " &8| &7світ=&f{0} &8| &7розмір=&f{1}x{2} &8| &7синхр=&f{3} &8| &7id=&f{4}",
+  "displayListUnknownOwner": "Невідомо",
+  "displayListUnknownWorld": "невідомо",
+  "displayListUnavailableUrl": "Н/Д",
+  "displayListTpButton": " [ТП]",
+  "displayListUrlButton": " [URL]",
   "modRequired": {
     "text": "",
     "extra": [
