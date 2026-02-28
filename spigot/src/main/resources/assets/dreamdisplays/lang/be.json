@@ -58,6 +58,7 @@
   "newPluginVersion": "&7D |&f Новая версія плагіна Dream Displays (%s) даступная! Калі ласка, абнавіце плагін на серверы!",
   "configReloaded": "&7D | &fDream Displays быў перазагружаны!",
   "configReloadFailed": "&7D |&f Не ўдалося перазагрузіць Dream Displays. Калі ласка, праверце кансоль на наяўнасць памылак",
+  "configReloadSummary": "&7D |&7 Перазагружана: &fканфіг, моўныя паведамленні, правы каманд",
   "noDisplaysFound": "&7D |&f Дысплеі не знойдзены",
   "displayListHeader": "&7D |&f Дысплеі:",
   "displayListEntry": "&7D |&f {0}. Уладальнік: {1}, Размяшчэнне: [{2}, {3}, {4}], URL: {5}",

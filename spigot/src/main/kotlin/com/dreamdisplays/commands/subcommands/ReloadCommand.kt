@@ -1,7 +1,6 @@
 package com.dreamdisplays.commands.subcommands
 
 import com.dreamdisplays.Main.Companion.config
-import com.dreamdisplays.utils.Message.sendColoredMessage
 import com.dreamdisplays.utils.Message.sendMessage
 import org.bukkit.command.CommandSender
 
@@ -14,8 +13,9 @@ class ReloadCommand : SubCommand {
         try {
             config.reload()
             sendMessage(sender, "configReloaded")
+            sendMessage(sender, "configReloadSummary")
         } catch (_: Exception) {
-            sendColoredMessage(sender, "configReloadFailed")
+            sendMessage(sender, "configReloadFailed")
         }
     }
 }

@@ -55,6 +55,7 @@
   "newPluginVersion": "&7D |&f Nowa wersja pluginu Dream Displays (%s)! Proszę zaktualizować go na serwerze!",
   "configReloaded": "&7D | &fDream Displays został przeładowany!",
   "configReloadFailed": "&7D |&f Nie udało się przeładować Dream Displays. Proszę sprawdzić konsolę, ponieważ mogą tam być błędy",
+  "configReloadSummary": "&7D |&7 Przeładowano: &fkonfigurację, wiadomości językowe i uprawnienia komend",
   "noDisplaysFound": "&7D |&f Nie znaleziono wyświetlaczy",
   "displayListHeader": "&7D |&f Wyświetlacze:",
   "displayListEntry": "&7D |&f {0}. Właściciel: {1}, Lokalizacja: [{2}, {3}, {4}], URL: {5}",
