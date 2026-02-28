@@ -24,6 +24,7 @@ class HelpCommand : SubCommand {
 
         line("displayHelpCreate")
         line("displayHelpVideo")
+        line("displayHelpInfo")
         line("displayHelpDelete")
         line("displayHelpList")
         line("displayHelpStats")

@@ -26,6 +26,7 @@ class DisplayCommand :
         CreateCommand(),
         DeleteCommand(),
         VideoCommand(),
+        InfoCommand(),
         ListCommand(),
         StatsCommand(),
         ReloadCommand(),
