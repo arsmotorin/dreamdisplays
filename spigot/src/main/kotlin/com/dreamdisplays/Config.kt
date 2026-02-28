@@ -221,6 +221,7 @@ class Config(private val plugin: Main) {
         val updates get() = permissions.updates
         val help get() = permissions.help
         val stats get() = permissions.stats
+        val toggleOthers get() = permissions.toggle_others
 
         data class PermissionsConfig(
             val create: String = "dreamdisplays.create",
@@ -233,6 +234,7 @@ class Config(private val plugin: Main) {
             val updates: String = "dreamdisplays.updates",
             val help: String = "dreamdisplays.help",
             val stats: String = "dreamdisplays.stats",
+            val toggle_others: String = "dreamdisplays.toggle.others",
         )
     }
 

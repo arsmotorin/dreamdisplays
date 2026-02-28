@@ -16,3 +16,5 @@ permissions:
     default: true
   dreamdisplays.info:
     default: true
+  dreamdisplays.toggle.others:
+    default: op

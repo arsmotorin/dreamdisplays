@@ -54,7 +54,7 @@ Plugin:
 - [x] Add translation for `/display list` command
 - [x] Improve `/display video` error feedback (separate invalid URL/not owner/wrong target block)
 - [x] Add total value output to `/display stats`
-- [ ] Add admin target mode for `/display on|off <player>`
+- [x] Add admin target mode for `/display on|off <player>`
 - [ ] Improve `/display reload` output with what was reloaded
 
 # Version 1.4.3

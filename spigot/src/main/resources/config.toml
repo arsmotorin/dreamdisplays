@@ -61,3 +61,4 @@ premium = "dreamdisplays.premium"    # Default: op
 delete = "dreamdisplays.delete"      # Default: op
 reload = "dreamdisplays.reload"      # Default: op
 updates = "dreamdisplays.updates"    # Default: op
+toggle_others = "dreamdisplays.toggle.others" # Default: op
