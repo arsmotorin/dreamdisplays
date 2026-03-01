@@ -38,12 +38,11 @@ For this mod to work, players install the client mod, while server admins only n
 
 ## Planned features
 
+- Fabric/NeoForge server and singleplayer support (in high-priority)
 - Switch from GStreamer to FFmpeg (in high-priority)
-- Support for additional video platforms
-- Support real-time streams
-- Better user interface
+- Support for additional video platforms (Twitch and other)
+- Better UI/UX
 - Native optimizations
-- Expanded /display commands
 
 ## How to use this mod?
 
