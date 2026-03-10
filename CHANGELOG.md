@@ -32,6 +32,7 @@ Mod:
 - [x] Fix null-pointer exception when window focus tries to work on not initialized Minecraft
 - [x] Fix client crash when server restarts while player is connected
 - [x] Fix volume amplification not working properly (de-facto 100% was 50%)
+- [ ] Discontinue of using INotSleep's dependence
 - [ ] Change channel from Beta to Release
 - [ ] Update wiki with new features
 
