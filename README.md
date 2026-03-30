@@ -1,3 +1,5 @@
+> **The mod will continue to support new Minecraft versions (like 26.1 and so on), but there won't be any major new features added. Only bug fixes and small adjustments.**
+
 [![Latest release](https://img.shields.io/github/release/arsmotorin/dreamdisplays.svg)](https://github.com/arsmotorin/dreamdisplays/releases/latest)
 [![License](https://img.shields.io/github/license/arsmotorin/dreamdisplays)](https://github.com/arsmotorin/dreamdisplays/blob/master/LICENSE)
 
@@ -35,14 +37,6 @@ For this mod to work, players install the client mod, while server admins only n
 - **Simple and precise server-side configuration**
 - Display commands – manage your in-game screens: create, delete, etc.
 - Fine-grained permissions for admin-only control
-
-## Planned features
-
-- Fabric/NeoForge server and singleplayer support (in high-priority)
-- Switch from GStreamer to FFmpeg (in high-priority)
-- Support for additional video platforms (Twitch and other)
-- Better UI/UX
-- Native optimizations
 
 ## How to use this mod?
 
