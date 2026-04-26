@@ -1,46 +1,17 @@
-# Version 1.6.0
-
-Mod:
-
-- [ ] Add spacial audio support
-- [ ] Support single-player mode ([#31](https://github.com/arsmotorin/dreamdisplays/issues/59))
-- [ ] Support Fabric servers ([#56](https://github.com/arsmotorin/dreamdisplays/issues/56))
-- [ ] Add toggle button for window focus
-- [ ] Add toggle button for video repeating
-- [ ] Add action bar messages when player looks at display
-
-Plugin:
-
-- [ ] Add config migrator from ancient versions of the plugin
-
 # Version 1.5.0
 
 Mod:
 
-- [ ] Switch from GStreamer to FFmpeg for video decoding
-- [x] Smoother video playback and optimizations
-- [x] Add video timeline
-- [x] Support lying and ceiling displays (server must have 1.5.0 or newer plugin version)
-- [x] Support timecodes in YouTube links
-- [ ] Add Spanish, French and Italian translations
-- [x] Make buttons smaller for better UI
-- [x] Link volume attenuation to display render distance
-- [x] Rewrite main part of the mod in Kotlin
-- [x] Ignore radio parameter in YouTube links
-- [ ] Replace INotSleep utils library with own implementation
-- [x] Fix NeoForge Gradle conflict while syncing with IntelliJ IDEA Gradle plugin
-- [x] Fix null-pointer exception when window focus tries to work on not initialized Minecraft
-- [x] Fix client crash when server restarts while player is connected
-- [x] Fix volume amplification not working properly (de-facto 100% was 50%)
-- [ ] Discontinue of using INotSleep's dependence
-- [ ] Change channel from Beta to Release
-- [ ] Update wiki with new features
+- [x] Switch YouTube playback to `yt-dlp`
+- [x] Improve video playback stability and reduce some lags
+- [x] Improve seeking, synchronization and buffering behavior
+- [x] Improve video quality detection
+- [x] Better detection of system GStreamer library path on macOS and Linux
+- [x] Update Gradle to 9.4.0
 
 Plugin:
 
-- [x] Support lying and ceiling displays
-- [x] Support `&start_radio=x` and `&t=x` YouTube parameters
-- [x] Add protection against fire spread and burning for flammable display blocks
+- [x] No changes
 
 # Version 1.4.4
 
