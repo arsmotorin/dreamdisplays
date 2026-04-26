@@ -21,7 +21,10 @@ import java.nio.ByteOrder;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -46,10 +49,26 @@ public class MediaPlayer {
             Executors.newSingleThreadExecutor(r ->
                     new Thread(r, "MediaPlayer-init")
             );
-    private static final int SYNC_CHECK_INTERVAL = 100; // Check sync every 100 ticks (~5 seconds)
-    private static final long MAX_SYNC_DRIFT_NS = 500_000_000L; // 500ms max drift before resync
-    private static final long MIN_FRAME_INTERVAL_NS = 16_666_667L; // ~60fps max
+    private static final int SYNC_CHECK_INTERVAL = 100;
+    private static final long MAX_SYNC_DRIFT_NS = 1_500_000_000L;
+    private static final long HTTP_QUEUE_BYTES = 64L * 1024 * 1024; // 64 MiB video
+    private static final long HTTP_QUEUE_BYTES_AUDIO = 8L * 1024 * 1024; // 8 MiB audio
+    private static final long HTTP_QUEUE_TIME_NS = 30L * 1_000_000_000L; // 30 s
+    private static final long RAW_QUEUE_TIME_NS = 2L * 1_000_000_000L; // 2 s
+    private static final long STOP_WAIT_TIMEOUT_SECONDS = 3;
     public static boolean captureSamples = true;
+    public static final boolean DEBUG =
+            Boolean.getBoolean("dreamdisplays.debug")
+                    || "1".equals(System.getenv("DREAMDISPLAYS_DEBUG"))
+                    || "true".equalsIgnoreCase(System.getenv("DREAMDISPLAYS_DEBUG"));
+    private static final long STATS_INTERVAL_MS = 2000;
+    private final java.util.concurrent.atomic.AtomicLong samplesIn =
+            new java.util.concurrent.atomic.AtomicLong();
+    private final java.util.concurrent.atomic.AtomicLong framesToGpu =
+            new java.util.concurrent.atomic.AtomicLong();
+    private final java.util.concurrent.atomic.AtomicLong framesDropped =
+            new java.util.concurrent.atomic.AtomicLong();
+    private @Nullable ScheduledExecutorService statsExecutor;
     private final String lang;
     // === PUBLIC API FIELDS ===============================================================
     private final String youtubeUrl;
@@ -63,8 +82,11 @@ public class MediaPlayer {
                     new Thread(r, "MediaPlayer-frame")
             );
     private final AtomicBoolean terminated = new AtomicBoolean(false);
+    private final AtomicBoolean frameTaskQueued = new AtomicBoolean(false);
+    private final Object frameLock = new Object();
     private final Screen screen;
-    private volatile double currentVolume;
+    private final String debugLabel;
+    private volatile double currentVolume = Initializer.config.defaultDisplayVolume;
     // === GST OBJECTS =====================================================================
     private volatile @Nullable Pipeline videoPipeline;
     private volatile @Nullable Pipeline audioPipeline;
@@ -77,6 +99,7 @@ public class MediaPlayer {
     private volatile int currentFrameWidth = 0;
     private volatile int currentFrameHeight = 0;
     private volatile @Nullable ByteBuffer preparedBuffer;
+    private int preparedBufferSize = 0;
     private volatile int lastTexW = 0,
             lastTexH = 0;
     private volatile int preparedW = 0,
@@ -87,50 +110,54 @@ public class MediaPlayer {
     private volatile double brightness = 1.0;
     private volatile boolean frameReady = false;
     private int syncCheckCounter = 0;
-    // Buffer system
-    private @Nullable ByteBuffer convertBuffer = null;
-    private int convertBufferSize = 0;
-    private @Nullable ByteBuffer scaleBuffer = null;
-    private int scaleBufferSize = 0;
-    // Frame rate limiting
-    private volatile long lastFrameTime = 0;
 
     // === CONSTRUCTOR =====================================================================
     public MediaPlayer(String youtubeUrl, String lang, Screen screen) {
         this.youtubeUrl = youtubeUrl;
         this.screen = screen;
         this.lang = lang;
+        this.debugLabel = screen.getUUID() + "/" + Integer.toHexString(System.identityHashCode(this));
         Gst.init("MediaPlayer");
         INIT_EXECUTOR.submit(this::initialize);
     }
 
     // === FRAME PROCESSING ================================================================
-    private static ByteBuffer sampleToBuffer(Sample sample) {
+    // Reusable direct buffer for the latest decoded frame. Reallocating ~8MB per
+    // frame at 30fps (1080p RGBA) thrashes JVM direct memory and stalls the
+    // GStreamer streaming thread. We grow it as needed and otherwise overwrite
+    // in place.
+    private @Nullable ByteBuffer frameBufferPool = null;
+
+    private ByteBuffer sampleToBuffer(Sample sample) {
         Buffer buf = sample.getBuffer();
         ByteBuffer bb = buf.map(false);
-
-        // If buffer is already in native order, use it directly
-        if (bb.order() == ByteOrder.nativeOrder()) {
-            ByteBuffer result = ByteBuffer.allocateDirect(bb.remaining()).order(
-                    ByteOrder.nativeOrder()
-            );
-            result.put(bb);
-            result.flip();
+        try {
+            int needed = bb.remaining();
+            ByteBuffer dst = frameBufferPool;
+            if (dst == null || dst.capacity() < needed) {
+                dst = ByteBuffer.allocateDirect(needed)
+                        .order(ByteOrder.nativeOrder());
+                frameBufferPool = dst;
+            }
+            dst.clear();
+            dst.put(bb);
+            dst.flip();
+            return dst;
+        } finally {
             buf.unmap();
-            return result;
         }
+    }
 
-        // Otherwise convert to native order
-        ByteBuffer result = ByteBuffer.allocateDirect(bb.remaining()).order(
-                ByteOrder.nativeOrder()
-        );
-        bb.rewind();
-        for (int i = 0; i < bb.remaining(); i++) {
-            result.put(bb.get());
+    private ByteBuffer ensurePreparedBufferCapacity(int size) {
+        ByteBuffer buffer = preparedBuffer;
+        if (buffer == null || preparedBufferSize < size) {
+            buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
+            preparedBuffer = buffer;
+            preparedBufferSize = size;
         }
-        result.flip();
-        buf.unmap();
-        return result;
+        buffer.clear();
+        buffer.limit(size);
+        return buffer;
     }
 
     private static void applyBrightnessToBuffer(ByteBuffer buffer, double brightness) {
@@ -189,25 +216,13 @@ public class MediaPlayer {
         }
     }
 
-    private ByteBuffer convertToRGBA(
-            ByteBuffer srcBuffer,
-            int width,
-            int height
-    ) {
-        int size = width * height * 4;
-
-        // Reuse buffer if possible, otherwise allocate new one
-        if (convertBuffer == null || convertBufferSize < size) {
-            convertBuffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
-            convertBufferSize = size;
+    private void bindVideoToAudioClock(Pipeline audio, @Nullable Pipeline video) {
+        if (video == null) return;
+        Clock audioClock = audio.getClock();
+        if (audioClock != null) {
+            video.setClock(audioClock);
         }
-
-        convertBuffer.clear();
-        srcBuffer.rewind();
-        convertBuffer.put(srcBuffer);
-        convertBuffer.flip();
-
-        return convertBuffer;
+        video.setBaseTime(audio.getBaseTime());
     }
 
     // === PUBLIC API ======================================================================
@@ -257,11 +272,25 @@ public class MediaPlayer {
 
     public void stop() {
         if (terminated.getAndSet(true)) return;
-        safeExecute(() -> {
+        Future<?> stopFuture = null;
+        if (!gstExecutor.isShutdown()) {
+            try {
+                stopFuture = gstExecutor.submit(this::doStop);
+            } catch (RejectedExecutionException ignored) {
+            }
+        }
+        if (stopFuture != null) {
+            try {
+                stopFuture.get(STOP_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                LoggingManager.warn("[MP debug " + debugLabel + "] Timed out stopping media player cleanly");
+                doStop();
+            }
+        } else {
             doStop();
-            gstExecutor.shutdown();
-            frameExecutor.shutdown();
-        });
+        }
+        gstExecutor.shutdownNow();
+        frameExecutor.shutdownNow();
     }
 
     public void setVolume(double volume) {
@@ -275,64 +304,62 @@ public class MediaPlayer {
     }
 
     public boolean textureFilled() {
-        return preparedBuffer != null && preparedBuffer.remaining() > 0;
+        synchronized (frameLock) {
+            return preparedBuffer != null && preparedBuffer.limit() > 0;
+        }
     }
 
     public void updateFrame(GpuTexture texture) {
-        // Only update if a new frame is ready
-        if (!frameReady || preparedBuffer == null) return;
+        synchronized (frameLock) {
+            if (!frameReady || preparedBuffer == null) return;
 
-        int w = screen.textureWidth,
-                h = screen.textureHeight;
-        if (w != preparedW || h != preparedH) return;
+            int w = screen.textureWidth,
+                    h = screen.textureHeight;
+            if (w != preparedW || h != preparedH) return;
 
-        CommandEncoder encoder =
-                RenderSystem.getDevice().createCommandEncoder();
+            CommandEncoder encoder =
+                    RenderSystem.getDevice().createCommandEncoder();
 
-        // Rewind buffer to beginning.
-        // Position was set to end of data after prepareBuffer()
-        preparedBuffer.rewind();
+            preparedBuffer.rewind();
 
-        // Validate buffer has enough data
-        int expectedSize = w * h * 4; // RGBA = 4 bytes per pixel
-        if (preparedBuffer.remaining() < expectedSize) {
-            LoggingManager.error(
-                    "Buffer underrun: expected " +
-                            expectedSize +
-                            " bytes, but only " +
-                            preparedBuffer.remaining() +
-                            " remaining"
-            );
-            return;
+            int expectedSize = w * h * 4;
+            if (preparedBuffer.remaining() < expectedSize) {
+                LoggingManager.error(
+                        "Buffer underrun: expected " +
+                                expectedSize +
+                                " bytes, but only " +
+                                preparedBuffer.remaining() +
+                                " remaining"
+                );
+                return;
+            }
+
+            if (w != lastTexW || h != lastTexH) {
+                lastTexW = w;
+                lastTexH = h;
+            }
+
+            if (!texture.isClosed()) {
+                encoder.writeToTexture(
+                        texture,
+                        preparedBuffer,
+                        NativeImage.Format.RGBA,
+                        0,
+                        0,
+                        0,
+                        0,
+                        texture.getWidth(0),
+                        texture.getHeight(0)
+                );
+            }
+
+            if (DEBUG) framesToGpu.incrementAndGet();
+            frameReady = false;
         }
-
-        if (w != lastTexW || h != lastTexH) {
-            lastTexW = w;
-            lastTexH = h;
-        }
-
-        if (!texture.isClosed()) {
-            encoder.writeToTexture(
-                    texture,
-                    preparedBuffer,
-                    NativeImage.Format.RGBA,
-                    0,
-                    0,
-                    0,
-                    0,
-                    texture.getWidth(0),
-                    texture.getHeight(0)
-            );
-        }
-
-        // Mark frame as processed - don't process same frame again
-        frameReady = false;
     }
 
     public java.util.List<Integer> getAvailableQualities() {
-        if (
-                !initialized || availableVideoStreams == null
-        ) return Collections.emptyList();
+        if (availableVideoStreams == null) return Collections.emptyList();
         return availableVideoStreams
                 .stream()
                 .map(YtStream::getResolution)
@@ -368,6 +395,7 @@ public class MediaPlayer {
             String cleanUrl = "https://www.youtube.com/watch?v=" + videoId;
 
             java.util.List<YtStream> all = YtDlp.fetch(cleanUrl);
+            if (terminated.get()) return;
             java.util.List<YtStream> audioS = all;
 
             availableVideoStreams = all
@@ -411,6 +439,14 @@ public class MediaPlayer {
 
             videoPipeline.getState();
             initialized = true;
+            if (DEBUG) {
+                LoggingManager.info("[MP debug " + debugLabel + "] picked video: " + currentVideoStream);
+                LoggingManager.info("[MP debug " + debugLabel + "] picked audio: " + audioOpt.get());
+                LoggingManager.info("[MP debug " + debugLabel + "] available video count="
+                        + availableVideoStreams.size()
+                        + " resolutions=" + getAvailableQualities());
+                startStatsReporter();
+            }
         } catch (Exception e) {
             LoggingManager.error("Failed to initialize MediaPlayer ", e);
             screen.errored = true;
@@ -423,7 +459,15 @@ public class MediaPlayer {
                 "souphttpsrc location=\"" + uri + "\"",
                 "user-agent=\"" + USER_AGENT_V + "\"",
                 "extra-headers=\"origin:https://www.youtube.com\\nreferer:https://www.youtube.com\\n\"",
-                "! matroskademux ! decodebin ! videoconvert ! video/x-raw,format=RGBA ! appsink name=videosink"
+                "blocksize=131072 retries=5 timeout=15",
+                "! queue2 name=httpQueueV",
+                "max-size-bytes=" + HTTP_QUEUE_BYTES,
+                "max-size-time=" + HTTP_QUEUE_TIME_NS,
+                "max-size-buffers=0",
+                "! matroskademux",
+                "! decodebin",
+                "! queue name=rawQueueV max-size-buffers=4 max-size-bytes=0 max-size-time=" + RAW_QUEUE_TIME_NS,
+                "! videoconvert ! video/x-raw,format=RGBA ! appsink name=videosink"
         );
         Pipeline p = (Pipeline) Gst.parseLaunch(desc);
         configureVideoSink((AppSink) p.getElementByName("videosink"));
@@ -433,7 +477,7 @@ public class MediaPlayer {
         final AtomicReference<Bus.ERROR> errRef = new AtomicReference<>();
         errRef.set((source, code, message) -> {
             LoggingManager.error(
-                    "[MediaPlayer V] [ERROR] GStreamer: " + message
+                    "[MediaPlayer V " + debugLabel + "] [ERROR] GStreamer: " + message
             );
             bus.disconnect(errRef.get());
             screen.errored = true;
@@ -444,20 +488,30 @@ public class MediaPlayer {
     }
 
     private Pipeline buildAudioPipeline(String uri) {
-        String desc =
-                "souphttpsrc location=\"" +
-                        uri +
-                        "\" ! decodebin ! audioconvert ! audioresample " +
-                        "! volume name=volumeElement volume=1 ! audioamplify name=ampElement amplification=" +
-                        currentVolume +
-                        " ! autoaudiosink";
+        String desc = String.join(
+                " ",
+                "souphttpsrc location=\"" + uri + "\"",
+                "user-agent=\"" + USER_AGENT_V + "\"",
+                "extra-headers=\"origin:https://www.youtube.com\\nreferer:https://www.youtube.com\\n\"",
+                "blocksize=65536 retries=5 timeout=15",
+                "! queue2 name=httpQueueA",
+                "max-size-bytes=" + HTTP_QUEUE_BYTES_AUDIO,
+                "max-size-time=" + HTTP_QUEUE_TIME_NS,
+                "max-size-buffers=0",
+                "! decodebin",
+                "! queue name=rawQueueA max-size-buffers=0 max-size-bytes=0 max-size-time=" + RAW_QUEUE_TIME_NS,
+                "! audioconvert ! audioresample",
+                "! volume name=volumeElement volume=1",
+                "! audioamplify name=ampElement amplification=" + currentVolume,
+                "! autoaudiosink"
+        );
         Pipeline p = (Pipeline) Gst.parseLaunch(desc);
         p
                 .getBus()
                 .connect(
                         (Bus.ERROR) (source, code, message) ->
                                 LoggingManager.error(
-                                        "[MediaPlayer A] [ERROR] GStreamer: " + message
+                                        "[MediaPlayer A " + debugLabel + "] [ERROR] GStreamer: " + message
                                 )
                 );
 
@@ -466,21 +520,24 @@ public class MediaPlayer {
                 .connect(
                         (Bus.EOS) source -> {
                             safeExecute(() -> {
-                                audioPipeline.seekSimple(
+                                Pipeline audio = audioPipeline;
+                                Pipeline video = videoPipeline;
+                                if (audio == null) return;
+                                audio.seekSimple(
                                         Format.TIME,
                                         EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE),
                                         0L
                                 );
-                                audioPipeline.play();
+                                audio.play();
 
                                 // If a video pipeline exists, seek it too
-                                if (videoPipeline != null) {
-                                    videoPipeline.seekSimple(
+                                if (video != null) {
+                                    video.seekSimple(
                                             Format.TIME,
                                             EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE),
                                             0L
                                     );
-                                    videoPipeline.play();
+                                    video.play();
                                 }
                             });
                         }
@@ -491,20 +548,34 @@ public class MediaPlayer {
 
     private void configureVideoSink(AppSink sink) {
         sink.set("emit-signals", true);
+        // Let GStreamer pace frames against the shared playback clock.
+        // The Java side should only transform/upload the latest frame, not act
+        // as the primary timing source.
         sink.set("sync", true);
-        sink.set("max-buffers", 1); // Drop old frames to stay in sync
-        sink.set("drop", true); // Drop frames when queue is full
+        sink.set("max-buffers", 1);
+        sink.set("drop", true);
         sink.connect(
                 (AppSink.NEW_SAMPLE) elem -> {
                     Sample s = elem.pullSample();
-                    if (s == null || !captureSamples) return FlowReturn.OK;
+                    if (s == null || !captureSamples || terminated.get()) return FlowReturn.OK;
+                    boolean scheduled = false;
                     try {
+                        if (!frameTaskQueued.compareAndSet(false, true)) {
+                            if (DEBUG) framesDropped.incrementAndGet();
+                            return FlowReturn.OK;
+                        }
                         Structure st = s.getCaps().getStructure(0);
-                        currentFrameWidth = st.getInteger("width");
-                        currentFrameHeight = st.getInteger("height");
-                        currentFrameBuffer = sampleToBuffer(s);
-                        prepareBufferAsync();
+                        synchronized (frameLock) {
+                            currentFrameWidth = st.getInteger("width");
+                            currentFrameHeight = st.getInteger("height");
+                            currentFrameBuffer = sampleToBuffer(s);
+                        }
+                        if (DEBUG) samplesIn.incrementAndGet();
+                        scheduled = prepareBufferAsync();
                     } finally {
+                        if (!scheduled) {
+                            frameTaskQueued.set(false);
+                        }
                         s.dispose();
                     }
                     return FlowReturn.OK;
@@ -512,169 +583,240 @@ public class MediaPlayer {
         );
     }
 
-    private void prepareBufferAsync() {
-        if (currentFrameBuffer == null) return;
-
-        // Frame rate limiting - skip if too soon since last frame
-        long now = System.nanoTime();
-        if (now - lastFrameTime < MIN_FRAME_INTERVAL_NS) return;
-        lastFrameTime = now;
-
+    private boolean prepareBufferAsync() {
         int w = screen.textureWidth,
                 h = screen.textureHeight;
 
         // Skip if screen dimensions are zero
-        if (w == 0 || h == 0) return;
+        if (w == 0 || h == 0) return false;
 
         try {
             frameExecutor.submit(this::prepareBuffer);
+            return true;
         } catch (RejectedExecutionException ignored) {
+            return false;
         }
     }
 
     private void prepareBuffer() {
-        int targetW = screen.textureWidth,
-                targetH = screen.textureHeight;
-        if (targetW == 0 || targetH == 0 || currentFrameBuffer == null) return;
+        try {
+            int targetW = screen.textureWidth,
+                    targetH = screen.textureHeight;
+            if (targetW == 0 || targetH == 0) return;
 
-        // Convert the frame buffer to RGBA (reuses buffer internally)
-        ByteBuffer converted = convertToRGBA(
-                currentFrameBuffer,
-                currentFrameWidth,
-                currentFrameHeight
-        );
+            synchronized (frameLock) {
+                if (currentFrameBuffer == null) return;
 
-        // If dimensions match, use directly
-        if (currentFrameWidth == targetW && currentFrameHeight == targetH) {
-            applyBrightnessToBuffer(converted, brightness);
-            preparedBuffer = converted;
-            preparedW = targetW;
-            preparedH = targetH;
-            frameReady = true;
+                int sourceW = currentFrameWidth;
+                int sourceH = currentFrameHeight;
+                int outputSize = targetW * targetH * 4;
+                ByteBuffer source = currentFrameBuffer.duplicate().order(ByteOrder.nativeOrder());
+                source.rewind();
+                ByteBuffer output = ensurePreparedBufferCapacity(outputSize);
+
+                if (sourceW == targetW && sourceH == targetH) {
+                    output.put(source);
+                    output.flip();
+                } else {
+                    output.position(0);
+                    output.limit(outputSize);
+                    Converter.scaleRGBA(
+                            source,
+                            sourceW,
+                            sourceH,
+                            output,
+                            targetW,
+                            targetH
+                    );
+                    output.position(0);
+                    output.limit(outputSize);
+                }
+
+                applyBrightnessToBuffer(output, brightness);
+                preparedW = targetW;
+                preparedH = targetH;
+                frameReady = true;
+            }
+
             Minecraft.getInstance().execute(screen::fitTexture);
-            return;
+        } finally {
+            frameTaskQueued.set(false);
         }
-
-        // Reuse scale buffer if possible
-        int scaleSize = targetW * targetH * 4;
-        if (scaleBuffer == null || scaleBufferSize < scaleSize) {
-            scaleBuffer = ByteBuffer.allocateDirect(scaleSize).order(ByteOrder.nativeOrder());
-            scaleBufferSize = scaleSize;
-        }
-        scaleBuffer.clear();
-
-        Converter.scaleRGBA(
-                converted,
-                currentFrameWidth,
-                currentFrameHeight,
-                scaleBuffer,
-                targetW,
-                targetH
-        );
-
-        applyBrightnessToBuffer(scaleBuffer, brightness);
-        preparedBuffer = scaleBuffer;
-        preparedW = targetW;
-        preparedH = targetH;
-        frameReady = true;
-
-        Minecraft.getInstance().execute(screen::fitTexture);
     }
 
     // === PLAYBACK HELPERS ================================================================
     private void doPlay() {
         if (!initialized) return;
-
-        // Get current audio position FIRST (audio is the master clock)
-        long audioPos = audioPipeline.queryPosition(Format.TIME);
-
-        audioPipeline.pause();
-        if (videoPipeline != null) {
-            videoPipeline.pause();
-        }
-
-        // Wait for pipelines to be ready
-        audioPipeline.getState();
-        if (videoPipeline != null) {
-            videoPipeline.getState();
-        }
-
-        // Sync video to audio position (audio is master)
-        if (videoPipeline != null && audioPos > 0) {
-            videoPipeline.seekSimple(Format.TIME, EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE), audioPos);
-            videoPipeline.getState(); // Wait for seek to complete
-        }
-
-        // Use audio pipeline's clock for video sync
-        Clock audioClock = audioPipeline.getClock();
-        if (audioClock != null && videoPipeline != null) {
-            videoPipeline.setClock(audioClock);
-            videoPipeline.setBaseTime(audioPipeline.getBaseTime());
-        }
+        Pipeline audio = audioPipeline;
+        if (audio == null) return;
+        Pipeline video = videoPipeline;
+        bindVideoToAudioClock(audio, video);
 
         if (!screen.getPaused()) {
-            audioPipeline.play();
-            if (videoPipeline != null) {
-                videoPipeline.play();
+            audio.play();
+            if (video != null) {
+                video.play();
             }
         }
     }
 
     private void doPause() {
         if (!initialized) return;
-        if (videoPipeline != null) videoPipeline.pause();
-        if (audioPipeline != null) audioPipeline.pause();
+        Pipeline video = videoPipeline;
+        Pipeline audio = audioPipeline;
+        if (video != null) video.pause();
+        if (audio != null) audio.pause();
     }
 
     private void doStop() {
         initialized = false;
-        frameReady = false;
-        preparedBuffer = null;
-        currentFrameBuffer = null;
+        frameTaskQueued.set(false);
+        synchronized (frameLock) {
+            frameReady = false;
+            preparedBuffer = null;
+            preparedBufferSize = 0;
+            currentFrameBuffer = null;
+            frameBufferPool = null;
+        }
+        stopStatsReporter();
         safeStopAndDispose(videoPipeline);
         safeStopAndDispose(audioPipeline);
         videoPipeline = null;
         audioPipeline = null;
     }
 
+    private void startStatsReporter() {
+        if (statsExecutor != null) return;
+        statsExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "MediaPlayer-stats");
+            t.setDaemon(true);
+            return t;
+        });
+        statsExecutor.scheduleAtFixedRate(
+                this::reportStats,
+                STATS_INTERVAL_MS,
+                STATS_INTERVAL_MS,
+                java.util.concurrent.TimeUnit.MILLISECONDS
+        );
+    }
+
+    private void stopStatsReporter() {
+        java.util.concurrent.ScheduledExecutorService ex = statsExecutor;
+        if (ex != null) {
+            ex.shutdownNow();
+            statsExecutor = null;
+        }
+    }
+
+    private void reportStats() {
+        try {
+            Pipeline v = videoPipeline;
+            Pipeline a = audioPipeline;
+            if (v == null || a == null) return;
+            long inN = samplesIn.getAndSet(0);
+            long outN = framesToGpu.getAndSet(0);
+            long dropN = framesDropped.getAndSet(0);
+            double seconds = STATS_INTERVAL_MS / 1000.0;
+            String vState = String.valueOf(v.getState(0));
+            String aState = String.valueOf(a.getState(0));
+            long aPos = a.queryPosition(Format.TIME);
+            long vPos = v.queryPosition(Format.TIME);
+            long drift = (aPos - vPos) / 1_000_000L;
+            LoggingManager.info(String.format(
+                    "[MP debug %s] decode=%.1ffps gpu=%.1ffps dropped=%.1f/s"
+                            + " | a/v=%s/%s drift=%dms"
+                            + " | %s",
+                    debugLabel,
+                    inN / seconds, outN / seconds, dropN / seconds,
+                    aState, vState, drift, queueLevels(v, a)
+            ));
+        } catch (Throwable t) {}
+    }
+
+    private String queueLevels(Pipeline v, Pipeline a) {
+        StringBuilder sb = new StringBuilder();
+        appendLevel(sb, v, "httpQueueV");
+        appendLevel(sb, v, "demuxQueueV");
+        appendLevel(sb, v, "rawQueueV");
+        appendLevel(sb, a, "httpQueueA");
+        appendLevel(sb, a, "rawQueueA");
+        return sb.toString();
+    }
+
+    private static void appendLevel(StringBuilder sb, Pipeline p, String name) {
+        Element e = p.getElementByName(name);
+        if (e == null) return;
+        try {
+            Object curBytes = e.get("current-level-bytes");
+            Object curTime = e.get("current-level-time");
+            long timeMs = curTime instanceof Number
+                    ? ((Number) curTime).longValue() / 1_000_000L
+                    : -1;
+            long kb = curBytes instanceof Number
+                    ? ((Number) curBytes).longValue() / 1024
+                    : -1;
+            sb.append(' ').append(name).append('=')
+                    .append(kb).append("KiB/").append(timeMs).append("ms");
+        } catch (Throwable ignored) {
+        }
+    }
+
     private void doSeek(long nanos, boolean b) {
         if (!initialized) return;
+        Pipeline audio = audioPipeline;
+        if (audio == null) return;
+        Pipeline video = videoPipeline;
         EnumSet<SeekFlags> flags = EnumSet.of(
                 SeekFlags.FLUSH,
                 SeekFlags.ACCURATE
         );
-        audioPipeline.pause();
-        if (videoPipeline != null) videoPipeline.pause();
-        if (videoPipeline != null) videoPipeline.seekSimple(
+        audio.pause();
+        if (video != null) video.pause();
+        if (video != null) video.seekSimple(
                 Format.TIME,
                 flags,
                 nanos
         );
-        audioPipeline.seekSimple(Format.TIME, flags, nanos);
-        if (videoPipeline != null) videoPipeline.getState(); // Waiting for pre-roll
-        audioPipeline.play();
-        if (videoPipeline != null && !screen.getPaused()) videoPipeline.play();
+        audio.seekSimple(Format.TIME, flags, nanos);
+        audio.getState();
+        if (video != null) {
+            bindVideoToAudioClock(audio, video);
+            video.getState();
+        }
+        if (!screen.getPaused()) {
+            audio.play();
+            if (video != null) video.play();
+        }
 
         if (b) screen.afterSeek();
     }
 
     private void doSeekFast(long nanos) {
         if (!initialized) return;
+        Pipeline audio = audioPipeline;
+        if (audio == null) return;
+        Pipeline video = videoPipeline;
         EnumSet<SeekFlags> flags = EnumSet.of(
                 SeekFlags.FLUSH,
                 SeekFlags.KEY_UNIT
         );
-        audioPipeline.pause();
-        if (videoPipeline != null) videoPipeline.pause();
-        if (videoPipeline != null) videoPipeline.seekSimple(
+        audio.pause();
+        if (video != null) video.pause();
+        if (video != null) video.seekSimple(
                 Format.TIME,
                 flags,
                 nanos
         );
-        audioPipeline.seekSimple(Format.TIME, flags, nanos);
-        if (videoPipeline != null) videoPipeline.getState(); // Waiting for pre-roll
-        audioPipeline.play();
-        if (videoPipeline != null && !screen.getPaused()) videoPipeline.play();
+        audio.seekSimple(Format.TIME, flags, nanos);
+        audio.getState();
+        if (video != null) {
+            bindVideoToAudioClock(audio, video);
+            video.getState();
+        }
+        if (!screen.getPaused()) {
+            audio.play();
+            if (video != null) video.play();
+        }
     }
 
     private void applyVolume() {
@@ -708,12 +850,13 @@ public class MediaPlayer {
             return;
         }
         if (target == lastQuality) return;
-        Minecraft.getInstance().execute(screen::reloadTexture);
 
         Optional<YtStream> best = pickVideo(target);
         if (best.isEmpty()) return;
         YtStream chosen = best.get();
         if (chosen.getUrl().equals(current.getUrl())) return;
+
+        Minecraft.getInstance().execute(screen::reloadTexture);
 
         long pos = audio.queryPosition(Format.TIME);
         audio.pause();
@@ -723,11 +866,7 @@ public class MediaPlayer {
         Pipeline newVid = buildVideoPipeline(chosen.getUrl());
 
         // Get the clock from audio pipeline and use it for video
-        Clock clock = audio.getClock();
-        if (clock != null) {
-            newVid.setClock(clock);
-            newVid.setBaseTime(audio.getBaseTime());
-        }
+        bindVideoToAudioClock(audio, newVid);
         newVid.pause();
 
         // Pre-roll the pipeline to ensure it's ready
@@ -784,7 +923,11 @@ public class MediaPlayer {
 
             if (drift > MAX_SYNC_DRIFT_NS) {
                 // Sync video to audio (audio is master)
+                videoPipeline.pause();
                 videoPipeline.seekSimple(Format.TIME, EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE), audioPos);
+                if (!screen.getPaused()) {
+                    videoPipeline.play();
+                }
             }
         } catch (Exception ignored) {
             // Ignore query errors during playback
@@ -793,7 +936,7 @@ public class MediaPlayer {
 
     // === CONCURRENCY HELPERS =============================================================
     private void safeExecute(Runnable action) {
-        if (!gstExecutor.isShutdown()) {
+        if (!terminated.get() && !gstExecutor.isShutdown()) {
             try {
                 gstExecutor.submit(action);
             } catch (RejectedExecutionException ignored) {

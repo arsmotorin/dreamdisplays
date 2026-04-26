@@ -138,15 +138,48 @@ public final class YtDlp {
             String resolution = null;
             if (hasVideo) {
                 Integer h = optInt(f, "height");
-                if (h != null && h > 0) resolution = h + "p";
+                if (h != null && h > 0) {
+                    resolution = h + "p";
+                } else {
+                    resolution = extractResolution(
+                            optString(f, "resolution"),
+                            optString(f, "format_note"),
+                            optString(f, "format")
+                    );
+                }
             }
 
             String language = optString(f, "language");
             String formatNote = optString(f, "format_note");
+            Double fps = optDouble(f, "fps");
+            Double tbr = optDouble(f, "tbr");
 
-            result.add(new YtStream(url, mime, resolution, language, formatNote));
+            result.add(new YtStream(
+                    url, mime, resolution, language, formatNote,
+                    vcodec, acodec, fps, tbr
+            ));
         }
         return result;
+    }
+
+    private static @Nullable String extractResolution(@Nullable String... candidates) {
+        for (String candidate : candidates) {
+            if (candidate == null || candidate.isBlank()) continue;
+            java.util.regex.Matcher matcher = java.util.regex.Pattern
+                    .compile("(\\d{3,4})p")
+                    .matcher(candidate);
+            if (matcher.find()) {
+                return matcher.group(1) + "p";
+            }
+
+            matcher = java.util.regex.Pattern
+                    .compile("(\\d{3,4})")
+                    .matcher(candidate);
+            if (matcher.find()) {
+                return matcher.group(1) + "p";
+            }
+        }
+        return null;
     }
 
     private static @Nullable String optString(JsonObject obj, String key) {
@@ -162,6 +195,15 @@ public final class YtDlp {
         if (!obj.has(key) || obj.get(key).isJsonNull()) return null;
         try {
             return obj.get(key).getAsInt();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static @Nullable Double optDouble(JsonObject obj, String key) {
+        if (!obj.has(key) || obj.get(key).isJsonNull()) return null;
+        try {
+            return obj.get(key).getAsDouble();
         } catch (Exception e) {
             return null;
         }

@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Represents a video display screen in the game world.
@@ -31,6 +31,7 @@ public class Screen {
     private static final int DEFAULT_QUALITY = 720;
     private static final int INIT_WAIT_TIMEOUT_MS = 30_000;
     private static final int INIT_WAIT_INTERVAL_MS = 100;
+    private static final long SYNC_SEEK_TOLERANCE_NS = 750_000_000L;
     private final UUID uuid;
     private final UUID ownerUuid;
     public boolean owner;
@@ -54,6 +55,7 @@ public class Screen {
     private boolean paused;
     private String quality;
     private long savedTimeNanos = 0;
+    private final AtomicLong mediaPlayerGeneration = new AtomicLong();
     private int renderDistance = 64;
     // Use a combined MediaPlayer instead of the separate VideoDecoder and AudioPlayer.
     private @Nullable MediaPlayer mediaPlayer;
@@ -118,20 +120,25 @@ public class Screen {
     public void loadVideo(String videoUrl, String lang) {
         if (Objects.equals(videoUrl, "")) return;
 
-        if (mediaPlayer != null) unregister();
+        long generation = mediaPlayerGeneration.incrementAndGet();
+        MediaPlayer oldPlayer = mediaPlayer;
+        mediaPlayer = null;
+        videoStarted = false;
+        errored = false;
+        if (oldPlayer != null) {
+            oldPlayer.stop();
+        }
 
         // Load the video URL and language into the screen
         this.videoUrl = videoUrl;
         this.lang = lang;
         boolean shouldBePaused = this.paused;
-        CompletableFuture.runAsync(() -> {
-            mediaPlayer = new MediaPlayer(videoUrl, lang, this);
-            int qualityInt = parseQualityOrDefault();
-            textureWidth = (int) ((width / (double) height) * qualityInt);
-            textureHeight = qualityInt;
-        });
+        mediaPlayer = new MediaPlayer(videoUrl, lang, this);
+        int qualityInt = parseQualityOrDefault();
+        textureWidth = (int) ((width / (double) height) * qualityInt);
+        textureHeight = qualityInt;
 
-        waitForMFInit(() -> {
+        waitForMFInit(generation, () -> {
             startVideo();
             if (shouldBePaused) {
                 this.paused = true;
@@ -185,32 +192,29 @@ public class Screen {
         if (!isSync) return;
 
         long nanos = System.nanoTime();
+        boolean desiredPaused = packet.currentState();
 
         waitForMFInit(() -> {
             if (!videoStarted) {
+                this.paused = desiredPaused;
                 startVideo();
                 setVolume((float) Initializer.config.syncDisplayVolume);
             }
 
-            if (paused) setPaused(false);
-//            if (paused != packet.currentState()) {
-//                if (paused) setPaused(false);
-//            }
-
             long lostTime = System.nanoTime() - nanos;
-//            long targetTime = packet.currentTime() + lostTime;
-//            long currentTime = getCurrentTimeNanos();
+            long targetTime = Math.max(0L, packet.currentTime() + lostTime);
+            long currentTime = getCurrentTimeNanos();
+            long drift = Math.abs(targetTime - currentTime);
 
-            seekVideoTo(packet.currentTime() + lostTime);
-            setPaused(packet.currentState());
-//            long diff = Math.abs(targetTime - currentTime);
-//            if (diff > 2_000_000_000L) {
-//                seekVideoTo(targetTime);
-//            }
-//
-//            if (paused != packet.currentState()) {
-//                setPaused(packet.currentState());
-//            }
+            if (desiredPaused && !paused) {
+                setPaused(true);
+            }
+            if (drift > SYNC_SEEK_TOLERANCE_NS) {
+                seekVideoTo(targetTime);
+            }
+            if (!desiredPaused && paused) {
+                setPaused(false);
+            }
         });
     }
 
@@ -378,6 +382,7 @@ public class Screen {
             });
             return;
         }
+        if (this.paused == paused) return;
         this.paused = paused;
         if (mediaPlayer != null) {
             if (paused) {
@@ -415,7 +420,11 @@ public class Screen {
     }
 
     public void unregister() {
-        if (mediaPlayer != null) mediaPlayer.stop();
+        mediaPlayerGeneration.incrementAndGet();
+        videoStarted = false;
+        MediaPlayer currentPlayer = mediaPlayer;
+        mediaPlayer = null;
+        if (currentPlayer != null) currentPlayer.stop();
 
         // Schedule texture cleanup on render thread to avoid "Rendersystem called from wrong thread" error
         Minecraft minecraft = getMinecraft();
@@ -539,11 +548,21 @@ public class Screen {
     }
 
     public void waitForMFInit(Runnable action) {
+        waitForMFInit(mediaPlayerGeneration.get(), action);
+    }
+
+    private void waitForMFInit(long expectedGeneration, Runnable action) {
         Thread initWaitThread = new Thread(() -> {
             int attempts = INIT_WAIT_TIMEOUT_MS / INIT_WAIT_INTERVAL_MS;
             while (attempts-- > 0) {
+                if (expectedGeneration != mediaPlayerGeneration.get()) {
+                    return;
+                }
                 MediaPlayer currentPlayer = mediaPlayer;
                 if (currentPlayer != null && currentPlayer.isInitialized()) {
+                    if (expectedGeneration != mediaPlayerGeneration.get() || currentPlayer != mediaPlayer) {
+                        return;
+                    }
                     action.run();
                     return;
                 }
