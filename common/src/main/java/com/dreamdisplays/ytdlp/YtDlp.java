@@ -26,6 +26,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @NullMarked
@@ -41,13 +47,73 @@ public final class YtDlp {
     private static final Path BUNDLED_DIR = Path.of("libs", "yt-dlp");
     private static final String DOWNLOAD_BASE =
             "https://github.com/yt-dlp/yt-dlp/releases/latest/download/";
+    private static final long CACHE_TTL_MS = 30_000L;
 
     private static volatile @Nullable String resolvedBinary;
+    private static final ExecutorService PREWARM_EXECUTOR =
+            Executors.newSingleThreadExecutor(r -> {
+                Thread thread = new Thread(r, "YtDlp-prewarm");
+                thread.setDaemon(true);
+                return thread;
+            });
+    private static final ConcurrentMap<String, CacheEntry> FORMAT_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, CompletableFuture<List<YtStream>>> IN_FLIGHT_FETCHES = new ConcurrentHashMap<>();
 
     private YtDlp() {
     }
 
     public static List<YtStream> fetch(String videoUrl) throws IOException {
+        CacheEntry cached = FORMAT_CACHE.get(videoUrl);
+        long now = System.currentTimeMillis();
+        if (cached != null && (now - cached.createdAtMs) <= CACHE_TTL_MS) {
+            return cached.streams;
+        }
+
+        CompletableFuture<List<YtStream>> future = IN_FLIGHT_FETCHES.computeIfAbsent(
+                videoUrl,
+                ignored -> CompletableFuture.supplyAsync(() -> {
+                    try {
+                        List<YtStream> streams = fetchUncached(videoUrl);
+                        List<YtStream> cachedStreams = List.copyOf(streams);
+                        FORMAT_CACHE.put(videoUrl, new CacheEntry(cachedStreams, System.currentTimeMillis()));
+                        return cachedStreams;
+                    } catch (IOException e) {
+                        throw new CompletionException(e);
+                    }
+                })
+        );
+
+        try {
+            return future.get(65, TimeUnit.SECONDS);
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException io) {
+                throw io;
+            }
+            throw new IOException("yt-dlp fetch failed for url: " + videoUrl, cause != null ? cause : e);
+        } catch (Exception e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException io) {
+                throw io;
+            }
+            throw new IOException("yt-dlp fetch failed for url: " + videoUrl, cause != null ? cause : e);
+        } finally {
+            IN_FLIGHT_FETCHES.remove(videoUrl, future);
+        }
+    }
+
+    public static void prewarmAsync() {
+        if (resolvedBinary != null) return;
+        PREWARM_EXECUTOR.submit(() -> {
+            try {
+                resolveBinary();
+            } catch (IOException e) {
+                LoggingManager.warn("Failed to prewarm yt-dlp", e);
+            }
+        });
+    }
+
+    private static List<YtStream> fetchUncached(String videoUrl) throws IOException {
         String binary = resolveBinary();
         ProcessBuilder pb = new ProcessBuilder(
                 binary,
@@ -95,6 +161,9 @@ public final class YtDlp {
         }
 
         return parseFormats(stdout.toString());
+    }
+
+    private record CacheEntry(List<YtStream> streams, long createdAtMs) {
     }
 
     private static List<YtStream> parseFormats(String json) throws IOException {

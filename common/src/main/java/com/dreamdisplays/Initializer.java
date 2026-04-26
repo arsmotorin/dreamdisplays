@@ -9,6 +9,7 @@ import com.dreamdisplays.screen.Settings;
 import com.dreamdisplays.util.Facing;
 import com.dreamdisplays.util.RayCasting;
 import com.dreamdisplays.util.Utils;
+import com.dreamdisplays.ytdlp.YtDlp;
 import me.inotsleep.utils.logging.LoggingManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -80,6 +81,7 @@ public class Initializer {
         Settings.load();
 
         Init.init();
+        YtDlp.prewarmAsync();
         new Focuser().start();
 
         timerThread.start();

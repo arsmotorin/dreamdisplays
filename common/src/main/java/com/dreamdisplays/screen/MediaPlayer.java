@@ -26,6 +26,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -45,9 +46,18 @@ public class MediaPlayer {
     private static final String USER_AGENT_V =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
                     + " (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+    private static final AtomicInteger INIT_THREAD_COUNTER = new AtomicInteger();
     private static final ExecutorService INIT_EXECUTOR =
-            Executors.newSingleThreadExecutor(r ->
-                    new Thread(r, "MediaPlayer-init")
+            Executors.newFixedThreadPool(
+                    Math.max(2, Math.min(4, Runtime.getRuntime().availableProcessors())),
+                    r -> {
+                        Thread thread = new Thread(
+                                r,
+                                "MediaPlayer-init-" + INIT_THREAD_COUNTER.incrementAndGet()
+                        );
+                        thread.setDaemon(true);
+                        return thread;
+                    }
             );
     private static final int SYNC_CHECK_INTERVAL = 100;
     private static final long MAX_SYNC_DRIFT_NS = 1_500_000_000L;
@@ -463,7 +473,7 @@ public class MediaPlayer {
 
             Pipeline readyPipeline = videoPipeline != null ? videoPipeline : audioPipeline;
             if (readyPipeline != null) {
-                readyPipeline.getState();
+                readyPipeline.getState(0);
             }
             initialized = true;
             if (DEBUG) {
@@ -1033,7 +1043,7 @@ public class MediaPlayer {
         newVid.pause();
 
         // Pre-roll the pipeline to ensure it's ready
-        newVid.getState();
+        newVid.getState(0);
 
         EnumSet<SeekFlags> flags = EnumSet.of(
                 SeekFlags.FLUSH,
@@ -1085,7 +1095,7 @@ public class MediaPlayer {
             if (readyPipeline == null) {
                 throw new IllegalStateException("Failed to build replacement pipeline");
             }
-            readyPipeline.getState();
+            readyPipeline.getState(0);
 
             Minecraft.getInstance().execute(screen::reloadTexture);
 
