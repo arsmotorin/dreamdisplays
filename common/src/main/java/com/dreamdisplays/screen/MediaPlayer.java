@@ -54,7 +54,9 @@ public class MediaPlayer {
     private static final long HTTP_QUEUE_BYTES = 64L * 1024 * 1024; // 64 MiB video
     private static final long HTTP_QUEUE_BYTES_AUDIO = 8L * 1024 * 1024; // 8 MiB audio
     private static final long HTTP_QUEUE_TIME_NS = 30L * 1_000_000_000L; // 30 s
+    private static final long LIVE_HTTP_QUEUE_TIME_NS = 5L * 1_000_000_000L; // 5 s
     private static final long RAW_QUEUE_TIME_NS = 2L * 1_000_000_000L; // 2 s
+    private static final long LIVE_RAW_QUEUE_TIME_NS = 500L * 1_000_000L; // 500 ms
     private static final long STOP_WAIT_TIMEOUT_SECONDS = 3;
     public static boolean captureSamples = true;
     public static final boolean DEBUG =
@@ -90,9 +92,15 @@ public class MediaPlayer {
     // === GST OBJECTS =====================================================================
     private volatile @Nullable Pipeline videoPipeline;
     private volatile @Nullable Pipeline audioPipeline;
+    private volatile boolean sharedAvPipeline;
     private volatile java.util.@Nullable List<YtStream> availableVideoStreams;
+    private volatile java.util.@Nullable List<YtStream> availableAudioStreams;
     private volatile @Nullable YtStream currentVideoStream;
+    private volatile @Nullable YtStream currentAudioStream;
     private volatile boolean initialized;
+    private volatile boolean liveStream;
+    private volatile boolean seekable;
+    private volatile long durationHintNanos;
     private int lastQuality;
     // === FRAME BUFFERS ===================================================================
     private volatile @Nullable ByteBuffer currentFrameBuffer;
@@ -218,6 +226,7 @@ public class MediaPlayer {
 
     private void bindVideoToAudioClock(Pipeline audio, @Nullable Pipeline video) {
         if (video == null) return;
+        if (audio == video) return;
         Clock audioClock = audio.getClock();
         if (audioClock != null) {
             video.setClock(audioClock);
@@ -245,13 +254,11 @@ public class MediaPlayer {
     public void seekRelative(double s) {
         safeExecute(() -> {
             Pipeline audio = audioPipeline;
-            if (!initialized || audio == null) return;
+            if (!initialized || audio == null || !seekable) return;
             long cur = audio.queryPosition(Format.TIME);
             long tgt = Math.max(0, cur + (long) (s * 1e9));
-            long dur = Math.max(
-                    0,
-                    audio.queryDuration(Format.TIME) - 1
-            );
+            long dur = Math.max(0, getDuration() - 1);
+            if (dur <= 0) return;
             doSeek(Math.min(tgt, dur), true);
         });
     }
@@ -262,12 +269,23 @@ public class MediaPlayer {
     }
 
     public long getDuration() {
+        if (liveStream) return 0L;
         Pipeline audio = audioPipeline;
-        return initialized && audio != null ? audio.queryDuration(Format.TIME) : 0;
+        if (!initialized || audio == null) return durationHintNanos;
+        long duration = audio.queryDuration(Format.TIME);
+        return duration > 0L ? duration : durationHintNanos;
     }
 
     public boolean isInitialized() {
         return initialized;
+    }
+
+    public boolean isLive() {
+        return liveStream;
+    }
+
+    public boolean canSeek() {
+        return initialized && seekable;
     }
 
     public void stop() {
@@ -396,35 +414,33 @@ public class MediaPlayer {
 
             java.util.List<YtStream> all = YtDlp.fetch(cleanUrl);
             if (terminated.get()) return;
-            java.util.List<YtStream> audioS = all;
+            if (all.isEmpty()) {
+                LoggingManager.error("No streams available");
+                screen.errored = true;
+                return;
+            }
+
+            liveStream = all.stream().anyMatch(YtStream::isLive);
+            seekable = all.stream().anyMatch(YtStream::isSeekable);
+            durationHintNanos = all.stream()
+                    .mapToLong(YtStream::getDurationNanos)
+                    .max()
+                    .orElse(0L);
 
             availableVideoStreams = all
                     .stream()
-                    .filter(s -> MIME_VIDEO.equals(s.getMimeType()))
+                    .filter(YtStream::hasVideo)
+                    .toList();
+            availableAudioStreams = all
+                    .stream()
+                    .filter(YtStream::hasAudio)
                     .toList();
 
             int requestedQuality = parseQualityValue(screen.getQuality(), 720);
             Optional<YtStream> videoOpt = pickVideo(
                     requestedQuality
             ).or(() -> availableVideoStreams.stream().findFirst());
-            Optional<YtStream> audioOpt = audioS
-                    .stream()
-                    .filter(s -> MIME_AUDIO.equals(s.getMimeType()))
-                    .filter(
-                            s ->
-                                    (s.getAudioTrackId() != null &&
-                                            s.getAudioTrackId().contains(lang)) ||
-                                            (s.getAudioTrackName() != null &&
-                                                    s.getAudioTrackName().contains(lang))
-                    )
-                    .reduce((f, n) -> n);
-
-            if (audioOpt.isEmpty()) {
-                audioOpt = all
-                        .stream()
-                        .filter(s -> MIME_AUDIO.equals(s.getMimeType()))
-                        .reduce((f, n) -> n);
-            }
+            Optional<YtStream> audioOpt = pickAudio(availableAudioStreams, videoOpt.orElse(null));
             if (videoOpt.isEmpty() || audioOpt.isEmpty()) {
                 LoggingManager.error("No streams available");
                 screen.errored = true;
@@ -432,16 +448,31 @@ public class MediaPlayer {
             }
 
             currentVideoStream = videoOpt.get();
+            currentAudioStream = audioOpt.get();
             lastQuality = parseQuality(currentVideoStream);
 
-            audioPipeline = buildAudioPipeline(audioOpt.get().getUrl());
-            videoPipeline = buildVideoPipeline(currentVideoStream.getUrl());
+            if (shouldUseSharedAvPipeline(currentVideoStream, currentAudioStream)) {
+                sharedAvPipeline = true;
+                audioPipeline = buildSharedAvPipeline(currentVideoStream);
+                videoPipeline = null;
+            } else {
+                sharedAvPipeline = false;
+                audioPipeline = buildAudioPipeline(currentAudioStream);
+                videoPipeline = buildVideoPipeline(currentVideoStream);
+            }
 
-            videoPipeline.getState();
+            Pipeline readyPipeline = videoPipeline != null ? videoPipeline : audioPipeline;
+            if (readyPipeline != null) {
+                readyPipeline.getState();
+            }
             initialized = true;
             if (DEBUG) {
                 LoggingManager.info("[MP debug " + debugLabel + "] picked video: " + currentVideoStream);
-                LoggingManager.info("[MP debug " + debugLabel + "] picked audio: " + audioOpt.get());
+                LoggingManager.info("[MP debug " + debugLabel + "] picked audio: " + currentAudioStream);
+                LoggingManager.info("[MP debug " + debugLabel + "] live=" + liveStream
+                        + " seekable=" + seekable
+                        + " duration=" + durationHintNanos
+                        + " sharedAv=" + sharedAvPipeline);
                 LoggingManager.info("[MP debug " + debugLabel + "] available video count="
                         + availableVideoStreams.size()
                         + " resolutions=" + getAvailableQualities());
@@ -453,22 +484,12 @@ public class MediaPlayer {
         }
     }
 
-    private Pipeline buildVideoPipeline(String uri) {
-        String desc = String.join(
-                " ",
-                "souphttpsrc location=\"" + uri + "\"",
-                "user-agent=\"" + USER_AGENT_V + "\"",
-                "extra-headers=\"origin:https://www.youtube.com\\nreferer:https://www.youtube.com\\n\"",
-                "blocksize=131072 retries=5 timeout=15",
-                "! queue2 name=httpQueueV",
-                "max-size-bytes=" + HTTP_QUEUE_BYTES,
-                "max-size-time=" + HTTP_QUEUE_TIME_NS,
-                "max-size-buffers=0",
-                "! matroskademux",
-                "! decodebin",
-                "! queue name=rawQueueV max-size-buffers=4 max-size-bytes=0 max-size-time=" + RAW_QUEUE_TIME_NS,
-                "! videoconvert ! video/x-raw,format=RGBA ! appsink name=videosink"
-        );
+    private Pipeline buildVideoPipeline(YtStream stream) {
+        long rawQueueTime = stream.isLive() ? LIVE_RAW_QUEUE_TIME_NS : RAW_QUEUE_TIME_NS;
+        String desc = buildSourceChain(stream, "httpQueueV", HTTP_QUEUE_BYTES, 131072)
+                + " ! decodebin"
+                + " ! queue name=rawQueueV max-size-buffers=4 max-size-bytes=0 max-size-time=" + rawQueueTime
+                + " ! videoconvert ! video/x-raw,format=RGBA ! appsink name=videosink";
         Pipeline p = (Pipeline) Gst.parseLaunch(desc);
         configureVideoSink((AppSink) p.getElementByName("videosink"));
         p.pause();
@@ -487,24 +508,15 @@ public class MediaPlayer {
         return p;
     }
 
-    private Pipeline buildAudioPipeline(String uri) {
-        String desc = String.join(
-                " ",
-                "souphttpsrc location=\"" + uri + "\"",
-                "user-agent=\"" + USER_AGENT_V + "\"",
-                "extra-headers=\"origin:https://www.youtube.com\\nreferer:https://www.youtube.com\\n\"",
-                "blocksize=65536 retries=5 timeout=15",
-                "! queue2 name=httpQueueA",
-                "max-size-bytes=" + HTTP_QUEUE_BYTES_AUDIO,
-                "max-size-time=" + HTTP_QUEUE_TIME_NS,
-                "max-size-buffers=0",
-                "! decodebin",
-                "! queue name=rawQueueA max-size-buffers=0 max-size-bytes=0 max-size-time=" + RAW_QUEUE_TIME_NS,
-                "! audioconvert ! audioresample",
-                "! volume name=volumeElement volume=1",
-                "! audioamplify name=ampElement amplification=" + currentVolume,
-                "! autoaudiosink"
-        );
+    private Pipeline buildAudioPipeline(YtStream stream) {
+        long rawQueueTime = stream.isLive() ? LIVE_RAW_QUEUE_TIME_NS : RAW_QUEUE_TIME_NS;
+        String desc = buildSourceChain(stream, "httpQueueA", HTTP_QUEUE_BYTES_AUDIO, 65536)
+                + " ! decodebin"
+                + " ! queue name=rawQueueA max-size-buffers=0 max-size-bytes=0 max-size-time=" + rawQueueTime
+                + " ! audioconvert ! audioresample"
+                + " ! volume name=volumeElement volume=1"
+                + " ! audioamplify name=ampElement amplification=" + currentVolume
+                + " ! autoaudiosink";
         Pipeline p = (Pipeline) Gst.parseLaunch(desc);
         p
                 .getBus()
@@ -519,6 +531,9 @@ public class MediaPlayer {
                 .getBus()
                 .connect(
                         (Bus.EOS) source -> {
+                            if (liveStream) {
+                                return;
+                            }
                             safeExecute(() -> {
                                 Pipeline audio = audioPipeline;
                                 Pipeline video = videoPipeline;
@@ -544,6 +559,101 @@ public class MediaPlayer {
                 );
 
         return p;
+    }
+
+    private Pipeline buildSharedAvPipeline(YtStream stream) {
+        long rawQueueTime = stream.isLive() ? LIVE_RAW_QUEUE_TIME_NS : RAW_QUEUE_TIME_NS;
+        String desc = buildSourceChain(stream, "httpQueueAV", HTTP_QUEUE_BYTES, 131072)
+                + " ! decodebin name=avDecoder"
+                + " avDecoder. ! queue name=rawQueueV max-size-buffers=4 max-size-bytes=0 max-size-time=" + rawQueueTime
+                + " ! videoconvert ! video/x-raw,format=RGBA ! appsink name=videosink"
+                + " avDecoder. ! queue name=rawQueueA max-size-buffers=0 max-size-bytes=0 max-size-time=" + rawQueueTime
+                + " ! audioconvert ! audioresample"
+                + " ! volume name=volumeElement volume=1"
+                + " ! audioamplify name=ampElement amplification=" + currentVolume
+                + " ! autoaudiosink";
+        Pipeline p = (Pipeline) Gst.parseLaunch(desc);
+        configureVideoSink((AppSink) p.getElementByName("videosink"));
+        p.pause();
+
+        Bus bus = p.getBus();
+        bus.connect(
+                (Bus.ERROR) (source, code, message) -> {
+                    LoggingManager.error(
+                            "[MediaPlayer AV " + debugLabel + "] [ERROR] GStreamer: " + message
+                    );
+                    screen.errored = true;
+                    initialized = false;
+                }
+        );
+        bus.connect(
+                (Bus.EOS) source -> {
+                    if (liveStream) {
+                        return;
+                    }
+                    safeExecute(() -> {
+                        Pipeline audio = audioPipeline;
+                        if (audio == null) return;
+                        audio.seekSimple(
+                                Format.TIME,
+                                EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE),
+                                0L
+                        );
+                        audio.play();
+                    });
+                }
+        );
+        return p;
+    }
+
+    private boolean shouldUseSharedAvPipeline(YtStream video, YtStream audio) {
+        return liveStream
+                && !seekable
+                && video.isMuxed()
+                && audio.isMuxed()
+                && video.getUrl().equals(audio.getUrl());
+    }
+
+    private String buildSourceChain(YtStream stream, String queueName, long queueBytes, int blockSize) {
+        long queueTime = stream.isLive() ? LIVE_HTTP_QUEUE_TIME_NS : HTTP_QUEUE_TIME_NS;
+        StringBuilder desc = new StringBuilder();
+        desc.append("souphttpsrc location=\"")
+                .append(stream.getUrl())
+                .append("\" user-agent=\"")
+                .append(USER_AGENT_V)
+                .append("\" extra-headers=\"origin:https://www.youtube.com\\nreferer:https://www.youtube.com\\n\" ")
+                .append("blocksize=")
+                .append(blockSize)
+                .append(" retries=5 timeout=15")
+                .append(" ! queue2 name=")
+                .append(queueName)
+                .append(" max-size-bytes=")
+                .append(queueBytes)
+                .append(" max-size-time=")
+                .append(queueTime)
+                .append(" max-size-buffers=0");
+
+        if (isDashStream(stream)) {
+            desc.append(" ! dashdemux");
+        } else if (isHlsStream(stream)) {
+            desc.append(" ! hlsdemux");
+        }
+
+        return desc.toString();
+    }
+
+    private static boolean isHlsStream(YtStream stream) {
+        String protocol = String.valueOf(stream.getProtocol()).toLowerCase(Locale.ENGLISH);
+        String container = String.valueOf(stream.getContainer()).toLowerCase(Locale.ENGLISH);
+        String url = stream.getUrl().toLowerCase(Locale.ENGLISH);
+        return protocol.contains("m3u8") || container.contains("m3u8") || url.contains(".m3u8");
+    }
+
+    private static boolean isDashStream(YtStream stream) {
+        String protocol = String.valueOf(stream.getProtocol()).toLowerCase(Locale.ENGLISH);
+        String container = String.valueOf(stream.getContainer()).toLowerCase(Locale.ENGLISH);
+        String url = stream.getUrl().toLowerCase(Locale.ENGLISH);
+        return protocol.contains("dash") || container.contains("dash") || url.contains(".mpd");
     }
 
     private void configureVideoSink(AppSink sink) {
@@ -650,7 +760,9 @@ public class MediaPlayer {
         Pipeline audio = audioPipeline;
         if (audio == null) return;
         Pipeline video = videoPipeline;
-        bindVideoToAudioClock(audio, video);
+        if (!sharedAvPipeline) {
+            bindVideoToAudioClock(audio, video);
+        }
 
         if (!screen.getPaused()) {
             audio.play();
@@ -664,11 +776,12 @@ public class MediaPlayer {
         if (!initialized) return;
         Pipeline video = videoPipeline;
         Pipeline audio = audioPipeline;
-        if (video != null) video.pause();
         if (audio != null) audio.pause();
+        if (video != null) video.pause();
     }
 
     private void doStop() {
+        boolean shared = sharedAvPipeline;
         initialized = false;
         frameTaskQueued.set(false);
         synchronized (frameLock) {
@@ -679,10 +792,17 @@ public class MediaPlayer {
             frameBufferPool = null;
         }
         stopStatsReporter();
-        safeStopAndDispose(videoPipeline);
-        safeStopAndDispose(audioPipeline);
+        if (shared) {
+            safeStopAndDispose(audioPipeline);
+        } else {
+            safeStopAndDispose(videoPipeline);
+            safeStopAndDispose(audioPipeline);
+        }
         videoPipeline = null;
         audioPipeline = null;
+        sharedAvPipeline = false;
+        currentVideoStream = null;
+        currentAudioStream = null;
     }
 
     private void startStatsReporter() {
@@ -710,8 +830,8 @@ public class MediaPlayer {
 
     private void reportStats() {
         try {
-            Pipeline v = videoPipeline;
             Pipeline a = audioPipeline;
+            Pipeline v = videoPipeline != null ? videoPipeline : a;
             if (v == null || a == null) return;
             long inN = samplesIn.getAndSet(0);
             long outN = framesToGpu.getAndSet(0);
@@ -720,7 +840,7 @@ public class MediaPlayer {
             String vState = String.valueOf(v.getState(0));
             String aState = String.valueOf(a.getState(0));
             long aPos = a.queryPosition(Format.TIME);
-            long vPos = v.queryPosition(Format.TIME);
+            long vPos = sharedAvPipeline ? aPos : v.queryPosition(Format.TIME);
             long drift = (aPos - vPos) / 1_000_000L;
             LoggingManager.info(String.format(
                     "[MP debug %s] decode=%.1ffps gpu=%.1ffps dropped=%.1f/s"
@@ -735,10 +855,13 @@ public class MediaPlayer {
 
     private String queueLevels(Pipeline v, Pipeline a) {
         StringBuilder sb = new StringBuilder();
+        appendLevel(sb, v, "httpQueueAV");
         appendLevel(sb, v, "httpQueueV");
         appendLevel(sb, v, "demuxQueueV");
         appendLevel(sb, v, "rawQueueV");
-        appendLevel(sb, a, "httpQueueA");
+        if (a != v) {
+            appendLevel(sb, a, "httpQueueA");
+        }
         appendLevel(sb, a, "rawQueueA");
         return sb.toString();
     }
@@ -762,7 +885,7 @@ public class MediaPlayer {
     }
 
     private void doSeek(long nanos, boolean b) {
-        if (!initialized) return;
+        if (!initialized || !seekable) return;
         Pipeline audio = audioPipeline;
         if (audio == null) return;
         Pipeline video = videoPipeline;
@@ -792,7 +915,7 @@ public class MediaPlayer {
     }
 
     private void doSeekFast(long nanos) {
-        if (!initialized) return;
+        if (!initialized || !seekable) return;
         Pipeline audio = audioPipeline;
         if (audio == null) return;
         Pipeline video = videoPipeline;
@@ -834,8 +957,43 @@ public class MediaPlayer {
                 .stream()
                 .filter(s -> s.getResolution() != null)
                 .min(
-                        Comparator.comparingInt(s -> Math.abs(parseQuality(s) - target))
+                        Comparator
+                                .comparingInt((YtStream s) -> Math.abs(parseQuality(s) - target))
+                                .thenComparingInt(s -> s.hasAudio() ? 1 : 0)
                 );
+    }
+
+    private Optional<YtStream> pickAudio(
+            java.util.List<YtStream> audioStreams,
+            @Nullable YtStream chosenVideo
+    ) {
+        Optional<YtStream> preferred = audioStreams
+                .stream()
+                .filter(s -> !s.hasVideo())
+                .filter(this::matchesRequestedLanguage)
+                .reduce((f, n) -> n);
+        if (preferred.isPresent()) return preferred;
+
+        preferred = audioStreams
+                .stream()
+                .filter(s -> !s.hasVideo())
+                .reduce((f, n) -> n);
+        if (preferred.isPresent()) return preferred;
+
+        if (chosenVideo != null && chosenVideo.hasAudio()) {
+            return Optional.of(chosenVideo);
+        }
+
+        preferred = audioStreams
+                .stream()
+                .filter(this::matchesRequestedLanguage)
+                .reduce((f, n) -> n);
+        return preferred.isPresent() ? preferred : audioStreams.stream().findFirst();
+    }
+
+    private boolean matchesRequestedLanguage(YtStream stream) {
+        return (stream.getAudioTrackId() != null && stream.getAudioTrackId().contains(lang))
+                || (stream.getAudioTrackName() != null && stream.getAudioTrackName().contains(lang));
     }
 
     private void changeQuality(String desired) {
@@ -856,6 +1014,11 @@ public class MediaPlayer {
         YtStream chosen = best.get();
         if (chosen.getUrl().equals(current.getUrl())) return;
 
+        if (liveStream) {
+            changeLiveQuality(chosen);
+            return;
+        }
+
         Minecraft.getInstance().execute(screen::reloadTexture);
 
         long pos = audio.queryPosition(Format.TIME);
@@ -863,7 +1026,7 @@ public class MediaPlayer {
 
         safeStopAndDispose(videoPipeline);
 
-        Pipeline newVid = buildVideoPipeline(chosen.getUrl());
+        Pipeline newVid = buildVideoPipeline(chosen);
 
         // Get the clock from audio pipeline and use it for video
         bindVideoToAudioClock(audio, newVid);
@@ -887,6 +1050,73 @@ public class MediaPlayer {
         videoPipeline = newVid;
         currentVideoStream = chosen;
         lastQuality = parseQuality(chosen);
+    }
+
+    private void changeLiveQuality(YtStream chosenVideo) {
+        java.util.List<YtStream> audioStreams = availableAudioStreams;
+        if (audioStreams == null || audioStreams.isEmpty()) return;
+
+        Optional<YtStream> audioOpt = pickAudio(audioStreams, chosenVideo);
+        if (audioOpt.isEmpty()) return;
+
+        YtStream chosenAudio = audioOpt.get();
+        boolean newSharedPipeline = shouldUseSharedAvPipeline(chosenVideo, chosenAudio);
+        boolean shouldPlay = !screen.getPaused();
+        Pipeline oldAudio = audioPipeline;
+        Pipeline oldVideo = videoPipeline;
+        boolean oldSharedPipeline = sharedAvPipeline;
+        if (oldAudio == null) return;
+
+        if (oldVideo != null) oldVideo.pause();
+        oldAudio.pause();
+
+        Pipeline newAudio = null;
+        Pipeline newVideo = null;
+        try {
+            if (newSharedPipeline) {
+                newAudio = buildSharedAvPipeline(chosenVideo);
+            } else {
+                newAudio = buildAudioPipeline(chosenAudio);
+                newVideo = buildVideoPipeline(chosenVideo);
+                bindVideoToAudioClock(newAudio, newVideo);
+            }
+
+            Pipeline readyPipeline = newVideo != null ? newVideo : newAudio;
+            if (readyPipeline == null) {
+                throw new IllegalStateException("Failed to build replacement pipeline");
+            }
+            readyPipeline.getState();
+
+            Minecraft.getInstance().execute(screen::reloadTexture);
+
+            audioPipeline = newAudio;
+            videoPipeline = newVideo;
+            sharedAvPipeline = newSharedPipeline;
+            currentAudioStream = chosenAudio;
+            currentVideoStream = chosenVideo;
+            lastQuality = parseQuality(chosenVideo);
+            applyVolume();
+
+            if (shouldPlay) {
+                newAudio.play();
+                if (newVideo != null) newVideo.play();
+            }
+
+            if (oldSharedPipeline) {
+                safeStopAndDispose(oldAudio);
+            } else {
+                safeStopAndDispose(oldVideo);
+                safeStopAndDispose(oldAudio);
+            }
+        } catch (Exception e) {
+            safeStopAndDispose(newVideo);
+            safeStopAndDispose(newAudio);
+            LoggingManager.warn("[MP debug " + debugLabel + "] Failed to change live quality", e);
+            if (shouldPlay) {
+                oldAudio.play();
+                if (oldVideo != null) oldVideo.play();
+            }
+        }
     }
 
     // === TICK ================================================================
@@ -913,7 +1143,7 @@ public class MediaPlayer {
     }
 
     private void checkAndFixSync() {
-        if (!initialized || videoPipeline == null || audioPipeline == null) return;
+        if (!initialized || !seekable || sharedAvPipeline || videoPipeline == null || audioPipeline == null) return;
         if (screen.getPaused()) return;
 
         try {

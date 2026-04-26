@@ -72,10 +72,10 @@ public class Utils {
 
                 // Handle YouTube Shorts URLs
                 String path = uri.getPath();
-                if (path != null && path.contains("shorts")) {
+                if (path != null && (path.contains("shorts") || path.contains("/live/"))) {
                     String[] pathSegments = path.split("/");
                     for (String segment : pathSegments) {
-                        if (!segment.isEmpty() && !segment.equals("shorts")) {
+                        if (!segment.isEmpty() && !segment.equals("shorts") && !segment.equals("live")) {
                             // Remove any query parameters
                             String videoId = segment.split("[?#]")[0];
                             return videoId.isEmpty() ? null : videoId;

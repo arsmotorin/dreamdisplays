@@ -683,7 +683,7 @@ public class Configuration extends Screen {
             backButton.setY(cY);
             backButton.setHeight(vCH);
             backButton.setWidth(vCH);
-            backButton.active = !(screen.isSync && !screen.owner);
+            backButton.active = !(screen.isSync && !screen.owner) && screen.canSeek();
         }
 
         if (forwardButton != null) {
@@ -691,7 +691,7 @@ public class Configuration extends Screen {
             forwardButton.setY(cY);
             forwardButton.setHeight(vCH);
             forwardButton.setWidth(vCH);
-            forwardButton.active = !(screen.isSync && !screen.owner);
+            forwardButton.active = !(screen.isSync && !screen.owner) && screen.canSeek();
         }
 
         if (pauseButton != null) {

@@ -109,6 +109,9 @@ public final class YtDlp {
             throw new IOException("yt-dlp returned unexpected JSON shape");
         }
         JsonObject obj = root.getAsJsonObject();
+        boolean isLive = isLive(obj);
+        long durationNanos = getDurationNanos(obj);
+        boolean seekable = !isLive && durationNanos > 0L;
         if (!obj.has("formats") || !obj.get("formats").isJsonArray()) {
             return result;
         }
@@ -122,16 +125,16 @@ public final class YtDlp {
             if (url == null || url.isEmpty()) continue;
 
             String protocol = optString(f, "protocol");
-            if (protocol != null && !protocol.startsWith("http")) continue;
+            if (!isSupportedProtocol(protocol, url)) continue;
 
             String vcodec = optString(f, "vcodec");
             String acodec = optString(f, "acodec");
             String ext = optString(f, "ext");
+            String container = optString(f, "container");
 
             boolean hasVideo = vcodec != null && !vcodec.equals("none");
             boolean hasAudio = acodec != null && !acodec.equals("none");
             if (!hasVideo && !hasAudio) continue;
-            if (hasVideo && hasAudio) continue;
 
             String mime = (hasVideo ? "video/" : "audio/") + (ext == null ? "webm" : ext);
 
@@ -155,11 +158,56 @@ public final class YtDlp {
             Double tbr = optDouble(f, "tbr");
 
             result.add(new YtStream(
-                    url, mime, resolution, language, formatNote,
-                    vcodec, acodec, fps, tbr
+                    url,
+                    mime,
+                    container,
+                    protocol,
+                    resolution,
+                    language,
+                    formatNote,
+                    vcodec,
+                    acodec,
+                    fps,
+                    tbr,
+                    hasVideo,
+                    hasAudio,
+                    isLive,
+                    seekable,
+                    durationNanos
             ));
         }
         return result;
+    }
+
+    private static boolean isLive(JsonObject obj) {
+        if (optBoolean(obj, "is_live")) return true;
+        String liveStatus = optString(obj, "live_status");
+        return liveStatus != null && switch (liveStatus) {
+            case "is_live", "is_upcoming", "post_live" -> true;
+            default -> false;
+        };
+    }
+
+    private static long getDurationNanos(JsonObject obj) {
+        Double durationSeconds = optDouble(obj, "duration");
+        if (durationSeconds == null || durationSeconds <= 0.0D) {
+            return 0L;
+        }
+        double nanos = durationSeconds * 1_000_000_000.0D;
+        if (nanos >= Long.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+        return Math.max(0L, Math.round(nanos));
+    }
+
+    private static boolean isSupportedProtocol(@Nullable String protocol, String url) {
+        if (protocol == null || protocol.isBlank()) return true;
+        if (protocol.startsWith("http")) return true;
+        if (protocol.contains("m3u8")) return true;
+        if (protocol.contains("dash")) return true;
+
+        String lowerUrl = url.toLowerCase(Locale.ENGLISH);
+        return lowerUrl.contains(".m3u8") || lowerUrl.contains(".mpd");
     }
 
     private static @Nullable String extractResolution(@Nullable String... candidates) {
@@ -206,6 +254,15 @@ public final class YtDlp {
             return obj.get(key).getAsDouble();
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    private static boolean optBoolean(JsonObject obj, String key) {
+        if (!obj.has(key) || obj.get(key).isJsonNull()) return false;
+        try {
+            return obj.get(key).getAsBoolean();
+        } catch (Exception e) {
+            return false;
         }
     }
 

@@ -205,11 +205,12 @@ public class Screen {
             long targetTime = Math.max(0L, packet.currentTime() + lostTime);
             long currentTime = getCurrentTimeNanos();
             long drift = Math.abs(targetTime - currentTime);
+            boolean canSeek = canSeek();
 
             if (desiredPaused && !paused) {
                 setPaused(true);
             }
-            if (drift > SYNC_SEEK_TOLERANCE_NS) {
+            if (canSeek && drift > SYNC_SEEK_TOLERANCE_NS) {
                 seekVideoTo(targetTime);
             }
             if (!desiredPaused && paused) {
@@ -407,14 +408,14 @@ public class Screen {
 
     // Relative seek video: moves the video by a specified number of seconds relative to the current position
     public void seekVideoRelative(long seconds) {
-        if (mediaPlayer != null) {
+        if (mediaPlayer != null && mediaPlayer.canSeek()) {
             mediaPlayer.seekRelative(seconds);
         }
     }
 
     // Absolute (cinema) seek video: moves to a specific second
     public void seekVideoTo(long nanos) {
-        if (mediaPlayer != null) {
+        if (mediaPlayer != null && mediaPlayer.canSeek()) {
             mediaPlayer.seekTo(nanos, false);
         }
     }
@@ -541,10 +542,19 @@ public class Screen {
         if (
                 savedTimeNanos > 0 &&
                         mediaPlayer != null &&
-                        mediaPlayer.isInitialized()
+                        mediaPlayer.isInitialized() &&
+                        mediaPlayer.canSeek()
         ) {
             mediaPlayer.seekToFast(savedTimeNanos);
         }
+    }
+
+    public boolean isLive() {
+        return mediaPlayer != null && mediaPlayer.isLive();
+    }
+
+    public boolean canSeek() {
+        return mediaPlayer != null && mediaPlayer.canSeek();
     }
 
     public void waitForMFInit(Runnable action) {
