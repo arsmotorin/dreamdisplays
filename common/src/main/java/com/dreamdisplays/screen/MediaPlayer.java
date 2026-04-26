@@ -1,8 +1,8 @@
 package com.dreamdisplays.screen;
 
 import com.dreamdisplays.Initializer;
-import com.github.felipeucelli.javatube.Stream;
-import com.github.felipeucelli.javatube.Youtube;
+import com.dreamdisplays.ytdlp.YtDlp;
+import com.dreamdisplays.ytdlp.YtStream;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -39,8 +39,9 @@ public class MediaPlayer {
     // === CONSTANTS =======================================================================
     private static final String MIME_VIDEO = "video/webm";
     private static final String MIME_AUDIO = "audio/webm";
-    private static final String USER_AGENT_V = "ANDROID_VR";
-    private static final String USER_AGENT_A = "ANDROID_TESTSUITE";
+    private static final String USER_AGENT_V =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                    + " (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
     private static final ExecutorService INIT_EXECUTOR =
             Executors.newSingleThreadExecutor(r ->
                     new Thread(r, "MediaPlayer-init")
@@ -67,8 +68,8 @@ public class MediaPlayer {
     // === GST OBJECTS =====================================================================
     private volatile @Nullable Pipeline videoPipeline;
     private volatile @Nullable Pipeline audioPipeline;
-    private volatile java.util.@Nullable List<Stream> availableVideoStreams;
-    private volatile @Nullable Stream currentVideoStream;
+    private volatile java.util.@Nullable List<YtStream> availableVideoStreams;
+    private volatile @Nullable YtStream currentVideoStream;
     private volatile boolean initialized;
     private int lastQuality;
     // === FRAME BUFFERS ===================================================================
@@ -157,7 +158,7 @@ public class MediaPlayer {
         buffer.flip();
     }
 
-    private static int parseQuality(Stream stream) {
+    private static int parseQuality(YtStream stream) {
         try {
             return Integer.parseInt(stream.getResolution().replaceAll("\\D+", ""));
         } catch (Exception e) {
@@ -334,7 +335,7 @@ public class MediaPlayer {
         ) return Collections.emptyList();
         return availableVideoStreams
                 .stream()
-                .map(Stream::getResolution)
+                .map(YtStream::getResolution)
                 .filter(Objects::nonNull)
                 .map(r -> parseQualityValue(r, Integer.MAX_VALUE))
                 .filter(r -> r != Integer.MAX_VALUE)
@@ -366,11 +367,8 @@ public class MediaPlayer {
             // Build proper YouTube URL with just the video ID
             String cleanUrl = "https://www.youtube.com/watch?v=" + videoId;
 
-            Youtube yt = new Youtube(cleanUrl, USER_AGENT_V);
-            java.util.List<Stream> all = yt.streams().getAll();
-
-            Youtube ytA = new Youtube(cleanUrl, USER_AGENT_A);
-            java.util.List<Stream> audioS = ytA.streams().getAll();
+            java.util.List<YtStream> all = YtDlp.fetch(cleanUrl);
+            java.util.List<YtStream> audioS = all;
 
             availableVideoStreams = all
                     .stream()
@@ -378,10 +376,10 @@ public class MediaPlayer {
                     .toList();
 
             int requestedQuality = parseQualityValue(screen.getQuality(), 720);
-            Optional<Stream> videoOpt = pickVideo(
+            Optional<YtStream> videoOpt = pickVideo(
                     requestedQuality
             ).or(() -> availableVideoStreams.stream().findFirst());
-            Optional<Stream> audioOpt = audioS
+            Optional<YtStream> audioOpt = audioS
                     .stream()
                     .filter(s -> MIME_AUDIO.equals(s.getMimeType()))
                     .filter(
@@ -689,7 +687,7 @@ public class MediaPlayer {
     }
 
     // === QUALITY HELPERS =================================================================
-    private Optional<Stream> pickVideo(int target) {
+    private Optional<YtStream> pickVideo(int target) {
         return availableVideoStreams
                 .stream()
                 .filter(s -> s.getResolution() != null)
@@ -701,7 +699,7 @@ public class MediaPlayer {
     private void changeQuality(String desired) {
         if (!initialized || availableVideoStreams == null) return;
         Pipeline audio = audioPipeline;
-        Stream current = currentVideoStream;
+        YtStream current = currentVideoStream;
         if (audio == null || current == null) return;
         int target;
         try {
@@ -712,9 +710,9 @@ public class MediaPlayer {
         if (target == lastQuality) return;
         Minecraft.getInstance().execute(screen::reloadTexture);
 
-        Optional<Stream> best = pickVideo(target);
+        Optional<YtStream> best = pickVideo(target);
         if (best.isEmpty()) return;
-        Stream chosen = best.get();
+        YtStream chosen = best.get();
         if (chosen.getUrl().equals(current.getUrl())) return;
 
         long pos = audio.queryPosition(Format.TIME);

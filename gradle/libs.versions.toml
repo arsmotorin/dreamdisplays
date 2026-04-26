@@ -5,7 +5,6 @@
 jspecify = "1.0.0"
 utils = "1.4.10"
 gst1 = "1.4.0"
-javatube = "6692a32"
 
 # Plugin versions
 loom = "1.16.0-alpha.9"
@@ -30,7 +29,6 @@ adventurePlatform = "4.4.1"
 jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
 utils = { module = "me.inotsleep:utils", version.ref = "utils" }
 gst1 = { module = "org.freedesktop.gstreamer:gst1-java-core", version.ref = "gst1" }
-javatube = { module = "com.github.felipeucelli:javatube", version.ref = "javatube" }
 
 # Fabric
 fabricLoader = { module = "net.fabricmc:fabric-loader", version.ref = "fabricLoader" }

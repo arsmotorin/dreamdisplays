@@ -5,7 +5,6 @@ plugins {
 dependencies {
     api(libs.gst1)
     api(libs.utils)
-    api(libs.javatube)
     api(libs.jspecify)
 }
 

@@ -60,16 +60,12 @@ tasks.shadowJar {
     dependencies {
         include(project(":common"))
         include(dependency("org.freedesktop.gstreamer:gst1-java-core"))
-        include(dependency("com.github.felipeucelli:javatube"))
-        include(dependency("org.json:json"))
         include(dependency("me.inotsleep:utils"))
     }
     val prefix = "com.dreamdisplays.libs"
     listOf(
-        "com.github.felipeucelli.javatube",
         "me.inotsleep.utils",
         "org.freedesktop.gstreamer",
-        "org.json",
     ).forEach { pack ->
         relocate(pack, "$prefix.$pack")
     }
