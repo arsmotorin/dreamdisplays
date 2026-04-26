@@ -1,5 +1,3 @@
-> **The mod will continue to support new Minecraft versions (like 26.1 and so on), but there won't be any major new features added. Only bug fixes and small adjustments.**
-
 [![Latest release](https://img.shields.io/github/release/arsmotorin/dreamdisplays.svg)](https://github.com/arsmotorin/dreamdisplays/releases/latest)
 [![License](https://img.shields.io/github/license/arsmotorin/dreamdisplays)](https://github.com/arsmotorin/dreamdisplays/blob/master/LICENSE)
 
