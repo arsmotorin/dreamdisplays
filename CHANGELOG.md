@@ -1,3 +1,27 @@
+# Version 1.6.0
+
+Mod:
+
+- [x] Support YouTube livestreams (live, première, and regular streams)
+- [x] Faster video loading and seeking with improved buffering and caching
+- [x] Video metadata caching system
+- [x] Direct searching and playback of YouTube videos without leaving the game
+- [x] Suggested videos based on current video and search history
+- [x] Progress slider with seeking support
+- [x] Improved display configuration UI
+- [x] Improved video quality and format detection
+- [ ] Better synchronization for video playback
+- [ ] Various optimizations and some small bug fixes
+- [ ] Some stability improvements
+- [ ] Update dependencies
+- [ ] Switch mod channel from Beta to Release
+
+Plugin:
+
+- [ ] Inform player about a display if they don't have the mod installed when they try to touch it
+- [ ] Various optimizations and some small bug fixes
+- [ ] Drop Bukkit support (no one uses this garbage)
+
 # Version 1.5.0
 
 Mod:
