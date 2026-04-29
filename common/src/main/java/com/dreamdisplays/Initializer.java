@@ -82,6 +82,9 @@ public class Initializer {
 
         Init.init();
         YtDlp.prewarmAsync();
+        // Drop yt-dlp cache entries older than the URL TTL on a background thread
+        new Thread(com.dreamdisplays.ytdlp.FormatDiskCache::sweepExpired,
+                "dreamdisplays-cache-sweep").start();
         new Focuser().start();
 
         timerThread.start();
@@ -89,6 +92,10 @@ public class Initializer {
 
     public static void onDisplayInfoPacket(Info packet) {
         if (!Initializer.displaysEnabled) return;
+
+        // Kick off yt-dlp early – by the time we render the display the formats are
+        // already cached.
+        YtDlp.prefetchFormats(packet.url());
 
         if (Manager.screens.containsKey(packet.uuid())) {
             Screen screen = Manager.screens.get(packet.uuid());
