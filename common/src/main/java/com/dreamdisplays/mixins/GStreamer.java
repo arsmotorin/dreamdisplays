@@ -36,6 +36,39 @@ public abstract class GStreamer {
     @Unique
     private static boolean dreamdisplays$downloaded = false;
 
+    // Prepend common system locations to jna.library.path so JNA can find a
+    // GStreamer installed via Homebrew (macOS) or the system package manager
+    // (Linux). Java does not search /opt/homebrew/lib by default on Apple
+    // Silicon, which causes UnsatisfiedLinkError when loading libgstreamer.
+    @Unique
+    private static void dreamdisplays$ensureSystemGstPath() {
+        String os = System.getProperty("os.name", "").toLowerCase();
+        List<String> candidates = new ArrayList<>();
+        if (os.contains("mac")) {
+            candidates.add("/opt/homebrew/lib");
+            candidates.add("/usr/local/lib");
+            candidates.add("/Library/Frameworks/GStreamer.framework/Libraries");
+        } else {
+            candidates.add("/usr/lib/x86_64-linux-gnu");
+            candidates.add("/usr/lib64");
+            candidates.add("/usr/lib");
+            candidates.add("/usr/local/lib");
+        }
+
+        StringBuilder sb = new StringBuilder();
+        String existing = System.getProperty("jna.library.path");
+        if (existing != null && !existing.isEmpty()) sb.append(existing);
+        for (String path : candidates) {
+            if (!new File(path).isDirectory()) continue;
+            if (existing != null && existing.contains(path)) continue;
+            if (sb.length() > 0) sb.append(File.pathSeparator);
+            sb.append(path);
+        }
+        if (sb.length() > 0) {
+            System.setProperty("jna.library.path", sb.toString());
+        }
+    }
+
     @Shadow
     public abstract void setScreen(@Nullable Screen screen);
 
@@ -105,39 +138,6 @@ public abstract class GStreamer {
                 }
             }
             dreamdisplays$recursionDetector.set(recursionValue);
-        }
-    }
-
-    // Prepend common system locations to jna.library.path so JNA can find a
-    // GStreamer installed via Homebrew (macOS) or the system package manager
-    // (Linux). Java does not search /opt/homebrew/lib by default on Apple
-    // Silicon, which causes UnsatisfiedLinkError when loading libgstreamer.
-    @Unique
-    private static void dreamdisplays$ensureSystemGstPath() {
-        String os = System.getProperty("os.name", "").toLowerCase();
-        List<String> candidates = new ArrayList<>();
-        if (os.contains("mac")) {
-            candidates.add("/opt/homebrew/lib");
-            candidates.add("/usr/local/lib");
-            candidates.add("/Library/Frameworks/GStreamer.framework/Libraries");
-        } else {
-            candidates.add("/usr/lib/x86_64-linux-gnu");
-            candidates.add("/usr/lib64");
-            candidates.add("/usr/lib");
-            candidates.add("/usr/local/lib");
-        }
-
-        StringBuilder sb = new StringBuilder();
-        String existing = System.getProperty("jna.library.path");
-        if (existing != null && !existing.isEmpty()) sb.append(existing);
-        for (String path : candidates) {
-            if (!new File(path).isDirectory()) continue;
-            if (existing != null && existing.contains(path)) continue;
-            if (sb.length() > 0) sb.append(File.pathSeparator);
-            sb.append(path);
-        }
-        if (sb.length() > 0) {
-            System.setProperty("jna.library.path", sb.toString());
         }
     }
 }

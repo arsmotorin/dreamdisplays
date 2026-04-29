@@ -2,7 +2,7 @@ package com.dreamdisplays.utils
 
 import org.jspecify.annotations.NullMarked
 import java.net.URI
-import java.util.Locale
+import java.util.*
 
 /**
  * Utility functions for handling YouTube URLs and video IDs.

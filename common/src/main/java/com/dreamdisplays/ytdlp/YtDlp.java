@@ -8,11 +8,7 @@ import me.inotsleep.utils.logging.LoggingManager;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -21,18 +17,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 
 @NullMarked
 public final class YtDlp {
@@ -49,8 +35,6 @@ public final class YtDlp {
             "https://github.com/yt-dlp/yt-dlp/releases/latest/download/";
     private static final long CACHE_TTL_MS = 5L * 60L * 60L * 1_000L;
     private static final long INFO_CACHE_TTL_MS = 30L * 60L * 1_000L;
-
-    private static volatile @Nullable String resolvedBinary;
     private static final ExecutorService PREWARM_EXECUTOR =
             Executors.newSingleThreadExecutor(r -> {
                 Thread thread = new Thread(r, "YtDlp-prewarm");
@@ -70,6 +54,7 @@ public final class YtDlp {
     private static final ConcurrentMap<String, CompletableFuture<List<YtVideoInfo>>> IN_FLIGHT_RELATED = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, TitleCacheEntry> TITLE_CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, CompletableFuture<@Nullable String>> IN_FLIGHT_TITLES = new ConcurrentHashMap<>();
+    private static volatile @Nullable String resolvedBinary;
 
     private YtDlp() {
     }
@@ -430,13 +415,11 @@ public final class YtDlp {
 
     private static @Nullable Long optLong(JsonObject obj, String key) {
         if (!obj.has(key) || obj.get(key).isJsonNull()) return null;
-        try { return obj.get(key).getAsLong(); } catch (Exception e) { return null; }
-    }
-
-    private record InfoCacheEntry(List<YtVideoInfo> results, long createdAtMs) {
-    }
-
-    private record TitleCacheEntry(@Nullable String title, long createdAtMs) {
+        try {
+            return obj.get(key).getAsLong();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private static List<YtVideoInfo> waitForInfoFuture(
@@ -511,9 +494,6 @@ public final class YtDlp {
         }
 
         return parseFormats(stdout.toString());
-    }
-
-    private record CacheEntry(List<YtStream> streams, long createdAtMs) {
     }
 
     private static List<YtStream> parseFormats(String json) throws IOException {
@@ -792,5 +772,14 @@ public final class YtDlp {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private record InfoCacheEntry(List<YtVideoInfo> results, long createdAtMs) {
+    }
+
+    private record TitleCacheEntry(@Nullable String title, long createdAtMs) {
+    }
+
+    private record CacheEntry(List<YtStream> streams, long createdAtMs) {
     }
 }

@@ -111,7 +111,10 @@ public final class FormatDiskCache {
                         long ts = obj.has("ts") ? obj.get("ts").getAsLong() : 0L;
                         if (now - ts > maxAgeMs) Files.deleteIfExists(p);
                     } catch (Exception ignored) {
-                        try { Files.deleteIfExists(p); } catch (Exception ignored2) {}
+                        try {
+                            Files.deleteIfExists(p);
+                        } catch (Exception ignored2) {
+                        }
                     }
                 });
             }

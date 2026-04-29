@@ -33,9 +33,9 @@ public final class Thumbnails {
     private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(
             Math.clamp(Runtime.getRuntime().availableProcessors() * 2, 4, 8),
             r -> {
-        Thread t = new Thread(r, "DD-Thumbnail-" + COUNTER.incrementAndGet());
-        t.setDaemon(true);
-        return t;
+                Thread t = new Thread(r, "DD-Thumbnail-" + COUNTER.incrementAndGet());
+                t.setDaemon(true);
+                return t;
             }
     );
 
@@ -100,7 +100,7 @@ public final class Thumbnails {
             if (src == null) {
                 String head = bytes.length >= 4
                         ? String.format("%02X %02X %02X %02X",
-                                bytes[0] & 0xFF, bytes[1] & 0xFF, bytes[2] & 0xFF, bytes[3] & 0xFF)
+                        bytes[0] & 0xFF, bytes[1] & 0xFF, bytes[2] & 0xFF, bytes[3] & 0xFF)
                         : "<empty>";
                 throw new IOException("Unsupported image format (first bytes: " + head
                         + ", size=" + bytes.length + ")");

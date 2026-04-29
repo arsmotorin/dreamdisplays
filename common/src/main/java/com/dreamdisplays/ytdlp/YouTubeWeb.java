@@ -189,7 +189,7 @@ public final class YouTubeWeb {
                     if (daysAgo == null) daysAgo = parseDaysAgo(dateText);
                     Long v = parseViews(runsText(vp.getAsJsonObject("viewCount")
                             == null ? null : vp.getAsJsonObject("viewCount").getAsJsonObject("videoViewCountRenderer")
-                            .getAsJsonObject("viewCount")));
+                                             .getAsJsonObject("viewCount")));
                     if (v == null) v = parseViews(simpleText(maybeViewCountText(vp)));
                     if (v != null) views = v;
                     likes = extractLikeCount(vp);

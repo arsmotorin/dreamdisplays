@@ -20,6 +20,7 @@ import java.util.function.LongSupplier;
 @NullMarked
 public class ProgressSlider extends AbstractWidget {
 
+    public static final long MAX_DRAG_DELTA_NS = 10L * 1_000_000_000L;
     private static final Identifier TEXTURE_ID =
             Identifier.withDefaultNamespace("widget/slider");
     private static final Identifier HIGHLIGHTED_TEXTURE_ID =
@@ -28,9 +29,6 @@ public class ProgressSlider extends AbstractWidget {
             Identifier.withDefaultNamespace("widget/slider_handle");
     private static final Identifier HANDLE_HIGHLIGHTED_TEXTURE_ID =
             Identifier.withDefaultNamespace("widget/slider_handle_highlighted");
-
-    public static final long MAX_DRAG_DELTA_NS = 10L * 1_000_000_000L;
-
     private final LongSupplier currentSupplier;
     private final LongSupplier durationSupplier;
     private final LongConsumer seekConsumer;
@@ -48,6 +46,16 @@ public class ProgressSlider extends AbstractWidget {
         this.currentSupplier = currentSupplier;
         this.durationSupplier = durationSupplier;
         this.seekConsumer = seekConsumer;
+    }
+
+    private static String formatTime(long nanos) {
+        if (nanos <= 0) return "00:00";
+        long s = nanos / 1_000_000_000L;
+        long h = s / 3600;
+        long m = (s % 3600) / 60;
+        long sec = s % 60;
+        if (h > 0) return String.format("%d:%02d:%02d", h, m, sec);
+        return String.format("%02d:%02d", m, sec);
     }
 
     @Override
@@ -75,16 +83,6 @@ public class ProgressSlider extends AbstractWidget {
         return Component.literal(formatTime(cur) + " / " + formatTime(dur))
                 .copy()
                 .withStyle(s -> s.withColor(color));
-    }
-
-    private static String formatTime(long nanos) {
-        if (nanos <= 0) return "00:00";
-        long s = nanos / 1_000_000_000L;
-        long h = s / 3600;
-        long m = (s % 3600) / 60;
-        long sec = s % 60;
-        if (h > 0) return String.format("%d:%02d:%02d", h, m, sec);
-        return String.format("%02d:%02d", m, sec);
     }
 
     private Identifier getTrackSprite() {

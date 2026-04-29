@@ -3,11 +3,7 @@ package com.dreamdisplays.screen;
 import com.dreamdisplays.Initializer;
 import com.dreamdisplays.net.Packets.Delete;
 import com.dreamdisplays.net.Packets.Report;
-import com.dreamdisplays.screen.widgets.Button;
-import com.dreamdisplays.screen.widgets.ProgressSlider;
-import com.dreamdisplays.screen.widgets.Slider;
-import com.dreamdisplays.screen.widgets.SuggestionsPanel;
-import com.dreamdisplays.screen.widgets.Toggle;
+import com.dreamdisplays.screen.widgets.*;
 import com.dreamdisplays.ytdlp.Thumbnails;
 import com.dreamdisplays.ytdlp.YtDlp;
 import com.dreamdisplays.ytdlp.YtVideoInfo;
@@ -33,6 +29,19 @@ import java.util.Objects;
 @NullMarked
 public class Configuration extends Screen {
 
+    private static final int PADDING = 10;
+    private static final int PANEL_GAP = 8;
+    private static final int PANEL_PADDING_X = 10;
+    private static final int PANEL_PADDING_Y = 10;
+    private static final int ROW_GAP = 4;
+    private static final int CTRL_BTN = 22;
+    private static final int ROW_H = CTRL_BTN;
+    private static final int RESET_W = CTRL_BTN;
+    private static final int CONTROL_W = 130;
+    private static final int PANEL_BG = 0x90101010;
+    private static final int PANEL_BORDER = 0xFF606060;
+    private static final int ROW_BG = 0x40000000;
+    private static final String GITHUB_URL = "https://github.com/arsmotorin/dreamdisplays";
     @Nullable Slider volume = null;
     @Nullable Slider renderD = null;
     @Nullable Slider quality = null;
@@ -49,26 +58,12 @@ public class Configuration extends Screen {
     @Nullable Button deleteButton = null;
     @Nullable Button reportButton = null;
     @Nullable ProgressSlider progress = null;
-
     @Nullable SuggestionsPanel suggestions = null;
     @Nullable String lastSuggestedVideoId = null;
-
-    private static final int PADDING = 10;
-    private static final int PANEL_GAP = 8;
-    private static final int PANEL_PADDING_X = 10;
-    private static final int PANEL_PADDING_Y = 10;
-    private static final int ROW_GAP = 4;
-    private static final int CTRL_BTN = 22;
-    private static final int ROW_H = CTRL_BTN;
-    private static final int RESET_W = CTRL_BTN;
-    private static final int CONTROL_W = 130;
-    private static final int PANEL_BG = 0x90101010;
-    private static final int PANEL_BORDER = 0xFF606060;
-    private static final int ROW_BG = 0x40000000;
-
-    private @Nullable HoverArea volumeHover, renderDHover, qualityHover, brightnessHover, syncHover;
-
     com.dreamdisplays.screen.@Nullable Screen screen = null;
+    private @Nullable HoverArea volumeHover, renderDHover, qualityHover, brightnessHover, syncHover;
+    private @Nullable HoverArea modLabelHover;
+    private long modLabelOpenedAtMs = System.currentTimeMillis();
 
     protected Configuration() {
         super(Component.translatable("dreamdisplays.ui.title"));
@@ -78,6 +73,11 @@ public class Configuration extends Screen {
         Configuration s = new Configuration();
         s.setScreen(screen);
         Minecraft.getInstance().setScreen(s);
+    }
+
+    private static boolean hovered(int mx, int my, AbstractWidget w) {
+        return mx >= w.getX() && mx < w.getX() + w.getWidth()
+                && my >= w.getY() && my < w.getY() + w.getHeight();
     }
 
     private void setScreen(com.dreamdisplays.screen.Screen s) {
@@ -91,17 +91,23 @@ public class Configuration extends Screen {
         volume = new Slider(0, 0, 0, 0,
                 Component.literal((int) Math.floor(screen.getVolume() * 200) + "%"),
                 screen.getVolume()) {
-            @Override protected void updateMessage() {
+            @Override
+            protected void updateMessage() {
                 setMessage(Component.literal((int) Math.floor(value * 200) + "%"));
             }
-            @Override protected void applyValue() { screen.setVolume((float) value); }
+
+            @Override
+            protected void applyValue() {
+                screen.setVolume((float) value);
+            }
         };
 
         backButton = iconButton("bbi", () -> screen.seekBackward());
         forwardButton = iconButton("bfi", () -> screen.seekForward());
         pauseButton = new Button(0, 0, 0, 0, 64, 64,
                 Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bpi"), 2) {
-            @Override public void onPress() {
+            @Override
+            public void onPress() {
                 screen.setPaused(!screen.getPaused());
                 setIconTextureId(Identifier.fromNamespaceAndPath(Initializer.MOD_ID,
                         screen.getPaused() ? "bupi" : "bpi"));
@@ -122,10 +128,13 @@ public class Configuration extends Screen {
         renderD = new Slider(0, 0, 0, 0,
                 Component.literal(screen.getRenderDistance() + " blocks"),
                 (screen.getRenderDistance() - 24) / (double) (128 - 24)) {
-            @Override protected void updateMessage() {
+            @Override
+            protected void updateMessage() {
                 setMessage(Component.literal(((int) (value * (128 - 24)) + 24) + " blocks"));
             }
-            @Override protected void applyValue() {
+
+            @Override
+            protected void applyValue() {
                 screen.setRenderDistance((int) (value * (128 - 24) + 24));
                 Manager.saveScreenData(screen);
             }
@@ -134,19 +143,29 @@ public class Configuration extends Screen {
         quality = new Slider(0, 0, 0, 0,
                 Component.literal(screen.getQuality() + "p"),
                 qualityFraction(screen.getQuality())) {
-            @Override protected void updateMessage() {
+            @Override
+            protected void updateMessage() {
                 setMessage(Component.literal(qualityFromFraction(value) + "p"));
             }
-            @Override protected void applyValue() { screen.setQuality(qualityFromFraction(value)); }
+
+            @Override
+            protected void applyValue() {
+                screen.setQuality(qualityFromFraction(value));
+            }
         };
 
         brightness = new Slider(0, 0, 0, 0,
                 Component.literal((int) Math.floor(screen.getBrightness() * 100) + "%"),
                 screen.getBrightness() / 2.0) {
-            @Override protected void updateMessage() {
+            @Override
+            protected void updateMessage() {
                 setMessage(Component.literal((int) Math.floor(value * 200) + "%"));
             }
-            @Override protected void applyValue() { screen.setBrightness((float) (value * 2.0)); }
+
+            @Override
+            protected void applyValue() {
+                screen.setBrightness((float) (value * 2.0));
+            }
         };
 
         renderDReset = resetButton(() -> {
@@ -177,11 +196,14 @@ public class Configuration extends Screen {
                 Component.translatable(screen.isSync ? "dreamdisplays.button.enabled"
                         : "dreamdisplays.button.disabled"),
                 screen.isSync) {
-            @Override protected void updateMessage() {
+            @Override
+            protected void updateMessage() {
                 setMessage(Component.translatable(value ? "dreamdisplays.button.enabled"
                         : "dreamdisplays.button.disabled"));
             }
-            @Override public void applyValue() {
+
+            @Override
+            public void applyValue() {
                 if (screen.owner && syncReset != null) {
                     screen.isSync = value;
                     syncReset.active = !value;
@@ -205,7 +227,8 @@ public class Configuration extends Screen {
 
         deleteButton = new Button(0, 0, 0, 0, 64, 64,
                 Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "delete"), 2) {
-            @Override public void onPress() {
+            @Override
+            public void onPress() {
                 Settings.removeDisplay(screen.getUUID());
                 Manager.unregisterScreen(screen);
                 Initializer.sendPacket(new Delete(screen.getUUID()));
@@ -218,7 +241,8 @@ public class Configuration extends Screen {
         if (Initializer.isReportingEnabled) {
             reportButton = new Button(0, 0, 0, 0, 64, 64,
                     Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "report"), 2) {
-                @Override public void onPress() {
+                @Override
+                public void onPress() {
                     Initializer.sendPacket(new Report(screen.getUUID()));
                     onClose();
                 }
@@ -252,14 +276,20 @@ public class Configuration extends Screen {
     private Button iconButton(String icon, Runnable action) {
         return new Button(0, 0, 0, 0, 64, 64,
                 Identifier.fromNamespaceAndPath(Initializer.MOD_ID, icon), 2) {
-            @Override public void onPress() { action.run(); }
+            @Override
+            public void onPress() {
+                action.run();
+            }
         };
     }
 
     private Button resetButton(Runnable action) {
         return new Button(0, 0, 0, 0, 64, 64,
                 Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bri"), 2) {
-            @Override public void onPress() { action.run(); }
+            @Override
+            public void onPress() {
+                action.run();
+            }
         };
     }
 
@@ -287,10 +317,13 @@ public class Configuration extends Screen {
 
         boolean videoReady = screen.isVideoStarted() && !screen.errored;
         if (syncReset != null) syncReset.active = videoReady && screen.owner && screen.isSync;
-        if (renderDReset != null) renderDReset.active = videoReady && screen.getRenderDistance() != Initializer.config.defaultDistance;
+        if (renderDReset != null)
+            renderDReset.active = videoReady && screen.getRenderDistance() != Initializer.config.defaultDistance;
         if (qualityReset != null) qualityReset.active = videoReady && !Objects.equals(screen.getQuality(), "720");
-        if (brightnessReset != null && brightness != null) brightnessReset.active = videoReady && Math.abs(brightness.value - 0.5) > 0.01;
-        if (volumeReset != null && volume != null) volumeReset.active = videoReady && Math.abs(volume.value - 0.5) > 0.01;
+        if (brightnessReset != null && brightness != null)
+            brightnessReset.active = videoReady && Math.abs(brightness.value - 0.5) > 0.01;
+        if (volumeReset != null && volume != null)
+            volumeReset.active = videoReady && Math.abs(volume.value - 0.5) > 0.01;
 
         boolean enabled = videoReady;
         if (volume != null) volume.active = enabled;
@@ -692,7 +725,7 @@ public class Configuration extends Screen {
                     Component.translatable("dreamdisplays.button.volume.tooltip.2").withStyle(s -> s.withColor(ChatFormatting.GRAY)),
                     Component.translatable("dreamdisplays.button.volume.tooltip.3").withStyle(s -> s.withColor(ChatFormatting.GRAY)),
                     Component.translatable("dreamdisplays.button.volume.tooltip.4",
-                            volume != null ? (int) (volume.value * 200) : 0)
+                                    volume != null ? (int) (volume.value * 200) : 0)
                             .withStyle(s -> s.withColor(ChatFormatting.GOLD))
             ), mouseX, mouseY);
         }
@@ -702,7 +735,7 @@ public class Configuration extends Screen {
                     Component.translatable("dreamdisplays.button.render-distance.tooltip.2").withStyle(s -> s.withColor(ChatFormatting.GRAY)),
                     Component.translatable("dreamdisplays.button.render-distance.tooltip.3").withStyle(s -> s.withColor(ChatFormatting.GRAY)),
                     Component.translatable("dreamdisplays.button.render-distance.tooltip.8",
-                            renderD != null ? (int) (renderD.value * (128 - 24) + 24) : 0)
+                                    renderD != null ? (int) (renderD.value * (128 - 24) + 24) : 0)
                             .withStyle(s -> s.withColor(ChatFormatting.GOLD))
             ), mouseX, mouseY);
         }
@@ -711,7 +744,7 @@ public class Configuration extends Screen {
                     Component.translatable("dreamdisplays.button.quality.tooltip.1").withStyle(s -> s.withColor(ChatFormatting.WHITE).withBold(true)),
                     Component.translatable("dreamdisplays.button.quality.tooltip.2").withStyle(s -> s.withColor(ChatFormatting.GRAY)),
                     Component.translatable("dreamdisplays.button.quality.tooltip.4",
-                            qualityFromFraction(quality.value))
+                                    qualityFromFraction(quality.value))
                             .withStyle(s -> s.withColor(ChatFormatting.GOLD))
             ));
             try {
@@ -728,7 +761,7 @@ public class Configuration extends Screen {
                     Component.translatable("dreamdisplays.button.brightness.tooltip.1").withStyle(s -> s.withColor(ChatFormatting.WHITE).withBold(true)),
                     Component.translatable("dreamdisplays.button.brightness.tooltip.2").withStyle(s -> s.withColor(ChatFormatting.GRAY)),
                     Component.translatable("dreamdisplays.button.brightness.tooltip.3",
-                            brightness != null ? (int) Math.floor(brightness.value * 200) : 100)
+                                    brightness != null ? (int) Math.floor(brightness.value * 200) : 100)
                             .withStyle(s -> s.withColor(ChatFormatting.GOLD))
             ), mouseX, mouseY);
         }
@@ -738,9 +771,9 @@ public class Configuration extends Screen {
                     Component.translatable("dreamdisplays.button.synchronization.tooltip.2").withStyle(s -> s.withColor(ChatFormatting.GRAY)),
                     Component.translatable("dreamdisplays.button.synchronization.tooltip.3").withStyle(s -> s.withColor(ChatFormatting.GRAY)),
                     Component.translatable("dreamdisplays.button.synchronization.tooltip.5",
-                            sync.value
-                                    ? Component.translatable("dreamdisplays.button.enabled")
-                                    : Component.translatable("dreamdisplays.button.disabled"))
+                                    sync.value
+                                            ? Component.translatable("dreamdisplays.button.enabled")
+                                            : Component.translatable("dreamdisplays.button.disabled"))
                             .withStyle(s -> s.withColor(ChatFormatting.GOLD))
             ), mouseX, mouseY);
         }
@@ -757,11 +790,6 @@ public class Configuration extends Screen {
                     Component.translatable("dreamdisplays.button.report.tooltip.2").withStyle(s -> s.withColor(ChatFormatting.GRAY))
             ), mouseX, mouseY);
         }
-    }
-
-    private static boolean hovered(int mx, int my, AbstractWidget w) {
-        return mx >= w.getX() && mx < w.getX() + w.getWidth()
-                && my >= w.getY() && my < w.getY() + w.getHeight();
     }
 
     private void drawPanel(GuiGraphics g, int x, int y, int w, int h, String title) {
@@ -810,16 +838,6 @@ public class Configuration extends Screen {
         return false;
     }
 
-    private record HoverArea(int x, int y, int w, int h) {
-        boolean contains(int mx, int my) {
-            return mx >= x && mx < x + w && my >= y && my < y + h;
-        }
-    }
-
-    private static final String GITHUB_URL = "https://github.com/arsmotorin/dreamdisplays";
-    private @Nullable HoverArea modLabelHover;
-    private long modLabelOpenedAtMs = System.currentTimeMillis();
-
     private void renderModLabel(GuiGraphics g, int x, int y) {
         boolean update = UpdateCheck.shouldShowArrow();
         Component name = Component.literal("Dream Displays");
@@ -836,9 +854,15 @@ public class Configuration extends Screen {
         }
         Component label = update
                 ? name.copy().append(ver).append(Component.literal(" ▲")
-                        .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFFFFD55A)))
+                                                 .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFFFFD55A)))
                 : name.copy().append(ver);
         g.drawString(font, label, x, y + yOffset, 0xFFFFFFFF, true);
         modLabelHover = new HoverArea(x, y + yOffset - 1, font.width(label), font.lineHeight + 2);
+    }
+
+    private record HoverArea(int x, int y, int w, int h) {
+        boolean contains(int mx, int my) {
+            return mx >= x && mx < x + w && my >= y && my < y + h;
+        }
     }
 }

@@ -35,6 +35,7 @@ public class Screen {
     private static final long SYNC_SEEK_TOLERANCE_NS = 750_000_000L;
     private final UUID uuid;
     private final UUID ownerUuid;
+    private final AtomicLong mediaPlayerGeneration = new AtomicLong();
     public boolean owner;
     public boolean errored;
     public boolean isSync;
@@ -56,7 +57,6 @@ public class Screen {
     private boolean paused;
     private String quality;
     private long savedTimeNanos = 0;
-    private final AtomicLong mediaPlayerGeneration = new AtomicLong();
     private int renderDistance = 64;
     private @Nullable MediaPlayer mediaPlayer;
     private @Nullable String videoUrl;

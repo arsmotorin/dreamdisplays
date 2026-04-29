@@ -49,22 +49,19 @@ public final class SuggestionsPanel extends AbstractWidget {
         t.setDaemon(true);
         return t;
     });
-
+    private static final int ACTION_W = SEARCH_H;
+    private static final int ACTION_GAP = 4;
     private final EditBox searchBox;
     private final net.minecraft.client.gui.components.Button clearButton;
     private final net.minecraft.client.gui.components.Button searchActionButton;
     private final Consumer<YtVideoInfo> onPick;
     private final List<YtVideoInfo> cards = new ArrayList<>();
     private final AtomicInteger requestSeq = new AtomicInteger();
-
     private @Nullable String currentVideoId;
     private @Nullable String statusMessage = null;
     private long loadStartedAtMs = 0L;
     private int scrollOffset = 0;
     private int hoveredCard = -1;
-
-    private static final int ACTION_W = SEARCH_H;
-    private static final int ACTION_GAP = 4;
 
     public SuggestionsPanel(int x, int y, int width, int height, Consumer<YtVideoInfo> onPick) {
         super(x, y, width, height, Component.translatable("dreamdisplays.button.suggestions"));
@@ -76,18 +73,59 @@ public final class SuggestionsPanel extends AbstractWidget {
         this.searchBox.setHint(Component.translatable("dreamdisplays.suggestions.search"));
         this.searchBox.setMaxLength(200);
         this.clearButton = net.minecraft.client.gui.components.Button.builder(
-                // TODO: replace!!
-                Component.literal("x"), b -> {
-                    searchBox.setValue("");
-                    searchBox.setFocused(true);
-                })
+                        // TODO: replace!!
+                        Component.literal("x"), b -> {
+                            searchBox.setValue("");
+                            searchBox.setFocused(true);
+                        })
                 .bounds(0, 0, ACTION_W, SEARCH_H)
                 .build();
         this.searchActionButton = net.minecraft.client.gui.components.Button.builder(
-                // TODO: replace!!
-                Component.literal(">"), b -> runSearch())
+                        // TODO: replace!!
+                        Component.literal(">"), b -> runSearch())
                 .bounds(0, 0, ACTION_W, SEARCH_H)
                 .build();
+    }
+
+    private static java.util.List<String> wrap(Font f, String s, int maxW, int maxLines) {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        String[] words = s.split("\\s+");
+        StringBuilder cur = new StringBuilder();
+        for (String word : words) {
+            String trial = cur.isEmpty() ? word : cur + " " + word;
+            if (f.width(trial) <= maxW) {
+                cur.setLength(0);
+                cur.append(trial);
+            } else {
+                if (!cur.isEmpty()) {
+                    out.add(cur.toString());
+                    if (out.size() == maxLines) break;
+                    cur.setLength(0);
+                }
+                if (f.width(word) > maxW) {
+                    out.add(trim(f, word, maxW));
+                    if (out.size() == maxLines) break;
+                } else {
+                    cur.append(word);
+                }
+            }
+        }
+        if (!cur.isEmpty() && out.size() < maxLines) out.add(cur.toString());
+        if (out.isEmpty()) out.add("");
+        // Ellipsize the last line if there's still text we couldn't fit
+        return out;
+    }
+
+    private static String trim(Font f, String s, int maxW) {
+        if (f.width(s) <= maxW) return s;
+        String dots = "...";
+        int dotsW = f.width(dots);
+        StringBuilder sb = new StringBuilder();
+        for (char c : s.toCharArray()) {
+            if (f.width(sb.toString() + c) + dotsW > maxW) break;
+            sb.append(c);
+        }
+        return sb + dots;
     }
 
     private int searchY() {
@@ -389,35 +427,6 @@ public final class SuggestionsPanel extends AbstractWidget {
         }
     }
 
-    private static java.util.List<String> wrap(Font f, String s, int maxW, int maxLines) {
-        java.util.List<String> out = new java.util.ArrayList<>();
-        String[] words = s.split("\\s+");
-        StringBuilder cur = new StringBuilder();
-        for (String word : words) {
-            String trial = cur.isEmpty() ? word : cur + " " + word;
-            if (f.width(trial) <= maxW) {
-                cur.setLength(0);
-                cur.append(trial);
-            } else {
-                if (!cur.isEmpty()) {
-                    out.add(cur.toString());
-                    if (out.size() == maxLines) break;
-                    cur.setLength(0);
-                }
-                if (f.width(word) > maxW) {
-                    out.add(trim(f, word, maxW));
-                    if (out.size() == maxLines) break;
-                } else {
-                    cur.append(word);
-                }
-            }
-        }
-        if (!cur.isEmpty() && out.size() < maxLines) out.add(cur.toString());
-        if (out.isEmpty()) out.add("");
-        // Ellipsize the last line if there's still text we couldn't fit
-        return out;
-    }
-
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double dx, double dy) {
         if (!isMouseOver(mouseX, mouseY)) return false;
@@ -480,17 +489,5 @@ public final class SuggestionsPanel extends AbstractWidget {
 
     @Override
     protected void updateWidgetNarration(NarrationElementOutput out) {
-    }
-
-    private static String trim(Font f, String s, int maxW) {
-        if (f.width(s) <= maxW) return s;
-        String dots = "...";
-        int dotsW = f.width(dots);
-        StringBuilder sb = new StringBuilder();
-        for (char c : s.toCharArray()) {
-            if (f.width(sb.toString() + c) + dotsW > maxW) break;
-            sb.append(c);
-        }
-        return sb + dots;
     }
 }

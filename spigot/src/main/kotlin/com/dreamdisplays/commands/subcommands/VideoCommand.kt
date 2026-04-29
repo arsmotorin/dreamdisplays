@@ -8,7 +8,7 @@ import com.dreamdisplays.utils.Message
 import com.dreamdisplays.utils.YouTubeUtils
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import java.util.Locale
+import java.util.*
 
 class VideoCommand : SubCommand {
 

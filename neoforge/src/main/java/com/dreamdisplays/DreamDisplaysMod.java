@@ -136,8 +136,8 @@ public class DreamDisplaysMod implements com.dreamdisplays.Mod {
             String serverId = mc.hasSingleplayerServer()
                     ? "singleplayer"
                     : (mc.getCurrentServer() != null
-                    ? mc.getCurrentServer().ip
-                    : "unknown");
+                       ? mc.getCurrentServer().ip
+                       : "unknown");
             Manager.loadScreensForServer(serverId);
         }
     }

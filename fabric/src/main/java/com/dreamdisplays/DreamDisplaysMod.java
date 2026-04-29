@@ -135,8 +135,8 @@ public class DreamDisplaysMod implements ClientModInitializer, Mod {
                 String serverId = client.isLocalServer()
                         ? "singleplayer"
                         : (client.getCurrentServer() != null
-                        ? client.getCurrentServer().ip
-                        : "unknown");
+                           ? client.getCurrentServer().ip
+                           : "unknown");
                 Manager.loadScreensForServer(serverId);
             }
         });

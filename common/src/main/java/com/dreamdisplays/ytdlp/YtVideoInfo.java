@@ -50,14 +50,37 @@ public final class YtVideoInfo {
         this.thumbnailUrl = thumbnailUrl;
     }
 
-    public String getId() { return id; }
-    public String getTitle() { return title; }
-    public @Nullable String getUploader() { return uploader; }
-    public @Nullable Long getDurationSec() { return durationSec; }
-    public @Nullable Long getViewCount() { return viewCount; }
-    public @Nullable Long getLikeCount() { return likeCount; }
-    public @Nullable String getPublishedText() { return publishedText; }
-    public @Nullable Integer getPublishedDaysAgo() { return publishedDaysAgo; }
+    public String getId() {
+        return id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public @Nullable String getUploader() {
+        return uploader;
+    }
+
+    public @Nullable Long getDurationSec() {
+        return durationSec;
+    }
+
+    public @Nullable Long getViewCount() {
+        return viewCount;
+    }
+
+    public @Nullable Long getLikeCount() {
+        return likeCount;
+    }
+
+    public @Nullable String getPublishedText() {
+        return publishedText;
+    }
+
+    public @Nullable Integer getPublishedDaysAgo() {
+        return publishedDaysAgo;
+    }
 
     public boolean isRecent(int daysWindow) {
         return publishedDaysAgo != null && publishedDaysAgo >= 0 && publishedDaysAgo <= daysWindow;

@@ -19,12 +19,7 @@ import org.jspecify.annotations.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -40,6 +35,10 @@ import java.util.stream.Collectors;
 @NullMarked
 public class MediaPlayer {
 
+    public static final boolean DEBUG =
+            Boolean.getBoolean("dreamdisplays.debug")
+                    || "1".equals(System.getenv("DREAMDISPLAYS_DEBUG"))
+                    || "true".equalsIgnoreCase(System.getenv("DREAMDISPLAYS_DEBUG"));
     // === CONSTANTS =======================================================================
     private static final String MIME_VIDEO = "video/webm";
     private static final String MIME_AUDIO = "audio/webm";
@@ -71,19 +70,15 @@ public class MediaPlayer {
     private static final long RAW_QUEUE_TIME_NS = 2L * 1_000_000_000L; // 2 s
     private static final long LIVE_RAW_QUEUE_TIME_NS = 500L * 1_000_000L; // 500 ms
     private static final long STOP_WAIT_TIMEOUT_SECONDS = 3;
-    public static boolean captureSamples = true;
-    public static final boolean DEBUG =
-            Boolean.getBoolean("dreamdisplays.debug")
-                    || "1".equals(System.getenv("DREAMDISPLAYS_DEBUG"))
-                    || "true".equalsIgnoreCase(System.getenv("DREAMDISPLAYS_DEBUG"));
     private static final long STATS_INTERVAL_MS = 2000;
+    private static final long SEEK_STATE_WAIT_NS = 4L * 1_000_000_000L;
+    public static boolean captureSamples = true;
     private final java.util.concurrent.atomic.AtomicLong samplesIn =
             new java.util.concurrent.atomic.AtomicLong();
     private final java.util.concurrent.atomic.AtomicLong framesToGpu =
             new java.util.concurrent.atomic.AtomicLong();
     private final java.util.concurrent.atomic.AtomicLong framesDropped =
             new java.util.concurrent.atomic.AtomicLong();
-    private @Nullable ScheduledExecutorService statsExecutor;
     private final String lang;
     // === PUBLIC API FIELDS ===============================================================
     private final String youtubeUrl;
@@ -101,6 +96,7 @@ public class MediaPlayer {
     private final Object frameLock = new Object();
     private final Screen screen;
     private final String debugLabel;
+    private @Nullable ScheduledExecutorService statsExecutor;
     private volatile double currentVolume = Initializer.config.defaultDisplayVolume;
     // === GST OBJECTS =====================================================================
     private volatile @Nullable Pipeline videoPipeline;
@@ -131,6 +127,12 @@ public class MediaPlayer {
     private volatile double brightness = 1.0;
     private volatile boolean frameReady = false;
     private int syncCheckCounter = 0;
+    // === FRAME PROCESSING ================================================================
+    // Reusable direct buffer for the latest decoded frame. Reallocating ~8MB per
+    // frame at 30fps (1080p RGBA) thrashes JVM direct memory and stalls the
+    // GStreamer streaming thread. We grow it as needed and otherwise overwrite
+    // in place.
+    private @Nullable ByteBuffer frameBufferPool = null;
 
     // === CONSTRUCTOR =====================================================================
     public MediaPlayer(String youtubeUrl, String lang, Screen screen) {
@@ -140,45 +142,6 @@ public class MediaPlayer {
         this.debugLabel = screen.getUUID() + "/" + Integer.toHexString(System.identityHashCode(this));
         Gst.init("MediaPlayer");
         INIT_EXECUTOR.submit(this::initialize);
-    }
-
-    // === FRAME PROCESSING ================================================================
-    // Reusable direct buffer for the latest decoded frame. Reallocating ~8MB per
-    // frame at 30fps (1080p RGBA) thrashes JVM direct memory and stalls the
-    // GStreamer streaming thread. We grow it as needed and otherwise overwrite
-    // in place.
-    private @Nullable ByteBuffer frameBufferPool = null;
-
-    private ByteBuffer sampleToBuffer(Sample sample) {
-        Buffer buf = sample.getBuffer();
-        ByteBuffer bb = buf.map(false);
-        try {
-            int needed = bb.remaining();
-            ByteBuffer dst = frameBufferPool;
-            if (dst == null || dst.capacity() < needed) {
-                dst = ByteBuffer.allocateDirect(needed)
-                        .order(ByteOrder.nativeOrder());
-                frameBufferPool = dst;
-            }
-            dst.clear();
-            dst.put(bb);
-            dst.flip();
-            return dst;
-        } finally {
-            buf.unmap();
-        }
-    }
-
-    private ByteBuffer ensurePreparedBufferCapacity(int size) {
-        ByteBuffer buffer = preparedBuffer;
-        if (buffer == null || preparedBufferSize < size) {
-            buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
-            preparedBuffer = buffer;
-            preparedBufferSize = size;
-        }
-        buffer.clear();
-        buffer.limit(size);
-        return buffer;
     }
 
     private static void applyBrightnessToBuffer(ByteBuffer buffer, double brightness) {
@@ -235,6 +198,74 @@ public class MediaPlayer {
             e.dispose();
         } catch (Exception ignore) {
         }
+    }
+
+    private static boolean isHlsStream(YtStream stream) {
+        String protocol = String.valueOf(stream.getProtocol()).toLowerCase(Locale.ENGLISH);
+        String container = String.valueOf(stream.getContainer()).toLowerCase(Locale.ENGLISH);
+        String url = stream.getUrl().toLowerCase(Locale.ENGLISH);
+        return protocol.contains("m3u8") || container.contains("m3u8") || url.contains(".m3u8");
+    }
+
+    private static boolean isDashStream(YtStream stream) {
+        String protocol = String.valueOf(stream.getProtocol()).toLowerCase(Locale.ENGLISH);
+        String url = stream.getUrl().toLowerCase(Locale.ENGLISH);
+        // yt-dlp reports container=mp4_dash/webm_dash for fragmented media files served
+        // over plain HTTP with byte ranges – those are not dash manifests and decodebin
+        // handles them directly.
+        //
+        // So... Only use dashdemux for real .mpd manifest URLs
+        return protocol.contains("dash_manifest") || url.contains(".mpd");
+    }
+
+    private static void appendLevel(StringBuilder sb, Pipeline p, String name) {
+        Element e = p.getElementByName(name);
+        if (e == null) return;
+        try {
+            Object curBytes = e.get("current-level-bytes");
+            Object curTime = e.get("current-level-time");
+            long timeMs = curTime instanceof Number
+                    ? ((Number) curTime).longValue() / 1_000_000L
+                    : -1;
+            long kb = curBytes instanceof Number
+                    ? ((Number) curBytes).longValue() / 1024
+                    : -1;
+            sb.append(' ').append(name).append('=')
+                    .append(kb).append("KiB/").append(timeMs).append("ms");
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private ByteBuffer sampleToBuffer(Sample sample) {
+        Buffer buf = sample.getBuffer();
+        ByteBuffer bb = buf.map(false);
+        try {
+            int needed = bb.remaining();
+            ByteBuffer dst = frameBufferPool;
+            if (dst == null || dst.capacity() < needed) {
+                dst = ByteBuffer.allocateDirect(needed)
+                        .order(ByteOrder.nativeOrder());
+                frameBufferPool = dst;
+            }
+            dst.clear();
+            dst.put(bb);
+            dst.flip();
+            return dst;
+        } finally {
+            buf.unmap();
+        }
+    }
+
+    private ByteBuffer ensurePreparedBufferCapacity(int size) {
+        ByteBuffer buffer = preparedBuffer;
+        if (buffer == null || preparedBufferSize < size) {
+            buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
+            preparedBuffer = buffer;
+            preparedBufferSize = size;
+        }
+        buffer.clear();
+        buffer.limit(size);
+        return buffer;
     }
 
     private void bindVideoToAudioClock(Pipeline audio, @Nullable Pipeline video) {
@@ -655,24 +686,6 @@ public class MediaPlayer {
         return desc.toString();
     }
 
-    private static boolean isHlsStream(YtStream stream) {
-        String protocol = String.valueOf(stream.getProtocol()).toLowerCase(Locale.ENGLISH);
-        String container = String.valueOf(stream.getContainer()).toLowerCase(Locale.ENGLISH);
-        String url = stream.getUrl().toLowerCase(Locale.ENGLISH);
-        return protocol.contains("m3u8") || container.contains("m3u8") || url.contains(".m3u8");
-    }
-
-    private static boolean isDashStream(YtStream stream) {
-        String protocol = String.valueOf(stream.getProtocol()).toLowerCase(Locale.ENGLISH);
-        String url = stream.getUrl().toLowerCase(Locale.ENGLISH);
-        // yt-dlp reports container=mp4_dash/webm_dash for fragmented media files served
-        // over plain HTTP with byte ranges – those are not dash manifests and decodebin
-        // handles them directly.
-        //
-        // So... Only use dashdemux for real .mpd manifest URLs
-        return protocol.contains("dash_manifest") || url.contains(".mpd");
-    }
-
     private void configureVideoSink(AppSink sink) {
         sink.set("emit-signals", true);
         // Let GStreamer pace frames against the shared playback clock.
@@ -867,7 +880,8 @@ public class MediaPlayer {
                     inN / seconds, outN / seconds, dropN / seconds,
                     aState, vState, drift, queueLevels(v, a)
             ));
-        } catch (Throwable t) {}
+        } catch (Throwable t) {
+        }
     }
 
     private String queueLevels(Pipeline v, Pipeline a) {
@@ -882,26 +896,6 @@ public class MediaPlayer {
         appendLevel(sb, a, "rawQueueA");
         return sb.toString();
     }
-
-    private static void appendLevel(StringBuilder sb, Pipeline p, String name) {
-        Element e = p.getElementByName(name);
-        if (e == null) return;
-        try {
-            Object curBytes = e.get("current-level-bytes");
-            Object curTime = e.get("current-level-time");
-            long timeMs = curTime instanceof Number
-                    ? ((Number) curTime).longValue() / 1_000_000L
-                    : -1;
-            long kb = curBytes instanceof Number
-                    ? ((Number) curBytes).longValue() / 1024
-                    : -1;
-            sb.append(' ').append(name).append('=')
-                    .append(kb).append("KiB/").append(timeMs).append("ms");
-        } catch (Throwable ignored) {
-        }
-    }
-
-    private static final long SEEK_STATE_WAIT_NS = 4L * 1_000_000_000L;
 
     private void doSeek(long nanos, boolean b) {
         seekUnified(nanos, EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE));

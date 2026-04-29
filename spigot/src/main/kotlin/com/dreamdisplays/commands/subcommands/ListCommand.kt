@@ -3,8 +3,8 @@ package com.dreamdisplays.commands.subcommands
 import com.dreamdisplays.Main
 import com.dreamdisplays.datatypes.DisplayData
 import com.dreamdisplays.managers.DisplayManager.getDisplays
-import com.dreamdisplays.utils.Message.sendComponent
 import com.dreamdisplays.utils.Message.sendColoredMessage
+import com.dreamdisplays.utils.Message.sendComponent
 import com.dreamdisplays.utils.Message.sendMessage
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.event.ClickEvent
@@ -13,7 +13,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import java.util.UUID
+import java.util.*
 import kotlin.math.max
 
 class ListCommand : SubCommand {
@@ -238,7 +238,7 @@ class ListCommand : SubCommand {
     ): List<DisplayData> {
         return displays.filter { display ->
             getOwnerName(display.ownerId, ownerNameCache)?.equals(ownerName, ignoreCase = true) == true ||
-                display.ownerId.toString().equals(ownerName, ignoreCase = true)
+                    display.ownerId.toString().equals(ownerName, ignoreCase = true)
         }
     }
 
