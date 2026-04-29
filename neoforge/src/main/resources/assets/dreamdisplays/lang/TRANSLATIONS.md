@@ -14,7 +14,7 @@ request!
 | Russian    | ru   | arsmotorin      |
 | Ukrainian  | uk   | arsmotorin      |
 | German     | de   | arsmotorin, AI  |
-| Czech      | cs   | Suppleer        |
+| Czech      | cs   | Suppleer, AI    |
 | Belarusian | be   | fosterrrrrr, AI |
 | Hebrew     | he   | Petro1t, AI     |
 | Spanish    | es   | AI              |
