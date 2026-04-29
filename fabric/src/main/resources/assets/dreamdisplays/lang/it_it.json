@@ -42,5 +42,11 @@
   "dreamdisplays.button.delete.tooltip.2": "Rimuove definitivamente questo display",
   "dreamdisplays.button.report": "Segnala",
   "dreamdisplays.button.report.tooltip.1": "Segnala display",
-  "dreamdisplays.button.report.tooltip.2": "Segnala contenuti inappropriati"
+  "dreamdisplays.button.report.tooltip.2": "Segnala contenuti inappropriati",
+  "dreamdisplays.ui.waiting": "In attesa del video...",
+  "dreamdisplays.button.suggestions": "Mostra suggerimenti",
+  "dreamdisplays.suggestions.search": "Cerca su YouTube...",
+  "dreamdisplays.suggestions.loading": "Caricamento...",
+  "dreamdisplays.suggestions.empty": "Nessun risultato trovato.",
+  "dreamdisplays.suggestions.error": "Caricamento fallito."
 }

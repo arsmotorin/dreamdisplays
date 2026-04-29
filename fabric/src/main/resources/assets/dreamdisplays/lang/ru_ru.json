@@ -42,5 +42,11 @@
   "dreamdisplays.button.delete.tooltip.2": "Навсегда удаляет этот дисплей",
   "dreamdisplays.button.report": "Жалоба",
   "dreamdisplays.button.report.tooltip.1": "Пожаловаться на дисплей",
-  "dreamdisplays.button.report.tooltip.2": "Пожаловаться на неподобающий контент"
+  "dreamdisplays.button.report.tooltip.2": "Пожаловаться на неподобающий контент",
+  "dreamdisplays.ui.waiting": "Ожидание видео...",
+  "dreamdisplays.button.suggestions": "Показывать рекомендации",
+  "dreamdisplays.suggestions.search": "Поиск YouTube...",
+  "dreamdisplays.suggestions.loading": "Загрузка...",
+  "dreamdisplays.suggestions.empty": "Ничего не найдено.",
+  "dreamdisplays.suggestions.error": "Не удалось загрузить."
 }

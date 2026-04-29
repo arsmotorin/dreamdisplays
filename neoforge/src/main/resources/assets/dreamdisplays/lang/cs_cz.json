@@ -42,5 +42,11 @@
   "dreamdisplays.button.delete.tooltip.2": "Trvale odstraní tento displej",
   "dreamdisplays.button.report": "Nahlásit",
   "dreamdisplays.button.report.tooltip.1": "Nahlásit displej",
-  "dreamdisplays.button.report.tooltip.2": "Nahlásit nevhodný obsah"
+  "dreamdisplays.button.report.tooltip.2": "Nahlásit nevhodný obsah",
+  "dreamdisplays.ui.waiting": "Čekání na video...",
+  "dreamdisplays.button.suggestions": "Zobrazit návrhy",
+  "dreamdisplays.suggestions.search": "Hledat na YouTube...",
+  "dreamdisplays.suggestions.loading": "Načítání...",
+  "dreamdisplays.suggestions.empty": "Nenalezen žádný výsledek.",
+  "dreamdisplays.suggestions.error": "Načítání se nezdařilo."
 }

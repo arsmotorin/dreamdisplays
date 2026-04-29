@@ -42,5 +42,11 @@
   "dreamdisplays.button.delete.tooltip.2": "מוחק לצמיתות את התצוגה הזו",
   "dreamdisplays.button.report": "דווח",
   "dreamdisplays.button.report.tooltip.1": "דווח על תצוגה",
-  "dreamdisplays.button.report.tooltip.2": "דווח על תוכן לא הולם"
+  "dreamdisplays.button.report.tooltip.2": "דווח על תוכן לא הולם",
+  "dreamdisplays.ui.waiting": "מחכה לווידאו...",
+  "dreamdisplays.button.suggestions": "הצג הצעות",
+  "dreamdisplays.suggestions.search": "חפש ב-YouTube...",
+  "dreamdisplays.suggestions.loading": "טוען...",
+  "dreamdisplays.suggestions.empty": "לא נמצאו תוצאות.",
+  "dreamdisplays.suggestions.error": "טעינה נכשלה."
 }

@@ -42,5 +42,11 @@
   "dreamdisplays.button.delete.tooltip.2": "Permanently removes this display",
   "dreamdisplays.button.report": "Report",
   "dreamdisplays.button.report.tooltip.1": "Report display",
-  "dreamdisplays.button.report.tooltip.2": "Report inappropriate content"
+  "dreamdisplays.button.report.tooltip.2": "Report inappropriate content",
+  "dreamdisplays.ui.waiting": "Waiting for video...",
+  "dreamdisplays.button.suggestions": "Show suggestions",
+  "dreamdisplays.suggestions.search": "Search YouTube...",
+  "dreamdisplays.suggestions.loading": "Loading...",
+  "dreamdisplays.suggestions.empty": "No results found.",
+  "dreamdisplays.suggestions.error": "Failed to load."
 }
