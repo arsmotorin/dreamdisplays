@@ -1,0 +1,496 @@
+package com.dreamdisplays.screen.widgets;
+
+import com.dreamdisplays.ytdlp.Thumbnails;
+import com.dreamdisplays.ytdlp.YouTubeWeb;
+import com.dreamdisplays.ytdlp.YtDlp;
+import com.dreamdisplays.ytdlp.YtVideoInfo;
+import me.inotsleep.utils.logging.LoggingManager;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+
+@NullMarked
+public final class SuggestionsPanel extends AbstractWidget {
+
+    private static final int RESULT_LIMIT = 12;
+    private static final int HEADER_H = 14;
+    private static final int CARD_GAP = 6;
+    private static final int CARD_W = 152;
+    private static final int CARD_TEXT_H = 32;
+    private static final int THUMB_MIN_H = 60;
+    private static final int THUMB_MAX_H = 110;
+    private static final int PANEL_BG = 0x9F0F0F0F;
+    private static final int PANEL_BORDER = 0xFF7A7A7A;
+    private static final int CARD_BG = 0x602A2A2A;
+    private static final int CARD_HOVER_BG = 0x90707070;
+    private static final int SEARCH_H = 22;
+
+    private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(2, r -> {
+        Thread t = new Thread(r, "DD-Suggestions");
+        t.setDaemon(true);
+        return t;
+    });
+
+    private final EditBox searchBox;
+    private final net.minecraft.client.gui.components.Button clearButton;
+    private final net.minecraft.client.gui.components.Button searchActionButton;
+    private final Consumer<YtVideoInfo> onPick;
+    private final List<YtVideoInfo> cards = new ArrayList<>();
+    private final AtomicInteger requestSeq = new AtomicInteger();
+
+    private @Nullable String currentVideoId;
+    private @Nullable String statusMessage = null;
+    private long loadStartedAtMs = 0L;
+    private int scrollOffset = 0;
+    private int hoveredCard = -1;
+
+    private static final int ACTION_W = SEARCH_H;
+    private static final int ACTION_GAP = 4;
+
+    public SuggestionsPanel(int x, int y, int width, int height, Consumer<YtVideoInfo> onPick) {
+        super(x, y, width, height, Component.translatable("dreamdisplays.button.suggestions"));
+        this.onPick = onPick;
+        Font f = Minecraft.getInstance().font;
+        this.searchBox = new EditBox(f, x + 10, y + searchY(),
+                searchBoxWidth(width), SEARCH_H,
+                Component.translatable("dreamdisplays.suggestions.search"));
+        this.searchBox.setHint(Component.translatable("dreamdisplays.suggestions.search"));
+        this.searchBox.setMaxLength(200);
+        this.clearButton = net.minecraft.client.gui.components.Button.builder(
+                // TODO: replace!!
+                Component.literal("x"), b -> {
+                    searchBox.setValue("");
+                    searchBox.setFocused(true);
+                })
+                .bounds(0, 0, ACTION_W, SEARCH_H)
+                .build();
+        this.searchActionButton = net.minecraft.client.gui.components.Button.builder(
+                // TODO: replace!!
+                Component.literal(">"), b -> runSearch())
+                .bounds(0, 0, ACTION_W, SEARCH_H)
+                .build();
+    }
+
+    private int searchY() {
+        return 10 + HEADER_H + 6;
+    }
+
+    private int searchBoxWidth(int panelW) {
+        return panelW - 20 - (ACTION_W + ACTION_GAP) * 2;
+    }
+
+    private int clearButtonX() {
+        return getX() + getWidth() - 10 - ACTION_W * 2 - ACTION_GAP;
+    }
+
+    private int searchButtonX() {
+        return getX() + getWidth() - 10 - ACTION_W;
+    }
+
+    private int actionRowY() {
+        return searchBox.getY();
+    }
+
+    public void setRelatedTo(@Nullable String videoId) {
+        if (videoId == null || videoId.isEmpty()) {
+            currentVideoId = null;
+            cards.clear();
+            statusMessage = null;
+            return;
+        }
+        if (videoId.equals(currentVideoId) && !cards.isEmpty()) return;
+        currentVideoId = videoId;
+        loadRelated(videoId);
+    }
+
+    public void runSearch() {
+        String q = searchBox.getValue().trim();
+        if (q.isEmpty()) {
+            if (currentVideoId != null) loadRelated(currentVideoId);
+            return;
+        }
+        // TODO: do it better
+        String maybeId = YtDlp.extractVideoId(q);
+        if (maybeId != null && maybeId.length() == 11) {
+            startLoad();
+            int seq2 = requestSeq.incrementAndGet();
+            String idForLambda = maybeId;
+            EXECUTOR.submit(() -> {
+                try {
+                    YtVideoInfo meta = YouTubeWeb.metadata(idForLambda);
+                    if (meta != null) {
+                        publish(seq2, java.util.List.of(meta), null);
+                    } else {
+                        publish(seq2, java.util.List.of(new YtVideoInfo(
+                                idForLambda, "https://youtu.be/" + idForLambda,
+                                null, null, null, null)), null);
+                    }
+                } catch (Exception e) {
+                    LoggingManager.warn("[Suggestions] URL meta fetch failed: " + e.getMessage());
+                    publish(seq2, java.util.List.of(new YtVideoInfo(
+                            idForLambda, "https://youtu.be/" + idForLambda,
+                            null, null, null, null)), null);
+                }
+            });
+            return;
+        }
+        startLoad();
+        int seq = requestSeq.incrementAndGet();
+        long tEnq = System.nanoTime();
+        LoggingManager.info("[Suggestions] search submit '" + q + "' seq=" + seq);
+        EXECUTOR.submit(() -> {
+            long tStart = System.nanoTime();
+            LoggingManager.info(String.format(
+                    "[Suggestions] search start '%s' (queue wait %d ms)",
+                    q, (tStart - tEnq) / 1_000_000L));
+            try {
+                List<YtVideoInfo> r = YtDlp.search(q, RESULT_LIMIT);
+                long tDone = System.nanoTime();
+                LoggingManager.info(String.format(
+                        "[Suggestions] search done '%s' -> %d in %d ms",
+                        q, r.size(), (tDone - tStart) / 1_000_000L));
+                publish(seq, r, null);
+            } catch (Exception e) {
+                LoggingManager.warn("[Suggestions] search failed '" + q + "': " + e.getMessage());
+                publish(seq, null, "dreamdisplays.suggestions.error");
+            }
+        });
+    }
+
+    private void loadRelated(String videoId) {
+        startLoad();
+        int seq = requestSeq.incrementAndGet();
+        long tEnq = System.nanoTime();
+        LoggingManager.info("[Suggestions] related submit " + videoId + " seq=" + seq);
+        EXECUTOR.submit(() -> {
+            long tStart = System.nanoTime();
+            LoggingManager.info(String.format(
+                    "[Suggestions] related start %s (queue wait %d ms)",
+                    videoId, (tStart - tEnq) / 1_000_000L));
+            try {
+                List<YtVideoInfo> r = YtDlp.related(videoId, RESULT_LIMIT);
+                long tDone = System.nanoTime();
+                LoggingManager.info(String.format(
+                        "[Suggestions] related done %s -> %d in %d ms",
+                        videoId, r.size(), (tDone - tStart) / 1_000_000L));
+                publish(seq, r, null);
+            } catch (Exception e) {
+                LoggingManager.warn("[Suggestions] related failed " + videoId + ": " + e.getMessage());
+                publish(seq, null, "dreamdisplays.suggestions.error");
+            }
+        });
+    }
+
+    private void startLoad() {
+        statusMessage = "dreamdisplays.suggestions.loading";
+        loadStartedAtMs = System.currentTimeMillis();
+        cards.clear();
+        scrollOffset = 0;
+    }
+
+    private void publish(int seq, @Nullable List<YtVideoInfo> results, @Nullable String error) {
+        Minecraft.getInstance().execute(() -> {
+            if (seq != requestSeq.get()) return;
+            cards.clear();
+            scrollOffset = 0;
+            if (error != null) {
+                statusMessage = error;
+                return;
+            }
+            if (results == null || results.isEmpty()) {
+                statusMessage = "dreamdisplays.suggestions.empty";
+                return;
+            }
+            statusMessage = null;
+            cards.addAll(results.subList(0, Math.min(results.size(), RESULT_LIMIT)));
+            int n = Math.min(cards.size(), RESULT_LIMIT);
+            for (int i = 0; i < n; i++) {
+                YtVideoInfo info = cards.get(i);
+                Thumbnails.request(info.getId(), info.getThumbnailUrl());
+            }
+        });
+    }
+
+    @Override
+    public void setX(int x) {
+        super.setX(x);
+        searchBox.setX(x + 10);
+    }
+
+    @Override
+    public void setY(int y) {
+        super.setY(y);
+        searchBox.setY(y + searchY());
+    }
+
+    @Override
+    public void setWidth(int w) {
+        super.setWidth(w);
+        searchBox.setWidth(searchBoxWidth(w));
+    }
+
+    @Override
+    protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float dt) {
+        // TODO: fix
+        g.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), PANEL_BG);
+        g.fill(getX(), getY(), getX() + getWidth(), getY() + 1, PANEL_BORDER);
+        g.fill(getX(), getY() + getHeight() - 1, getX() + getWidth(), getY() + getHeight(), PANEL_BORDER);
+        g.fill(getX(), getY(), getX() + 1, getY() + getHeight(), PANEL_BORDER);
+        g.fill(getX() + getWidth() - 1, getY(), getX() + getWidth(), getY() + getHeight(), PANEL_BORDER);
+
+        Font f = Minecraft.getInstance().font;
+        g.drawString(f, getMessage(), getX() + 10, getY() + 10, 0xFFFFFFFF, false);
+
+        searchBox.render(g, mouseX, mouseY, dt);
+
+        clearButton.setX(clearButtonX());
+        clearButton.setY(actionRowY());
+        clearButton.render(g, mouseX, mouseY, dt);
+
+        searchActionButton.setX(searchButtonX());
+        searchActionButton.setY(actionRowY());
+        searchActionButton.render(g, mouseX, mouseY, dt);
+
+        int stripTop = searchBox.getY() + SEARCH_H + 8;
+        int stripBottom = getY() + getHeight() - 10;
+        int stripH = stripBottom - stripTop;
+        if (stripH < 40) return;
+
+        if (statusMessage != null) {
+            String base = Component.translatable(statusMessage).getString();
+            String msg;
+            if ("dreamdisplays.suggestions.loading".equals(statusMessage)) {
+                long elapsed = Math.max(0, (System.currentTimeMillis() - loadStartedAtMs) / 1000L);
+                msg = base.replaceAll("\\.+$", "") + " • " + elapsed + "s";
+            } else {
+                msg = base;
+            }
+            g.drawString(f, msg, getX() + 10, stripTop + 6, 0xFFAAAAAA, false);
+            return;
+        }
+
+        int stripLeft = getX() + 10;
+        int stripRight = getX() + getWidth() - 10;
+        int viewportW = stripRight - stripLeft;
+
+        // TODO: fix
+        int reserveForBar = 6; // TODO: maybe 8-12?
+        int availForCard = Math.max(CARD_TEXT_H + THUMB_MIN_H,
+                stripBottom - stripTop - reserveForBar);
+        int dynThumbH = Math.max(THUMB_MIN_H,
+                Math.min(THUMB_MAX_H, availForCard - CARD_TEXT_H));
+        int dynCardH = dynThumbH + CARD_TEXT_H;
+
+        int contentW = cards.size() * (CARD_W + CARD_GAP) - CARD_GAP;
+        int maxOff = Math.max(0, contentW - viewportW);
+        scrollOffset = Math.max(0, Math.min(maxOff, scrollOffset));
+
+        g.enableScissor(stripLeft, stripTop, stripRight, stripBottom);
+        hoveredCard = -1;
+        int cx = stripLeft - scrollOffset;
+        for (int i = 0; i < cards.size(); i++) {
+            YtVideoInfo info = cards.get(i);
+            int cardLeft = cx;
+            int cardRight = cx + CARD_W;
+            if (cardRight >= stripLeft && cardLeft <= stripRight) {
+                boolean hover = mouseX >= cardLeft && mouseX < cardRight
+                        && mouseY >= stripTop && mouseY < stripTop + dynCardH
+                        && mouseX >= stripLeft && mouseX < stripRight;
+                if (hover) hoveredCard = i;
+                renderCard(g, f, info, cardLeft, stripTop, dynThumbH, dynCardH, hover);
+                if (Thumbnails.get(info.getId()) == null) {
+                    Thumbnails.request(info.getId(), info.getThumbnailUrl());
+                }
+            }
+            cx += CARD_W + CARD_GAP;
+        }
+        g.disableScissor();
+
+        if (contentW > viewportW) {
+            int barY = stripBottom + 1;
+            g.fill(stripLeft, barY, stripRight, barY + 2, 0xFF202020);
+            int barW = Math.max(20, (int) ((float) viewportW / contentW * viewportW));
+            int barX = stripLeft + (int) ((float) scrollOffset / maxOff * (viewportW - barW));
+            g.fill(barX, barY, barX + barW, barY + 2, 0xFF808080);
+        }
+    }
+
+    private void renderCard(GuiGraphics g, Font f, YtVideoInfo info, int x, int y,
+                            int thumbH, int cardH, boolean hover) {
+        int w = CARD_W;
+        g.fill(x, y, x + w, y + cardH, hover ? CARD_HOVER_BG : CARD_BG);
+
+        int thumbX = x + 2;
+        int thumbY = y + 2;
+        int thumbW = w - 4;
+        Identifier thumb = Thumbnails.get(info.getId());
+        if (thumb != null) {
+            g.blit(RenderPipelines.GUI_TEXTURED, thumb,
+                    thumbX, thumbY, 0F, 0F, thumbW, thumbH, thumbW, thumbH);
+        } else {
+            g.fill(thumbX, thumbY, thumbX + thumbW, thumbY + thumbH, 0xFF000000);
+        }
+
+        if (info.isRecent(7)) {
+            String tag = "New";
+            int tw = f.width(tag) + 4;
+            int th = f.lineHeight + 2;
+            g.fill(thumbX + 2, thumbY + 2, thumbX + 2 + tw, thumbY + 2 + th, 0xFFE53935);
+            g.drawString(f, tag, thumbX + 4, thumbY + 3, 0xFFFFFFFF, false);
+        }
+
+        String dur = info.formatDuration();
+        if (!dur.isEmpty()) {
+            int dw = f.width(dur) + 4;
+            int dh = f.lineHeight + 2;
+            int dx = thumbX + thumbW - dw - 2;
+            int dy = thumbY + thumbH - dh - 2;
+            g.fill(dx, dy, dx + dw, dy + dh, 0xC0000000);
+            g.drawString(f, dur, dx + 2, dy + 2, 0xFFFFFFFF, false);
+        }
+
+        int textX = x + 4;
+        int textW = w - 8;
+        int textY = thumbY + thumbH + 3;
+        java.util.List<String> titleLines = wrap(f, info.getTitle(), textW, 2);
+        for (String line : titleLines) {
+            g.drawString(f, line, textX, textY, 0xFFFFFFFF, false);
+            textY += f.lineHeight + 1;
+        }
+
+        String meta = info.getUploader() == null ? "" : info.getUploader();
+        String views = info.formatViews();
+        if (!views.isEmpty()) {
+            meta = meta.isEmpty()
+                    ? views
+                    : trim(f, meta, Math.max(20, textW - f.width(" • " + views))) + " • " + views;
+        }
+        if (!meta.isEmpty()) {
+            g.drawString(f, trim(f, meta, textW), textX, textY, 0xFFB8B8B8, false);
+        }
+    }
+
+    private static java.util.List<String> wrap(Font f, String s, int maxW, int maxLines) {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        String[] words = s.split("\\s+");
+        StringBuilder cur = new StringBuilder();
+        for (String word : words) {
+            String trial = cur.isEmpty() ? word : cur + " " + word;
+            if (f.width(trial) <= maxW) {
+                cur.setLength(0);
+                cur.append(trial);
+            } else {
+                if (!cur.isEmpty()) {
+                    out.add(cur.toString());
+                    if (out.size() == maxLines) break;
+                    cur.setLength(0);
+                }
+                if (f.width(word) > maxW) {
+                    out.add(trim(f, word, maxW));
+                    if (out.size() == maxLines) break;
+                } else {
+                    cur.append(word);
+                }
+            }
+        }
+        if (!cur.isEmpty() && out.size() < maxLines) out.add(cur.toString());
+        if (out.isEmpty()) out.add("");
+        // Ellipsize the last line if there's still text we couldn't fit
+        return out;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double dx, double dy) {
+        if (!isMouseOver(mouseX, mouseY)) return false;
+        int stripTop = searchBox.getY() + SEARCH_H + 8;
+        int stripBottom = getY() + getHeight() - 10;
+        if (mouseY < stripTop || mouseY > stripBottom) return false;
+        int viewportW = getWidth() - 20;
+        int contentW = cards.size() * (CARD_W + CARD_GAP) - CARD_GAP;
+        int maxOff = Math.max(0, contentW - viewportW);
+        // Accept either dx or dy
+        double delta = (dx != 0 ? dx : dy) * 32;
+        scrollOffset = Math.max(0, Math.min(maxOff, scrollOffset - (int) delta));
+        return true;
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean dbl) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        if (clearButton.isMouseOver(mouseX, mouseY)) {
+            return clearButton.mouseClicked(event, dbl);
+        }
+        if (searchActionButton.isMouseOver(mouseX, mouseY)) {
+            return searchActionButton.mouseClicked(event, dbl);
+        }
+        if (searchBox.isMouseOver(mouseX, mouseY)) {
+            boolean handled = searchBox.mouseClicked(event, dbl);
+            searchBox.setFocused(true);
+            return handled;
+        }
+        searchBox.setFocused(false);
+        if (hoveredCard >= 0 && hoveredCard < cards.size()) {
+            net.minecraft.client.resources.sounds.SimpleSoundInstance s =
+                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                            net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK.value(), 1.0F);
+            Minecraft.getInstance().getSoundManager().play(s);
+            onPick.accept(cards.get(hoveredCard));
+            return true;
+        }
+        return super.mouseClicked(event, dbl);
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        if (searchBox.isFocused()) {
+            if (event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER) {
+                runSearch();
+                return true;
+            }
+            return searchBox.keyPressed(event);
+        }
+        return super.keyPressed(event);
+    }
+
+    @Override
+    public boolean charTyped(CharacterEvent event) {
+        if (searchBox.isFocused()) return searchBox.charTyped(event);
+        return super.charTyped(event);
+    }
+
+    @Override
+    protected void updateWidgetNarration(NarrationElementOutput out) {
+    }
+
+    private static String trim(Font f, String s, int maxW) {
+        if (f.width(s) <= maxW) return s;
+        String dots = "...";
+        int dotsW = f.width(dots);
+        StringBuilder sb = new StringBuilder();
+        for (char c : s.toCharArray()) {
+            if (f.width(sb.toString() + c) + dotsW > maxW) break;
+            sb.append(c);
+        }
+        return sb + dots;
+    }
+}

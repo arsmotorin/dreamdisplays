@@ -4,6 +4,7 @@ import com.dreamdisplays.Initializer;
 import com.dreamdisplays.net.Packets.Info;
 import com.dreamdisplays.net.Packets.RequestSync;
 import com.dreamdisplays.net.Packets.Sync;
+import com.dreamdisplays.ytdlp.YtDlp;
 import me.inotsleep.utils.logging.LoggingManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -30,7 +31,7 @@ public class Screen {
 
     private static final int DEFAULT_QUALITY = 720;
     private static final int INIT_WAIT_TIMEOUT_MS = 30_000;
-    private static final int INIT_WAIT_INTERVAL_MS = 100;
+    private static final int INIT_WAIT_INTERVAL_MS = 25;
     private static final long SYNC_SEEK_TOLERANCE_NS = 750_000_000L;
     private final UUID uuid;
     private final UUID ownerUuid;
@@ -57,10 +58,9 @@ public class Screen {
     private long savedTimeNanos = 0;
     private final AtomicLong mediaPlayerGeneration = new AtomicLong();
     private int renderDistance = 64;
-    // Use a combined MediaPlayer instead of the separate VideoDecoder and AudioPlayer.
     private @Nullable MediaPlayer mediaPlayer;
     private @Nullable String videoUrl;
-    // Cache (good for performance)
+    private boolean clientUrlOverride = false;
     private transient @Nullable BlockPos blockPos;
     private @Nullable String lang;
 
@@ -118,7 +118,24 @@ public class Screen {
 
     // Loads a video from a given URL and language
     public void loadVideo(String videoUrl, String lang) {
+        loadVideoInternal(videoUrl, lang, true);
+    }
+
+    public void playVideoNow(String videoUrl, String lang) {
+        this.paused = false;
+        this.savedTimeNanos = 0L;
+        loadVideoInternal(videoUrl, lang, false);
+    }
+
+    public void playSuggestedVideo(String videoUrl, String lang) {
+        this.clientUrlOverride = true;
+        playVideoNow(videoUrl, lang);
+    }
+
+    private void loadVideoInternal(String videoUrl, String lang, boolean preservePausedState) {
         if (Objects.equals(videoUrl, "")) return;
+
+        YtDlp.prefetchFormats(videoUrl);
 
         long generation = mediaPlayerGeneration.incrementAndGet();
         MediaPlayer oldPlayer = mediaPlayer;
@@ -126,13 +143,14 @@ public class Screen {
         videoStarted = false;
         errored = false;
         if (oldPlayer != null) {
+            // Synchronous stop
             oldPlayer.stop();
         }
 
         // Load the video URL and language into the screen
         this.videoUrl = videoUrl;
         this.lang = lang;
-        boolean shouldBePaused = this.paused;
+        boolean shouldBePaused = preservePausedState && this.paused;
         mediaPlayer = new MediaPlayer(videoUrl, lang, this);
         int qualityInt = parseQualityOrDefault();
         textureWidth = (int) ((width / (double) height) * qualityInt);
@@ -173,6 +191,10 @@ public class Screen {
                 !Objects.equals(videoUrl, packet.url()) ||
                         !Objects.equals(lang, packet.lang())
         ) {
+            // If the user picked a different video locally via the suggestions panel,
+            // ignore the server's URL override – that packet is just the canonical
+            // URL the server still believes the display should show.
+            if (clientUrlOverride) return;
             this.paused = false;
             loadVideo(packet.url(), packet.lang());
             if (isSync) {
@@ -420,6 +442,12 @@ public class Screen {
         }
     }
 
+    public void seekToMillis(long ms) {
+        if (mediaPlayer != null && mediaPlayer.canSeek()) {
+            mediaPlayer.seekTo(ms * 1_000_000L, true);
+        }
+    }
+
     public void unregister() {
         mediaPlayerGeneration.incrementAndGet();
         videoStarted = false;
@@ -551,6 +579,10 @@ public class Screen {
 
     public boolean isLive() {
         return mediaPlayer != null && mediaPlayer.isLive();
+    }
+
+    public long getMediaPlayerDurationNanos() {
+        return mediaPlayer != null ? mediaPlayer.getDuration() : 0L;
     }
 
     public boolean canSeek() {

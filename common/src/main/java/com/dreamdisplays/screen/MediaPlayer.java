@@ -59,8 +59,11 @@ public class MediaPlayer {
                         return thread;
                     }
             );
-    private static final int SYNC_CHECK_INTERVAL = 100;
-    private static final long MAX_SYNC_DRIFT_NS = 1_500_000_000L;
+    // private static final int SYNC_CHECK_INTERVAL = 100;
+    // private static final long MAX_SYNC_DRIFT_NS = 1_500_000_000L;
+    private static final int SYNC_CHECK_INTERVAL = 20;
+    private static final long MAX_SYNC_DRIFT_NS = 400_000_000L;
+    private static final long POST_SEEK_RESYNC_DELAY_MS = 250L;
     private static final long HTTP_QUEUE_BYTES = 64L * 1024 * 1024; // 64 MiB video
     private static final long HTTP_QUEUE_BYTES_AUDIO = 8L * 1024 * 1024; // 8 MiB audio
     private static final long HTTP_QUEUE_TIME_NS = 30L * 1_000_000_000L; // 30 s
@@ -661,9 +664,13 @@ public class MediaPlayer {
 
     private static boolean isDashStream(YtStream stream) {
         String protocol = String.valueOf(stream.getProtocol()).toLowerCase(Locale.ENGLISH);
-        String container = String.valueOf(stream.getContainer()).toLowerCase(Locale.ENGLISH);
         String url = stream.getUrl().toLowerCase(Locale.ENGLISH);
-        return protocol.contains("dash") || container.contains("dash") || url.contains(".mpd");
+        // yt-dlp reports container=mp4_dash/webm_dash for fragmented media files served
+        // over plain HTTP with byte ranges – those are not dash manifests and decodebin
+        // handles them directly.
+        //
+        // So... Only use dashdemux for real .mpd manifest URLs
+        return protocol.contains("dash_manifest") || url.contains(".mpd");
     }
 
     private void configureVideoSink(AppSink sink) {
@@ -894,62 +901,78 @@ public class MediaPlayer {
         }
     }
 
-    private void doSeek(long nanos, boolean b) {
-        if (!initialized || !seekable) return;
-        Pipeline audio = audioPipeline;
-        if (audio == null) return;
-        Pipeline video = videoPipeline;
-        EnumSet<SeekFlags> flags = EnumSet.of(
-                SeekFlags.FLUSH,
-                SeekFlags.ACCURATE
-        );
-        audio.pause();
-        if (video != null) video.pause();
-        if (video != null) video.seekSimple(
-                Format.TIME,
-                flags,
-                nanos
-        );
-        audio.seekSimple(Format.TIME, flags, nanos);
-        audio.getState();
-        if (video != null) {
-            bindVideoToAudioClock(audio, video);
-            video.getState();
-        }
-        if (!screen.getPaused()) {
-            audio.play();
-            if (video != null) video.play();
-        }
+    private static final long SEEK_STATE_WAIT_NS = 4L * 1_000_000_000L;
 
+    private void doSeek(long nanos, boolean b) {
+        seekUnified(nanos, EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE));
         if (b) screen.afterSeek();
     }
 
     private void doSeekFast(long nanos) {
+        seekUnified(nanos, EnumSet.of(SeekFlags.FLUSH, SeekFlags.KEY_UNIT));
+    }
+
+    // Synchronous seek that brings audio and video to the same position before
+    // resuming playback. Critical: we wait for both pipelines to finish their flush
+    // -> paused preroll before calling play() – otherwise audio races ahead while
+    // the video HTTP source is still fetching the new byte range, and we get
+    // permanent A/V desync. After playing we schedule a follow-up resync to catch
+    // any drift that builds up while the slow side catches up.
+    private void seekUnified(long nanos, EnumSet<SeekFlags> flags) {
         if (!initialized || !seekable) return;
         Pipeline audio = audioPipeline;
         if (audio == null) return;
         Pipeline video = videoPipeline;
-        EnumSet<SeekFlags> flags = EnumSet.of(
-                SeekFlags.FLUSH,
-                SeekFlags.KEY_UNIT
-        );
+
+        // Drop any frame the renderer hasn't picked up yet – those belong to the
+        // pre-seek timeline and would flash on screen for one frame.
+        synchronized (frameLock) {
+            frameReady = false;
+            preparedBuffer = null;
+            preparedBufferSize = 0;
+        }
+
         audio.pause();
         if (video != null) video.pause();
-        if (video != null) video.seekSimple(
-                Format.TIME,
-                flags,
-                nanos
-        );
+
+        // Issue both seeks back-to-back so HTTP byte-range requests run in parallel
+        if (video != null) video.seekSimple(Format.TIME, flags, nanos);
         audio.seekSimple(Format.TIME, flags, nanos);
-        audio.getState();
+
+        // Wait for flush -> paused preroll – bounded so a slow source can never hang us
+        audio.getState(SEEK_STATE_WAIT_NS);
         if (video != null) {
+            // Re-bind clock + base time after both are paused at the new position.
+            // If we did this earlier (while video was still playing) the base time
+            // would just lock to the old position.
             bindVideoToAudioClock(audio, video);
-            video.getState();
+            video.getState(SEEK_STATE_WAIT_NS);
         }
+
         if (!screen.getPaused()) {
+            // Start audio first – it owns the master clock. Video's clock is slaved
+            // to audio so once video.play() runs it immediately syncs to audio.
             audio.play();
             if (video != null) video.play();
         }
+
+        // Force a sync correction shortly after seek
+        scheduleResync();
+    }
+
+    // Sync correction.
+    // TODO: do it better
+    private void scheduleResync() {
+        if (sharedAvPipeline) return;
+        gstExecutor.execute(() -> {
+            try {
+                Thread.sleep(POST_SEEK_RESYNC_DELAY_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+            safeExecute(this::checkAndFixSync);
+        });
     }
 
     private void applyVolume() {
@@ -1031,35 +1054,38 @@ public class MediaPlayer {
 
         Minecraft.getInstance().execute(screen::reloadTexture);
 
-        long pos = audio.queryPosition(Format.TIME);
-        audio.pause();
-
-        safeStopAndDispose(videoPipeline);
-
+        // Build the new video pipeline first while audio keeps playing, so this avoids
+        // any audio dropout while the new video HTTP source is fetched.
         Pipeline newVid = buildVideoPipeline(chosen);
-
-        // Get the clock from audio pipeline and use it for video
         bindVideoToAudioClock(audio, newVid);
         newVid.pause();
+        newVid.getState(SEEK_STATE_WAIT_NS); // pre-roll to paused
 
-        // Pre-roll the pipeline to ensure it's ready
-        newVid.getState(0);
+        // Now query audio position as late as possible so the new video lands as
+        // close to the current playhead as possible.
+        long pos = audio.queryPosition(Format.TIME);
+        if (pos < 0) pos = 0;
 
-        EnumSet<SeekFlags> flags = EnumSet.of(
-                SeekFlags.FLUSH,
-                SeekFlags.ACCURATE
-        );
-        audio.seekSimple(Format.TIME, flags, pos);
+        // Seek the new video to the audio current position. Audio is never paused
+        // or seeked – it keeps playing throughout, so there's no audible glitch.
+        // TODO: improve this logic
+        EnumSet<SeekFlags> flags = EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE);
         newVid.seekSimple(Format.TIME, flags, pos);
+        newVid.getState(SEEK_STATE_WAIT_NS);
 
-        if (!screen.getPaused()) {
-            audio.play();
-            newVid.play();
+        // Drop any pre-swap video frame still in the renderer queue
+        synchronized (frameLock) {
+            frameReady = false;
+            preparedBuffer = null;
+            preparedBufferSize = 0;
         }
 
+        Pipeline oldVid = videoPipeline;
         videoPipeline = newVid;
         currentVideoStream = chosen;
         lastQuality = parseQuality(chosen);
+        if (!screen.getPaused()) newVid.play();
+        safeStopAndDispose(oldVid);
     }
 
     private void changeLiveQuality(YtStream chosenVideo) {
@@ -1162,12 +1188,11 @@ public class MediaPlayer {
             long drift = Math.abs(audioPos - videoPos);
 
             if (drift > MAX_SYNC_DRIFT_NS) {
-                // Sync video to audio (audio is master)
-                videoPipeline.pause();
-                videoPipeline.seekSimple(Format.TIME, EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE), audioPos);
-                if (!screen.getPaused()) {
-                    videoPipeline.play();
-                }
+                // Soft sync – issue a flushing seek on video to audio current
+                // position without pausing first. Pause + play would cause a visible
+                // stutter; the flush alone keeps playback continuous.
+                EnumSet<SeekFlags> flags = EnumSet.of(SeekFlags.FLUSH, SeekFlags.KEY_UNIT);
+                videoPipeline.seekSimple(Format.TIME, flags, audioPos);
             }
         } catch (Exception ignored) {
             // Ignore query errors during playback
