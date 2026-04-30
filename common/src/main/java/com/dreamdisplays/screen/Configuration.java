@@ -42,6 +42,7 @@ public class Configuration extends Screen {
     private static final int PANEL_BORDER = 0xFF606060;
     private static final int ROW_BG = 0x40000000;
     private static final String GITHUB_URL = "https://github.com/arsmotorin/dreamdisplays";
+    private static final String MODRINTH_URL = "https://modrinth.com/plugin/dreamdisplays/versions";
     @Nullable Slider volume = null;
     @Nullable Slider renderD = null;
     @Nullable Slider quality = null;
@@ -55,6 +56,7 @@ public class Configuration extends Screen {
     @Nullable Button brightnessReset = null;
     @Nullable Button volumeReset = null;
     @Nullable Button syncReset = null;
+    @Nullable Button muteButton = null;
     @Nullable Button deleteButton = null;
     @Nullable Button reportButton = null;
     @Nullable ProgressSlider progress = null;
@@ -102,19 +104,30 @@ public class Configuration extends Screen {
             }
         };
 
-        backButton = iconButton("bbi", () -> screen.seekBackward());
-        forwardButton = iconButton("bfi", () -> screen.seekForward());
+        backButton = iconButton("left", () -> screen.seekBackward());
+        forwardButton = iconButton("right", () -> screen.seekForward());
         pauseButton = new Button(0, 0, 0, 0, 64, 64,
-                Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bpi"), 2) {
+                Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "pause"), 2) {
             @Override
             public void onPress() {
                 screen.setPaused(!screen.getPaused());
                 setIconTextureId(Identifier.fromNamespaceAndPath(Initializer.MOD_ID,
-                        screen.getPaused() ? "bupi" : "bpi"));
+                        screen.getPaused() ? "play" : "pause"));
             }
         };
         pauseButton.setIconTextureId(Identifier.fromNamespaceAndPath(Initializer.MOD_ID,
-                screen.getPaused() ? "bupi" : "bpi"));
+                screen.getPaused() ? "play" : "pause"));
+
+        muteButton = new Button(0, 0, 0, 0, 64, 64,
+                Identifier.fromNamespaceAndPath(Initializer.MOD_ID,
+                        screen.muted ? "mute" : "sound"), 2) {
+            @Override
+            public void onPress() {
+                screen.mute(!screen.muted);
+                setIconTextureId(Identifier.fromNamespaceAndPath(Initializer.MOD_ID,
+                        screen.muted ? "mute" : "sound"));
+            }
+        };
 
         progress = new ProgressSlider(0, 0, 100, CTRL_BTN,
                 () -> screen != null ? screen.getCurrentTimeNanos() : 0,
@@ -255,6 +268,7 @@ public class Configuration extends Screen {
         addRenderableWidget(volume);
         addRenderableWidget(backButton);
         addRenderableWidget(forwardButton);
+        addRenderableWidget(muteButton);
         addRenderableWidget(progress);
         addRenderableWidget(pauseButton);
         addRenderableWidget(renderD);
@@ -285,7 +299,7 @@ public class Configuration extends Screen {
 
     private Button resetButton(Runnable action) {
         return new Button(0, 0, 0, 0, 64, 64,
-                Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "bri"), 2) {
+                Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "refresh"), 2) {
             @Override
             public void onPress() {
                 action.run();
@@ -297,8 +311,9 @@ public class Configuration extends Screen {
         if (screen == null) return;
         screen.playSuggestedVideo(info.getWatchUrl(),
                 screen.getLang() == null ? "" : screen.getLang());
-        // Cache the title we already have so the preview overlay shows it instantly
+        // Cache title + full metadata so the overlay shows them instantly
         com.dreamdisplays.ytdlp.VideoTitleCache.put(info.getId(), info.getTitle());
+        com.dreamdisplays.ytdlp.VideoMetadataCache.put(info.getId(), info);
         lastSuggestedVideoId = info.getId();
         if (suggestions != null) suggestions.setRelatedTo(info.getId());
     }
@@ -358,7 +373,6 @@ public class Configuration extends Screen {
         int settingsX, settingsY, settingsW, settingsH;
         int suggestionsX, suggestionsY, suggestionsW, suggestionsH;
         boolean suggestionsVertical = false;
-        boolean suggestionsCompact = false;
 
         if (wide) {
             int rightColW = Math.max(200, Math.min(280, totalW * 3 / 10));
@@ -379,10 +393,9 @@ public class Configuration extends Screen {
             suggestionsH = leftColH;
             suggestionsVertical = true;
         } else {
-            final int STRIP_OVERHEAD = 70; // header + search + padding inside panel
-            final int MIN_FULL_CARD_SH = 188; // sH needed to show title text
-            final int MIN_COMPACT_SH   = 160; // sH needed for thumbnail-only cards
-            final int MIN_SH           = MIN_COMPACT_SH;
+            // Thumbnails now shrink dynamically inside SuggestionsPanel so the
+            // title/meta text always fits — no need for a compact threshold.
+            final int MIN_SH = 120;
 
             int topRowH = Math.max(220, (totalH * 6) / 10);
             int sH = totalH - topRowH - PANEL_GAP;
@@ -390,9 +403,7 @@ public class Configuration extends Screen {
                 sH = MIN_SH;
                 topRowH = totalH - sH - PANEL_GAP;
             }
-            // If even topRow can't fit a minimum preview, hide suggestions entirely
             boolean showSuggestions = topRowH >= 160;
-            suggestionsCompact = sH < MIN_FULL_CARD_SH;
 
             if (compact) {
                 previewW = totalW;
@@ -417,8 +428,10 @@ public class Configuration extends Screen {
             suggestionsH = showSuggestions ? sH : 0;
         }
 
-        drawPanel(g, previewX, previewY, previewW, previewH, "Preview"); // TODO: translation
-        drawPanel(g, settingsX, settingsY, settingsW, settingsH, "Display settings"); // TODO: translation
+        drawPanel(g, previewX, previewY, previewW, previewH,
+                Component.translatable("dreamdisplays.ui.preview").getString());
+        drawPanel(g, settingsX, settingsY, settingsW, settingsH,
+                Component.translatable("dreamdisplays.ui.settings").getString());
 
         renderPreviewSection(g, previewX, previewY, previewW, previewH);
         renderSettingsSection(g, settingsX, settingsY, settingsW, settingsH);
@@ -426,7 +439,7 @@ public class Configuration extends Screen {
         if (suggestions != null) {
             suggestions.visible = suggestionsH > 0;
             suggestions.setVertical(suggestionsVertical);
-            suggestions.setCompactCards(suggestionsCompact);
+            suggestions.setCompactCards(false);
             suggestions.setX(suggestionsX);
             suggestions.setY(suggestionsY);
             suggestions.setWidth(suggestionsW);
@@ -462,11 +475,13 @@ public class Configuration extends Screen {
         if (volumeReset != null) volumeReset.active = false;
         if (syncReset != null) syncReset.active = false;
         if (progress != null) progress.active = false;
+        if (muteButton != null) muteButton.active = false;
 
         int panelW = Math.min(420, this.width - 40);
         int panelX = this.width / 2 - panelW / 2;
         int panelY = this.height / 2 - 70;
-        drawPanel(g, panelX, panelY, panelW, 130, "Display error"); // TODO: translation
+        drawPanel(g, panelX, panelY, panelW, 130,
+                Component.translatable("dreamdisplays.ui.error").getString());
         List<Component> lines = List.of(
                 Component.translatable("dreamdisplays.error.loadingerror.1").withStyle(s -> s.withColor(ChatFormatting.RED)),
                 Component.translatable("dreamdisplays.error.loadingerror.2").withStyle(s -> s.withColor(ChatFormatting.RED)),
@@ -558,20 +573,26 @@ public class Configuration extends Screen {
             forwardButton.setHeight(CTRL_BTN);
             forwardButton.active = canSeek;
         }
+        if (muteButton != null) {
+            muteButton.setX(controlsLeft + CTRL_BTN * 2 + 8);
+            muteButton.setY(controlsRowY);
+            muteButton.setWidth(CTRL_BTN);
+            muteButton.setHeight(CTRL_BTN);
+            muteButton.active = !(scr.isSync && !scr.owner);
+            muteButton.setIconTextureId(Identifier.fromNamespaceAndPath(
+                    Initializer.MOD_ID, scr.muted ? "mute" : "sound"));
+        }
         if (pauseButton != null) {
             pauseButton.setX(controlsRight - CTRL_BTN);
             pauseButton.setY(controlsRowY);
             pauseButton.setWidth(CTRL_BTN);
             pauseButton.setHeight(CTRL_BTN);
-            // Always enabled (modulo sync) — the pause button is the user's only way
-            // to kick off playback when the saved state is "paused", so blocking it
-            // on isVideoStarted leaves them stuck on "Waiting for video".
             pauseButton.active = !(scr.isSync && !scr.owner);
             pauseButton.setIconTextureId(Identifier.fromNamespaceAndPath(
-                    Initializer.MOD_ID, scr.getPaused() ? "bupi" : "bpi"));
+                    Initializer.MOD_ID, scr.getPaused() ? "play" : "pause"));
         }
         if (progress != null) {
-            int progX = controlsLeft + CTRL_BTN * 2 + 8;
+            int progX = controlsLeft + CTRL_BTN * 3 + 12;
             int progRight = controlsRight - CTRL_BTN - 4;
             int progW = Math.max(40, progRight - progX);
             progress.setX(progX);
@@ -591,6 +612,11 @@ public class Configuration extends Screen {
         }
 
         String title = meta != null ? meta.getTitle() : null;
+        // Fall back to the title cache (populated instantly on pick) before showing
+        // the raw URL, which would flash for a frame while metadata loads async.
+        if ((title == null || title.isEmpty()) && videoId != null) {
+            title = com.dreamdisplays.ytdlp.VideoTitleCache.get(videoId);
+        }
         if (title == null || title.isEmpty()) title = scr.getVideoUrl();
         if (title == null) title = "—";
 
@@ -612,7 +638,7 @@ public class Configuration extends Screen {
         int titleX = x + padX;
         int titleY = boxY + padY;
         if (isNew) {
-            String tag = "New"; // TODO: translation
+            String tag = Component.translatable("dreamdisplays.ui.new").getString();
             int tw = font.width(tag) + 6;
             int th = font.lineHeight;
             g.fill(titleX, titleY - 1, titleX + tw, titleY + th, 0xFFE53935);
@@ -630,7 +656,7 @@ public class Configuration extends Screen {
         }
         if (!likes.isEmpty()) {
             if (meta2.length() > 0) meta2.append(" • ");
-            meta2.append(likes).append(" likes"); // TODO: translation
+            meta2.append(likes).append(" ").append(Component.translatable("dreamdisplays.ui.likes").getString());
         }
         if (published != null && !published.isEmpty()) {
             if (meta2.length() > 0) meta2.append(" • ");
@@ -746,6 +772,19 @@ public class Configuration extends Screen {
     }
 
     @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean dbl) {
+        if (modLabelHover != null && UpdateCheck.shouldShowArrow()
+                && modLabelHover.contains((int) event.x(), (int) event.y())) {
+            try {
+                java.awt.Desktop.getDesktop().browse(java.net.URI.create(MODRINTH_URL));
+            } catch (Exception ignored) {
+            }
+            return true;
+        }
+        return super.mouseClicked(event, dbl);
+    }
+
+    @Override
     public boolean mouseReleased(MouseButtonEvent event) {
         if (progress != null && progress.commitDragIfActive()) {
             return true;
@@ -772,6 +811,7 @@ public class Configuration extends Screen {
                     Component.translatable("dreamdisplays.button.render-distance.tooltip.1").withStyle(s -> s.withColor(ChatFormatting.WHITE).withBold(true)),
                     Component.translatable("dreamdisplays.button.render-distance.tooltip.2").withStyle(s -> s.withColor(ChatFormatting.GRAY)),
                     Component.translatable("dreamdisplays.button.render-distance.tooltip.3").withStyle(s -> s.withColor(ChatFormatting.GRAY)),
+                    Component.literal(""),
                     Component.translatable("dreamdisplays.button.render-distance.tooltip.8",
                                     renderD != null ? (int) (renderD.value * (128 - 24) + 24) : 0)
                             .withStyle(s -> s.withColor(ChatFormatting.GOLD))
@@ -781,6 +821,7 @@ public class Configuration extends Screen {
             List<Component> tip = new java.util.ArrayList<>(List.of(
                     Component.translatable("dreamdisplays.button.quality.tooltip.1").withStyle(s -> s.withColor(ChatFormatting.WHITE).withBold(true)),
                     Component.translatable("dreamdisplays.button.quality.tooltip.2").withStyle(s -> s.withColor(ChatFormatting.GRAY)),
+                    Component.literal(""),
                     Component.translatable("dreamdisplays.button.quality.tooltip.4",
                                     qualityFromFraction(quality.value))
                             .withStyle(s -> s.withColor(ChatFormatting.GOLD))
@@ -798,6 +839,7 @@ public class Configuration extends Screen {
             g.setComponentTooltipForNextFrame(font, List.of(
                     Component.translatable("dreamdisplays.button.brightness.tooltip.1").withStyle(s -> s.withColor(ChatFormatting.WHITE).withBold(true)),
                     Component.translatable("dreamdisplays.button.brightness.tooltip.2").withStyle(s -> s.withColor(ChatFormatting.GRAY)),
+                    Component.literal(""),
                     Component.translatable("dreamdisplays.button.brightness.tooltip.3",
                                     brightness != null ? (int) Math.floor(brightness.value * 200) : 100)
                             .withStyle(s -> s.withColor(ChatFormatting.GOLD))
@@ -808,6 +850,7 @@ public class Configuration extends Screen {
                     Component.translatable("dreamdisplays.button.synchronization.tooltip.1").withStyle(s -> s.withColor(ChatFormatting.WHITE).withBold(true)),
                     Component.translatable("dreamdisplays.button.synchronization.tooltip.2").withStyle(s -> s.withColor(ChatFormatting.GRAY)),
                     Component.translatable("dreamdisplays.button.synchronization.tooltip.3").withStyle(s -> s.withColor(ChatFormatting.GRAY)),
+                    Component.literal(""),
                     Component.translatable("dreamdisplays.button.synchronization.tooltip.5",
                                     sync.value
                                             ? Component.translatable("dreamdisplays.button.enabled")
