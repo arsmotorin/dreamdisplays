@@ -62,8 +62,11 @@ public final class Thumbnails {
 
     private static void download(String videoId, String url) {
         try {
-            byte[] cached = Objects.requireNonNull(readDiskCache(videoId));
-            Minecraft.getInstance().execute(() -> register(videoId, cached));
+            byte[] cached = readDiskCache(videoId);
+            if (cached != null) {
+                Minecraft.getInstance().execute(() -> register(videoId, cached));
+                return;
+            }
             byte[] finalBytes = Objects.requireNonNull(fetch(url));
             writeDiskCacheAsync(videoId, finalBytes);
             Minecraft.getInstance().execute(() -> register(videoId, finalBytes));
