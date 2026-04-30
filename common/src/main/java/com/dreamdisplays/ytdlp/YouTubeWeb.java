@@ -113,18 +113,44 @@ public final class YouTubeWeb {
     private static @Nullable YtVideoInfo parseVideoRenderer(JsonObject vr) {
         String id = optString(vr, "videoId");
         if (id == null) return null;
+        // Filter stupid shorts. YouTube has been pushing them aggressively, so remove them!
+        // Three signals:
+        // 1. navigationEndpoint URL starts with /shorts/
+        // 2. duration < 65 s (most shorts are 60 s exactly)
+        // 3. presence of a "SHORTS" badge / shortsLockupViewModel
+        if (looksLikeShorts(vr)) return null;
         String title = runsText(vr.getAsJsonObject("title"));
         if (title == null) title = simpleText(vr.getAsJsonObject("title"));
         if (title == null) title = id;
         String uploader = runsText(vr.getAsJsonObject("ownerText"));
         if (uploader == null) uploader = runsText(vr.getAsJsonObject("longBylineText"));
         Long duration = parseDuration(simpleText(vr.getAsJsonObject("lengthText")));
+        if (duration != null && duration < 65) return null;
         Long views = parseViews(simpleText(vr.getAsJsonObject("viewCountText")));
         if (views == null) views = parseViews(simpleText(vr.getAsJsonObject("shortViewCountText")));
         String publishedText = simpleText(vr.getAsJsonObject("publishedTimeText"));
         Integer daysAgo = parseDaysAgo(publishedText);
         return new YtVideoInfo(id, title, uploader, duration, views, null,
                 publishedText, daysAgo, null);
+    }
+
+    private static boolean looksLikeShorts(JsonObject vr) {
+        try {
+            JsonObject nav = vr.getAsJsonObject("navigationEndpoint");
+            if (nav != null) {
+                JsonObject cmd = nav.getAsJsonObject("commandMetadata");
+                if (cmd != null) {
+                    JsonObject web = cmd.getAsJsonObject("webCommandMetadata");
+                    if (web != null) {
+                        String webUrl = optString(web, "url");
+                        if (webUrl != null && webUrl.startsWith("/shorts/")) return true;
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return vr.toString().contains("\"label\":\"Shorts\"")
+                || vr.toString().contains("shortsLockupViewModel");
     }
 
     // Watch page
@@ -153,11 +179,13 @@ public final class YouTubeWeb {
     private static @Nullable YtVideoInfo parseCompactVideoRenderer(JsonObject cvr) {
         String id = optString(cvr, "videoId");
         if (id == null) return null;
+        if (looksLikeShorts(cvr)) return null;
         String title = simpleText(cvr.getAsJsonObject("title"));
         if (title == null) title = id;
         String uploader = simpleText(cvr.getAsJsonObject("longBylineText"));
         if (uploader == null) uploader = simpleText(cvr.getAsJsonObject("shortBylineText"));
         Long duration = parseDuration(simpleText(cvr.getAsJsonObject("lengthText")));
+        if (duration != null && duration < 65) return null;
         Long views = parseViews(simpleText(cvr.getAsJsonObject("viewCountText")));
         if (views == null) views = parseViews(simpleText(cvr.getAsJsonObject("shortViewCountText")));
         String publishedText = simpleText(cvr.getAsJsonObject("publishedTimeText"));
