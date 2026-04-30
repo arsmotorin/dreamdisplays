@@ -8,9 +8,10 @@ Mod:
 - [x] Direct searching and playback of YouTube videos without leaving the game
 - [x] Suggested videos based on current video and search history
 - [x] Progress slider with seeking support
-- [x] Improved display configuration UI
+- [x] Improved display configuration UI and icons
 - [x] Improved video quality and format detection
 - [ ] Better synchronization for video playback
+- [ ] Fix language selector
 - [ ] Various optimizations and some small bug fixes
 - [ ] Some stability improvements
 - [ ] Update dependencies
