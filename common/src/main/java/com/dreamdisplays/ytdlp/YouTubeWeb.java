@@ -25,7 +25,7 @@ public final class YouTubeWeb {
     private static final String UA =
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0 Safari/537.36";
     private static final Pattern INITIAL_DATA = Pattern.compile(
-            "var ytInitialData\\s*=\\s*(\\{.*?\\});",
+            "var ytInitialData\\s*=\\s*(\\{.*?});",
             Pattern.DOTALL);
     private static final Pattern AGE_PATTERN = Pattern.compile(
             "(\\d+)\\s+(second|minute|hour|day|week|month|year)s?\\s+ago",
@@ -131,7 +131,7 @@ public final class YouTubeWeb {
         String publishedText = simpleText(vr.getAsJsonObject("publishedTimeText"));
         Integer daysAgo = parseDaysAgo(publishedText);
         return new YtVideoInfo(id, title, uploader, duration, views, null,
-                publishedText, daysAgo, null);
+                publishedText, daysAgo);
     }
 
     private static boolean looksLikeShorts(JsonObject vr) {
@@ -191,7 +191,7 @@ public final class YouTubeWeb {
         String publishedText = simpleText(cvr.getAsJsonObject("publishedTimeText"));
         Integer daysAgo = parseDaysAgo(publishedText);
         return new YtVideoInfo(id, title, uploader, duration, views, null,
-                publishedText, daysAgo, null);
+                publishedText, daysAgo);
     }
 
     // Metadata
@@ -235,7 +235,7 @@ public final class YouTubeWeb {
             }
             if (title == null) return null;
             return new YtVideoInfo(videoId, title, channel, null, views, likes,
-                    publishedText, daysAgo, null);
+                    publishedText, daysAgo);
         } catch (Exception e) {
             LoggingManager.warn("Watch metadata parse failed: " + e.getMessage());
             return null;
@@ -316,7 +316,7 @@ public final class YouTubeWeb {
             String t = optString(el.getAsJsonObject(), "text");
             if (t != null) sb.append(t);
         }
-        return sb.length() == 0 ? null : sb.toString();
+        return sb.isEmpty() ? null : sb.toString();
     }
 
     private static @Nullable String simpleText(@Nullable JsonObject obj) {

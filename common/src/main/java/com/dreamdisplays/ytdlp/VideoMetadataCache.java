@@ -23,7 +23,7 @@ public final class VideoMetadataCache {
     }
 
     public static void put(String videoId, YtVideoInfo info) {
-        if (videoId == null || videoId.isEmpty() || info == null) return;
+        if (videoId.isEmpty()) return;
         CACHE.put(videoId, info);
         // Also seed the title cache so the simpler consumers stay in sync
         VideoTitleCache.put(videoId, info.getTitle());
@@ -34,7 +34,7 @@ public final class VideoMetadataCache {
     }
 
     public static void requestAsync(String videoId) {
-        if (videoId == null || videoId.isEmpty()) return;
+        if (videoId.isEmpty()) return;
         if (CACHE.containsKey(videoId)) return;
         if (IN_FLIGHT.putIfAbsent(videoId, Boolean.TRUE) != null) return;
         EXEC.submit(() -> fetchAndStore(videoId));

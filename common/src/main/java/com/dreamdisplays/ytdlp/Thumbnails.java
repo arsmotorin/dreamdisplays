@@ -31,7 +31,7 @@ public final class Thumbnails {
     private static final AtomicInteger COUNTER = new AtomicInteger();
 
     private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(
-            Math.clamp(Runtime.getRuntime().availableProcessors() * 2, 4, 8),
+            Math.clamp(Runtime.getRuntime().availableProcessors() * 2L, 4, 8),
             r -> {
                 Thread t = new Thread(r, "DD-Thumbnail-" + COUNTER.incrementAndGet());
                 t.setDaemon(true);
@@ -62,11 +62,8 @@ public final class Thumbnails {
 
     private static void download(String videoId, String url) {
         try {
-            byte[] cached = readDiskCache(videoId);
-            if (cached != null) {
-                Minecraft.getInstance().execute(() -> register(videoId, cached));
-                return;
-            }
+            byte[] cached = Objects.requireNonNull(readDiskCache(videoId));
+            Minecraft.getInstance().execute(() -> register(videoId, cached));
             byte[] finalBytes = Objects.requireNonNull(fetch(url));
             writeDiskCacheAsync(videoId, finalBytes);
             Minecraft.getInstance().execute(() -> register(videoId, finalBytes));

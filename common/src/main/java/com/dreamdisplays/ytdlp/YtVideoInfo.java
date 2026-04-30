@@ -15,17 +15,15 @@ public final class YtVideoInfo {
     private final @Nullable Long likeCount;
     private final @Nullable String publishedText;
     private final @Nullable Integer publishedDaysAgo;
-    private final @Nullable String thumbnailUrl;
 
     public YtVideoInfo(
             String id,
             String title,
             @Nullable String uploader,
             @Nullable Long durationSec,
-            @Nullable Long viewCount,
-            @Nullable String thumbnailUrl
+            @Nullable Long viewCount
     ) {
-        this(id, title, uploader, durationSec, viewCount, null, null, null, thumbnailUrl);
+        this(id, title, uploader, durationSec, viewCount, null, null, null);
     }
 
     public YtVideoInfo(
@@ -36,8 +34,7 @@ public final class YtVideoInfo {
             @Nullable Long viewCount,
             @Nullable Long likeCount,
             @Nullable String publishedText,
-            @Nullable Integer publishedDaysAgo,
-            @Nullable String thumbnailUrl
+            @Nullable Integer publishedDaysAgo
     ) {
         this.id = id;
         this.title = title;
@@ -47,7 +44,6 @@ public final class YtVideoInfo {
         this.likeCount = likeCount;
         this.publishedText = publishedText;
         this.publishedDaysAgo = publishedDaysAgo;
-        this.thumbnailUrl = thumbnailUrl;
     }
 
     public String getId() {
@@ -62,24 +58,8 @@ public final class YtVideoInfo {
         return uploader;
     }
 
-    public @Nullable Long getDurationSec() {
-        return durationSec;
-    }
-
-    public @Nullable Long getViewCount() {
-        return viewCount;
-    }
-
-    public @Nullable Long getLikeCount() {
-        return likeCount;
-    }
-
     public @Nullable String getPublishedText() {
         return publishedText;
-    }
-
-    public @Nullable Integer getPublishedDaysAgo() {
-        return publishedDaysAgo;
     }
 
     public boolean isRecent(int daysWindow) {

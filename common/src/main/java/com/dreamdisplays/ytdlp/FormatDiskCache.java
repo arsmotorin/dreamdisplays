@@ -68,10 +68,6 @@ public final class FormatDiskCache {
         }
     }
 
-    public static @Nullable List<YtStream> load(String videoUrl) {
-        return load(videoUrl, DEFAULT_TTL_MS);
-    }
-
     public static void saveAsync(String videoUrl, List<YtStream> streams) {
         if (streams.isEmpty()) return;
         WRITER.submit(() -> writeNow(videoUrl, streams));

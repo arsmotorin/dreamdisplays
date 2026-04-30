@@ -94,10 +94,6 @@ public final class YtDlp {
         }
     }
 
-    public static String binaryPath() throws java.io.IOException {
-        return resolveBinary();
-    }
-
     public static void prewarmAsync() {
         if (resolvedBinary != null) return;
         PREWARM_EXECUTOR.submit(() -> {
@@ -110,7 +106,7 @@ public final class YtDlp {
     }
 
     public static void prefetchFormats(String videoUrl) {
-        if (videoUrl == null || videoUrl.isBlank()) return;
+        if (videoUrl.isBlank()) return;
         CacheEntry cached = FORMAT_CACHE.get(videoUrl);
         long now = System.currentTimeMillis();
         if (cached != null && (now - cached.createdAtMs) <= CACHE_TTL_MS) return;
@@ -134,8 +130,8 @@ public final class YtDlp {
     }
 
     public static List<YtVideoInfo> search(String query, int limit) throws IOException {
-        if (query == null || query.isBlank()) return new ArrayList<>();
-        int n = Math.max(1, Math.min(limit, 25));
+        if (query.isBlank()) return new ArrayList<>();
+        int n = Math.clamp(limit, 1, 25);
         String key = query.trim().toLowerCase(Locale.ENGLISH) + "|" + n;
         InfoCacheEntry cached = SEARCH_CACHE.get(key);
         long now = System.currentTimeMillis();
@@ -174,8 +170,8 @@ public final class YtDlp {
     }
 
     public static List<YtVideoInfo> related(String videoId, int limit) throws IOException {
-        if (videoId == null || videoId.isBlank()) return new ArrayList<>();
-        int n = Math.max(1, Math.min(limit, 25));
+        if (videoId.isBlank()) return new ArrayList<>();
+        int n = Math.clamp(limit, 1, 25);
         String key = videoId + "|" + n;
         InfoCacheEntry cached = RELATED_CACHE.get(key);
         long now = System.currentTimeMillis();
@@ -305,7 +301,7 @@ public final class YtDlp {
                 videoId,
                 ignored -> CompletableFuture.supplyAsync(() -> {
                     try {
-                        @Nullable String title = fetchVideoTitleUncached(videoId);
+                        String title = fetchVideoTitleUncached(videoId);
                         TITLE_CACHE.put(videoId, new TitleCacheEntry(title, System.currentTimeMillis()));
                         return title;
                     } catch (IOException e) {
@@ -348,7 +344,6 @@ public final class YtDlp {
     private static String runJsonProcess(ProcessBuilder pb, String tag, int timeoutSec) throws IOException {
         pb.redirectErrorStream(false);
         long tStart = System.nanoTime();
-        long tBinaryReady = tStart;
         Process process = pb.start();
         long tProcStarted = System.nanoTime();
         StringBuilder stdout = new StringBuilder();
@@ -381,7 +376,7 @@ public final class YtDlp {
         LoggingManager.info(String.format(
                 "[YtDlp] %s — binary=%dms, process=%dms, total=%dms (stdout %d bytes)",
                 tag,
-                (tBinaryReady - tStart) / 1_000_000L,
+                0,
                 (tDone - tProcStarted) / 1_000_000L,
                 (tDone - tStart) / 1_000_000L,
                 stdout.length()
@@ -402,10 +397,10 @@ public final class YtDlp {
                 if (id == null || title == null) continue;
                 Double dur = optDouble(e, "duration");
                 Long durSec = dur == null ? null : (long) Math.floor(dur);
-                Long views = optLong(e, "view_count");
+                Long views = optLong(e);
                 String uploader = optString(e, "uploader");
                 if (uploader == null) uploader = optString(e, "channel");
-                out.add(new YtVideoInfo(id, title, uploader, durSec, views, null));
+                out.add(new YtVideoInfo(id, title, uploader, durSec, views));
             }
             return out;
         } catch (Exception e) {
@@ -413,10 +408,10 @@ public final class YtDlp {
         }
     }
 
-    private static @Nullable Long optLong(JsonObject obj, String key) {
-        if (!obj.has(key) || obj.get(key).isJsonNull()) return null;
+    private static @Nullable Long optLong(JsonObject obj) {
+        if (!obj.has("view_count") || obj.get("view_count").isJsonNull()) return null;
         try {
-            return obj.get(key).getAsLong();
+            return obj.get("view_count").getAsLong();
         } catch (Exception e) {
             return null;
         }
@@ -539,7 +534,7 @@ public final class YtDlp {
 
             String resolution = null;
             if (hasVideo) {
-                Integer h = optInt(f, "height");
+                Integer h = optInt(f);
                 if (h != null && h > 0) {
                     resolution = h + "p";
                 } else {
@@ -579,7 +574,7 @@ public final class YtDlp {
     }
 
     private static boolean isLive(JsonObject obj) {
-        if (optBoolean(obj, "is_live")) return true;
+        if (optBoolean(obj)) return true;
         String liveStatus = optString(obj, "live_status");
         return liveStatus != null && switch (liveStatus) {
             case "is_live", "is_upcoming", "post_live" -> true;
@@ -638,10 +633,10 @@ public final class YtDlp {
         }
     }
 
-    private static @Nullable Integer optInt(JsonObject obj, String key) {
-        if (!obj.has(key) || obj.get(key).isJsonNull()) return null;
+    private static @Nullable Integer optInt(JsonObject obj) {
+        if (!obj.has("height") || obj.get("height").isJsonNull()) return null;
         try {
-            return obj.get(key).getAsInt();
+            return obj.get("height").getAsInt();
         } catch (Exception e) {
             return null;
         }
@@ -656,16 +651,16 @@ public final class YtDlp {
         }
     }
 
-    private static boolean optBoolean(JsonObject obj, String key) {
-        if (!obj.has(key) || obj.get(key).isJsonNull()) return false;
+    private static boolean optBoolean(JsonObject obj) {
+        if (!obj.has("is_live") || obj.get("is_live").isJsonNull()) return false;
         try {
-            return obj.get(key).getAsBoolean();
+            return obj.get("is_live").getAsBoolean();
         } catch (Exception e) {
             return false;
         }
     }
 
-    private static String resolveBinary() throws IOException {
+    private static @Nullable String resolveBinary() throws IOException {
         String cached = resolvedBinary;
         if (cached != null) return cached;
         synchronized (YtDlp.class) {

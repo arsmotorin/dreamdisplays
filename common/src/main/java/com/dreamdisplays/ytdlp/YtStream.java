@@ -63,10 +63,6 @@ public final class YtStream {
         return url;
     }
 
-    public String getMimeType() {
-        return mimeType;
-    }
-
     public @Nullable String getContainer() {
         return container;
     }
@@ -85,22 +81,6 @@ public final class YtStream {
 
     public @Nullable String getAudioTrackName() {
         return audioTrackName;
-    }
-
-    public @Nullable String getVcodec() {
-        return vcodec;
-    }
-
-    public @Nullable String getAcodec() {
-        return acodec;
-    }
-
-    public @Nullable Double getFps() {
-        return fps;
-    }
-
-    public @Nullable Double getTbrKbps() {
-        return tbrKbps;
     }
 
     public boolean hasVideo() {

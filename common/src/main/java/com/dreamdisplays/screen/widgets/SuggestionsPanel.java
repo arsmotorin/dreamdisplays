@@ -190,13 +190,13 @@ public final class SuggestionsPanel extends AbstractWidget {
                     } else {
                         publish(seq2, java.util.List.of(new YtVideoInfo(
                                 idForLambda, "https://youtu.be/" + idForLambda,
-                                null, null, null, null)), null);
+                                null, null, null)), null);
                     }
                 } catch (Exception e) {
                     LoggingManager.warn("[Suggestions] URL meta fetch failed: " + e.getMessage());
                     publish(seq2, java.util.List.of(new YtVideoInfo(
                             idForLambda, "https://youtu.be/" + idForLambda,
-                            null, null, null, null)), null);
+                            null, null, null)), null);
                 }
             });
             return;
