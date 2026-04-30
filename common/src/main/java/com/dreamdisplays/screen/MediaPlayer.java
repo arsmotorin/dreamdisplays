@@ -906,51 +906,69 @@ public class MediaPlayer {
         seekUnified(nanos, EnumSet.of(SeekFlags.FLUSH, SeekFlags.KEY_UNIT));
     }
 
-    // Synchronous seek that brings audio and video to the same position before
-    // resuming playback. Critical: we wait for both pipelines to finish their flush
-    // -> paused preroll before calling play() – otherwise audio races ahead while
-    // the video HTTP source is still fetching the new byte range, and we get
-    // permanent A/V desync. After playing we schedule a follow-up resync to catch
-    // any drift that builds up while the slow side catches up.
+    // Seek implementation. Audio is seeked in place that's reliable. Video,
+    // however, will not budge for fragmented mp4_dash served over plain HTTP:
+    // souphttpsrc holds the original byte-range and seekSimple silently no-ops,
+    // so audio jumps but the picture keeps playing from the old position. To
+    // dodge that we rebuild the video pipeline at the new position (the same
+    // trick changeQuality uses successfully) and swap it in once it's prerolled.
+    // Audio is never paused during the swap, so there's no audible glitch.
     private void seekUnified(long nanos, EnumSet<SeekFlags> flags) {
         if (!initialized || !seekable) return;
         Pipeline audio = audioPipeline;
         if (audio == null) return;
-        Pipeline video = videoPipeline;
 
-        // Drop any frame the renderer hasn't picked up yet – those belong to the
-        // pre-seek timeline and would flash on screen for one frame.
+        if (sharedAvPipeline) {
+            synchronized (frameLock) {
+                frameReady = false;
+                preparedBuffer = null;
+                preparedBufferSize = 0;
+            }
+            audio.pause();
+            audio.seekSimple(Format.TIME, flags, nanos);
+            audio.getState(SEEK_STATE_WAIT_NS);
+            if (!screen.getPaused()) audio.play();
+            return;
+        }
+
+        audio.pause();
+        audio.seekSimple(Format.TIME, flags, nanos);
+        audio.getState(SEEK_STATE_WAIT_NS);
+
+        Pipeline oldVideo = videoPipeline;
+        YtStream stream = currentVideoStream;
+        Pipeline newVideo = null;
+        if (stream != null) {
+            try {
+                newVideo = buildVideoPipeline(stream);
+                bindVideoToAudioClock(audio, newVideo);
+                newVideo.getState(SEEK_STATE_WAIT_NS);
+                newVideo.seekSimple(Format.TIME, flags, nanos);
+                newVideo.getState(SEEK_STATE_WAIT_NS);
+            } catch (Exception e) {
+                LoggingManager.warn("[MP debug " + debugLabel + "] video seek rebuild failed: " + e.getMessage());
+                safeStopAndDispose(newVideo);
+                newVideo = null;
+            }
+        }
+
         synchronized (frameLock) {
             frameReady = false;
             preparedBuffer = null;
             preparedBufferSize = 0;
         }
 
-        audio.pause();
-        if (video != null) video.pause();
-
-        // Issue both seeks back-to-back so HTTP byte-range requests run in parallel
-        if (video != null) video.seekSimple(Format.TIME, flags, nanos);
-        audio.seekSimple(Format.TIME, flags, nanos);
-
-        // Wait for flush -> paused preroll – bounded so a slow source can never hang us
-        audio.getState(SEEK_STATE_WAIT_NS);
-        if (video != null) {
-            // Re-bind clock + base time after both are paused at the new position.
-            // If we did this earlier (while video was still playing) the base time
-            // would just lock to the old position.
-            bindVideoToAudioClock(audio, video);
-            video.getState(SEEK_STATE_WAIT_NS);
+        if (newVideo != null) {
+            videoPipeline = newVideo;
+            safeStopAndDispose(oldVideo);
         }
 
         if (!screen.getPaused()) {
-            // Start audio first – it owns the master clock. Video's clock is slaved
-            // to audio so once video.play() runs it immediately syncs to audio.
             audio.play();
-            if (video != null) video.play();
+            Pipeline v = videoPipeline;
+            if (v != null) v.play();
         }
 
-        // Force a sync correction shortly after seek
         scheduleResync();
     }
 

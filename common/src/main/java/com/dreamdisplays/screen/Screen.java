@@ -444,7 +444,11 @@ public class Screen {
 
     public void seekToMillis(long ms) {
         if (mediaPlayer != null && mediaPlayer.canSeek()) {
-            mediaPlayer.seekTo(ms * 1_000_000L, true);
+            // Use the KEY_UNIT seek path – accurate seeks frequently fail silently
+            // on YouTube's mp4_dash video stream (audio jumps, video keeps playing
+            // from the original position). Snapping to the nearest keyframe is more
+            // reliable across all containers.
+            mediaPlayer.seekToFast(ms * 1_000_000L);
         }
     }
 
