@@ -1,5 +1,6 @@
 package com.dreamdisplays.screen.widgets;
 
+import com.dreamdisplays.Initializer;
 import com.dreamdisplays.ytdlp.Thumbnails;
 import com.dreamdisplays.ytdlp.YouTubeWeb;
 import com.dreamdisplays.ytdlp.YtDlp;
@@ -52,8 +53,8 @@ public final class SuggestionsPanel extends AbstractWidget {
     private static final int ACTION_W = SEARCH_H;
     private static final int ACTION_GAP = 4;
     private final EditBox searchBox;
-    private final net.minecraft.client.gui.components.Button clearButton;
-    private final net.minecraft.client.gui.components.Button searchActionButton;
+    private final Button clearButton;
+    private final Button searchActionButton;
     private final Consumer<YtVideoInfo> onPick;
     private final List<YtVideoInfo> cards = new ArrayList<>();
     private final AtomicInteger requestSeq = new AtomicInteger();
@@ -82,19 +83,21 @@ public final class SuggestionsPanel extends AbstractWidget {
                 Component.translatable("dreamdisplays.suggestions.search"));
         this.searchBox.setHint(Component.translatable("dreamdisplays.suggestions.search"));
         this.searchBox.setMaxLength(200);
-        this.clearButton = net.minecraft.client.gui.components.Button.builder(
-                        // TODO: replace!!
-                        Component.literal("x"), b -> {
-                            searchBox.setValue("");
-                            searchBox.setFocused(true);
-                        })
-                .bounds(0, 0, ACTION_W, SEARCH_H)
-                .build();
-        this.searchActionButton = net.minecraft.client.gui.components.Button.builder(
-                        // TODO: replace!!
-                        Component.literal(">"), b -> runSearch())
-                .bounds(0, 0, ACTION_W, SEARCH_H)
-                .build();
+        this.clearButton = new Button(0, 0, ACTION_W, SEARCH_H, 64, 64,
+                Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "cross"), 4) {
+            @Override
+            public void onPress() {
+                searchBox.setValue("");
+                searchBox.setFocused(true);
+            }
+        };
+        this.searchActionButton = new Button(0, 0, ACTION_W, SEARCH_H, 64, 64,
+                Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "search"), 4) {
+            @Override
+            public void onPress() {
+                runSearch();
+            }
+        };
     }
 
     private static java.util.List<String> wrap(Font f, String s, int maxW, int maxLines) {
@@ -339,12 +342,11 @@ public final class SuggestionsPanel extends AbstractWidget {
         int stripLeft = getX() + 10;
         int stripRight = getX() + getWidth() - 10;
         int viewportW = stripRight - stripLeft;
-        int effectiveCardH = effectiveCardH();
-        int effectiveThumbH = effectiveThumbH();
+        lastStripH = stripH;
 
         if (vertical) {
             verticalCardW = Math.max(CARD_W, viewportW);
-            int vCardH = compactCards ? (effectiveThumbH + 4) : CARD_H;
+            int vCardH = compactCards ? (THUMB_H + 4) : CARD_H;
             int vThumbH = Math.max(THUMB_H, (int) (verticalCardW * 180.0 / 320.0));
             if (!compactCards) vCardH = vThumbH + CARD_TEXT_H;
 
@@ -376,9 +378,12 @@ public final class SuggestionsPanel extends AbstractWidget {
             return;
         }
 
-        int rowY = stripTop + Math.max(0, (stripBottom - stripTop - effectiveCardH) / 2);
+        int hCardH = dynCardH();
+        int hThumbH = dynThumbH();
+        int hCardW = dynCardW();
+        int rowY = stripTop + Math.max(0, (stripBottom - stripTop - hCardH) / 2);
 
-        int contentW = cards.size() * (CARD_W + CARD_GAP) - CARD_GAP;
+        int contentW = cards.size() * (hCardW + CARD_GAP) - CARD_GAP;
         int maxOff = Math.max(0, contentW - viewportW);
         scrollOffset = Math.max(0, Math.min(maxOff, scrollOffset));
 
@@ -388,18 +393,18 @@ public final class SuggestionsPanel extends AbstractWidget {
         for (int i = 0; i < cards.size(); i++) {
             YtVideoInfo info = cards.get(i);
             int cardLeft = cx;
-            int cardRight = cx + CARD_W;
+            int cardRight = cx + hCardW;
             if (cardRight >= stripLeft && cardLeft <= stripRight) {
                 boolean hover = mouseX >= cardLeft && mouseX < cardRight
-                        && mouseY >= rowY && mouseY < rowY + effectiveCardH
+                        && mouseY >= rowY && mouseY < rowY + hCardH
                         && mouseX >= stripLeft && mouseX < stripRight;
                 if (hover) hoveredCard = i;
-                renderCard(g, f, info, cardLeft, rowY, effectiveThumbH, effectiveCardH, hover);
+                renderCardSized(g, f, info, cardLeft, rowY, hCardW, hThumbH, hCardH, hover);
                 if (Thumbnails.get(info.getId()) == null) {
                     Thumbnails.request(info.getId(), info.getThumbnailUrl());
                 }
             }
-            cx += CARD_W + CARD_GAP;
+            cx += hCardW + CARD_GAP;
         }
         g.disableScissor();
 
@@ -412,22 +417,34 @@ public final class SuggestionsPanel extends AbstractWidget {
         }
     }
 
-    private int effectiveCardH() {
-        return compactCards ? THUMB_H + 4 : CARD_H;
+    private int lastStripH = CARD_H;
+
+    private int dynThumbH() {
+        int available = lastStripH - 2 - 3 - CARD_TEXT_H - 2;
+        return Math.max(30, Math.min(THUMB_H, available));
     }
 
-    private int effectiveThumbH() {
-        return THUMB_H;
+    private int dynCardH() {
+        return dynThumbH() + 2 + 3 + CARD_TEXT_H + 2;
     }
 
-    private void renderCard(GuiGraphics g, Font f, YtVideoInfo info, int x, int y,
-                            int thumbH, int cardH, boolean hover) {
-        renderCardSized(g, f, info, x, y, CARD_W, thumbH, cardH, hover);
+    private int dynCardW() {
+        int th = dynThumbH();
+        if (th >= THUMB_H) return CARD_W;
+        return Math.max(80, (int) (th * CARD_W / (double) THUMB_H));
     }
 
     private void renderCardSized(GuiGraphics g, Font f, YtVideoInfo info, int x, int y,
                                  int w, int thumbH, int cardH, boolean hover) {
-        g.fill(x, y, x + w, y + cardH, hover ? CARD_HOVER_BG : CARD_BG);
+        int bg;
+        if (hover) {
+            float pulse = (float) (Math.sin(System.currentTimeMillis() / 400.0 * Math.PI) * 0.5 + 0.5);
+            int alpha = (int) (0x60 + pulse * 0x30);
+            bg = (alpha << 24) | 0x707070;
+        } else {
+            bg = CARD_BG;
+        }
+        g.fill(x, y, x + w, y + cardH, bg);
 
         int thumbX = x + 2;
         int thumbY = y + 2;
@@ -441,7 +458,7 @@ public final class SuggestionsPanel extends AbstractWidget {
         }
 
         if (info.isRecent(7)) {
-            String tag = "New";
+            String tag = Component.translatable("dreamdisplays.ui.new").getString();
             int tw = f.width(tag) + 4;
             int th = f.lineHeight + 2;
             g.fill(thumbX + 2, thumbY + 2, thumbX + 2 + tw, thumbY + 2 + th, 0xFFE53935);
@@ -492,14 +509,18 @@ public final class SuggestionsPanel extends AbstractWidget {
         int maxOff;
         if (vertical) {
             int viewportH = stripBottom - stripTop;
-            int contentH = cards.size() * (effectiveCardH() + CARD_GAP) - CARD_GAP;
+            int viewportW2 = getWidth() - 20;
+            int vCardW = Math.max(CARD_W, viewportW2);
+            int vThumbH2 = Math.max(THUMB_H, (int) (vCardW * 180.0 / 320.0));
+            int vCardH2 = compactCards ? (THUMB_H + 4) : (vThumbH2 + CARD_TEXT_H);
+            int contentH = cards.size() * (vCardH2 + CARD_GAP) - CARD_GAP;
             maxOff = Math.max(0, contentH - viewportH);
         } else {
             int viewportW = getWidth() - 20;
-            int contentW = cards.size() * (CARD_W + CARD_GAP) - CARD_GAP;
+            int contentW = cards.size() * (dynCardW() + CARD_GAP) - CARD_GAP;
             maxOff = Math.max(0, contentW - viewportW);
         }
-        double delta = (dx != 0 ? dx : dy) * 32;
+        double delta = vertical ? dy * 32 : (dx != 0 ? dx : dy) * 32;
         scrollOffset = Math.max(0, Math.min(maxOff, scrollOffset - (int) delta));
         return true;
     }
