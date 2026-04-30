@@ -112,12 +112,7 @@ public final class Thumbnails {
             src.getRGB(0, 0, w, h, argb, 0, w);
             for (int y = 0; y < h; y++) {
                 for (int x = 0; x < w; x++) {
-                    int p = argb[y * w + x];
-                    int a = (p >>> 24) & 0xFF;
-                    int r = (p >>> 16) & 0xFF;
-                    int g = (p >>> 8) & 0xFF;
-                    int b = p & 0xFF;
-                    image.setPixel(x, y, (a << 24) | (b << 16) | (g << 8) | r);
+                    image.setPixel(x, y, argb[y * w + x]);
                 }
             }
             return image;
