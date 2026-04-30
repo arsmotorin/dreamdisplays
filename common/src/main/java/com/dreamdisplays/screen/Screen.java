@@ -118,6 +118,9 @@ public class Screen {
 
     // Loads a video from a given URL and language
     public void loadVideo(String videoUrl, String lang) {
+        if (!clientUrlOverride) {
+            Settings.setUrlOverride(uuid, null, null);
+        }
         loadVideoInternal(videoUrl, lang, true);
     }
 
@@ -129,6 +132,7 @@ public class Screen {
 
     public void playSuggestedVideo(String videoUrl, String lang) {
         this.clientUrlOverride = true;
+        Settings.setUrlOverride(uuid, videoUrl, lang);
         playVideoNow(videoUrl, lang);
     }
 
@@ -195,6 +199,18 @@ public class Screen {
             // ignore the server's URL override – that packet is just the canonical
             // URL the server still believes the display should show.
             if (clientUrlOverride) return;
+
+            // Check for a persisted URL override (survives rejoin)
+            Settings.DisplaySettings ds = Settings.getSettings(uuid);
+            if (ds.urlOverride != null && !ds.urlOverride.isEmpty()) {
+                this.clientUrlOverride = true;
+                String overrideUrl = ds.urlOverride;
+                String overrideLang = ds.langOverride != null ? ds.langOverride : packet.lang();
+                this.paused = false;
+                loadVideo(overrideUrl, overrideLang);
+                return;
+            }
+
             this.paused = false;
             loadVideo(packet.url(), packet.lang());
             if (isSync) {
@@ -429,7 +445,7 @@ public class Screen {
     }
 
     // Relative seek video: moves the video by a specified number of seconds relative to the current position
-    public void seekVideoRelative(long seconds) {
+    public void seekVideoRelative(double seconds) {
         if (mediaPlayer != null && mediaPlayer.canSeek()) {
             mediaPlayer.seekRelative(seconds);
         }

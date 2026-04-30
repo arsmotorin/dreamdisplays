@@ -13,6 +13,7 @@ import net.minecraft.core.BlockPos;
 import org.freedesktop.gstreamer.*;
 import org.freedesktop.gstreamer.elements.AppSink;
 import org.freedesktop.gstreamer.event.SeekFlags;
+import org.freedesktop.gstreamer.event.SeekType;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -22,7 +23,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -40,8 +40,6 @@ public class MediaPlayer {
                     || "1".equals(System.getenv("DREAMDISPLAYS_DEBUG"))
                     || "true".equalsIgnoreCase(System.getenv("DREAMDISPLAYS_DEBUG"));
     // === CONSTANTS =======================================================================
-    private static final String MIME_VIDEO = "video/webm";
-    private static final String MIME_AUDIO = "audio/webm";
     private static final String USER_AGENT_V =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
                     + " (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
@@ -58,8 +56,6 @@ public class MediaPlayer {
                         return thread;
                     }
             );
-    // private static final int SYNC_CHECK_INTERVAL = 100;
-    // private static final long MAX_SYNC_DRIFT_NS = 1_500_000_000L;
     private static final int SYNC_CHECK_INTERVAL = 20;
     private static final long MAX_SYNC_DRIFT_NS = 400_000_000L;
     private static final long POST_SEEK_RESYNC_DELAY_MS = 250L;
@@ -128,10 +124,6 @@ public class MediaPlayer {
     private volatile boolean frameReady = false;
     private int syncCheckCounter = 0;
     // === FRAME PROCESSING ================================================================
-    // Reusable direct buffer for the latest decoded frame. Reallocating ~8MB per
-    // frame at 30fps (1080p RGBA) thrashes JVM direct memory and stalls the
-    // GStreamer streaming thread. We grow it as needed and otherwise overwrite
-    // in place.
     private @Nullable ByteBuffer frameBufferPool = null;
 
     // === CONSTRUCTOR =====================================================================
@@ -145,7 +137,7 @@ public class MediaPlayer {
     }
 
     private static void applyBrightnessToBuffer(ByteBuffer buffer, double brightness) {
-        if (Math.abs(brightness - 1.0) < 1e-5) return; // Skip if brightness is 1.0
+        if (Math.abs(brightness - 1.0) < 1e-5) return;
 
         buffer.rewind();
         while (buffer.remaining() >= 4) {
@@ -154,12 +146,10 @@ public class MediaPlayer {
             int b = buffer.get() & 0xFF;
             byte a = buffer.get();
 
-            // Apply brightness
             r = (int) Math.min(255, r * brightness);
             g = (int) Math.min(255, g * brightness);
             b = (int) Math.min(255, b * brightness);
 
-            // Put values back (need to go back 4 bytes)
             buffer.position(buffer.position() - 4);
             buffer.put((byte) r);
             buffer.put((byte) g);
@@ -210,11 +200,6 @@ public class MediaPlayer {
     private static boolean isDashStream(YtStream stream) {
         String protocol = String.valueOf(stream.getProtocol()).toLowerCase(Locale.ENGLISH);
         String url = stream.getUrl().toLowerCase(Locale.ENGLISH);
-        // yt-dlp reports container=mp4_dash/webm_dash for fragmented media files served
-        // over plain HTTP with byte ranges – those are not dash manifests and decodebin
-        // handles them directly.
-        //
-        // So... Only use dashdemux for real .mpd manifest URLs
         return protocol.contains("dash_manifest") || url.contains(".mpd");
     }
 
@@ -539,16 +524,13 @@ public class MediaPlayer {
         p.pause();
 
         Bus bus = p.getBus();
-        final AtomicReference<Bus.ERROR> errRef = new AtomicReference<>();
-        errRef.set((source, code, message) -> {
+        bus.connect((Bus.ERROR) (source, code, message) -> {
             LoggingManager.error(
                     "[MediaPlayer V " + debugLabel + "] [ERROR] GStreamer: " + message
             );
-            bus.disconnect(errRef.get());
             screen.errored = true;
             initialized = false;
         });
-        bus.connect(errRef.get());
         return p;
     }
 
@@ -562,45 +544,37 @@ public class MediaPlayer {
                 + " ! audioamplify name=ampElement amplification=" + currentVolume
                 + " ! autoaudiosink";
         Pipeline p = (Pipeline) Gst.parseLaunch(desc);
-        p
-                .getBus()
-                .connect(
-                        (Bus.ERROR) (source, code, message) ->
-                                LoggingManager.error(
-                                        "[MediaPlayer A " + debugLabel + "] [ERROR] GStreamer: " + message
-                                )
-                );
+        p.getBus().connect(
+                (Bus.ERROR) (source, code, message) ->
+                        LoggingManager.error(
+                                "[MediaPlayer A " + debugLabel + "] [ERROR] GStreamer: " + message
+                        )
+        );
 
-        p
-                .getBus()
-                .connect(
-                        (Bus.EOS) source -> {
-                            if (liveStream) {
-                                return;
-                            }
-                            safeExecute(() -> {
-                                Pipeline audio = audioPipeline;
-                                Pipeline video = videoPipeline;
-                                if (audio == null) return;
-                                audio.seekSimple(
-                                        Format.TIME,
-                                        EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE),
-                                        0L
-                                );
-                                audio.play();
-
-                                // If a video pipeline exists, seek it too
-                                if (video != null) {
-                                    video.seekSimple(
-                                            Format.TIME,
-                                            EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE),
-                                            0L
-                                    );
-                                    video.play();
-                                }
-                            });
+        p.getBus().connect(
+                (Bus.EOS) source -> {
+                    if (liveStream) return;
+                    safeExecute(() -> {
+                        Pipeline audio = audioPipeline;
+                        Pipeline video = videoPipeline;
+                        if (audio == null) return;
+                        audio.seekSimple(
+                                Format.TIME,
+                                EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE),
+                                0L
+                        );
+                        audio.play();
+                        if (video != null) {
+                            video.seekSimple(
+                                    Format.TIME,
+                                    EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE),
+                                    0L
+                            );
+                            video.play();
                         }
-                );
+                    });
+                }
+        );
 
         return p;
     }
@@ -632,9 +606,7 @@ public class MediaPlayer {
         );
         bus.connect(
                 (Bus.EOS) source -> {
-                    if (liveStream) {
-                        return;
-                    }
+                    if (liveStream) return;
                     safeExecute(() -> {
                         Pipeline audio = audioPipeline;
                         if (audio == null) return;
@@ -688,9 +660,6 @@ public class MediaPlayer {
 
     private void configureVideoSink(AppSink sink) {
         sink.set("emit-signals", true);
-        // Let GStreamer pace frames against the shared playback clock.
-        // The Java side should only transform/upload the latest frame, not act
-        // as the primary timing source.
         sink.set("sync", true);
         sink.set("max-buffers", 1);
         sink.set("drop", true);
@@ -727,7 +696,6 @@ public class MediaPlayer {
         int w = screen.textureWidth,
                 h = screen.textureHeight;
 
-        // Skip if screen dimensions are zero
         if (w == 0 || h == 0) return false;
 
         try {
@@ -906,74 +874,71 @@ public class MediaPlayer {
         seekUnified(nanos, EnumSet.of(SeekFlags.FLUSH, SeekFlags.KEY_UNIT));
     }
 
-    // Seek implementation. Audio is seeked in place that's reliable. Video,
-    // however, will not budge for fragmented mp4_dash served over plain HTTP:
-    // souphttpsrc holds the original byte-range and seekSimple silently no-ops,
-    // so audio jumps but the picture keeps playing from the old position. To
-    // dodge that we rebuild the video pipeline at the new position (the same
-    // trick changeQuality uses successfully) and swap it in once it's prerolled.
-    // Audio is never paused during the swap, so there's no audible glitch.
+    // Seek using GStreamer's full seek API. Audio is seeked in-place (works
+    // reliably). Video pipeline is REBUILT — souphttpsrc cannot reliably seek
+    // on YouTube's fragmented mp4_dash streams once playback has started.
+    // Building a fresh pipeline issues a clean HTTP connection, then we seek
+    // the NEW pipeline before it starts playing.
     private void seekUnified(long nanos, EnumSet<SeekFlags> flags) {
         if (!initialized || !seekable) return;
         Pipeline audio = audioPipeline;
         if (audio == null) return;
+        Pipeline video = videoPipeline;
+        YtStream vidStream = currentVideoStream;
 
-        if (sharedAvPipeline) {
-            synchronized (frameLock) {
-                frameReady = false;
-                preparedBuffer = null;
-                preparedBufferSize = 0;
-            }
-            audio.pause();
-            audio.seekSimple(Format.TIME, flags, nanos);
-            audio.getState(SEEK_STATE_WAIT_NS);
-            if (!screen.getPaused()) audio.play();
-            return;
-        }
-
-        audio.pause();
-        audio.seekSimple(Format.TIME, flags, nanos);
-        audio.getState(SEEK_STATE_WAIT_NS);
-
-        Pipeline oldVideo = videoPipeline;
-        YtStream stream = currentVideoStream;
-        Pipeline newVideo = null;
-        if (stream != null) {
-            try {
-                newVideo = buildVideoPipeline(stream);
-                bindVideoToAudioClock(audio, newVideo);
-                newVideo.getState(SEEK_STATE_WAIT_NS);
-                newVideo.seekSimple(Format.TIME, flags, nanos);
-                newVideo.getState(SEEK_STATE_WAIT_NS);
-            } catch (Exception e) {
-                LoggingManager.warn("[MP debug " + debugLabel + "] video seek rebuild failed: " + e.getMessage());
-                safeStopAndDispose(newVideo);
-                newVideo = null;
-            }
-        }
-
+        // Drop pre-seek frames
         synchronized (frameLock) {
             frameReady = false;
             preparedBuffer = null;
             preparedBufferSize = 0;
         }
 
-        if (newVideo != null) {
-            videoPipeline = newVideo;
-            safeStopAndDispose(oldVideo);
+        // Pause audio before seeking
+        audio.pause();
+
+        // Seek audio using the full API
+        boolean audioOk = audio.seek(1.0, Format.TIME, flags,
+                SeekType.SET, nanos, SeekType.NONE, -1);
+        audio.getState(SEEK_STATE_WAIT_NS);
+
+        if (video != null && !sharedAvPipeline && vidStream != null) {
+            // Rebuild the video pipeline instead of seeking in-place
+            Pipeline newVid = buildVideoPipeline(vidStream);
+            bindVideoToAudioClock(audio, newVid);
+            newVid.pause();
+            newVid.getState(SEEK_STATE_WAIT_NS);
+
+            // Seek the fresh pipeline to the target position
+            EnumSet<SeekFlags> videoFlags = EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE);
+            newVid.seek(1.0, Format.TIME, videoFlags,
+                    SeekType.SET, nanos, SeekType.NONE, -1);
+            newVid.getState(SEEK_STATE_WAIT_NS);
+
+            if (DEBUG) {
+                LoggingManager.info("[MP debug " + debugLabel + "] seek audio=" + audioOk
+                        + " video=rebuild target=" + (nanos / 1_000_000L) + "ms");
+            }
+
+            // Swap pipelines
+            videoPipeline = newVid;
+            if (!screen.getPaused()) newVid.play();
+            safeStopAndDispose(video);
+        } else if (sharedAvPipeline) {
+            // For shared A/V pipeline, just seek – audio and video are in one pipeline
+            if (DEBUG) {
+                LoggingManager.info("[MP debug " + debugLabel + "] seek shared pipeline"
+                        + " audio=" + audioOk + " target=" + (nanos / 1_000_000L) + "ms");
+            }
         }
 
         if (!screen.getPaused()) {
             audio.play();
-            Pipeline v = videoPipeline;
-            if (v != null) v.play();
         }
 
         scheduleResync();
     }
 
     // Sync correction.
-    // TODO: do it better
     private void scheduleResync() {
         if (sharedAvPipeline) return;
         gstExecutor.execute(() -> {
@@ -1066,26 +1031,24 @@ public class MediaPlayer {
 
         Minecraft.getInstance().execute(screen::reloadTexture);
 
-        // Build the new video pipeline first while audio keeps playing, so this avoids
-        // any audio dropout while the new video HTTP source is fetched.
+        // Build the new video pipeline first while audio keeps playing
         Pipeline newVid = buildVideoPipeline(chosen);
         bindVideoToAudioClock(audio, newVid);
         newVid.pause();
-        newVid.getState(SEEK_STATE_WAIT_NS); // pre-roll to paused
+        newVid.getState(SEEK_STATE_WAIT_NS);
 
-        // Now query audio position as late as possible so the new video lands as
-        // close to the current playhead as possible.
+        // Query audio position as late as possible
         long pos = audio.queryPosition(Format.TIME);
         if (pos < 0) pos = 0;
 
-        // Seek the new video to the audio current position. Audio is never paused
-        // or seeked – it keeps playing throughout, so there's no audible glitch.
-        // TODO: improve this logic
+        // Seek the new video to the audio position using the full seek API.
+        // seekSimple fails on fragmented mp4_dash; the full API with SeekType.SET
+        // works reliably on a freshly built pipeline.
         EnumSet<SeekFlags> flags = EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE);
-        newVid.seekSimple(Format.TIME, flags, pos);
+        newVid.seek(1.0, Format.TIME, flags, SeekType.SET, pos, SeekType.NONE, -1);
         newVid.getState(SEEK_STATE_WAIT_NS);
 
-        // Drop any pre-swap video frame still in the renderer queue
+        // Drop any pre-swap video frame
         synchronized (frameLock) {
             frameReady = false;
             preparedBuffer = null;
@@ -1180,7 +1143,7 @@ public class MediaPlayer {
             safeExecute(this::applyVolume);
         }
 
-        // Periodic sync check - only when playing
+        // Periodic sync check – only when playing
         if (!screen.getPaused()) {
             syncCheckCounter++;
             if (syncCheckCounter >= SYNC_CHECK_INTERVAL) {
@@ -1200,14 +1163,10 @@ public class MediaPlayer {
             long drift = Math.abs(audioPos - videoPos);
 
             if (drift > MAX_SYNC_DRIFT_NS) {
-                // Soft sync – issue a flushing seek on video to audio current
-                // position without pausing first. Pause + play would cause a visible
-                // stutter; the flush alone keeps playback continuous.
                 EnumSet<SeekFlags> flags = EnumSet.of(SeekFlags.FLUSH, SeekFlags.KEY_UNIT);
                 videoPipeline.seekSimple(Format.TIME, flags, audioPos);
             }
         } catch (Exception ignored) {
-            // Ignore query errors during playback
         }
     }
 

@@ -217,6 +217,14 @@ public class Settings {
         save();
     }
 
+    // Update the client-side URL override for a display (set when user picks from suggestions)
+    public static void setUrlOverride(UUID displayUuid, @Nullable String url, @Nullable String lang) {
+        DisplaySettings settings = getSettings(displayUuid);
+        settings.urlOverride = url;
+        settings.langOverride = lang;
+        save();
+    }
+
     // Get full display data for a server
     public static @Nullable FullDisplayData getDisplayData(UUID displayUuid) {
         if (currentServerId == null) return null;
@@ -269,6 +277,8 @@ public class Settings {
         public float brightness = 1.0f;
         public boolean muted = false;
         public boolean paused = true;
+        public @Nullable String urlOverride = null;
+        public @Nullable String langOverride = null;
 
         public DisplaySettings() {
         }
