@@ -36,8 +36,8 @@ public final class SuggestionsPanel extends AbstractWidget {
     private static final int CARD_GAP = 6;
     private static final int CARD_W = 152;
     private static final int CARD_TEXT_H = 32;
-    private static final int THUMB_MIN_H = 60;
-    private static final int THUMB_MAX_H = 110;
+    private static final int THUMB_H = 86;
+    private static final int CARD_H = THUMB_H + CARD_TEXT_H;
     private static final int PANEL_BG = 0x9F0F0F0F;
     private static final int PANEL_BORDER = 0xFF7A7A7A;
     private static final int CARD_BG = 0x602A2A2A;
@@ -62,6 +62,16 @@ public final class SuggestionsPanel extends AbstractWidget {
     private long loadStartedAtMs = 0L;
     private int scrollOffset = 0;
     private int hoveredCard = -1;
+    private boolean vertical = false;
+    private boolean compactCards = false;
+    private int verticalCardW = CARD_W;
+    public void setVertical(boolean v) {
+        this.vertical = v;
+    }
+
+    public void setCompactCards(boolean c) {
+        this.compactCards = c;
+    }
 
     public SuggestionsPanel(int x, int y, int width, int height, Consumer<YtVideoInfo> onPick) {
         super(x, y, width, height, Component.translatable("dreamdisplays.button.suggestions"));
@@ -329,14 +339,44 @@ public final class SuggestionsPanel extends AbstractWidget {
         int stripLeft = getX() + 10;
         int stripRight = getX() + getWidth() - 10;
         int viewportW = stripRight - stripLeft;
+        int effectiveCardH = effectiveCardH();
+        int effectiveThumbH = effectiveThumbH();
 
-        // TODO: fix
-        int reserveForBar = 6; // TODO: maybe 8-12?
-        int availForCard = Math.max(CARD_TEXT_H + THUMB_MIN_H,
-                stripBottom - stripTop - reserveForBar);
-        int dynThumbH = Math.max(THUMB_MIN_H,
-                Math.min(THUMB_MAX_H, availForCard - CARD_TEXT_H));
-        int dynCardH = dynThumbH + CARD_TEXT_H;
+        if (vertical) {
+            verticalCardW = Math.max(CARD_W, viewportW);
+            int vCardH = compactCards ? (effectiveThumbH + 4) : CARD_H;
+            int vThumbH = Math.max(THUMB_H, (int) (verticalCardW * 180.0 / 320.0));
+            if (!compactCards) vCardH = vThumbH + CARD_TEXT_H;
+
+            int contentH = cards.size() * (vCardH + CARD_GAP) - CARD_GAP;
+            int viewportH = stripBottom - stripTop;
+            int maxOff = Math.max(0, contentH - viewportH);
+            scrollOffset = Math.max(0, Math.min(maxOff, scrollOffset));
+
+            g.enableScissor(stripLeft, stripTop, stripRight, stripBottom);
+            hoveredCard = -1;
+            int cy = stripTop - scrollOffset;
+            for (int i = 0; i < cards.size(); i++) {
+                YtVideoInfo info = cards.get(i);
+                int cardTop = cy;
+                int cardBottom = cy + vCardH;
+                if (cardBottom >= stripTop && cardTop <= stripBottom) {
+                    boolean hover = mouseX >= stripLeft && mouseX < stripLeft + verticalCardW
+                            && mouseY >= cardTop && mouseY < cardBottom
+                            && mouseY >= stripTop && mouseY < stripBottom;
+                    if (hover) hoveredCard = i;
+                    renderCardSized(g, f, info, stripLeft, cardTop, verticalCardW, vThumbH, vCardH, hover);
+                    if (Thumbnails.get(info.getId()) == null) {
+                        Thumbnails.request(info.getId(), info.getThumbnailUrl());
+                    }
+                }
+                cy += vCardH + CARD_GAP;
+            }
+            g.disableScissor();
+            return;
+        }
+
+        int rowY = stripTop + Math.max(0, (stripBottom - stripTop - effectiveCardH) / 2);
 
         int contentW = cards.size() * (CARD_W + CARD_GAP) - CARD_GAP;
         int maxOff = Math.max(0, contentW - viewportW);
@@ -351,10 +391,10 @@ public final class SuggestionsPanel extends AbstractWidget {
             int cardRight = cx + CARD_W;
             if (cardRight >= stripLeft && cardLeft <= stripRight) {
                 boolean hover = mouseX >= cardLeft && mouseX < cardRight
-                        && mouseY >= stripTop && mouseY < stripTop + dynCardH
+                        && mouseY >= rowY && mouseY < rowY + effectiveCardH
                         && mouseX >= stripLeft && mouseX < stripRight;
                 if (hover) hoveredCard = i;
-                renderCard(g, f, info, cardLeft, stripTop, dynThumbH, dynCardH, hover);
+                renderCard(g, f, info, cardLeft, rowY, effectiveThumbH, effectiveCardH, hover);
                 if (Thumbnails.get(info.getId()) == null) {
                     Thumbnails.request(info.getId(), info.getThumbnailUrl());
                 }
@@ -372,9 +412,21 @@ public final class SuggestionsPanel extends AbstractWidget {
         }
     }
 
+    private int effectiveCardH() {
+        return compactCards ? THUMB_H + 4 : CARD_H;
+    }
+
+    private int effectiveThumbH() {
+        return THUMB_H;
+    }
+
     private void renderCard(GuiGraphics g, Font f, YtVideoInfo info, int x, int y,
                             int thumbH, int cardH, boolean hover) {
-        int w = CARD_W;
+        renderCardSized(g, f, info, x, y, CARD_W, thumbH, cardH, hover);
+    }
+
+    private void renderCardSized(GuiGraphics g, Font f, YtVideoInfo info, int x, int y,
+                                 int w, int thumbH, int cardH, boolean hover) {
         g.fill(x, y, x + w, y + cardH, hover ? CARD_HOVER_BG : CARD_BG);
 
         int thumbX = x + 2;
@@ -406,6 +458,10 @@ public final class SuggestionsPanel extends AbstractWidget {
             g.drawString(f, dur, dx + 2, dy + 2, 0xFFFFFFFF, false);
         }
 
+        // Compact mode: thumbnail (with badges) only — no text underneath. Used
+        // when the strip is too short for the title/meta rows to be readable.
+        if (compactCards) return;
+
         int textX = x + 4;
         int textW = w - 8;
         int textY = thumbY + thumbH + 3;
@@ -433,10 +489,16 @@ public final class SuggestionsPanel extends AbstractWidget {
         int stripTop = searchBox.getY() + SEARCH_H + 8;
         int stripBottom = getY() + getHeight() - 10;
         if (mouseY < stripTop || mouseY > stripBottom) return false;
-        int viewportW = getWidth() - 20;
-        int contentW = cards.size() * (CARD_W + CARD_GAP) - CARD_GAP;
-        int maxOff = Math.max(0, contentW - viewportW);
-        // Accept either dx or dy
+        int maxOff;
+        if (vertical) {
+            int viewportH = stripBottom - stripTop;
+            int contentH = cards.size() * (effectiveCardH() + CARD_GAP) - CARD_GAP;
+            maxOff = Math.max(0, contentH - viewportH);
+        } else {
+            int viewportW = getWidth() - 20;
+            int contentW = cards.size() * (CARD_W + CARD_GAP) - CARD_GAP;
+            maxOff = Math.max(0, contentW - viewportW);
+        }
         double delta = (dx != 0 ? dx : dy) * 32;
         scrollOffset = Math.max(0, Math.min(maxOff, scrollOffset - (int) delta));
         return true;

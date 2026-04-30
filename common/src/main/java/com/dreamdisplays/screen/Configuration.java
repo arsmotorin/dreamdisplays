@@ -343,45 +343,79 @@ public class Configuration extends Screen {
         int contentBottom = this.height - PADDING;
         int totalW = this.width - PADDING * 2;
         int totalH = contentBottom - contentTop;
-        boolean compact = totalW < 600;
 
-        int topRowH = Math.max(220, (totalH * 6) / 10);
-        int suggestionsH = totalH - topRowH - PANEL_GAP;
-        if (suggestionsH < 160) {
-            suggestionsH = 160;
-            topRowH = totalH - suggestionsH - PANEL_GAP;
-        }
+        // Three layouts based on available space (which is what changes with GUI
+        // scale). Wide -> suggestions become a vertical column on the right with
+        // preview top-left and settings bottom-left. Normal -> current side-by-side
+        // top with horizontal suggestions strip below. Compact -> vertical stack;
+        // suggestions hide their text rows so the thumbnails alone fit.
+        // TODO: refine it in 1.6.x versions
+        boolean wide = totalW >= 900 && totalH >= 480;
+        boolean compact = !wide && totalW < 600;
 
         int leftX = PADDING;
-        int previewW;
-        int settingsW;
-        int settingsX;
-        int previewH;
-        int settingsH;
-        int settingsY;
+        int previewX, previewY, previewW, previewH;
+        int settingsX, settingsY, settingsW, settingsH;
+        int suggestionsX, suggestionsY, suggestionsW, suggestionsH;
+        boolean suggestionsVertical = false;
+        boolean suggestionsCompact = false;
 
-        if (compact) {
-            previewW = totalW;
-            previewH = Math.min(220, topRowH * 3 / 5);
-            settingsW = totalW;
-            settingsH = topRowH - previewH - PANEL_GAP;
+        if (wide) {
+            int rightColW = Math.max(200, Math.min(280, totalW * 3 / 10));
+            int leftColW = totalW - rightColW - PANEL_GAP;
+            int leftColH = totalH;
+            int previewSlice = leftColH * 6 / 10;
+            previewX = leftX;
+            previewY = contentTop;
+            previewW = leftColW;
+            previewH = previewSlice;
             settingsX = leftX;
-            settingsY = contentTop + previewH + PANEL_GAP;
+            settingsY = contentTop + previewSlice + PANEL_GAP;
+            settingsW = leftColW;
+            settingsH = leftColH - previewSlice - PANEL_GAP;
+            suggestionsX = leftX + leftColW + PANEL_GAP;
+            suggestionsY = contentTop;
+            suggestionsW = rightColW;
+            suggestionsH = leftColH;
+            suggestionsVertical = true;
         } else {
-            previewW = (totalW * 6) / 10 - PANEL_GAP / 2;
-            settingsW = totalW - previewW - PANEL_GAP;
-            settingsX = leftX + previewW + PANEL_GAP;
-            previewH = topRowH;
-            settingsH = topRowH;
-            settingsY = contentTop;
+            final int STRIP_OVERHEAD = 70; // header + search + padding inside panel
+            final int MIN_FULL_CARD_SH = 188; // sH needed to show title text
+            final int MIN_COMPACT_SH   = 160; // sH needed for thumbnail-only cards
+            final int MIN_SH           = MIN_COMPACT_SH;
+
+            int topRowH = Math.max(220, (totalH * 6) / 10);
+            int sH = totalH - topRowH - PANEL_GAP;
+            if (sH < MIN_SH) {
+                sH = MIN_SH;
+                topRowH = totalH - sH - PANEL_GAP;
+            }
+            // If even topRow can't fit a minimum preview, hide suggestions entirely
+            boolean showSuggestions = topRowH >= 160;
+            suggestionsCompact = sH < MIN_FULL_CARD_SH;
+
+            if (compact) {
+                previewW = totalW;
+                previewH = Math.min(220, topRowH * 3 / 5);
+                settingsW = totalW;
+                settingsH = topRowH - previewH - PANEL_GAP;
+                settingsX = leftX;
+                settingsY = contentTop + previewH + PANEL_GAP;
+            } else {
+                previewW = (totalW * 6) / 10 - PANEL_GAP / 2;
+                settingsW = totalW - previewW - PANEL_GAP;
+                settingsX = leftX + previewW + PANEL_GAP;
+                previewH = topRowH;
+                settingsH = topRowH;
+                settingsY = contentTop;
+            }
+            previewX = leftX;
+            previewY = contentTop;
+            suggestionsX = leftX;
+            suggestionsY = contentTop + topRowH + PANEL_GAP;
+            suggestionsW = totalW;
+            suggestionsH = showSuggestions ? sH : 0;
         }
-
-        int previewX = leftX;
-        int previewY = contentTop;
-
-        int suggestionsX = leftX;
-        int suggestionsY = contentTop + topRowH + PANEL_GAP;
-        int suggestionsW = totalW;
 
         drawPanel(g, previewX, previewY, previewW, previewH, "Preview"); // TODO: translation
         drawPanel(g, settingsX, settingsY, settingsW, settingsH, "Display settings"); // TODO: translation
@@ -390,7 +424,9 @@ public class Configuration extends Screen {
         renderSettingsSection(g, settingsX, settingsY, settingsW, settingsH);
 
         if (suggestions != null) {
-            suggestions.visible = true;
+            suggestions.visible = suggestionsH > 0;
+            suggestions.setVertical(suggestionsVertical);
+            suggestions.setCompactCards(suggestionsCompact);
             suggestions.setX(suggestionsX);
             suggestions.setY(suggestionsY);
             suggestions.setWidth(suggestionsW);
@@ -531,6 +567,8 @@ public class Configuration extends Screen {
             // to kick off playback when the saved state is "paused", so blocking it
             // on isVideoStarted leaves them stuck on "Waiting for video".
             pauseButton.active = !(scr.isSync && !scr.owner);
+            pauseButton.setIconTextureId(Identifier.fromNamespaceAndPath(
+                    Initializer.MOD_ID, scr.getPaused() ? "bupi" : "bpi"));
         }
         if (progress != null) {
             int progX = controlsLeft + CTRL_BTN * 2 + 8;
@@ -841,23 +879,27 @@ public class Configuration extends Screen {
     private void renderModLabel(GuiGraphics g, int x, int y) {
         boolean update = UpdateCheck.shouldShowArrow();
         Component name = Component.literal("Dream Displays");
-        Component ver = Component.literal(" v" + com.dreamdisplays.util.Utils.getModVersion())
+        Component ver = Component.literal(" " + com.dreamdisplays.util.Utils.getModVersion())
                 .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFF6AB7FF));
+        Component label = name.copy().append(ver);
+        g.drawString(font, label, x, y, 0xFFFFFFFF, true);
 
-        int yOffset = 0;
+        int textW = font.width(label);
+        int totalW = textW;
         if (update) {
             float t = ((System.currentTimeMillis() - modLabelOpenedAtMs) % 1800L) / 1800F;
+            int arrowYOffset = 0;
             if (t < 0.25F) {
                 float p = t / 0.25F;
-                yOffset = (int) (-Math.sin(p * Math.PI) * 3F);
+                arrowYOffset = (int) (-Math.sin(p * Math.PI) * 3F);
             }
+            Component arrow = Component.literal(" ▲")
+                    .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFFFF4040));
+            g.drawString(font, arrow, x + textW, y + arrowYOffset, 0xFFFFFFFF, true);
+            totalW += font.width(arrow);
         }
-        Component label = update
-                ? name.copy().append(ver).append(Component.literal(" ▲")
-                                                 .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFFFFD55A)))
-                : name.copy().append(ver);
-        g.drawString(font, label, x, y + yOffset, 0xFFFFFFFF, true);
-        modLabelHover = new HoverArea(x, y + yOffset - 1, font.width(label), font.lineHeight + 2);
+
+        modLabelHover = new HoverArea(x, y - 1, totalW, font.lineHeight + 2);
     }
 
     private record HoverArea(int x, int y, int w, int h) {
