@@ -60,20 +60,60 @@ public final class Thumbnails {
         EXECUTOR.submit(() -> download(videoId, url));
     }
 
-    public static void requestBatch(Iterable<YtVideoInfo> infos) {
-        for (YtVideoInfo info : infos) {
-            request(info.getId(), info.getThumbnailUrl());
-        }
-    }
-
     private static void download(String videoId, String url) {
         try {
+            byte[] cached = readDiskCache(videoId);
+            if (cached != null) {
+                Minecraft.getInstance().execute(() -> register(videoId, cached));
+                return;
+            }
             byte[] finalBytes = Objects.requireNonNull(fetch(url));
+            writeDiskCacheAsync(videoId, finalBytes);
             Minecraft.getInstance().execute(() -> register(videoId, finalBytes));
         } catch (Exception e) {
             LoggingManager.warn("Thumbnail fetch failed for " + videoId + ": " + e.getMessage());
             IN_FLIGHT.remove(videoId);
         }
+    }
+
+    private static final java.nio.file.Path THUMB_CACHE_DIR =
+            java.nio.file.Path.of("config", "dreamdisplays", "thumb-cache");
+    private static final long THUMB_CACHE_TTL_MS = 7L * 24L * 60L * 60L * 1_000L;
+
+    private static byte @Nullable [] readDiskCache(String videoId) {
+        try {
+            java.io.File f = thumbFile(videoId);
+            if (!f.isFile()) return null;
+            if (System.currentTimeMillis() - f.lastModified() > THUMB_CACHE_TTL_MS) {
+                f.delete();
+                return null;
+            }
+            return java.nio.file.Files.readAllBytes(f.toPath());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static void writeDiskCacheAsync(String videoId, byte[] bytes) {
+        EXECUTOR.submit(() -> {
+            try {
+                java.nio.file.Files.createDirectories(THUMB_CACHE_DIR);
+                java.io.File target = thumbFile(videoId);
+                java.io.File tmp = new java.io.File(target.getParentFile(),
+                        target.getName() + ".tmp");
+                java.nio.file.Files.write(tmp.toPath(), bytes);
+                java.nio.file.Files.move(tmp.toPath(), target.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            } catch (Exception ignored) {
+            }
+        });
+    }
+
+    private static java.io.File thumbFile(String videoId) {
+        String safe = videoId.toLowerCase(java.util.Locale.ROOT)
+                .replaceAll("[^a-z0-9_-]", "_");
+        return new java.io.File(THUMB_CACHE_DIR.toFile(), safe + ".jpg");
     }
 
     private static void register(String videoId, byte[] bytes) {
