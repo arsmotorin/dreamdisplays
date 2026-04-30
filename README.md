@@ -20,14 +20,15 @@ For this mod to work, players install the client mod, while server admins only n
 ### Client
 
 - **Ad-free YouTube video playback, so you can enjoy uninterrupted viewing**
-- **Seamless multiplayer synchronization**
+- **Seamless multiplayer synchronization (beta)**
+- **Livestreams and premières support**
+- **Direct YouTube search and suggestions**
 - Adjustable resolutions from 144p up to 4K
 - Volume control from 0% to 200%
 - Brightness control from 0% to 200%
 - Multiple video languages support
 - Customizable screen sizes in blocks
 - Integrated controls for play, pause, and seek
-- Native optimizations (in development)
 
 ### Server
 
