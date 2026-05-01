@@ -42,7 +42,8 @@ class DisplayCommand :
             return
         }
 
-        val sub = subCommands[args[0]?.lowercase()]
+        val first = args.getOrNull(0).orEmpty().lowercase()
+        val sub = subCommands[first]
             ?: return sendMessage(sender, "displayWrongCommand")
 
         if (sub.playerOnly && sender !is Player) {
@@ -69,14 +70,14 @@ class DisplayCommand :
             return subCommands.values
                 .asSequence()
                 .filter { !it.playerOnly || sender is Player }
-                .filter { (it.permission == null) || sender.hasPermission(it.permission ?: "") }
+                .filter { it.permission?.let { p -> sender.hasPermission(p) } ?: true }
                 .map { it.name }
                 .filter { it.lowercase().startsWith(prefix) }
                 .sorted()
                 .toMutableList()
         }
 
-        val sub = subCommands[args[0]?.lowercase()] ?: return mutableListOf()
+        val sub = subCommands[args.getOrNull(0).orEmpty().lowercase()] ?: return mutableListOf()
         if (sub.playerOnly && sender !is Player) {
             return mutableListOf()
         }
