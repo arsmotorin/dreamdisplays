@@ -45,13 +45,9 @@ class SelectionData(player: Player) {
     }
 
     fun generateDisplayData(): DisplayData {
-        check(pos1 != null) { "Position 1 is null" }
-        check(pos2 != null) { "Position 2 is null" }
-        check(face != null) { "Face is null" }
-
-        val p1 = pos1!!
-        val p2 = pos2!!
-        val f = face!!
+        val p1 = requireNotNull(pos1) { "Position 1 is null" }
+        val p2 = requireNotNull(pos2) { "Position 2 is null" }
+        val f = requireNotNull(face) { "Face is null" }
 
         val region = calculateRegion(p1, p2)
         val dPos1 = region.getMinLocation(p1.world)
