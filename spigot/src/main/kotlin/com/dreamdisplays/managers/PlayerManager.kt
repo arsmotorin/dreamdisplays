@@ -10,10 +10,10 @@ import java.util.*
  */
 @NullMarked
 object PlayerManager {
-    private val versions: MutableMap<UUID?, Version?> = HashMap()
-    private val modUpdateNotified: MutableMap<UUID?, Boolean?> = HashMap()
-    private val pluginUpdateNotified: MutableMap<UUID?, Boolean?> = HashMap()
-    private val modRequiredNotified: MutableMap<UUID?, Boolean?> = HashMap()
+    private val versions: MutableMap<UUID, Version?> = HashMap()
+    private val modUpdateNotified: MutableMap<UUID, Boolean> = HashMap()
+    private val pluginUpdateNotified: MutableMap<UUID, Boolean> = HashMap()
+    private val modRequiredNotified: MutableMap<UUID, Boolean> = HashMap()
     private val displaysEnabled: MutableMap<UUID, Boolean> = HashMap()
 
     @JvmStatic
@@ -22,11 +22,12 @@ object PlayerManager {
     }
 
     fun removeVersion(player: Player) {
-        versions.remove(player.uniqueId)
-        modUpdateNotified.remove(player.uniqueId)
-        pluginUpdateNotified.remove(player.uniqueId)
-        modRequiredNotified.remove(player.uniqueId)
-        displaysEnabled.remove(player.uniqueId)
+        val id = player.uniqueId
+        versions.remove(id)
+        modUpdateNotified.remove(id)
+        pluginUpdateNotified.remove(id)
+        modRequiredNotified.remove(id)
+        displaysEnabled.remove(id)
     }
 
     @JvmStatic
@@ -75,7 +76,7 @@ object PlayerManager {
     }
 
     @JvmStatic
-    fun getVersions(): Map<UUID?, Version?> {
-        return versions
+    fun getVersions(): Map<UUID, Version?> {
+        return HashMap(versions)
     }
 }
