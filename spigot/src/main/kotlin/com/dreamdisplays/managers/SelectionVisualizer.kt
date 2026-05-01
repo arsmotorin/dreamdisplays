@@ -20,8 +20,9 @@ object SelectionVisualizer {
                 selectionPoints.values.forEach { it.drawBox() }
                 selectionPoints.forEach { (playerId, sel) ->
                     Bukkit.getPlayer(playerId)?.let { player ->
-                        if (sel.isReady && sel.pos1 != null && sel.pos2 != null)
-                            showOutline(player, sel.pos1!!, sel.pos2!!)
+                        if (sel.isReady) {
+                            sel.pos1?.let { p1 -> sel.pos2?.let { p2 -> showOutline(player, p1, p2) } }
+                        }
                     }
                 }
             }
