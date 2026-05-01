@@ -95,6 +95,7 @@ class StorageManager(var plugin: Main) {
     }
 
     private fun bytesToUuid(bytes: ByteArray): UUID {
+        if (bytes.size != 16) throw IllegalArgumentException("UUID byte array must be 16 bytes, got ${bytes.size}.")
         val buf = ByteBuffer.wrap(bytes)
         val msb = buf.getLong()
         val lsb = buf.getLong()
@@ -161,10 +162,50 @@ class StorageManager(var plugin: Main) {
             try {
                 conn.executeQuery(sql).use { rs ->
                     while (rs.next()) {
-                        val id = bytesToUuid(rs.getBytes("id"))
-                        val ownerId = bytesToUuid(rs.getBytes("ownerId"))
-                        val videoCode = rs.getString("videoCode")
-                        val world = Bukkit.getWorld(rs.getString("world"))
+                        val idBytes = rs.getBytes("id")
+                        if (idBytes == null) {
+                            error("Skipping display row with null id.")
+                            continue
+                        }
+                        val ownerBytes = rs.getBytes("ownerId")
+                        if (ownerBytes == null) {
+                            error("Skipping display row with null ownerId.")
+                            continue
+                        }
+                        val id = try {
+                            bytesToUuid(idBytes)
+                        } catch (e: Exception) {
+                            error("Invalid UUID bytes for display id, skipping row", e)
+                            continue
+                        }
+                        val ownerId = try {
+                            bytesToUuid(ownerBytes)
+                        } catch (e: Exception) {
+                            error("Invalid UUID bytes for ownerId, skipping row", e)
+                            continue
+                        }
+                        val videoCode = rs.getString("videoCode") ?: ""
+                        val worldName = rs.getString("world")
+                        if (worldName == null) {
+                            error("Skipping display $id because world name is null")
+                            continue
+                        }
+
+                        // Try to resolve world by name first. If that fails, attempt to parse stored
+                        // world value as a UUID and resolve by UUID. This helps if worlds are
+                        // stored by UUID (or if server uses UUID-based world storage) or when
+                        // world names changed between imports.
+                        var world = Bukkit.getWorld(worldName)
+                        if (world == null) {
+                            runCatching { UUID.fromString(worldName) }.getOrNull()?.let { wuid ->
+                                world = Bukkit.getWorld(wuid)
+                            }
+                        }
+
+                        if (world == null) {
+                            error("Skipping display $id because world '$worldName' not found on server")
+                            continue
+                        }
 
                         val packed1 = rs.getLong("pos1")
                         val packed2 = rs.getLong("pos2")
@@ -179,12 +220,15 @@ class StorageManager(var plugin: Main) {
                         val width: Int = unpackHigh(sizePacked)
                         val height: Int = unpackLow(sizePacked)
 
+                        val facingIndex = rs.getInt("facing")
+                        val facing = BlockFace.entries.getOrNull(facingIndex) ?: BlockFace.NORTH
+
                         val data = DisplayData(
                             id, ownerId,
                             Location(world, x1.toDouble(), y1.toDouble(), z1.toDouble()),
                             Location(world, x2.toDouble(), y2.toDouble(), z2.toDouble()),
                             width, height,
-                            BlockFace.entries[rs.getInt("facing")]
+                            facing
                         )
                         data.url = videoCode
                         data.isSync = rs.getBoolean("isSync")
@@ -193,7 +237,7 @@ class StorageManager(var plugin: Main) {
                             data.duration = dur
                         }
 
-                        data.lang = rs.getString("lang")
+                        data.lang = rs.getString("lang") ?: ""
 
                         list.add(data)
                     }
