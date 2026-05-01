@@ -8,13 +8,14 @@ import com.dreamdisplays.utils.net.PacketUtils
 import org.bukkit.entity.Player
 import org.jspecify.annotations.NullMarked
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Manages the state of displays being played by players.
  */
 @NullMarked
 object StateManager {
-    private val playStates: MutableMap<UUID, StateData> = HashMap()
+    private val playStates: MutableMap<UUID, StateData> = ConcurrentHashMap()
 
     @JvmStatic
     fun processSyncPacket(packet: SyncData, player: Player) {

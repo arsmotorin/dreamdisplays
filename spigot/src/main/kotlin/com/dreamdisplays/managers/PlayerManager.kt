@@ -10,11 +10,11 @@ import java.util.*
  */
 @NullMarked
 object PlayerManager {
-    private val versions: MutableMap<UUID, Version?> = HashMap()
-    private val modUpdateNotified: MutableMap<UUID, Boolean> = HashMap()
-    private val pluginUpdateNotified: MutableMap<UUID, Boolean> = HashMap()
-    private val modRequiredNotified: MutableMap<UUID, Boolean> = HashMap()
-    private val displaysEnabled: MutableMap<UUID, Boolean> = HashMap()
+    private val versions: MutableMap<UUID, Version?> = java.util.concurrent.ConcurrentHashMap()
+    private val modUpdateNotified: MutableMap<UUID, Boolean> = java.util.concurrent.ConcurrentHashMap()
+    private val pluginUpdateNotified: MutableMap<UUID, Boolean> = java.util.concurrent.ConcurrentHashMap()
+    private val modRequiredNotified: MutableMap<UUID, Boolean> = java.util.concurrent.ConcurrentHashMap()
+    private val displaysEnabled: MutableMap<UUID, Boolean> = java.util.concurrent.ConcurrentHashMap()
 
     @JvmStatic
     fun setVersion(player: Player, version: Version?) {
