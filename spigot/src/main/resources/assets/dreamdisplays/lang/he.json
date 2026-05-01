@@ -9,6 +9,8 @@
   "secondPointSelected": "&7D |&f נקודה שנייה נבחרה!",
   "structureWrongDepth": "&7D |&f הבחירה חייבת להיות באורך של לפחות 1 בלוק",
   "wrongStructure": "&7D |&f ניתן להשתמש רק בבלוקי בטון שחורים לתצוגות",
+  "displayTooHigh": "&7D |&f גובה התצוגה גבוה מדי (מקסימום %d)",
+  "displayTooLow": "&7D |&f התצוגה נמוכה מדי (מינימום %d)",
   "selectionClear": "&7D |&f הבחירה נמחקה!",
   "displayWrongCommand": "&7D |&f הקלדת משהו לא נכון!",
   "displayCommandMissingPermission": "&7D |&f אין לך הרשאה להשתמש בפקודה זו!",

@@ -33,6 +33,20 @@ class CreateCommand : SubCommand {
             return
         }
 
+        // Prevent creating displays outside supported Y range (-2048..2047)
+        val y1 = sel.pos1?.blockY ?: 0
+        val y2 = sel.pos2?.blockY ?: 0
+        val maxY = kotlin.math.max(y1, y2)
+        val minY = kotlin.math.min(y1, y2)
+        if (maxY > 2047) {
+            config.getMessageForPlayer(player, "displayTooHigh")
+            return
+        }
+        if (minY < -2048) {
+            config.getMessageForPlayer(player, "displayTooLow")
+            return
+        }
+
         val displayData = sel.generateDisplayData()
         selectionPoints.remove(player.uniqueId)
 
