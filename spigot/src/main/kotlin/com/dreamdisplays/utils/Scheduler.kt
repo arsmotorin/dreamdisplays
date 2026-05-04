@@ -2,73 +2,66 @@ package com.dreamdisplays.utils
 
 import com.dreamdisplays.utils.PlatformUtils.isFolia
 import org.bukkit.plugin.Plugin
-import org.bukkit.scheduler.BukkitRunnable
 import org.jspecify.annotations.NullMarked
 import java.lang.reflect.Proxy
 
-/**
- * Scheduler utility to run tasks synchronously or asynchronously,
- * supporting both standard Bukkit and Folia server implementations.
- */
 @NullMarked
 object Scheduler {
 
     private lateinit var plugin: Plugin
 
-    // Initialize the scheduler with the plugin instance
     fun init(plugin: Plugin) {
         this.plugin = plugin
     }
 
-    // Run async
     fun runAsync(task: Runnable) {
-        if (isFolia) {
-            runFoliaAsync(task)
-        } else {
-            BukkitTask(task).runTaskAsynchronously(plugin)
-        }
+        if (isFolia) foliaRunAsync(task)
+        else plugin.server.scheduler.runTaskAsynchronously(plugin, task)
     }
 
-    // Run sync
     fun runSync(task: Runnable) {
-        if (isFolia) {
-            runFoliaSync(task)
-        } else {
-            BukkitTask(task).runTask(plugin)
-        }
+        if (isFolia) foliaRunSync(task)
+        else plugin.server.scheduler.runTask(plugin, task)
     }
 
-    // Folia async
-    private fun runFoliaAsync(task: Runnable) {
+    fun runLater(ticks: Long, task: Runnable) {
+        if (isFolia) foliaRunGlobalLater(ticks, task)
+        else plugin.server.scheduler.runTaskLater(plugin, task, ticks)
+    }
+
+    private fun foliaRunAsync(task: Runnable) {
         runCatching {
             val scheduler = Class.forName("org.bukkit.Bukkit")
                 .getMethod("getAsyncScheduler")
                 .invoke(null)
-
             scheduler.javaClass
                 .getMethod("runNow", Plugin::class.java, consumerClass)
                 .invoke(scheduler, plugin, consumer(task))
-        }.getOrElse {
-            task.run()
-        }
+        }.getOrElse { task.run() }
     }
 
-    // Folia sync
-    private fun runFoliaSync(task: Runnable) {
+    private fun foliaRunSync(task: Runnable) {
         runCatching {
             val scheduler = Class.forName("org.bukkit.Bukkit")
                 .getMethod("getGlobalRegionScheduler")
                 .invoke(null)
-
             scheduler.javaClass
                 .getMethod("run", Plugin::class.java, consumerClass)
                 .invoke(scheduler, plugin, consumer(task))
-        }.getOrElse {
-            task.run()
-        }
+        }.getOrElse { task.run() }
     }
 
-    // Create Consumer proxy (it's needed to pass Runnable to Folia scheduler)
+    private fun foliaRunGlobalLater(ticks: Long, task: Runnable) {
+        runCatching {
+            val scheduler = Class.forName("org.bukkit.Bukkit")
+                .getMethod("getGlobalRegionScheduler")
+                .invoke(null)
+            scheduler.javaClass
+                .getMethod("runDelayed", Plugin::class.java, consumerClass, Long::class.javaPrimitiveType)
+                .invoke(scheduler, plugin, consumer(task), ticks)
+        }.getOrElse { task.run() }
+    }
+
     private val consumerClass = Class.forName("java.util.function.Consumer")
 
     private fun consumer(task: Runnable): Any =
@@ -79,9 +72,4 @@ object Scheduler {
             task.run()
             null
         }
-
-    // Bukkit task wrapper
-    private class BukkitTask(private val task: Runnable) : BukkitRunnable() {
-        override fun run() = task.run()
-    }
 }
