@@ -71,6 +71,36 @@
   "displayListUnavailableUrl": "N/V",
   "displayListTpButton": " [TP]",
   "displayListUrlButton": " [URL]",
+  "displayBlockBreak": {
+    "text": "",
+    "extra": [
+      {
+        "text": "D | ",
+        "color": "#9D9D97"
+      },
+      {
+        "text": "Das ist ein Display-Block. Installiere die Mod ",
+        "color": "#FFFFFF"
+      },
+      {
+        "text": "Dream Displays",
+        "color": "#5555FF",
+        "underlined": true,
+        "clickEvent": {
+          "action": "open_url",
+          "value": "https://modrinth.com/plugin/dreamdisplays"
+        },
+        "hoverEvent": {
+          "action": "show_text",
+          "value": "Klicke, um Dream Displays herunterzuladen"
+        }
+      },
+      {
+        "text": ", um damit zu interagieren!",
+        "color": "#FFFFFF"
+      }
+    ]
+  },
   "modRequired": {
     "text": "",
     "extra": [

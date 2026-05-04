@@ -19,8 +19,9 @@ Mod:
 
 Plugin:
 
-- [ ] Inform player about a display if they don't have the mod installed when they try to touch it
+- [x] Inform player about a display if they don't have the mod installed when they try to touch it
 - [x] Various optimizations and some small bug fixes
+- [x] Switch to Paper plugin
 - [x] Drop Bukkit and Spigot support
 
 # Version 1.5.0

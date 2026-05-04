@@ -71,6 +71,36 @@
   "displayListUnavailableUrl": "N/A",
   "displayListTpButton": " [TP]",
   "displayListUrlButton": " [URL]",
+  "displayBlockBreak": {
+    "text": "",
+    "extra": [
+      {
+        "text": "D | ",
+        "color": "#9D9D97"
+      },
+      {
+        "text": "Toto je blok displeje. Nainstalujte mod ",
+        "color": "#FFFFFF"
+      },
+      {
+        "text": "Dream Displays",
+        "color": "#5555FF",
+        "underlined": true,
+        "clickEvent": {
+          "action": "open_url",
+          "value": "https://modrinth.com/plugin/dreamdisplays"
+        },
+        "hoverEvent": {
+          "action": "show_text",
+          "value": "Klikněte pro stažení Dream Displays"
+        }
+      },
+      {
+        "text": " pro interakci s ním!",
+        "color": "#FFFFFF"
+      }
+    ]
+  },
   "modRequired": {
     "text": "",
     "extra": [

@@ -1,7 +1,10 @@
 package com.dreamdisplays.listeners
 
+import com.dreamdisplays.Main.Companion.config
 import com.dreamdisplays.managers.DisplayManager.isContains
+import com.dreamdisplays.managers.PlayerManager
 import com.dreamdisplays.managers.SelectionManager.isLocationSelected
+import com.dreamdisplays.utils.Message.sendColoredMessage
 import org.bukkit.Location
 import org.bukkit.block.Block
 import org.bukkit.event.Cancellable
@@ -16,11 +19,18 @@ import org.bukkit.event.entity.EntityExplodeEvent
  * Listener for protecting display areas from modifications.
  * Handles block breaking, explosions, and piston movements.
  */
+@Suppress("UNUSED")
 class ProtectionListener : Listener {
     // Problem: player tries to break a block in a protected area
     // Solution: cancel event entirely
     @EventHandler
-    fun onBlockBreak(event: BlockBreakEvent) = cancelIfProtected(event.block.location, event)
+    fun onBlockBreak(event: BlockBreakEvent) {
+        val loc = event.block.location
+        if (isContains(loc) != null && PlayerManager.getVersion(event.player) == null) {
+            sendColoredMessage(event.player, config.messages["displayBlockBreak"])
+        }
+        cancelIfProtected(loc, event)
+    }
 
     // Problem: explosion tries to destroy blocks in a protected area
     // Solution: remove protected blocks from the list of blocks to be destroyed
