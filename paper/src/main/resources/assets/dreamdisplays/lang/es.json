@@ -60,7 +60,7 @@
   "newPluginVersion": "&7D |&f ¡Hay disponible una nueva versión del plugin Dream Displays (%s)! ¡Actualiza el plugin del servidor!",
   "configReloaded": "&7D | &f¡Dream Displays se ha recargado!",
   "configReloadFailed": "&7D |&f No se pudo recargar Dream Displays. Revisa la consola para ver errores",
-  "configReloadSummary": "&7D |&7 Recargado: &fconfiguración, mensajes de idioma, permisos de comandos",
+  "configReloadSummary": "&7D |&f Recargado: configuración, mensajes de idioma, permisos de comandos",
   "noDisplaysFound": "&7D |&f No se encontraron pantallas",
   "displayListHeader": "&7D |&f Pantallas:",
   "displayListEntry": "&7D |&f {0}. Propietario: {1}, Ubicación: [{2}, {3}, {4}], URL: {5}",
