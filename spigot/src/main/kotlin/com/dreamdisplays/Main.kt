@@ -7,7 +7,6 @@ import com.dreamdisplays.registrar.ListenerRegistrar.registerListeners
 import com.dreamdisplays.registrar.SchedulerRegistrar.runRepeatingTasks
 import com.github.zafarkhaja.semver.Version
 import me.inotsleep.utils.logging.LoggingManager.log
-import net.kyori.adventure.platform.bukkit.BukkitAudiences
 import org.bstats.bukkit.Metrics
 import org.bukkit.plugin.java.JavaPlugin
 import org.jspecify.annotations.NullMarked
@@ -15,7 +14,6 @@ import org.jspecify.annotations.NullMarked
 @NullMarked
 class Main : JavaPlugin() {
     lateinit var storage: StorageManager
-    var audiences: BukkitAudiences? = null
 
     override fun onEnable() {
         instance = this
@@ -31,12 +29,6 @@ class Main : JavaPlugin() {
 
         // Initialize Scheduler
         com.dreamdisplays.utils.Scheduler.init(this)
-
-        // Adventure API
-        audiences = runCatching { BukkitAudiences.create(this) }.getOrElse {
-            logger.warning("Adventure API not supported on this server.")
-            null
-        }
 
         // Configuration
         Companion.config = Config(this)
@@ -60,7 +52,6 @@ class Main : JavaPlugin() {
 
     fun doDisable() {
         log("Disabling Dream Displays ${description.version}...")
-        audiences?.close()
         storage.onDisable()
     }
 
