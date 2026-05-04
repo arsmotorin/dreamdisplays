@@ -2,14 +2,9 @@ package com.dreamdisplays.managers
 
 import com.dreamdisplays.Main.Companion.config
 import com.dreamdisplays.datatypes.SelectionData
-import com.dreamdisplays.utils.Message.sendColoredMessage
+import com.dreamdisplays.utils.Message.sendMessage
 import org.bukkit.entity.Player
 
-/**
- * Validates display structures based on selection data.
- * Returns specific error codes for different validation failures.
- *
- */
 object DisplayValidator {
     private const val VALID_DISPLAY = 6
 
@@ -52,6 +47,6 @@ object DisplayValidator {
             5 -> "wrongStructure"
             else -> return
         }
-        sendColoredMessage(player, config.messages[key] as String?)
+        sendMessage(player, key)
     }
 }
