@@ -1,13 +1,12 @@
 package com.dreamdisplays.listeners
 
 import com.dreamdisplays.Main.Companion.config
-import com.dreamdisplays.Main.Companion.getInstance
 import com.dreamdisplays.managers.DisplayManager
 import com.dreamdisplays.managers.DisplayManager.getDisplays
 import com.dreamdisplays.managers.PlayerManager
 import com.dreamdisplays.managers.PlayerManager.hasBeenNotifiedAboutModRequired
 import com.dreamdisplays.managers.PlayerManager.setModRequiredNotified
-import com.dreamdisplays.utils.Message.sendColoredMessage
+import com.dreamdisplays.utils.Message.sendMessage
 import com.dreamdisplays.utils.PlatformUtils.isFolia
 import com.dreamdisplays.utils.Scheduler
 import com.dreamdisplays.utils.net.PacketUtils
@@ -19,6 +18,7 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.jspecify.annotations.NullMarked
 
 @NullMarked
+@Suppress("UNUSED")
 class PlayerListener : Listener {
 
     private var hasValidatedWorld = false
@@ -46,7 +46,7 @@ class PlayerListener : Listener {
 
         Scheduler.runLater(600L) {
             if (PlayerManager.getVersion(player) == null && !hasBeenNotifiedAboutModRequired(player)) {
-                sendColoredMessage(player, config.messages["modRequired"])
+                sendMessage(player, "modRequired")
                 setModRequiredNotified(player, true)
             }
         }

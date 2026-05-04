@@ -1,10 +1,9 @@
 package com.dreamdisplays.listeners
 
-import com.dreamdisplays.Main.Companion.config
 import com.dreamdisplays.managers.DisplayManager.isContains
 import com.dreamdisplays.managers.PlayerManager
 import com.dreamdisplays.managers.SelectionManager.isLocationSelected
-import com.dreamdisplays.utils.Message.sendColoredMessage
+import com.dreamdisplays.utils.Message.sendMessage
 import org.bukkit.Location
 import org.bukkit.block.Block
 import org.bukkit.event.Cancellable
@@ -27,7 +26,7 @@ class ProtectionListener : Listener {
     fun onBlockBreak(event: BlockBreakEvent) {
         val loc = event.block.location
         if (isContains(loc) != null && PlayerManager.getVersion(event.player) == null) {
-            sendColoredMessage(event.player, config.messages["displayBlockBreak"])
+            sendMessage(event.player, "displayBlockBreak")
         }
         cancelIfProtected(loc, event)
     }

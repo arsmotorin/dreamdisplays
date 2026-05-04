@@ -188,7 +188,7 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
     }
 
     private fun sendModUpdateMessage(player: Player, version: Version) {
-        val message = when (val rawMessage = config.messages["newVersion"]) {
+        val message = when (val rawMessage = config.getMessageForPlayer(player, "newVersion")) {
             is String -> String.format(rawMessage, version.toString())
             else -> {
                 val component = GsonComponentSerializer.gson()
@@ -207,7 +207,7 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
     }
 
     private fun sendPluginUpdateMessage(player: Player, version: String) {
-        val template = config.messages["newPluginVersion"] as? String
+        val template = config.getMessageForPlayer(player, "newPluginVersion") as? String
             ?: "A new plugin version is available: %s"
         val message = String.format(template, version)
         sendColoredMessage(player, message)
