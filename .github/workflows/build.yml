@@ -168,15 +168,15 @@ jobs:
           game-versions: |
             1.21.11
 
-      - name: Publish Spigot
+      - name: Publish Paper
         if: "!contains(needs.build.outputs.version, '-SNAPSHOT')"
         uses: Kir-Antipov/mc-publish@v3.3
         with:
-          name: '[Spigot 1.21.x] Dream Displays ${{ needs.build.outputs.version }}'
-          version: spigot-${{ needs.build.outputs.version }}
+          name: '[Paper 1.21.x] Dream Displays ${{ needs.build.outputs.version }}'
+          version: paper-${{ needs.build.outputs.version }}
           version-type: release
 
-          files: build/libs/dreamdisplays-spigot-*.jar
+          files: build/libs/dreamdisplays-paper-*.jar
 
           changelog-file: plugin_changelog.md
 
@@ -184,10 +184,8 @@ jobs:
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
 
           loaders: |
-            bukkit
             folia
             paper
-            spigot
             purpur
 
           game-versions: |

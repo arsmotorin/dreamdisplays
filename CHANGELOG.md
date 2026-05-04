@@ -20,8 +20,8 @@ Mod:
 Plugin:
 
 - [ ] Inform player about a display if they don't have the mod installed when they try to touch it
-- [ ] Various optimizations and some small bug fixes
-- [ ] Drop Bukkit support (no one uses this garbage)
+- [x] Various optimizations and some small bug fixes
+- [x] Drop Bukkit and Spigot support
 
 # Version 1.5.0
 
