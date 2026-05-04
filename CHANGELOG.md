@@ -2,27 +2,28 @@
 
 Mod:
 
+- [ ] Switch mod channel from Beta to Release
 - [x] Support YouTube livestreams (live, première, and regular streams)
 - [x] Faster video loading and seeking with improved buffering and caching
-- [x] Video metadata caching system
 - [x] Direct searching and playback of YouTube videos without leaving the game
-- [x] Suggested videos based on current video and search history
+- [x] Suggested videos based on current video
 - [x] Progress slider with seeking support
-- [x] Improved display configuration UI and icons
+- [x] Mute and unmute buttons
+- [x] Improved display configuration UI
+- [x] Better UI icons in configuration
 - [x] Improved video quality and format detection
 - [ ] Better synchronization for video playback
-- [ ] Fix language selector
-- [ ] Various optimizations and some small bug fixes
+- [x] Video metadata caching system
 - [ ] Some stability improvements
+- [ ] Various optimizations and some small bug fixes
 - [x] Update dependencies
-- [ ] Switch mod channel from Beta to Release
 
 Plugin:
 
-- [x] Inform player about a display if they don't have the mod installed when they try to touch it
-- [x] Various optimizations and some small bug fixes
 - [x] Switch to Paper plugin
 - [x] Drop Bukkit and Spigot support
+- [x] Inform player about a display if they don't have the mod installed when they try to touch it
+- [x] Various optimizations and some small bug fixes
 
 # Version 1.5.0
 

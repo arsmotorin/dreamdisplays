@@ -977,6 +977,13 @@ public class MediaPlayer {
             java.util.List<YtStream> audioStreams,
             @Nullable YtStream chosenVideo
     ) {
+        LoggingManager.info("[pickAudio] lang='" + lang + "' candidates: " +
+                audioStreams.stream()
+                        .filter(s -> !s.hasVideo())
+                        .map(s -> "trackId=" + s.getAudioTrackId() + " note=" + s.getAudioTrackName())
+                        .collect(Collectors.joining(", ")));
+
+        // 1. Exact language match (audio-only streams)
         Optional<YtStream> preferred = audioStreams
                 .stream()
                 .filter(s -> !s.hasVideo())
@@ -984,6 +991,16 @@ public class MediaPlayer {
                 .reduce((f, n) -> n);
         if (preferred.isPresent()) return preferred;
 
+        // 2. Original/default audio – null or "und" language tag (audio-only)
+        // Prefer this over auto-dubbed tracks when requested language has no match
+        preferred = audioStreams
+                .stream()
+                .filter(s -> !s.hasVideo())
+                .filter(s -> s.getAudioTrackId() == null || s.getAudioTrackId().equals("und"))
+                .reduce((f, n) -> n);
+        if (preferred.isPresent()) return preferred;
+
+        // 3. Any audio-only stream (last resort before video streams)
         preferred = audioStreams
                 .stream()
                 .filter(s -> !s.hasVideo())
