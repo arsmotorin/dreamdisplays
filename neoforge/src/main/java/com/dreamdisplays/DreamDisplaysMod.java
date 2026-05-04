@@ -99,6 +99,12 @@ public class DreamDisplaysMod implements com.dreamdisplays.Mod {
                 (p, c) -> {
                 }
         );
+        registrar.playToServer(
+                SetVideo.PACKET_ID,
+                SetVideo.PACKET_CODEC,
+                (p, c) -> {
+                }
+        );
     }
 
     @SubscribeEvent

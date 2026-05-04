@@ -7,7 +7,9 @@ import com.dreamdisplays.datatypes.SyncData
 import com.dreamdisplays.managers.DisplayManager.delete
 import com.dreamdisplays.managers.DisplayManager.getDisplayData
 import com.dreamdisplays.managers.DisplayManager.getDisplays
+import com.dreamdisplays.managers.DisplayManager.getReceivers
 import com.dreamdisplays.managers.DisplayManager.report
+import com.dreamdisplays.managers.DisplayManager.sendUpdate
 import com.dreamdisplays.managers.PlayerManager.hasBeenNotifiedAboutModUpdate
 import com.dreamdisplays.managers.PlayerManager.hasBeenNotifiedAboutPluginUpdate
 import com.dreamdisplays.managers.PlayerManager.setDisplaysEnabled
@@ -52,6 +54,7 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
             "dreamdisplays:report" -> handleReport(player, message)
             "dreamdisplays:version" -> handleVersion(player, message)
             "dreamdisplays:display_enabled" -> handleDisplayEnabled(player, message)
+            "dreamdisplays:set_video" -> handleSetVideo(player, message)
         }
     }
 
@@ -232,6 +235,31 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
             }
     }
 
+    private fun handleSetVideo(player: Player, message: ByteArray) {
+        runCatching {
+            DataInputStream(ByteArrayInputStream(message)).use { input ->
+                val displayId = input.readUUID()
+                val url = input.readString()
+                val lang = input.readString()
+
+                val displayData = getDisplayData(displayId)
+                    ?: return@runCatching
+
+                if (displayData.ownerId != player.uniqueId &&
+                    !player.hasPermission(config.permissions.delete)
+                ) return@runCatching
+
+                displayData.url = url
+                displayData.lang = lang
+                displayData.isSync = false
+
+                sendUpdate(displayData, getReceivers(displayData))
+            }
+        }.onFailure { error ->
+            warn("Failed to decode set_video packet", error)
+        }
+    }
+
     private fun readUUIDPacket(message: ByteArray): UUID? {
         return runCatching {
             DataInputStream(ByteArrayInputStream(message)).use { input ->
@@ -266,4 +294,10 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
     private fun DataInputStream.readUUID() = PacketUtils.run { readUUID() }
     private fun DataInputStream.readVarInt() = PacketUtils.run { readVarInt() }
     private fun DataInputStream.readVarLong() = PacketUtils.run { readVarLong() }
+    private fun DataInputStream.readString(): String {
+        val length = readVarInt()
+        val data = ByteArray(length)
+        readFully(data)
+        return String(data, Charsets.UTF_8)
+    }
 }

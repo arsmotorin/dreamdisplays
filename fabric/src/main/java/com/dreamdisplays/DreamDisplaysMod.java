@@ -81,6 +81,11 @@ public class DreamDisplaysMod implements ClientModInitializer, Mod {
                 Version.PACKET_CODEC
         );
 
+        PayloadTypeRegistry.playC2S().register(
+                SetVideo.PACKET_ID,
+                SetVideo.PACKET_CODEC
+        );
+
         ClientPlayNetworking.registerGlobalReceiver(
                 Info.PACKET_ID,
                 (payload, unused) -> Initializer.onDisplayInfoPacket(payload)

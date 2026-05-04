@@ -3,6 +3,7 @@ package com.dreamdisplays.screen;
 import com.dreamdisplays.Initializer;
 import com.dreamdisplays.net.Packets.Info;
 import com.dreamdisplays.net.Packets.RequestSync;
+import com.dreamdisplays.net.Packets.SetVideo;
 import com.dreamdisplays.net.Packets.Sync;
 import com.dreamdisplays.ytdlp.YtDlp;
 import me.inotsleep.utils.logging.LoggingManager;
@@ -133,6 +134,7 @@ public class Screen {
     public void playSuggestedVideo(String videoUrl, String lang) {
         this.clientUrlOverride = true;
         Settings.setUrlOverride(uuid, videoUrl, lang);
+        Initializer.sendPacket(new SetVideo(uuid, videoUrl, lang));
         playVideoNow(videoUrl, lang);
     }
 

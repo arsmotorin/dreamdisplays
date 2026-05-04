@@ -211,6 +211,24 @@ public final class Packets {
         }
     }
 
+    public record SetVideo(UUID uuid, String url, String lang) implements CustomPacketPayload {
+        public static final Type<SetVideo> PACKET_ID = createType("set_video");
+        public static final StreamCodec<FriendlyByteBuf, SetVideo> PACKET_CODEC =
+                StreamCodec.of(
+                        (buf, packet) -> {
+                            buf.writeUUID(packet.uuid);
+                            buf.writeUtf(packet.url);
+                            buf.writeUtf(packet.lang);
+                        },
+                        buf -> new SetVideo(buf.readUUID(), buf.readUtf(), buf.readUtf())
+                );
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return PACKET_ID;
+        }
+    }
+
     public record ClearCache(List<UUID> displayUuids) implements CustomPacketPayload {
         public static final Type<ClearCache> PACKET_ID = createType("clear_cache");
         public static final StreamCodec<FriendlyByteBuf, ClearCache> PACKET_CODEC =
