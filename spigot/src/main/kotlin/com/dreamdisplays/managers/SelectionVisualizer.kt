@@ -13,14 +13,12 @@ object SelectionVisualizer {
         if (isFolia) return
 
         plugin.server.scheduler.runTaskTimer(plugin, Runnable {
-            selectionPoints.values.forEach { it.drawBox() }
             selectionPoints.forEach { (playerId, sel) ->
-                if (sel.isReady) {
-                    val player = Bukkit.getPlayer(playerId) ?: return@forEach
-                    val p1 = sel.pos1 ?: return@forEach
-                    val p2 = sel.pos2 ?: return@forEach
-                    showOutline(player, p1, p2)
-                }
+                if (!sel.isReady) return@forEach
+                val player = Bukkit.getPlayer(playerId) ?: return@forEach
+                val p1 = sel.pos1 ?: return@forEach
+                val p2 = sel.pos2 ?: return@forEach
+                showOutline(player, p1, p2)
             }
         }, 0L, config.settings.particleRenderDelay.toLong())
     }

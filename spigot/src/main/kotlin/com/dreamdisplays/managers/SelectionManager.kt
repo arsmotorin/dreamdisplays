@@ -31,7 +31,7 @@ object SelectionManager {
             return
         }
         sel.pos2 = loc.clone()
-        sel.isReady = false
+        sel.isReady = true
         sendMessage(player, "secondPointSelected")
     }
 
