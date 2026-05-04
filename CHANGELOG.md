@@ -14,7 +14,7 @@ Mod:
 - [ ] Fix language selector
 - [ ] Various optimizations and some small bug fixes
 - [ ] Some stability improvements
-- [ ] Update dependencies
+- [x] Update dependencies
 - [ ] Switch mod channel from Beta to Release
 
 Plugin:
