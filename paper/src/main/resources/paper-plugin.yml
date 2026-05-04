@@ -1,14 +1,14 @@
 name: DreamDisplays
 version: '${version}'
-authors: [ arsmotorin, INotSleep, Kolyakot33, Toffikk ]
-description: 'Plugin for the Dream Displays mod.'
 main: com.dreamdisplays.Main
 api-version: '1.21'
+description: 'Plugin for the Dream Displays mod.'
+authors:
+  - arsmotorin
+  - INotSleep
+  - Kolyakot33
+  - Toffikk
 folia-supported: true
-commands:
-  display:
-    description: Main command for Dream Displays
-    usage: /display <subcommand>
 permissions:
   dreamdisplays.create:
     default: true

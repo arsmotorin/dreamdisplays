@@ -33,7 +33,7 @@ tasks.processResources {
     val props = mapOf("version" to projectVersion)
     inputs.properties(props)
     filteringCharset = Charsets.UTF_8.name()
-    filesMatching("plugin.yml") {
+    filesMatching("paper-plugin.yml") {
         expand(props)
     }
 }
