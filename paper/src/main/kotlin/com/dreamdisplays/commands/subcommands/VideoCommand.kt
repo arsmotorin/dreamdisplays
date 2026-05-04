@@ -75,7 +75,7 @@ class VideoCommand : SubCommand {
     }
 
     companion object {
-        private val languageSuggestions: List<String> by lazy {
+        val languageSuggestions: List<String> by lazy {
             val fromJavaLocales = Locale.getAvailableLocales()
                 .asSequence()
                 .map { it.language.lowercase(Locale.ROOT) }

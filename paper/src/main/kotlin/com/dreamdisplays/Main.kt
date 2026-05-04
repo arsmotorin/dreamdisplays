@@ -1,22 +1,31 @@
 package com.dreamdisplays
 
-import com.dreamdisplays.commands.DisplayCommand
 import com.dreamdisplays.managers.StorageManager
 import com.dreamdisplays.registrar.ChannelRegistrar.registerChannels
+import com.dreamdisplays.registrar.CommandRegistrar
 import com.dreamdisplays.registrar.ListenerRegistrar.registerListeners
 import com.dreamdisplays.registrar.SchedulerRegistrar.runRepeatingTasks
 import com.github.zafarkhaja.semver.Version
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import me.inotsleep.utils.logging.LoggingManager.log
 import org.bstats.bukkit.Metrics
 import org.bukkit.plugin.java.JavaPlugin
 import org.jspecify.annotations.NullMarked
 
 @NullMarked
+@Suppress("UnstableApiUsage")
 class Main : JavaPlugin() {
     lateinit var storage: StorageManager
 
-    override fun onEnable() {
+    override fun onLoad() {
         instance = this
+        Companion.config = Config(this)
+        lifecycle.registerEventHandler(LifecycleEvents.COMMANDS) { event ->
+            CommandRegistrar.register(event.registrar())
+        }
+    }
+
+    override fun onEnable() {
         doEnable()
     }
 
@@ -27,26 +36,14 @@ class Main : JavaPlugin() {
     fun doEnable() {
         log("Enabling DreamDisplays ${description.version}...")
 
-        // Initialize Scheduler
         com.dreamdisplays.utils.Scheduler.init(this)
 
-        // Configuration
-        Companion.config = Config(this)
-
-        // Storage
         storage = StorageManager(this)
 
-        // Register commands
-        val displayCommand = DisplayCommand()
-        getCommand("display")?.setExecutor(displayCommand)
-        getCommand("display")?.tabCompleter = displayCommand
-
-        // Registrars
         registerListeners(this)
         registerChannels(this)
         runRepeatingTasks(this)
 
-        // bStats
         Metrics(this, 26488)
     }
 
@@ -61,8 +58,7 @@ class Main : JavaPlugin() {
         var modVersion: Version? = null
         var pluginLatestVersion: String? = null
 
-        fun getInstance(): Main =
-            instance
+        fun getInstance(): Main = instance
 
         fun disablePlugin() {
             instance.server.pluginManager.disablePlugin(instance)
