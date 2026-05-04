@@ -8,6 +8,8 @@ import com.dreamdisplays.managers.PlayerManager
 import com.dreamdisplays.managers.PlayerManager.hasBeenNotifiedAboutModRequired
 import com.dreamdisplays.managers.PlayerManager.setModRequiredNotified
 import com.dreamdisplays.utils.Message.sendColoredMessage
+import com.dreamdisplays.utils.PlatformUtils.isFolia
+import com.dreamdisplays.utils.Scheduler
 import com.dreamdisplays.utils.net.PacketUtils
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
@@ -16,14 +18,6 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.jspecify.annotations.NullMarked
 
-/**
- * Listener for player join and quit events to manage mod detection notifications.
- *
- * When a player joins, if mod detection is enabled and the player does not have the mod,
- * they will be notified after a delay. When a player leaves, their version information is removed
- * from the `PlayerManager`.
- *
- */
 @NullMarked
 class PlayerListener : Listener {
 
@@ -33,39 +27,33 @@ class PlayerListener : Listener {
     fun onPlayerJoin(event: PlayerJoinEvent) {
         val player = event.player
 
-        // Validate displays
         if (!hasValidatedWorld && getDisplays().isNotEmpty()) {
             hasValidatedWorld = true
-            getInstance().server.scheduler.runTaskLater(getInstance(), Runnable {
+            Scheduler.runLater(40L) {
                 val removedDisplayUuids = DisplayManager.validateDisplaysAndCleanup()
                 if (removedDisplayUuids.isNotEmpty()) {
-                    val onlinePlayers = Bukkit.getOnlinePlayers().toMutableList()
                     @Suppress("UNCHECKED_CAST")
-                    PacketUtils.sendClearCache(onlinePlayers, removedDisplayUuids)
+                    PacketUtils.sendClearCache(Bukkit.getOnlinePlayers().toMutableList(), removedDisplayUuids)
                 }
-            }, 40L)
+            }
         }
 
         if (!config.settings.modDetectionEnabled) return
         if (getDisplays().isEmpty()) return
 
-        if (Bukkit.getServer().name.contains("Folia", ignoreCase = true)) {
-            // Temporarily disable mod detection on Folia due to scheduler issues
-            // TODO: implement a Folia-compatible solution
-            return
-        }
+        // TODO: implement Folia-compatible entity scheduler for delayed player tasks
+        if (isFolia) return
 
-        getInstance().server.scheduler.runTaskLater(getInstance(), Runnable {
+        Scheduler.runLater(600L) {
             if (PlayerManager.getVersion(player) == null && !hasBeenNotifiedAboutModRequired(player)) {
-                val message = config.messages["modRequired"]
-                sendColoredMessage(player, message)
+                sendColoredMessage(player, config.messages["modRequired"])
                 setModRequiredNotified(player, true)
             }
-        }, 600L)
+        }
     }
 
     @EventHandler
     fun onPlayerLeave(event: PlayerQuitEvent) {
-        PlayerManager.removeVersion(event.getPlayer())
+        PlayerManager.removeVersion(event.player)
     }
 }
