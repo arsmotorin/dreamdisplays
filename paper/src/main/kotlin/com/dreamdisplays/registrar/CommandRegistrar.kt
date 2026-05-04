@@ -47,25 +47,26 @@ object CommandRegistrar {
     private fun videoSubCommand() = Commands.literal("video")
         .requires { it.sender is Player && it.sender.hasPermission(Main.config.permissions.video) }
         .then(
-            Commands.argument("url", StringArgumentType.word())
+            // greedyString captures the rest of the input (URL + optional lang separated by space)
+            Commands.argument("url_and_lang", StringArgumentType.greedyString())
+                .suggests { _, builder ->
+                    // Only suggest lang codes when the input looks like "url lang_prefix"
+                    if (builder.remaining.contains(' ')) {
+                        val prefix = builder.remaining.substringAfterLast(' ')
+                        VideoCommand.languageSuggestions
+                            .filter { it.startsWith(prefix, ignoreCase = true) }
+                            .forEach { builder.suggest(builder.remaining.substringBeforeLast(' ') + " " + it) }
+                    }
+                    builder.buildFuture()
+                }
                 .executes { ctx ->
-                    val url = StringArgumentType.getString(ctx, "url")
-                    VideoCommand().execute(ctx.source.sender, arrayOf("video", url))
+                    val raw = StringArgumentType.getString(ctx, "url_and_lang").trim()
+                    val parts = raw.split(" ")
+                    val url = parts[0]
+                    val lang = if (parts.size > 1) parts.last() else ""
+                    VideoCommand().execute(ctx.source.sender, arrayOf("video", url, lang))
                     Command.SINGLE_SUCCESS
                 }
-                .then(
-                    Commands.argument("lang", StringArgumentType.word())
-                        .suggests { _, builder ->
-                            VideoCommand.languageSuggestions.forEach { builder.suggest(it) }
-                            builder.buildFuture()
-                        }
-                        .executes { ctx ->
-                            val url = StringArgumentType.getString(ctx, "url")
-                            val lang = StringArgumentType.getString(ctx, "lang")
-                            VideoCommand().execute(ctx.source.sender, arrayOf("video", url, lang))
-                            Command.SINGLE_SUCCESS
-                        }
-                )
         )
 
     private fun toggleSubCommand(name: String, cmd: SubCommand) = Commands.literal(name)
