@@ -39,11 +39,11 @@ class CreateCommand : SubCommand {
         val maxY = kotlin.math.max(y1, y2)
         val minY = kotlin.math.min(y1, y2)
         if (maxY > 2047) {
-            config.getMessageForPlayer(player, "displayTooHigh")
+            sendMessage(player, "displayTooHigh")
             return
         }
         if (minY < -2048) {
-            config.getMessageForPlayer(player, "displayTooLow")
+            sendMessage(player, "displayTooLow")
             return
         }
 
