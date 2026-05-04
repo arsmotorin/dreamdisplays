@@ -461,21 +461,21 @@ public class Configuration extends Screen {
 
     private void renderErroredOverlay(GuiGraphics g, int mouseX, int mouseY, float delta) {
         if (suggestions != null) suggestions.visible = false;
-        if (volume != null) volume.active = false;
-        if (renderD != null) renderD.active = false;
-        if (quality != null) quality.active = false;
-        if (brightness != null) brightness.active = false;
-        if (sync != null) sync.active = false;
-        if (backButton != null) backButton.active = false;
-        if (forwardButton != null) forwardButton.active = false;
-        if (pauseButton != null) pauseButton.active = false;
-        if (renderDReset != null) renderDReset.active = false;
-        if (qualityReset != null) qualityReset.active = false;
-        if (brightnessReset != null) brightnessReset.active = false;
-        if (volumeReset != null) volumeReset.active = false;
-        if (syncReset != null) syncReset.active = false;
-        if (progress != null) progress.active = false;
-        if (muteButton != null) muteButton.active = false;
+        if (volume != null) { volume.active = false; volume.visible = false; }
+        if (renderD != null) { renderD.active = false; renderD.visible = false; }
+        if (quality != null) { quality.active = false; quality.visible = false; }
+        if (brightness != null) { brightness.active = false; brightness.visible = false; }
+        if (sync != null) { sync.active = false; sync.visible = false; }
+        if (backButton != null) { backButton.active = false; backButton.visible = false; }
+        if (forwardButton != null) { forwardButton.active = false; forwardButton.visible = false; }
+        if (pauseButton != null) { pauseButton.active = false; pauseButton.visible = false; }
+        if (renderDReset != null) { renderDReset.active = false; renderDReset.visible = false; }
+        if (qualityReset != null) { qualityReset.active = false; qualityReset.visible = false; }
+        if (brightnessReset != null) { brightnessReset.active = false; brightnessReset.visible = false; }
+        if (volumeReset != null) { volumeReset.active = false; volumeReset.visible = false; }
+        if (syncReset != null) { syncReset.active = false; syncReset.visible = false; }
+        if (progress != null) { progress.active = false; progress.visible = false; }
+        if (muteButton != null) { muteButton.active = false; muteButton.visible = false; }
 
         int panelW = Math.min(420, this.width - 40);
         int panelX = this.width / 2 - panelW / 2;
