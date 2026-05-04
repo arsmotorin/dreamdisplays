@@ -20,8 +20,8 @@ class Main : JavaPlugin() {
     override fun onLoad() {
         instance = this
         Companion.config = Config(this)
-        lifecycle.registerEventHandler(LifecycleEvents.COMMANDS) { event ->
-            CommandRegistrar.register(event.registrar())
+        lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) { event ->
+            event.registrar().register(CommandRegistrar.buildDisplayCommand(), "Main DreamDisplays command")
         }
     }
 
@@ -48,7 +48,7 @@ class Main : JavaPlugin() {
     }
 
     fun doDisable() {
-        log("Disabling Dream Displays ${description.version}...")
+        log("Disabling Dream Displays ${pluginMeta.version}...")
         storage.onDisable()
     }
 

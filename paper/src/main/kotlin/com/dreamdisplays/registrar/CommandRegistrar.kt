@@ -5,20 +5,16 @@ import com.dreamdisplays.commands.subcommands.*
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
+import com.mojang.brigadier.tree.LiteralCommandNode
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.Commands
-import io.papermc.paper.command.brigadier.CommandRegistrar as PaperCommandRegistrar
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 
 @Suppress("UnstableApiUsage")
 object CommandRegistrar {
 
-    fun register(registrar: PaperCommandRegistrar<CommandSourceStack>) {
-        registrar.register(buildDisplayCommand(), "Main DreamDisplays command")
-    }
-
-    private fun buildDisplayCommand() = Commands.literal("display")
+    fun buildDisplayCommand(): LiteralCommandNode<CommandSourceStack> = Commands.literal("display")
         .executes { ctx ->
             HelpCommand().execute(ctx.source.sender, emptyArray())
             Command.SINGLE_SUCCESS
