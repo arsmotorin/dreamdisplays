@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
     compileOnly(libs.jspecify)
     implementation("me.inotsleep:utils:1.3.4")
     implementation("com.github.zafarkhaja:java-semver:0.10.2")
@@ -14,8 +14,6 @@ dependencies {
     }
     implementation(kotlin("stdlib-jdk8:2.3.0"))
     implementation("org.bstats:bstats-bukkit:3.1.0")
-    implementation(libs.adventure)
-    implementation(libs.adventurePlatform)
 }
 
 val targetJavaVersion = 21
@@ -64,7 +62,6 @@ tasks.shadowJar {
         "org.bstats",
         "com.moandjiezana.toml",
         "com.github.zafarkhaja.semver",
-        "net.kyori",
     ).forEach { pack ->
         relocate(pack, "$prefix.$pack")
     }
