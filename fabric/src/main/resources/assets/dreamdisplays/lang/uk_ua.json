@@ -32,7 +32,7 @@
   "dreamdisplays.button.volume.tooltip.3": "",
   "dreamdisplays.button.volume.tooltip.4": "Зараз: %d%%",
   "dreamdisplays.button.synchronization": "Синхронізація",
-  "dreamdisplays.button.synchronization.tooltip.1": "Синхронізація",
+  "dreamdisplays.button.synchronization.tooltip.1": "Синхронізація (beta)",
   "dreamdisplays.button.synchronization.tooltip.2": "Опція доступна лише власнику дисплея",
   "dreamdisplays.button.synchronization.tooltip.3": "Встановлює, чи буде дисплей синхронізовано між гравцями",
   "dreamdisplays.button.synchronization.tooltip.4": "",

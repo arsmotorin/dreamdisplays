@@ -2,9 +2,8 @@
 
 Mod:
 
-- [ ] Switch mod channel from Beta to Release
+- [x] Switch mod channel from Beta to Release
 - [x] Support YouTube livestreams (live, première, and regular streams)
-- [x] Faster video loading and seeking with improved buffering and caching
 - [x] Direct searching and playback of YouTube videos without leaving the game
 - [x] Suggested videos based on current video
 - [x] Progress slider with seeking support
@@ -12,10 +11,13 @@ Mod:
 - [x] Improved display configuration UI
 - [x] Better UI icons in configuration
 - [x] Improved video quality and format detection
-- [ ] Better synchronization for video playback
+- [x] Faster video loading and seeking with improved buffering and caching
+- [x] Rewrite seek and quality-change to use a single reliable pipeline rebuild
+- [x] Single unified pipeline for all content (merged video + audio)
+- [x] Better synchronization for video playback
 - [x] Video metadata caching system
-- [ ] Some stability improvements
-- [ ] Various optimizations and some small bug fixes
+- [x] Some stability improvements
+- [x] Various optimizations and some small bug fixes
 - [x] Update dependencies
 
 Plugin:

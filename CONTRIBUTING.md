@@ -13,7 +13,7 @@ your help makes the project better for everyone.
 ### Tips
 
 - Keep commits focused
-- Ensure your code compiles and runs correctly in **both client (Forge, NeoForge, etc.)** and **all forks (Bukkit,
+- Ensure your code compiles and runs correctly in **both client (Forge, NeoForge, etc.)** and **all forks (Paper,
   Folia, etc.)**
 - Update documentation if your changes introduce new features
 - Respect the project's license

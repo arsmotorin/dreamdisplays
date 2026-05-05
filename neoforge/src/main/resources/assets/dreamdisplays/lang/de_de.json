@@ -32,7 +32,7 @@
   "dreamdisplays.button.volume.tooltip.3": "",
   "dreamdisplays.button.volume.tooltip.4": "Aktuell: %d%%",
   "dreamdisplays.button.synchronization": "Synchronisierung",
-  "dreamdisplays.button.synchronization.tooltip.1": "Synchronisierung",
+  "dreamdisplays.button.synchronization.tooltip.1": "Synchronisierung (beta)",
   "dreamdisplays.button.synchronization.tooltip.2": "Option nur für den Besitzer der Anzeige verfügbar",
   "dreamdisplays.button.synchronization.tooltip.3": "Legt fest, ob die Anzeige zwischen Spielern synchronisiert wird",
   "dreamdisplays.button.synchronization.tooltip.4": "",
