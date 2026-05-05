@@ -207,18 +207,18 @@ public final class SuggestionsPanel extends AbstractWidget {
         startLoad();
         int seq = requestSeq.incrementAndGet();
         long tEnq = System.nanoTime();
-        LoggingManager.info("[Suggestions] search submit '" + q + "' seq=" + seq);
+        // LoggingManager.info("[Suggestions] search submit '" + q + "' seq=" + seq);
         EXECUTOR.submit(() -> {
             long tStart = System.nanoTime();
-            LoggingManager.info(String.format(
-                    "[Suggestions] search start '%s' (queue wait %d ms)",
-                    q, (tStart - tEnq) / 1_000_000L));
+            // LoggingManager.info(String.format(
+            //        "[Suggestions] search start '%s' (queue wait %d ms)",
+            //        q, (tStart - tEnq) / 1_000_000L));
             try {
                 List<YtVideoInfo> r = YtDlp.search(q, RESULT_LIMIT);
                 long tDone = System.nanoTime();
-                LoggingManager.info(String.format(
-                        "[Suggestions] search done '%s' -> %d in %d ms",
-                        q, r.size(), (tDone - tStart) / 1_000_000L));
+                // LoggingManager.info(String.format(
+                //        "[Suggestions] search done '%s' -> %d in %d ms",
+                //        q, r.size(), (tDone - tStart) / 1_000_000L));
                 publish(seq, r, null);
             } catch (Exception e) {
                 LoggingManager.warn("[Suggestions] search failed '" + q + "': " + e.getMessage());
@@ -231,18 +231,18 @@ public final class SuggestionsPanel extends AbstractWidget {
         startLoad();
         int seq = requestSeq.incrementAndGet();
         long tEnq = System.nanoTime();
-        LoggingManager.info("[Suggestions] related submit " + videoId + " seq=" + seq);
+        // LoggingManager.info("[Suggestions] related submit " + videoId + " seq=" + seq);
         EXECUTOR.submit(() -> {
             long tStart = System.nanoTime();
-            LoggingManager.info(String.format(
-                    "[Suggestions] related start %s (queue wait %d ms)",
-                    videoId, (tStart - tEnq) / 1_000_000L));
+            // LoggingManager.info(String.format(
+            //        "[Suggestions] related start %s (queue wait %d ms)",
+            //        videoId, (tStart - tEnq) / 1_000_000L));
             try {
                 List<YtVideoInfo> r = YtDlp.related(videoId, RESULT_LIMIT);
                 long tDone = System.nanoTime();
-                LoggingManager.info(String.format(
-                        "[Suggestions] related done %s -> %d in %d ms",
-                        videoId, r.size(), (tDone - tStart) / 1_000_000L));
+                // LoggingManager.info(String.format(
+                //        "[Suggestions] related done %s -> %d in %d ms",
+                //        videoId, r.size(), (tDone - tStart) / 1_000_000L));
                 publish(seq, r, null);
             } catch (Exception e) {
                 LoggingManager.warn("[Suggestions] related failed " + videoId + ": " + e.getMessage());

@@ -136,7 +136,7 @@ public final class YtDlp {
         InfoCacheEntry cached = SEARCH_CACHE.get(key);
         long now = System.currentTimeMillis();
         if (cached != null && (now - cached.createdAtMs) <= INFO_CACHE_TTL_MS) {
-            LoggingManager.info("[YtDlp] search cache hit '" + query + "' (" + cached.results.size() + " results)");
+            // LoggingManager.info("[YtDlp] search cache hit '" + query + "' (" + cached.results.size() + " results)");
             return cached.results;
         }
         CompletableFuture<List<YtVideoInfo>> future = IN_FLIGHT_SEARCHES.computeIfAbsent(
@@ -148,7 +148,7 @@ public final class YtDlp {
                         if (!web.isEmpty()) {
                             List<YtVideoInfo> results = List.copyOf(web);
                             long elapsedMs = (System.nanoTime() - t0) / 1_000_000L;
-                            LoggingManager.info("[YouTubeWeb] search '" + query + "' -> " + results.size() + " in " + elapsedMs + " ms");
+                            // LoggingManager.info("[YouTubeWeb] search '" + query + "' -> " + results.size() + " in " + elapsedMs + " ms");
                             SEARCH_CACHE.put(key, new InfoCacheEntry(results, System.currentTimeMillis()));
                             return results;
                         }
@@ -158,7 +158,7 @@ public final class YtDlp {
                     try {
                         List<YtVideoInfo> results = List.copyOf(searchUncached(query.trim(), n));
                         long elapsedMs = (System.nanoTime() - t0) / 1_000_000L;
-                        LoggingManager.info("[YtDlp] search '" + query + "' -> " + results.size() + " results in " + elapsedMs + " ms");
+                        // LoggingManager.info("[YtDlp] search '" + query + "' -> " + results.size() + " results in " + elapsedMs + " ms");
                         SEARCH_CACHE.put(key, new InfoCacheEntry(results, System.currentTimeMillis()));
                         return results;
                     } catch (IOException e) {
@@ -176,7 +176,7 @@ public final class YtDlp {
         InfoCacheEntry cached = RELATED_CACHE.get(key);
         long now = System.currentTimeMillis();
         if (cached != null && (now - cached.createdAtMs) <= INFO_CACHE_TTL_MS) {
-            LoggingManager.info("[YtDlp] related cache hit " + videoId + " (" + cached.results.size() + " results)");
+            // LoggingManager.info("[YtDlp] related cache hit " + videoId + " (" + cached.results.size() + " results)");
             return cached.results;
         }
         CompletableFuture<List<YtVideoInfo>> future = IN_FLIGHT_RELATED.computeIfAbsent(
@@ -189,16 +189,16 @@ public final class YtDlp {
                             List<YtVideoInfo> immutable = List.copyOf(web);
                             RELATED_CACHE.put(key, new InfoCacheEntry(immutable, System.currentTimeMillis()));
                             long elapsedMs = (System.nanoTime() - t0) / 1_000_000L;
-                            LoggingManager.info("[YouTubeWeb] related " + videoId + " -> " + immutable.size() + " in " + elapsedMs + " ms");
+                            // LoggingManager.info("[YouTubeWeb] related " + videoId + " -> " + immutable.size() + " in " + elapsedMs + " ms");
                             return immutable;
                         }
                     } catch (Exception webEx) {
-                        LoggingManager.warn("[YouTubeWeb] related failed, falling back to yt-dlp: " + webEx.getMessage());
+                        // LoggingManager.warn("[YouTubeWeb] related failed, falling back to yt-dlp: " + webEx.getMessage());
                     }
                     try {
                         List<YtVideoInfo> immutable = loadRelatedUncached(videoId, n, key);
                         long elapsedMs = (System.nanoTime() - t0) / 1_000_000L;
-                        LoggingManager.info("[YtDlp] related " + videoId + " -> " + immutable.size() + " results in " + elapsedMs + " ms");
+                        // LoggingManager.info("[YtDlp] related " + videoId + " -> " + immutable.size() + " results in " + elapsedMs + " ms");
                         return immutable;
                     } catch (IOException e) {
                         throw new CompletionException(e);
@@ -277,13 +277,13 @@ public final class YtDlp {
         try {
             hits = new ArrayList<>(parseEntries(runJsonProcess(pb, "mix:" + videoId, 20)));
         } catch (IOException e) {
-            LoggingManager.info("[YtDlp] mix fallback for " + videoId + ": " + e.getMessage());
+            // LoggingManager.info("[YtDlp] mix fallback for " + videoId + ": " + e.getMessage());
             String title = null;
             try {
                 YtVideoInfo meta = YouTubeWeb.metadata(videoId);
                 if (meta != null) title = meta.getTitle();
             } catch (Exception webEx) {
-                LoggingManager.warn("[YouTubeWeb] metadata fallback failed for " + videoId + ": " + webEx.getMessage());
+                // LoggingManager.warn("[YouTubeWeb] metadata fallback failed for " + videoId + ": " + webEx.getMessage());
             }
             if (title == null || title.isBlank()) {
                 title = fetchVideoTitle(videoId);
@@ -383,14 +383,14 @@ public final class YtDlp {
             throw new IOException("yt-dlp exited " + process.exitValue() + ": " + stderr.toString().trim());
         }
         long tDone = System.nanoTime();
-        LoggingManager.info(String.format(
-                "[YtDlp] %s — binary=%dms, process=%dms, total=%dms (stdout %d bytes)",
-                tag,
-                0,
-                (tDone - tProcStarted) / 1_000_000L,
-                (tDone - tStart) / 1_000_000L,
-                stdout.length()
-        ));
+        // LoggingManager.info(String.format(
+        //        "[YtDlp] %s — binary=%dms, process=%dms, total=%dms (stdout %d bytes)",
+        //        tag,
+        //        0,
+        //        (tDone - tProcStarted) / 1_000_000L,
+        //        (tDone - tStart) / 1_000_000L,
+        //        stdout.length()
+        //));
         return stdout.toString();
     }
 
@@ -690,13 +690,12 @@ public final class YtDlp {
 
             for (String c : candidates) {
                 if (canExecute(c)) {
-                    LoggingManager.info("Using yt-dlp at " + c);
                     resolvedBinary = c;
                     return c;
                 }
             }
 
-            LoggingManager.info("yt-dlp not found, downloading bundled copy...");
+            // LoggingManager.info("yt-dlp not found, downloading bundled copy...");
             String downloaded = downloadBundled(bundled);
             resolvedBinary = downloaded;
             return downloaded;
