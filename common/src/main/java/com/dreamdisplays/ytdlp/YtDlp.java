@@ -278,8 +278,18 @@ public final class YtDlp {
             hits = new ArrayList<>(parseEntries(runJsonProcess(pb, "mix:" + videoId, 20)));
         } catch (IOException e) {
             LoggingManager.info("[YtDlp] mix fallback for " + videoId + ": " + e.getMessage());
-            String title = fetchVideoTitle(videoId);
+            String title = null;
+            try {
+                YtVideoInfo meta = YouTubeWeb.metadata(videoId);
+                if (meta != null) title = meta.getTitle();
+            } catch (Exception webEx) {
+                LoggingManager.warn("[YouTubeWeb] metadata fallback failed for " + videoId + ": " + webEx.getMessage());
+            }
             if (title == null || title.isBlank()) {
+                title = fetchVideoTitle(videoId);
+            }
+            if (title == null || title.isBlank()) {
+                RELATED_CACHE.put(cacheKey, new InfoCacheEntry(List.of(), System.currentTimeMillis()));
                 return List.of();
             }
             hits = new ArrayList<>(search(title, limit + 2));
