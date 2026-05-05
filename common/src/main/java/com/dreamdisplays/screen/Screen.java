@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Screen {
 
     private static final int DEFAULT_QUALITY = 720;
-    private static final int INIT_WAIT_TIMEOUT_MS = 30_000;
+    private static final int INIT_WAIT_TIMEOUT_MS = 200_000;
     private static final int INIT_WAIT_INTERVAL_MS = 25;
     private static final long SYNC_SEEK_TOLERANCE_NS = 750_000_000L;
     private final UUID uuid;

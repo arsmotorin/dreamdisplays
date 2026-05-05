@@ -24,9 +24,6 @@ public final class YouTubeWeb {
 
     private static final String UA =
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0 Safari/537.36";
-    private static final Pattern INITIAL_DATA = Pattern.compile(
-            "var ytInitialData\\s*=\\s*(\\{.*?});",
-            Pattern.DOTALL);
     private static final Pattern AGE_PATTERN = Pattern.compile(
             "(\\d+)\\s+(second|minute|hour|day|week|month|year)s?\\s+ago",
             Pattern.CASE_INSENSITIVE);
@@ -62,15 +59,19 @@ public final class YouTubeWeb {
         conn.setRequestProperty("User-Agent", UA);
         conn.setRequestProperty("Accept-Language", "en-US,en;q=0.9");
         conn.setRequestProperty("Accept", "text/html,application/xhtml+xml");
+        String realCookies = YtDlp.getPublicCookieHeader();
         conn.setRequestProperty("Cookie",
-                "CONSENT=YES+cb; SOCS=CAI; PREF=hl=en");
+                realCookies != null ? realCookies : "CONSENT=YES+cb; SOCS=CAI; PREF=hl=en");
         try (InputStream in = conn.getInputStream()) {
             String body = new String(in.readAllBytes(), StandardCharsets.UTF_8);
-            Matcher m = INITIAL_DATA.matcher(body);
-            if (!m.find()) {
+            // Use brace-counting extraction (regex .*? cuts off at first '};')
+            String json = YtDlp.extractJsonObject(body, "var ytInitialData");
+            if (json == null) {
+                json = YtDlp.extractJsonObject(body, "window[\"ytInitialData\"]");
+            }
+            if (json == null) {
                 throw new IOException("ytInitialData not found");
             }
-            String json = m.group(1);
             try {
                 return JsonParser.parseString(json).getAsJsonObject();
             } catch (Exception e) {

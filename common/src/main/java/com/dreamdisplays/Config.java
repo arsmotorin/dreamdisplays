@@ -31,6 +31,9 @@ public class Config extends AbstractConfig {
     @Path("displays-enabled")
     public boolean displaysEnabled = true;
 
+    @Path("ytdlp-cookies-from-browser")
+    public String ytdlpCookiesFromBrowser = "auto";
+
     public Config(File baseDir) {
         super(baseDir, "config.yml");
     }
