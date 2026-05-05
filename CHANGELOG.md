@@ -1,3 +1,16 @@
+# Version 1.6.1
+
+Mod:
+
+- [x] Correct suggestion translations
+- [x] Fix video playback failing with a 403 Forbidden error when cached YouTube URLs expire – the player now automatically invalidates the stale cache entry and re-fetches fresh URLs from `yt-dlp` instead of permanently marking the screen as errored
+- [x] Reduce format URL cache TTL from 5 hours to 2 hours to avoid serving near-expired YouTube CDN links
+- [x] Improve error handling and timeout management in `yt-dlp` process execution
+
+Plugin:
+
+- [x] No changes
+
 # Version 1.6.0
 
 Mod:
