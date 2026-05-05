@@ -46,7 +46,7 @@ Done! To customize the display, look at it and press `Shift + RMB`
 
 [Read more in our wiki](https://github.com/arsmotorin/dreamdisplays/wiki).
 
-![img](https://i.imgur.com/VbICiJo.png)
+![img](https://i.imgur.com/pOQT3KW.png)
 
 ## For developers
 
