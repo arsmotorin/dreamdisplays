@@ -125,7 +125,7 @@ jobs:
         with:
           name: '[Fabric 1.21.11] Dream Displays ${{ needs.build.outputs.version }}'
           version: fabric-${{ needs.build.outputs.version }}
-          version-type: beta
+          version-type: release
 
           files: build/libs/dreamdisplays-fabric-*.jar
 
@@ -152,7 +152,7 @@ jobs:
         with:
           name: '[NeoForge 1.21.11] Dream Displays ${{ needs.build.outputs.version }}'
           version: neoforge-${{ needs.build.outputs.version }}
-          version-type: beta
+          version-type: release
 
           files: build/libs/dreamdisplays-neoforge-*.jar
 
