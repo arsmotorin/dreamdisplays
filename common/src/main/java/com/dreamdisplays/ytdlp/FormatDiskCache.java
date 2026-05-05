@@ -91,6 +91,15 @@ public final class FormatDiskCache {
         }
     }
 
+    public static void deleteEntry(String videoUrl) {
+        WRITER.submit(() -> {
+            try {
+                Files.deleteIfExists(fileFor(videoUrl).toPath());
+            } catch (IOException ignored) {
+            }
+        });
+    }
+
     public static void sweepExpired() {
         sweepExpired(DEFAULT_TTL_MS);
     }

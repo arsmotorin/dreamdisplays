@@ -96,6 +96,8 @@ public class MediaPlayer {
     private volatile boolean seekable;
     private volatile long durationHintNanos;
     private int lastQuality;
+    private volatile int fetchRetries = 0;
+    private static final int MAX_FETCH_RETRIES = 2;
 
     private volatile @Nullable ByteBuffer currentFrameBuffer;
     private volatile int currentFrameWidth = 0;
@@ -427,6 +429,7 @@ public class MediaPlayer {
             if (p != null) {
                 p.getState(0);
             }
+            fetchRetries = 0;
             initialized = true;
             if (DEBUG) {
                 LoggingManager.info("[MP debug " + debugLabel + "] picked video: " + currentVideoStream);
@@ -450,7 +453,10 @@ public class MediaPlayer {
         PlayBin p = new PlayBin("mediaPlaybin");
         p.setVideoSink(buildPlaybinVideoSink());
         p.setURI(java.net.URI.create(stream.getUrl()));
-        p.connect((PlayBin.SOURCE_SETUP) (playbin, source) -> configureHttpSource(source, 131072));
+        p.connect((PlayBin.SOURCE_SETUP) (playbin, source) -> configureHttpSource(source, 1_048_576));
+        setElementPropertyIfPresent(p, "buffer-size", 16 * 1024 * 1024);
+        setElementPropertyIfPresent(p, "buffer-duration", 3_000_000_000L);
+        setElementPropertyIfPresent(p, "ring-buffer-max-size", 32L * 1024L * 1024L);
         p.pause();
         PlayBin self = p;
 
@@ -458,8 +464,19 @@ public class MediaPlayer {
         bus.connect((Bus.ERROR) (source, code, message) -> {
             if (pipeline != self) return;
             LoggingManager.error("[MediaPlayer playbin " + debugLabel + "] GStreamer error: " + message);
-            screen.errored = true;
-            initialized = false;
+            boolean isForbidden = message != null && message.contains("Forbidden");
+            if (isForbidden && fetchRetries < MAX_FETCH_RETRIES && !terminated.get()) {
+                fetchRetries++;
+                LoggingManager.warn("[MediaPlayer playbin " + debugLabel + "] URL expired (403), invalidating cache and retrying (attempt "
+                        + fetchRetries + "/" + MAX_FETCH_RETRIES + ")");
+                YtDlp.invalidateCache(youtubeUrl);
+                initialized = false;
+                pipeline = null;
+                INIT_EXECUTOR.submit(this::initialize);
+            } else {
+                screen.errored = true;
+                initialized = false;
+            }
         });
         bus.connect((Bus.EOS) source -> {
             if (liveStream) return;
@@ -497,8 +514,21 @@ public class MediaPlayer {
     private void configureHttpSource(Element source, int blockSize) {
         setElementPropertyIfPresent(source, "user-agent", USER_AGENT_V);
         setElementPropertyIfPresent(source, "blocksize", blockSize);
-        setElementPropertyIfPresent(source, "retries", 5);
-        setElementPropertyIfPresent(source, "timeout", 15);
+        setElementPropertyIfPresent(source, "retries", 8);
+        setElementPropertyIfPresent(source, "timeout", 30);
+        setElementPropertyIfPresent(source, "keep-alive", true);
+        setElementPropertyIfPresent(source, "compress", false);
+        // YouTube CDN requires Referer/Origin headers
+        try {
+            // fromString avoids GValue boxing issues with element.set()
+            Structure extraHeaders = Structure.fromString(
+                    "extra-headers, Referer=(string)https://www.youtube.com/,"
+                    + " Origin=(string)https://www.youtube.com");
+            if (extraHeaders != null) {
+                source.set("extra-headers", extraHeaders);
+            }
+        } catch (Throwable ignored) {
+        }
     }
 
     private void setElementPropertyIfPresent(Element element, String property, Object value) {

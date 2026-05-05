@@ -1,5 +1,6 @@
 package com.dreamdisplays.ytdlp;
 
+import com.dreamdisplays.Initializer;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -33,7 +34,7 @@ public final class YtDlp {
     private static final Path BUNDLED_DIR = Path.of("libs", "yt-dlp");
     private static final String DOWNLOAD_BASE =
             "https://github.com/yt-dlp/yt-dlp/releases/latest/download/";
-    private static final long CACHE_TTL_MS = 5L * 60L * 60L * 1_000L;
+    private static final long CACHE_TTL_MS = 2L * 60L * 60L * 1_000L;
     private static final long INFO_CACHE_TTL_MS = 30L * 60L * 1_000L;
     private static final ExecutorService PREWARM_EXECUTOR =
             Executors.newSingleThreadExecutor(r -> {
@@ -41,7 +42,7 @@ public final class YtDlp {
                 thread.setDaemon(true);
                 return thread;
             });
-    private static final ExecutorService FETCH_EXECUTOR = Executors.newFixedThreadPool(3, r -> {
+    private static final ExecutorService FETCH_EXECUTOR = Executors.newFixedThreadPool(4, r -> {
         Thread thread = new Thread(r, "YtDlp-fetch");
         thread.setDaemon(true);
         return thread;
@@ -60,6 +61,16 @@ public final class YtDlp {
     private static final ConcurrentMap<String, TitleCacheEntry> TITLE_CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, CompletableFuture<@Nullable String>> IN_FLIGHT_TITLES = new ConcurrentHashMap<>();
     private static volatile @Nullable String resolvedBinary;
+    private static volatile @Nullable String resolvedCookieBrowser;
+    private static volatile boolean cookieBrowserResolved;
+    private static final String[] BROWSER_CANDIDATES = {"chrome", "firefox", "safari", "edge", "brave", "opera", "vivaldi"};
+    private static volatile @Nullable String cachedCookieHeader;
+    private static volatile long cookieHeaderExportedAt;
+    private static final long COOKIE_REFRESH_MS = 2L * 60L * 60L * 1_000L;
+    private static final String PLAYER_RESPONSE_MARKER = "ytInitialPlayerResponse";
+    private static final String WEB_UA =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                    + " (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
     private YtDlp() {
     }
@@ -81,7 +92,7 @@ public final class YtDlp {
         CompletableFuture<List<YtStream>> future = startFetchInternal(videoUrl);
 
         try {
-            return future.get(90, TimeUnit.SECONDS);
+            return future.get(180, TimeUnit.SECONDS);
         } catch (CompletionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof IOException io) {
@@ -100,10 +111,12 @@ public final class YtDlp {
     }
 
     public static void prewarmAsync() {
-        if (resolvedBinary != null) return;
+        if (resolvedBinary != null && cookieBrowserResolved && cachedCookieHeader != null) return;
         PREWARM_EXECUTOR.submit(() -> {
             try {
                 resolveBinary();
+                resolveCookieBrowser();
+                getCookieHeader();
             } catch (IOException e) {
                 LoggingManager.warn("Failed to prewarm yt-dlp", e);
             }
@@ -250,17 +263,39 @@ public final class YtDlp {
 
     private static List<YtVideoInfo> searchUncached(String query, int limit) throws IOException {
         String binary = resolveBinary();
-        ProcessBuilder pb = new ProcessBuilder(
-                binary,
-                "-J",
-                "--flat-playlist",
-                "--no-warnings",
-                // Force the lightweight "web" client only
-                "--extractor-args", "youtube:player_client=web",
-                "--playlist-end", String.valueOf(limit),
-                "ytsearch" + limit + ":" + query
-        );
-        return parseEntries(runJsonProcess(pb, "search:" + query, 25));
+        List<String> args = new ArrayList<>();
+        args.add(binary);
+        addCookieArgs(args);
+        args.add("-J");
+        args.add("--flat-playlist");
+        args.add("--no-warnings");
+        args.add("--extractor-args");
+        args.add("youtube:player_client=web");
+        args.add("--playlist-end");
+        args.add(String.valueOf(limit));
+        args.add("ytsearch" + limit + ":" + query);
+        return parseEntries(runJsonProcess(new ProcessBuilder(args), "search:" + query, 25));
+    }
+
+    private static void addCookieArgs(List<String> args) {
+        // Prefer pre-exported cookies.txt (avoids browser DB access on every call)
+        Path cookieFile = BUNDLED_DIR.resolve("cookies.txt");
+        if (Files.exists(cookieFile)) {
+            try {
+                long age = System.currentTimeMillis() - Files.getLastModifiedTime(cookieFile).toMillis();
+                if (age < COOKIE_REFRESH_MS) {
+                    args.add("--cookies");
+                    args.add(cookieFile.toString());
+                    return;
+                }
+            } catch (IOException ignored) {
+            }
+        }
+        String browser = resolveCookieBrowser();
+        if (browser != null) {
+            args.add("--cookies-from-browser");
+            args.add(browser);
+        }
     }
 
     private static List<YtVideoInfo> loadRelatedUncached(String videoId, int limit, String cacheKey) throws IOException {
@@ -268,16 +303,19 @@ public final class YtDlp {
         // are dramatically faster to fetch than search-by-title (one yt-dlp call vs
         // two, no title round-trip). Falls back to title search if Mix isn't returned.
         String binary = resolveBinary();
-        ProcessBuilder pb = new ProcessBuilder(
-                binary,
-                "-J",
-                "--flat-playlist",
-                "--no-warnings",
-                "--extractor-args", "youtube:player_client=web",
-                "--playlist-end", String.valueOf(limit + 2),
-                "--lazy-playlist",
-                "https://www.youtube.com/watch?v=" + videoId + "&list=RD" + videoId
-        );
+        List<String> args = new ArrayList<>();
+        args.add(binary);
+        addCookieArgs(args);
+        args.add("-J");
+        args.add("--flat-playlist");
+        args.add("--no-warnings");
+        args.add("--extractor-args");
+        args.add("youtube:player_client=web");
+        args.add("--playlist-end");
+        args.add(String.valueOf(limit + 2));
+        args.add("--lazy-playlist");
+        args.add("https://www.youtube.com/watch?v=" + videoId + "&list=RD" + videoId);
+        ProcessBuilder pb = new ProcessBuilder(args);
         List<YtVideoInfo> hits;
         try {
             hits = new ArrayList<>(parseEntries(runJsonProcess(pb, "mix:" + videoId, 20)));
@@ -345,14 +383,15 @@ public final class YtDlp {
 
     private static @Nullable String fetchVideoTitleUncached(String videoId) throws IOException {
         String binary = resolveBinary();
-        ProcessBuilder pb = new ProcessBuilder(
-                binary,
-                "--print", "%(title)s",
-                "--no-warnings",
-                "--skip-download",
-                "https://www.youtube.com/watch?v=" + videoId
-        );
-        String out = runJsonProcess(pb, "title:" + videoId, 25).trim();
+        List<String> args = new ArrayList<>();
+        args.add(binary);
+        addCookieArgs(args);
+        args.add("--print");
+        args.add("%(title)s");
+        args.add("--no-warnings");
+        args.add("--skip-download");
+        args.add("https://www.youtube.com/watch?v=" + videoId);
+        String out = runJsonProcess(new ProcessBuilder(args), "title:" + videoId, 25).trim();
         return out.isEmpty() ? null : out;
     }
 
@@ -362,25 +401,22 @@ public final class YtDlp {
         Process process = pb.start();
         long tProcStarted = System.nanoTime();
         StringBuilder stdout = new StringBuilder();
-        try (BufferedReader r = new BufferedReader(
-                new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-            char[] buf = new char[8192];
-            int n;
-            while ((n = r.read(buf)) != -1) stdout.append(buf, 0, n);
-        }
         StringBuilder stderr = new StringBuilder();
-        try (BufferedReader r = new BufferedReader(
-                new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
-            char[] buf = new char[8192];
-            int n;
-            while ((n = r.read(buf)) != -1) stderr.append(buf, 0, n);
-        }
+        Thread stdoutReader = streamReader(process.getInputStream(), stdout, "YtDlp-stdout");
+        Thread stderrReader = streamReader(process.getErrorStream(), stderr, "YtDlp-stderr");
+        stdoutReader.start();
+        stderrReader.start();
         try {
             if (!process.waitFor(timeoutSec, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
+                stdoutReader.join(2_000);
+                stderrReader.join(2_000);
                 throw new IOException("yt-dlp timed out for " + tag);
             }
+            stdoutReader.join(5_000);
+            stderrReader.join(5_000);
         } catch (InterruptedException e) {
+            process.destroyForcibly();
             Thread.currentThread().interrupt();
             throw new IOException("Interrupted waiting for yt-dlp", e);
         }
@@ -457,47 +493,67 @@ public final class YtDlp {
     }
 
     private static List<YtStream> fetchUncached(String videoUrl) throws IOException {
+        IOException lastError = null;
+        for (int attempt = 0; attempt < 2; attempt++) {
+            if (attempt > 0) {
+                try {
+                    Thread.sleep(5_000);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Interrupted before yt-dlp retry", ie);
+                }
+            }
+            try {
+                return fetchUncachedOnce(videoUrl);
+            } catch (IOException e) {
+                String msg = e.getMessage();
+                if (msg != null && msg.contains("timed out")) throw e;
+                lastError = e;
+            }
+        }
+        throw lastError;
+    }
+
+    private static List<YtStream> fetchUncachedOnce(String videoUrl) throws IOException {
         String binary = resolveBinary();
-        ProcessBuilder pb = new ProcessBuilder(
-                binary,
-                "-J",
-                "--no-playlist",
-                "--no-warnings",
-                videoUrl
-        );
+        List<String> cmd = new ArrayList<>();
+        cmd.add(binary);
+        addCookieArgs(cmd);
+        cmd.add("-J");
+        cmd.add("--no-playlist");
+        cmd.add("--no-warnings");
+        cmd.add("--no-check-formats");
+        cmd.add(videoUrl);
+        ProcessBuilder pb = new ProcessBuilder(cmd);
         pb.redirectErrorStream(false);
         Process process = pb.start();
 
         StringBuilder stdout = new StringBuilder();
         StringBuilder stderr = new StringBuilder();
 
-        Thread stderrReader = new Thread(() -> {
-            try (BufferedReader r = new BufferedReader(
-                    new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
-                char[] buf = new char[8192];
-                int n;
-                while ((n = r.read(buf)) != -1) stderr.append(buf, 0, n);
-            } catch (IOException ignored) {
-            }
-        }, "YtDlp-stderr");
-        stderrReader.setDaemon(true);
+        Thread stdoutReader = streamReader(process.getInputStream(), stdout, "YtDlp-stdout");
+        Thread stderrReader = streamReader(process.getErrorStream(), stderr, "YtDlp-stderr");
+        stdoutReader.start();
         stderrReader.start();
 
-        try (BufferedReader r = new BufferedReader(
-                new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8)
-        )) {
-            char[] buf = new char[8192];
-            int n;
-            while ((n = r.read(buf)) != -1) stdout.append(buf, 0, n);
-        }
-
         try {
-            stderrReader.join(5_000);
-            if (!process.waitFor(60, TimeUnit.SECONDS)) {
+            long t0 = System.nanoTime();
+            if (!process.waitFor(90, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
+                stdoutReader.join(2_000);
+                stderrReader.join(2_000);
+                LoggingManager.warn("[YtDlp] fetch timeout after 90s for " + videoUrl
+                        + " (stderr: " + stderr.toString().trim() + ")");
                 throw new IOException("yt-dlp timed out for url: " + videoUrl);
             }
+            stdoutReader.join(5_000);
+            stderrReader.join(5_000);
+            long elapsedMs = (System.nanoTime() - t0) / 1_000_000L;
+            if (elapsedMs > 5_000) {
+                // LoggingManager.info("[YtDlp] fetch took " + elapsedMs + "ms for " + videoUrl);
+            }
         } catch (InterruptedException e) {
+            process.destroyForcibly();
             Thread.currentThread().interrupt();
             throw new IOException("Interrupted while waiting for yt-dlp", e);
         }
@@ -510,6 +566,284 @@ public final class YtDlp {
         }
 
         return parseFormats(stdout.toString());
+    }
+
+    private static Thread streamReader(InputStream in, StringBuilder sink, String name) {
+        Thread t = new Thread(() -> {
+            try (BufferedReader r = new BufferedReader(
+                    new InputStreamReader(in, StandardCharsets.UTF_8))) {
+                char[] buf = new char[8192];
+                int n;
+                while ((n = r.read(buf)) != -1) {
+                    synchronized (sink) {
+                        sink.append(buf, 0, n);
+                    }
+                }
+            } catch (IOException ignored) {
+            }
+        }, name);
+        t.setDaemon(true);
+        return t;
+    }
+
+    private static @Nullable List<YtStream> fetchViaWeb(String videoId) {
+        try {
+            String cookieHeader = getCookieHeader();
+            if (cookieHeader == null || cookieHeader.isEmpty()) return null;
+
+            String url = "https://www.youtube.com/watch?v=" + videoId;
+            HttpURLConnection conn = (HttpURLConnection) URI.create(url).toURL().openConnection();
+            conn.setInstanceFollowRedirects(true);
+            conn.setConnectTimeout(10_000);
+            conn.setReadTimeout(15_000);
+            conn.setRequestProperty("User-Agent", WEB_UA);
+            conn.setRequestProperty("Accept-Language", "en-US,en;q=0.9");
+            conn.setRequestProperty("Accept", "text/html,application/xhtml+xml");
+            conn.setRequestProperty("Cookie", cookieHeader);
+
+            String html;
+            try (InputStream in = conn.getInputStream()) {
+                html = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            } finally {
+                conn.disconnect();
+            }
+
+            String jsonStr = extractJsonObject(html, PLAYER_RESPONSE_MARKER);
+            if (jsonStr == null) {
+                LoggingManager.warn("[YtDlp] web fetch: ytInitialPlayerResponse not found for " + videoId);
+                return null;
+            }
+
+            JsonObject playerResponse = JsonParser.parseString(jsonStr).getAsJsonObject();
+            JsonObject playability = playerResponse.getAsJsonObject("playabilityStatus");
+            if (playability == null || !"OK".equals(optString(playability, "status"))) {
+                String reason = playability != null ? optString(playability, "reason") : "unknown";
+                LoggingManager.warn("[YtDlp] web fetch: not playable for " + videoId + ": " + reason);
+                return null;
+            }
+
+            JsonObject streamingData = playerResponse.getAsJsonObject("streamingData");
+            if (streamingData == null) return null;
+
+            JsonObject videoDetails = playerResponse.getAsJsonObject("videoDetails");
+            boolean isLive = videoDetails != null && optBoolean(videoDetails, "isLiveContent");
+            long durationNanos = 0L;
+            if (videoDetails != null) {
+                String lenSec = optString(videoDetails, "lengthSeconds");
+                if (lenSec != null) {
+                    try {
+                        durationNanos = Long.parseLong(lenSec) * 1_000_000_000L;
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+            }
+            boolean seekable = !isLive && durationNanos > 0;
+
+            List<YtStream> result = new ArrayList<>();
+            parseWebFormats(streamingData.getAsJsonArray("formats"), result, isLive, seekable, durationNanos);
+            parseWebFormats(streamingData.getAsJsonArray("adaptiveFormats"), result, isLive, seekable, durationNanos);
+
+            if (result.isEmpty()) return null;
+            return List.copyOf(result);
+        } catch (Exception e) {
+            LoggingManager.warn("[YtDlp] web fetch failed for " + videoId + ": " + e.getMessage());
+            return null;
+        }
+    }
+
+    private static void parseWebFormats(@Nullable JsonArray formats, List<YtStream> out,
+                                        boolean isLive, boolean seekable, long durationNanos) {
+        if (formats == null) return;
+        for (JsonElement el : formats) {
+            if (!el.isJsonObject()) continue;
+            JsonObject f = el.getAsJsonObject();
+            String url = optString(f, "url");
+            if (url == null || url.isEmpty()) continue;
+
+            String mimeType = optString(f, "mimeType");
+            if (mimeType == null) continue;
+
+            boolean hasVideo = mimeType.startsWith("video/");
+            boolean hasAudio = mimeType.startsWith("audio/") || mimeType.contains("mp4a") || mimeType.contains("opus");
+            if (mimeType.startsWith("video/") && (mimeType.contains("mp4a") || mimeType.contains("opus"))) {
+                hasAudio = true;
+            }
+
+            String vcodec = null;
+            String acodec = null;
+            if (mimeType.contains("codecs=\"")) {
+                String codecs = mimeType.substring(mimeType.indexOf("codecs=\"") + 8);
+                codecs = codecs.substring(0, codecs.indexOf('"'));
+                String[] parts = codecs.split(",\\s*");
+                if (hasVideo) {
+                    vcodec = parts[0].trim();
+                    if (parts.length > 1) {
+                        acodec = parts[1].trim();
+                        hasAudio = true;
+                    }
+                } else {
+                    acodec = parts[0].trim();
+                }
+            }
+
+            String resolution = null;
+            Integer height = optIntField(f, "height");
+            if (height != null && height > 0) {
+                resolution = height + "p";
+            } else {
+                String ql = optString(f, "qualityLabel");
+                if (ql != null) resolution = ql;
+            }
+
+            String ext = "mp4";
+            if (mimeType.contains("webm")) ext = "webm";
+            else if (mimeType.contains("mp4")) ext = "mp4";
+            String mime = (hasVideo ? "video/" : "audio/") + ext;
+
+            Double fps = optDouble(f, "fps");
+            Integer bitrate = optIntField(f, "bitrate");
+            Double tbr = bitrate != null ? bitrate / 1000.0 : null;
+
+            String audioTrackId = null;
+            String audioTrackName = null;
+            JsonObject audioTrack = f.has("audioTrack") && f.get("audioTrack").isJsonObject()
+                    ? f.getAsJsonObject("audioTrack") : null;
+            if (audioTrack != null) {
+                audioTrackId = optString(audioTrack, "id");
+                audioTrackName = optString(audioTrack, "displayName");
+            }
+
+            out.add(new YtStream(url, mime, ext, "https", resolution,
+                    audioTrackId, audioTrackName, vcodec, acodec,
+                    fps, tbr, hasVideo, hasAudio, isLive, seekable, durationNanos));
+        }
+    }
+
+    private static @Nullable Integer optIntField(JsonObject obj, String key) {
+        if (!obj.has(key) || obj.get(key).isJsonNull()) return null;
+        try {
+            return obj.get(key).getAsInt();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static boolean optBoolean(JsonObject obj, String key) {
+        if (!obj.has(key) || obj.get(key).isJsonNull()) return false;
+        try {
+            return obj.get(key).getAsBoolean();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static void invalidateCache(String videoUrl) {
+        FORMAT_CACHE.remove(videoUrl);
+        IN_FLIGHT_FETCHES.remove(videoUrl);
+        FormatDiskCache.deleteEntry(videoUrl);
+    }
+
+    public static @Nullable String getPublicCookieHeader() {
+        return getCookieHeader();
+    }
+
+    private static @Nullable String getCookieHeader() {
+        String cached = cachedCookieHeader;
+        long now = System.currentTimeMillis();
+        if (cached != null && (now - cookieHeaderExportedAt) < COOKIE_REFRESH_MS) {
+            return cached;
+        }
+        synchronized (YtDlp.class) {
+            if (cachedCookieHeader != null && (System.currentTimeMillis() - cookieHeaderExportedAt) < COOKIE_REFRESH_MS) {
+                return cachedCookieHeader;
+            }
+            try {
+                String header = exportCookieHeader();
+                cachedCookieHeader = header;
+                cookieHeaderExportedAt = System.currentTimeMillis();
+                return header;
+            } catch (Exception e) {
+                LoggingManager.warn("[YtDlp] cookie export failed: " + e.getMessage());
+                return cachedCookieHeader;
+            }
+        }
+    }
+
+    private static @Nullable String exportCookieHeader() throws IOException {
+        String browser = resolveCookieBrowser();
+        if (browser == null) return null;
+        String binary = resolveBinary();
+        Path cookieFile = BUNDLED_DIR.resolve("cookies.txt");
+        Files.createDirectories(cookieFile.getParent());
+
+        ProcessBuilder pb = new ProcessBuilder(binary,
+                "--cookies-from-browser", browser,
+                "--cookies", cookieFile.toString(),
+                "--simulate", "--quiet", "--no-warnings",
+                "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+        pb.redirectErrorStream(true);
+        Process p = pb.start();
+        p.getInputStream().readAllBytes();
+        try {
+            if (!p.waitFor(20, TimeUnit.SECONDS)) {
+                p.destroyForcibly();
+                throw new IOException("cookie export timed out");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("interrupted", e);
+        }
+
+        if (!Files.exists(cookieFile)) return null;
+        List<String> lines = Files.readAllLines(cookieFile, StandardCharsets.UTF_8);
+        StringBuilder sb = new StringBuilder();
+        for (String line : lines) {
+            if (line.startsWith("#") || line.isBlank()) continue;
+            String[] parts = line.split("\t");
+            if (parts.length < 7) continue;
+            String domain = parts[0];
+            if (!domain.contains("youtube") && !domain.contains("google")) continue;
+            if (!sb.isEmpty()) sb.append("; ");
+            sb.append(parts[5]).append("=").append(parts[6]);
+        }
+        String result = sb.toString();
+        if (result.isEmpty()) return null;
+        LoggingManager.info("[YtDlp] exported " + lines.size() + " cookie lines, header " + result.length() + " chars");
+        return result;
+    }
+
+    static @Nullable String extractJsonObject(String html, String marker) {
+        int idx = html.indexOf(marker);
+        if (idx < 0) return null;
+        int braceStart = html.indexOf('{', idx);
+        if (braceStart < 0) return null;
+        int depth = 0;
+        boolean inString = false;
+        boolean escaped = false;
+        for (int i = braceStart; i < html.length(); i++) {
+            char c = html.charAt(i);
+            if (escaped) {
+                escaped = false;
+                continue;
+            }
+            if (c == '\\' && inString) {
+                escaped = true;
+                continue;
+            }
+            if (c == '"') {
+                inString = !inString;
+                continue;
+            }
+            if (inString) continue;
+            if (c == '{') depth++;
+            else if (c == '}') {
+                depth--;
+                if (depth == 0) {
+                    return html.substring(braceStart, i + 1);
+                }
+            }
+        }
+        return null;
     }
 
     private static List<YtStream> parseFormats(String json) throws IOException {
@@ -713,6 +1047,76 @@ public final class YtDlp {
         }
     }
 
+    private static @Nullable String resolveCookieBrowser() {
+        if (cookieBrowserResolved) return resolvedCookieBrowser;
+        synchronized (YtDlp.class) {
+            if (cookieBrowserResolved) return resolvedCookieBrowser;
+            String configured = Initializer.config != null ? Initializer.config.ytdlpCookiesFromBrowser : "auto";
+            if (configured == null) configured = "auto";
+            configured = configured.trim().toLowerCase(Locale.ENGLISH);
+
+            if (configured.equals("none") || configured.equals("off") || configured.equals("disabled") || configured.isEmpty()) {
+                cookieBrowserResolved = true;
+                resolvedCookieBrowser = null;
+                LoggingManager.info("[YtDlp] cookies-from-browser disabled via config");
+                return null;
+            }
+
+            String[] candidates = configured.equals("auto") ? BROWSER_CANDIDATES : new String[]{configured};
+            String binary;
+            try {
+                binary = resolveBinary();
+            } catch (IOException e) {
+                cookieBrowserResolved = true;
+                return null;
+            }
+            for (String browser : candidates) {
+                if (testCookieBrowser(binary, browser)) {
+                    LoggingManager.info("[YtDlp] using cookies from browser: " + browser);
+                    resolvedCookieBrowser = browser;
+                    cookieBrowserResolved = true;
+                    return browser;
+                }
+            }
+            LoggingManager.warn("[YtDlp] no working browser cookies found (tried: "
+                    + String.join(", ", candidates)
+                    + "). YouTube may rate-limit or refuse requests. "
+                    + "Set 'ytdlp-cookies-from-browser' in config to your browser name, "
+                    + "or to 'none' to silence this warning.");
+            cookieBrowserResolved = true;
+            return null;
+        }
+    }
+
+    private static boolean testCookieBrowser(String binary, String browser) {
+        try {
+            Path testCookieFile = BUNDLED_DIR.resolve("cookie-test-" + browser + ".txt");
+            Files.createDirectories(testCookieFile.getParent());
+            Files.deleteIfExists(testCookieFile);
+
+            ProcessBuilder pb = new ProcessBuilder(binary,
+                    "--cookies-from-browser", browser,
+                    "--cookies", testCookieFile.toString(),
+                    "--simulate", "--quiet", "--no-warnings",
+                    "--skip-download",
+                    "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+            pb.redirectErrorStream(true);
+            Process p = pb.start();
+            p.getInputStream().readAllBytes();
+            if (!p.waitFor(15, TimeUnit.SECONDS)) {
+                p.destroyForcibly();
+                return false;
+            }
+            // Check if cookie file was created with YouTube cookies
+            if (!Files.exists(testCookieFile)) return false;
+            List<String> lines = Files.readAllLines(testCookieFile, StandardCharsets.UTF_8);
+            Files.deleteIfExists(testCookieFile);
+            return lines.stream().anyMatch(l -> !l.startsWith("#") && l.contains("youtube"));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private static String bundledBinaryName() {
         String os = System.getProperty("os.name", "").toLowerCase(Locale.ENGLISH);
         return os.contains("win") ? "yt-dlp.exe" : "yt-dlp";
@@ -760,12 +1164,16 @@ public final class YtDlp {
             } catch (UnsupportedOperationException ignored) {
                 target.toFile().setExecutable(true, false);
             }
+            // Remove macOS quarantine flag that blocks execution of downloaded binaries
+            // This is safe for yt-dlp
+            try {
+                new ProcessBuilder("xattr", "-d", "com.apple.quarantine", target.toString())
+                        .redirectErrorStream(true).start().waitFor(5, TimeUnit.SECONDS);
+            } catch (Exception ignored) {
+            }
         }
 
         String path = target.toString();
-        if (!canExecute(path)) {
-            throw new IOException("Downloaded yt-dlp at " + path + " is not executable");
-        }
         LoggingManager.info("yt-dlp ready at " + path);
         return path;
     }
@@ -774,11 +1182,13 @@ public final class YtDlp {
         try {
             File f = new File(path);
             if (f.isAbsolute() || path.contains(File.separator)) {
-                if (!f.isFile() || !f.canExecute()) return false;
+                return f.isFile() && f.canExecute();
             }
+            // Path lookup – need to actually test
             ProcessBuilder pb = new ProcessBuilder(path, "--version");
             pb.redirectErrorStream(true);
             Process p = pb.start();
+            p.getInputStream().readAllBytes();
             if (!p.waitFor(30, TimeUnit.SECONDS)) {
                 p.destroyForcibly();
                 return false;
