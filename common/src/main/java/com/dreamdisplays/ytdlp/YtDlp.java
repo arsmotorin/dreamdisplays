@@ -41,6 +41,11 @@ public final class YtDlp {
                 thread.setDaemon(true);
                 return thread;
             });
+    private static final ExecutorService FETCH_EXECUTOR = Executors.newFixedThreadPool(3, r -> {
+        Thread thread = new Thread(r, "YtDlp-fetch");
+        thread.setDaemon(true);
+        return thread;
+    });
     private static final ExecutorService SEARCH_EXECUTOR = Executors.newFixedThreadPool(4, r -> {
         Thread thread = new Thread(r, "YtDlp-search");
         thread.setDaemon(true);
@@ -76,7 +81,7 @@ public final class YtDlp {
         CompletableFuture<List<YtStream>> future = startFetchInternal(videoUrl);
 
         try {
-            return future.get(65, TimeUnit.SECONDS);
+            return future.get(90, TimeUnit.SECONDS);
         } catch (CompletionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof IOException io) {
@@ -125,7 +130,7 @@ public final class YtDlp {
                     } catch (IOException e) {
                         throw new CompletionException(e);
                     }
-                })
+                }, FETCH_EXECUTOR)
         );
     }
 
@@ -464,6 +469,20 @@ public final class YtDlp {
         Process process = pb.start();
 
         StringBuilder stdout = new StringBuilder();
+        StringBuilder stderr = new StringBuilder();
+
+        Thread stderrReader = new Thread(() -> {
+            try (BufferedReader r = new BufferedReader(
+                    new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
+                char[] buf = new char[8192];
+                int n;
+                while ((n = r.read(buf)) != -1) stderr.append(buf, 0, n);
+            } catch (IOException ignored) {
+            }
+        }, "YtDlp-stderr");
+        stderrReader.setDaemon(true);
+        stderrReader.start();
+
         try (BufferedReader r = new BufferedReader(
                 new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8)
         )) {
@@ -472,16 +491,8 @@ public final class YtDlp {
             while ((n = r.read(buf)) != -1) stdout.append(buf, 0, n);
         }
 
-        StringBuilder stderr = new StringBuilder();
-        try (BufferedReader r = new BufferedReader(
-                new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8)
-        )) {
-            char[] buf = new char[8192];
-            int n;
-            while ((n = r.read(buf)) != -1) stderr.append(buf, 0, n);
-        }
-
         try {
+            stderrReader.join(5_000);
             if (!process.waitFor(60, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
                 throw new IOException("yt-dlp timed out for url: " + videoUrl);
