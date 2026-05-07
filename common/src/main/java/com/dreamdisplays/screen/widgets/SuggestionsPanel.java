@@ -179,9 +179,10 @@ public final class SuggestionsPanel extends AbstractWidget {
             if (currentVideoId != null) loadRelated(currentVideoId);
             return;
         }
-        // TODO: do it better
-        String maybeId = YtDlp.extractVideoId(q);
-        if (maybeId != null && maybeId.length() == 11) {
+        String maybeId = (q.startsWith("http") || q.contains("youtube.com") || q.contains("youtu.be"))
+                ? YtDlp.extractVideoId(q)
+                : null;
+        if (maybeId != null) {
             startLoad();
             int seq2 = requestSeq.incrementAndGet();
             String idForLambda = maybeId;
