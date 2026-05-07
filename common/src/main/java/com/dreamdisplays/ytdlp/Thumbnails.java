@@ -133,7 +133,6 @@ public final class Thumbnails {
         }
     }
 
-    // TODO: fix
     private static NativeImage decode(byte[] bytes) throws IOException {
         try (InputStream in = new ByteArrayInputStream(bytes)) {
             BufferedImage src = ImageIO.read(in);
@@ -148,12 +147,13 @@ public final class Thumbnails {
             int w = src.getWidth();
             int h = src.getHeight();
             NativeImage image = new NativeImage(NativeImage.Format.RGBA, w, h, false);
-            int[] argb = new int[w * h];
-            src.getRGB(0, 0, w, h, argb, 0, w);
-            for (int y = 0; y < h; y++) {
-                for (int x = 0; x < w; x++) {
-                    image.setPixel(x, y, argb[y * w + x]);
-                }
+            int[] pixels = src.getRGB(0, 0, w, h, null, 0, w);
+            long ptr = image.pixels();
+            for (int i = 0; i < pixels.length; i++) {
+                int argb = pixels[i];
+                // Convert ARGB (BufferedImage) to ABGR (NativeImage RGBA little-endian)
+                int abgr = (argb & 0xFF00FF00) | ((argb << 16) & 0x00FF0000) | ((argb >> 16) & 0xFF);
+                org.lwjgl.system.MemoryUtil.memPutInt(ptr + (long) i * 4, abgr);
             }
             return image;
         }
