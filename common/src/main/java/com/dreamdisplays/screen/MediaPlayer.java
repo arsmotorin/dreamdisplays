@@ -479,7 +479,21 @@ public class MediaPlayer {
             }
         });
         bus.connect((Bus.EOS) source -> {
-            if (liveStream) return;
+            if (pipeline != self) return;
+            if (liveStream) {
+                if (fetchRetries < MAX_FETCH_RETRIES && !terminated.get()) {
+                    fetchRetries++;
+                    LoggingManager.warn("[MediaPlayer playbin " + debugLabel + "] live EOS (URL expired?), retrying ("
+                            + fetchRetries + "/" + MAX_FETCH_RETRIES + ")");
+                    YtDlp.invalidateCache(youtubeUrl);
+                    initialized = false;
+                    pipeline = null;
+                    INIT_EXECUTOR.submit(this::initialize);
+                } else {
+                    screen.errored = true;
+                }
+                return;
+            }
             safeExecute(() -> {
                 if (pipeline != self) return;
                 self.seekSimple(Format.TIME, EnumSet.of(SeekFlags.FLUSH, SeekFlags.ACCURATE), 0L);
