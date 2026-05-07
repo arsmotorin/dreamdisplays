@@ -68,7 +68,7 @@ public class ScreenRenderer {
         fixRotation(stack, screen.getFacing());
         stack.scale(screen.getWidth(), screen.getHeight(), 0);
 
-        // Render the screen texture or black square
+        // Render the screen texture, a loading pulse, or black
         if (
                 screen.isVideoStarted() &&
                         screen.texture != null &&
@@ -76,7 +76,9 @@ public class ScreenRenderer {
         ) {
             renderGpuTexture(stack, tessellator, screen.renderType);
         } else if (screen.renderType != null) {
-            renderColor(stack, tessellator, screen.renderType);
+            float pulse = (float) Math.abs(Math.sin(System.nanoTime() / 1_500_000_000.0 * Math.PI));
+            int v = (int) (10 + pulse * 20);
+            renderColor(stack, tessellator, screen.renderType, v, v, v);
         }
         stack.popPose();
     }
@@ -205,7 +207,10 @@ public class ScreenRenderer {
     private static void renderColor(
             PoseStack stack,
             Tesselator tesselator,
-            RenderType type
+            RenderType type,
+            int r,
+            int g,
+            int b
     ) {
         Matrix4f pose = stack.last().pose();
 
@@ -216,28 +221,28 @@ public class ScreenRenderer {
 
         builder
                 .addVertex(pose, 0f, 0f, 0f)
-                .setColor(0, 0, 0, 255)
+                .setColor(r, g, b, 255)
                 .setUv(0f, 1f)
                 .setLight(0xF000F0)
                 .setNormal(0f, 0f, 1f);
 
         builder
                 .addVertex(pose, 1f, 0f, 0f)
-                .setColor(0, 0, 0, 255)
+                .setColor(r, g, b, 255)
                 .setUv(1f, 1f)
                 .setLight(0xF000F0)
                 .setNormal(0f, 0f, 1f);
 
         builder
                 .addVertex(pose, 1f, 1f, 0f)
-                .setColor(0, 0, 0, 255)
+                .setColor(r, g, b, 255)
                 .setUv(1f, 0f)
                 .setLight(0xF000F0)
                 .setNormal(0f, 0f, 1f);
 
         builder
                 .addVertex(pose, 0f, 1f, 0f)
-                .setColor(0, 0, 0, 255)
+                .setColor(r, g, b, 255)
                 .setUv(0f, 0f)
                 .setLight(0xF000F0)
                 .setNormal(0f, 0f, 1f);
