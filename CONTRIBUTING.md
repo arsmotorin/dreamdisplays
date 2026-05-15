@@ -12,7 +12,7 @@ your help makes the project better for everyone.
 
 ### Tips
 
-- Keep commits focused
+- Keep commits focused and write them ~[as that](https://www.conventionalcommits.org/en/v1.0.0/)
 - Ensure your code compiles and runs correctly in **both client (Forge, NeoForge, etc.)** and **all forks (Paper,
   Folia, etc.)**
 - Update documentation if your changes introduce new features
