@@ -1,0 +1,86 @@
+package com.dreamdisplays.client.ui.widgets
+
+import net.minecraft.client.InputType
+import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.GuiGraphics
+import net.minecraft.client.gui.components.AbstractWidget
+import net.minecraft.client.gui.narration.NarrationElementOutput
+import net.minecraft.client.input.MouseButtonEvent
+import net.minecraft.client.renderer.RenderPipelines
+import net.minecraft.network.chat.Component
+import net.minecraft.network.chat.MutableComponent
+import net.minecraft.resources.Identifier
+
+/** Toggle widget. **/
+abstract class ToggleWidget(
+    x: Int, y: Int, width: Int, height: Int,
+    message: Component,
+    var value: Boolean,
+) : AbstractWidget(x, y, width, height, message) {
+
+    private var dValue: Double = if (value) 1.0 else 0.0
+    private var sliderFocused: Boolean = false
+
+    private fun getTexture(): Identifier =
+        if (isFocused && !sliderFocused) HIGHLIGHTED_TEXTURE_ID else TEXTURE_ID
+
+    private fun getHandleTexture(): Identifier =
+        if (!isHovered && !sliderFocused) HANDLE_TEXTURE_ID else HANDLE_HIGHLIGHTED_TEXTURE_ID
+
+    override fun createNarrationMessage(): MutableComponent =
+        Component.translatable("gui.narrate.slider", message)
+
+    override fun updateWidgetNarration(output: NarrationElementOutput) {}
+
+    override fun renderWidget(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
+        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, getTexture(), x, y, width, height)
+        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, getHandleTexture(),
+            x + (dValue * (width - 8).toDouble()).toInt(), y, 8, height)
+        val i = if (active) 16777215 else 10526880
+        val msg: MutableComponent = message.copy().withStyle { it.withColor(i) }
+        renderScrollingStringOverContents(
+            guiGraphics.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.TOOLTIP_AND_CURSOR),
+            msg, 2)
+    }
+
+    override fun setFocused(focused: Boolean) {
+        super.setFocused(focused)
+        if (!focused) {
+            sliderFocused = false
+        } else {
+            val t = Minecraft.getInstance().lastInputType
+            if (t == InputType.MOUSE || t == InputType.KEYBOARD_TAB) sliderFocused = true
+        }
+    }
+
+    private fun setValueFromMouse() {
+        value = !value
+        dValue = if (value) 1.0 else 0.0
+    }
+
+    override fun onClick(event: MouseButtonEvent, doubleClick: Boolean) {
+        setValueFromMouse()
+        updateMessage()
+        applyValue()
+        super.playDownSound(Minecraft.getInstance().soundManager)
+    }
+
+    protected abstract fun updateMessage()
+    abstract fun applyValue()
+
+    fun updateValue(newValue: Boolean) {
+        if (value != newValue) {
+            value = newValue
+            dValue = if (newValue) 1.0 else 0.0
+            updateMessage()
+            applyValue()
+        }
+    }
+
+    companion object {
+        private val TEXTURE_ID = Identifier.withDefaultNamespace("widget/slider")
+        private val HIGHLIGHTED_TEXTURE_ID = Identifier.withDefaultNamespace("widget/slider_highlighted")
+        private val HANDLE_TEXTURE_ID = Identifier.withDefaultNamespace("widget/slider_handle")
+        private val HANDLE_HIGHLIGHTED_TEXTURE_ID = Identifier.withDefaultNamespace("widget/slider_handle_highlighted")
+    }
+}

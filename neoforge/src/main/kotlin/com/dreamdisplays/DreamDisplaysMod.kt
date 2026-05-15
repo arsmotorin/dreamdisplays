@@ -1,0 +1,98 @@
+package com.dreamdisplays
+
+import com.dreamdisplays.display.DisplayManager
+import com.dreamdisplays.net.Packets
+import com.dreamdisplays.render.ScreenRenderer
+import net.minecraft.client.Minecraft
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload
+import net.neoforged.api.distmarker.Dist
+import net.neoforged.bus.api.IEventBus
+import net.neoforged.bus.api.SubscribeEvent
+import net.neoforged.fml.common.Mod
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent
+import net.neoforged.neoforge.client.event.ClientTickEvent
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent
+import net.neoforged.neoforge.common.NeoForge
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent
+
+@Suppress("UNUSED")
+@Mod(value = DreamDisplaysMod.MOD_ID, dist = [Dist.CLIENT])
+class DreamDisplaysMod(modEventBus: IEventBus) : com.dreamdisplays.Mod {
+
+    init {
+        Initializer.onModInit(this)
+        modEventBus.addListener(::registerPayloads)
+        NeoForge.EVENT_BUS.register(this)
+    }
+
+    fun registerPayloads(event: RegisterPayloadHandlersEvent) {
+        val registrar = event.registrar(MOD_ID).optional().versioned("1")
+
+        registrar.playBidirectional(Packets.Delete.PACKET_ID, Packets.Delete.PACKET_CODEC,
+            { _, _ -> },
+            { payload, _ -> Initializer.onDeletePacket(payload) })
+        registrar.playToClient(Packets.Info.PACKET_ID, Packets.Info.PACKET_CODEC) { payload, _ ->
+            Initializer.onDisplayInfoPacket(payload)
+        }
+        registrar.playToClient(Packets.Premium.PACKET_ID, Packets.Premium.PACKET_CODEC) { payload, _ ->
+            Initializer.onPremiumPacket(payload)
+        }
+        registrar.playToClient(Packets.DisplayEnabled.PACKET_ID, Packets.DisplayEnabled.PACKET_CODEC) { payload, _ ->
+            Initializer.onDisplayEnabledPacket(payload)
+        }
+        registrar.playToClient(Packets.ReportEnabled.PACKET_ID, Packets.ReportEnabled.PACKET_CODEC) { payload, _ ->
+            Initializer.onReportEnabledPacket(payload)
+        }
+        registrar.playToClient(Packets.ClearCache.PACKET_ID, Packets.ClearCache.PACKET_CODEC) { payload, _ ->
+            Initializer.onClearCachePacket(payload)
+        }
+        registrar.playBidirectional(Packets.Sync.PACKET_ID, Packets.Sync.PACKET_CODEC,
+            { _, _ -> },
+            { payload, _ -> Initializer.onSyncPacket(payload) })
+        registrar.playToServer(Packets.RequestSync.PACKET_ID, Packets.RequestSync.PACKET_CODEC) { _, _ -> }
+        registrar.playToServer(Packets.Report.PACKET_ID, Packets.Report.PACKET_CODEC) { _, _ -> }
+        registrar.playToServer(Packets.Version.PACKET_ID, Packets.Version.PACKET_CODEC) { _, _ -> }
+        registrar.playToServer(Packets.SetVideo.PACKET_ID, Packets.SetVideo.PACKET_CODEC) { _, _ -> }
+    }
+
+    @SubscribeEvent
+    fun onClientTick(event: ClientTickEvent.Post) {
+        Initializer.onEndTick(Minecraft.getInstance())
+    }
+
+    @SubscribeEvent
+    fun onClientStop(event: ClientPlayerNetworkEvent.LoggingOut) {
+        DisplayManager.saveAllScreens()
+        DisplayManager.unloadAll()
+    }
+
+    @SubscribeEvent
+    fun onClientStopping(event: ClientPlayerNetworkEvent.LoggingOut) {
+        Initializer.onStop()
+    }
+
+    @SubscribeEvent
+    fun onRenderLevelAfterEntities(event: RenderLevelStageEvent.AfterEntities) {
+        val mc = Minecraft.getInstance()
+        if (mc.level == null || mc.player == null) return
+        ScreenRenderer.render(event.poseStack, mc.gameRenderer.mainCamera)
+    }
+
+    @SubscribeEvent
+    fun onClientLogin(event: ClientPlayerNetworkEvent.LoggingIn) {
+        val mc = Minecraft.getInstance()
+        if (mc.level != null && mc.player != null) {
+            val serverId = if (mc.hasSingleplayerServer()) "singleplayer"
+            else mc.currentServer?.ip ?: "unknown"
+            DisplayManager.loadScreensForServer(serverId)
+        }
+    }
+
+    override fun sendPacket(packet: CustomPacketPayload) {
+        Minecraft.getInstance().connection?.send(packet)
+    }
+
+    companion object {
+        const val MOD_ID: String = "dreamdisplays"
+    }
+}

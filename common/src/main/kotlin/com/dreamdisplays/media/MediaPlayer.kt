@@ -15,7 +15,6 @@ import net.minecraft.client.Minecraft
 import net.minecraft.core.BlockPos
 import java.io.BufferedReader
 import java.io.IOException
-import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.OutputStream
 import java.nio.ByteBuffer
@@ -35,6 +34,10 @@ import javax.sound.sampled.DataLine
 import javax.sound.sampled.LineUnavailableException
 import javax.sound.sampled.SourceDataLine
 
+/**
+ * Media player for a single `YouTube` video. It handles stream selection, manages `FFmpeg` processes for video and audio,
+ * reads raw frames and audio. It's a main orchestrator for video / audio playback.
+ */
 class MediaPlayer(
     private val youtubeUrl: String,
     private val lang: String,
@@ -42,11 +45,11 @@ class MediaPlayer(
 ) {
 
     companion object {
-        @JvmField
+
         val DEBUG: Boolean = System.getProperty("dreamdisplays.debug")?.toBoolean() == true
                 || System.getenv("DREAMDISPLAYS_DEBUG").let { it == "1" || it.equals("true", ignoreCase = true) }
 
-        @JvmField
+
         var captureSamples: Boolean = true
 
         private const val STOP_WAIT_TIMEOUT_SECONDS = 3L
@@ -186,20 +189,20 @@ class MediaPlayer(
 
     fun isClockRunning(): Boolean = startWallNanos != CLOCK_NOT_STARTED
 
-    fun setVolume(volume: Double) {
-        userVolume = volume.coerceIn(0.0, 2.0)
+    fun setVolume(volume: Float) {
+        userVolume = volume.toDouble().coerceIn(0.0, 2.0)
         currentVolume = userVolume * lastAttenuation
     }
 
-    fun setBrightness(brightness: Double) {
-        this.brightness = brightness.coerceIn(0.0, 2.0)
+    fun setBrightness(brightness: Float) {
+        this.brightness = brightness.toDouble().coerceIn(0.0, 2.0)
     }
 
     fun textureFilled(): Boolean = synchronized(frameLock) {
         preparedBuffer?.let { it.limit() > 0 } == true
     }
 
-    fun updateFrame(texture: GpuTexture) = synchronized(frameLock) {
+    fun updateFrame(texture: GpuTexture): Unit = synchronized(frameLock) {
         val buf = preparedBuffer ?: return
         if (!frameReady) return
         val w = displayScreen.textureWidth
@@ -274,25 +277,23 @@ class MediaPlayer(
 
             liveStream = all.any(YtStream::isLive)
             seekable = !liveStream && all.any(YtStream::isSeekable)
-            durationHintNanos = all.maxOfOrNull(YtStream::getDurationNanos) ?: 0L
+            durationHintNanos = all.maxOfOrNull(YtStream::durationNanos) ?: 0L
 
             val videoStreams = all.filter(YtStream::hasVideo)
             val audioStreams = all.filter(YtStream::hasAudio)
             availableVideoStreams = videoStreams
             availableAudioStreams = audioStreams
 
-            val requestedQuality = MediaStreamSelector.parseQualityValue(displayScreen.getQuality(), 720)
-            val video = MediaStreamSelector.pickVideo(videoStreams, requestedQuality)
-                .or { videoStreams.stream().findFirst() }
-            val audio = MediaStreamSelector.pickAudio(audioStreams, lang, video.orElse(null))
-            if (video.isEmpty || audio.isEmpty) {
+            val requestedQuality = MediaStreamSelector.parseQualityValue(displayScreen.quality, 720)
+            val pickedVideo = MediaStreamSelector.pickVideo(videoStreams, requestedQuality)
+                ?: videoStreams.firstOrNull()
+            val pickedAudio = MediaStreamSelector.pickAudio(audioStreams, lang, pickedVideo)
+            if (pickedVideo == null || pickedAudio == null) {
                 LoggingManager.error("No usable streams for $cleanUrl")
                 displayScreen.errored = true
                 return
             }
 
-            val pickedVideo = video.get()
-            val pickedAudio = audio.get()
             currentVideoStream = pickedVideo
             currentAudioStream = pickedAudio
             lastQuality = MediaStreamSelector.parseQuality(pickedVideo)
@@ -493,7 +494,7 @@ class MediaPlayer(
                     LockSupport.parkNanos(10_000_000L)
                 }
                 if (terminated.get() || stopFlag.get()) return
-                line!!.start()
+                line.start()
                 currentAudioLine = line
 
                 val chunk = ByteArray(AUDIO_CHUNK_BYTES)
@@ -503,7 +504,7 @@ class MediaPlayer(
                     MediaBufferEffects.applyVolumeS16LE(chunk, n, currentVolume)
                     var written = 0
                     while (written < n && !terminated.get() && !stopFlag.get()) {
-                        val w = line!!.write(chunk, written, n - written)
+                        val w = line.write(chunk, written, n - written)
                         if (w <= 0) break
                         written += w
                     }
@@ -565,11 +566,11 @@ class MediaPlayer(
             if (restartPending.compareAndSet(false, true)) {
                 safeExecute {
                     try {
-                        val vs = currentVideoStream
-                        val as_ = currentAudioStream
-                        if (!terminated.get() && !displayScreen.paused && vs != null && as_ != null) {
+                        val video = currentVideoStream
+                        val audio = currentAudioStream
+                        if (!terminated.get() && !displayScreen.getPaused() && video != null && audio != null) {
                             seekOffsetNanos = 0
-                            startStreams(vs, as_, 0)
+                            startStreams(video, audio, 0)
                             displayScreen.afterSeek()
                         }
                     } finally {
@@ -647,10 +648,10 @@ class MediaPlayer(
 
     private fun doPlay() {
         if (!_initialized || terminated.get() || playing) return
-        val vs = currentVideoStream ?: return
-        val as_ = currentAudioStream ?: return
+        val video = currentVideoStream ?: return
+        val audio = currentAudioStream ?: return
         playing = true
-        startStreams(vs, as_, seekOffsetNanos)
+        startStreams(video, audio, seekOffsetNanos)
     }
 
     private fun doPause() {
@@ -684,8 +685,8 @@ class MediaPlayer(
 
     private fun doSeek(nanos: Long, fire: Boolean) {
         if (!_initialized || !seekable) return
-        val vs = currentVideoStream ?: return
-        val as_ = currentAudioStream ?: return
+        val video = currentVideoStream ?: return
+        val audio = currentAudioStream ?: return
 
         val wasPlaying = playing
         synchronized(frameLock) {
@@ -696,7 +697,7 @@ class MediaPlayer(
         Minecraft.getInstance().execute(displayScreen::reloadTexture)
 
         seekOffsetNanos = nanos
-        if (wasPlaying) startStreams(vs, as_, nanos)
+        if (wasPlaying) startStreams(video, audio, nanos)
         if (fire) displayScreen.afterSeek()
     }
 
@@ -709,11 +710,11 @@ class MediaPlayer(
         val target = MediaStreamSelector.parseQualityValue(desired, -1)
         if (target < 0 || target == lastQuality) return
 
-        val best = MediaStreamSelector.pickVideo(videoStreams, target).orElse(null) ?: return
+        val best = MediaStreamSelector.pickVideo(videoStreams, target) ?: return
         if (best.url == currentVideo.url) return
 
         val chosenAudio = availableAudioStreams?.let {
-            MediaStreamSelector.pickAudio(it, lang, best).orElse(currentAudio)
+            MediaStreamSelector.pickAudio(it, lang, best) ?: currentAudio
         } ?: currentAudio
 
         val pos = if (liveStream) 0L else getCurrentTime()
@@ -740,11 +741,11 @@ class MediaPlayer(
                     lastFrameReceivedNanos.set(System.nanoTime())
                     safeExecute {
                         if (terminated.get()) return@safeExecute
-                        val vs = currentVideoStream
-                        val as_ = currentAudioStream
-                        if (vs != null && as_ != null) {
+                        val video = currentVideoStream
+                        val audio = currentAudioStream
+                        if (video != null && audio != null) {
                             val pos = if (liveStream) 0L else getCurrentTime()
-                            startStreams(vs, as_, pos)
+                            startStreams(video, audio, pos)
                         }
                     }
                 }

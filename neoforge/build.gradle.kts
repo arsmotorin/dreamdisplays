@@ -2,7 +2,10 @@ plugins {
     id("net.neoforged.moddev") version libs.versions.moddev
     id("maven-publish")
     id("com.gradleup.shadow") version libs.versions.shadow
+    kotlin("jvm") version libs.versions.kotlin
 }
+
+kotlin { jvmToolchain(21) }
 
 dependencies {
     implementation(project(":common"))

@@ -3,15 +3,18 @@
 Mod:
 
 - [x] Switch from `GStreamer` to `FFmpeg` which is more reliable and performant library for video playback
-- [x] Better error handling for expired YouTube URLs
+- [x] Rewrite mod in Kotlin for better maintainability
+- [x] Add error handling for expired YouTube URLs
 - [x] Add `FFmpeg` automatic HTTP reconnection flags for resilient streaming over unstable networks
 - [x] Add watchdog timer that detects stalled `FFmpeg` processes and restarts streams automatically
 - [x] Retry on all transient errors (403, 404, 429, 5xx, connection resets, timeouts)
-- [x] Increase max fetch retries from 2 to 3
+- [x] Increase max `yt-dlp` fetch retries from 2 to 3
 - [x] Add audio line retry with backoff when multiple displays compete for audio resources
+- [ ] Use merged video + audio stream for improved synchronization and reduced resource usage
 - [x] Save brightness to display settings
-- [x] Some thumbnail optimizations
+- [x] Some thumbnail loading optimizations
 - [x] Enhance project structure and code quality in some places
+- [x] Fix focuser activation error when Minecraft hasn't been loaded yet
 - [x] Fix list of available qualities
 - [x] Fix frame buffers preallocation to reduce GC pressure during playback
 - [ ] Fix language selector ([#73](https://github.com/arsmotorin/dreamdisplays/issues/73))

@@ -4,7 +4,10 @@ plugins {
     id("net.fabricmc.fabric-loom-remap") version libs.versions.loom // remove remap in 26.1
     id("maven-publish")
     id("com.gradleup.shadow") version libs.versions.shadow
+    kotlin("jvm") version libs.versions.kotlin
 }
+
+kotlin { jvmToolchain(21) }
 
 loom {
     accessWidenerPath.set(project(":common").file("src/main/resources/dreamdisplays.classtweaker"))
