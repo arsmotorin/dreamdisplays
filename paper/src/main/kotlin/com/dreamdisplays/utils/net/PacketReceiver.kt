@@ -217,22 +217,38 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
     }
 
     private fun sendAllDisplays(player: Player) {
-        getDisplays()
-            .filter { it.pos1.world == player.world }
-            .forEach { display ->
-                sendDisplayInfo(
-                    listOf(player),
-                    display.id,
-                    display.ownerId,
-                    display.box.min,
-                    display.width,
-                    display.height,
-                    display.url,
-                    display.lang,
-                    display.facing,
-                    display.isSync
-                )
+        val displays = getDisplays().filter { it.pos1.world == player.world }
+        if (displays.isEmpty()) return
+
+        val batchSize = 5
+        val batches = displays.chunked(batchSize)
+        batches.forEachIndexed { index, batch ->
+            val delayTicks = (index * 2).toLong()
+            if (delayTicks == 0L) {
+                sendDisplayBatch(player, batch)
+            } else {
+                com.dreamdisplays.utils.Scheduler.runLater(delayTicks) {
+                    if (player.isOnline) sendDisplayBatch(player, batch)
+                }
             }
+        }
+    }
+
+    private fun sendDisplayBatch(player: Player, displays: List<com.dreamdisplays.datatypes.DisplayData>) {
+        displays.forEach { display ->
+            sendDisplayInfo(
+                listOf(player),
+                display.id,
+                display.ownerId,
+                display.box.min,
+                display.width,
+                display.height,
+                display.url,
+                display.lang,
+                display.facing,
+                display.isSync
+            )
+        }
     }
 
     private fun handleSetVideo(player: Player, message: ByteArray) {
