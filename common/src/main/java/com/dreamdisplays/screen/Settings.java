@@ -298,6 +298,7 @@ public class Settings {
         public String lang;
         public float volume;
         public String quality;
+        public float brightness;
         public boolean muted;
         public boolean isSync;
         public UUID ownerUuid;
@@ -316,6 +317,7 @@ public class Settings {
                 String lang,
                 float volume,
                 String quality,
+                float brightness,
                 boolean muted,
                 boolean isSync,
                 UUID ownerUuid
@@ -331,6 +333,7 @@ public class Settings {
             this.lang = lang;
             this.volume = volume;
             this.quality = quality;
+            this.brightness = brightness;
             this.muted = muted;
             this.isSync = isSync;
             this.ownerUuid = ownerUuid;
@@ -348,6 +351,7 @@ public class Settings {
                 String lang,
                 float volume,
                 String quality,
+                float brightness,
                 boolean muted,
                 boolean isSync,
                 UUID ownerUuid,
@@ -365,8 +369,10 @@ public class Settings {
                     lang,
                     volume,
                     quality,
+                    brightness,
                     muted,
-                    isSync, ownerUuid);
+                    isSync,
+                    ownerUuid);
             this.renderDistance = renderDistance;
             this.currentTimeNanos = currentTimeNanos;
         }

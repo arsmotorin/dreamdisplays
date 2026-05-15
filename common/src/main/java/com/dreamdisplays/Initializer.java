@@ -220,6 +220,7 @@ public class Initializer {
         screen.setSavedTimeNanos(data.currentTimeNanos);
         screen.setVolume(data.volume);
         screen.setQuality(data.quality);
+        screen.setBrightness(data.brightness);
         screen.muted = data.muted;
 
         Manager.screens.put(screen.getUUID(), screen);

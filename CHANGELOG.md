@@ -11,9 +11,10 @@ Mod:
 - [x] Increase max fetch retries from 2 to 3
 - [x] Add audio line retry with backoff when multiple displays compete for audio resources
 - [x] Fix frame buffers preallocation to reduce GC pressure during playback
+- [x] Save brightness to display settings
 - [ ] Fix language selector ([#73](https://github.com/arsmotorin/dreamdisplays/issues/73))
 - [ ] Fix video loading with Content ID ([#74](https://github.com/arsmotorin/dreamdisplays/issues/74))
-- [ ] Fix volume reset after leaving active display distance ([#76](https://github.com/arsmotorin/dreamdisplays/issues/76))
+- [x] Fix volume reset after leaving active display distance ([#76](https://github.com/arsmotorin/dreamdisplays/issues/76))
 - [ ] Discontinue to use INotSleep's utils library for safety and stability reasons
 
 Plugin:
