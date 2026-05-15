@@ -433,7 +433,14 @@ object YtDlp {
         val cmd = ArrayList<String>()
         cmd.add(binary)
         addCookieArgs(cmd)
-        cmd.addAll(listOf("-J", "--no-playlist", "--no-warnings", "--no-check-formats", videoUrl))
+        cmd.addAll(listOf(
+            "-J", "--no-playlist", "--no-warnings", "--no-check-formats",
+            "--ignore-config", "--no-mark-watched",
+            "--extractor-retries", "1",
+            "--socket-timeout", "10",
+            "--extractor-args", "youtube:player_client=web_safari,web",
+            videoUrl,
+        ))
         val pb = ProcessBuilder(cmd)
         pb.redirectErrorStream(false)
         val process = pb.start()
