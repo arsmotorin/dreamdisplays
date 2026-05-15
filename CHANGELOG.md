@@ -1,3 +1,28 @@
+# Version 1.6.2
+
+Mod:
+
+- [x] Switch from `GStreamer` to `FFmpeg` which is more reliable and performant library for video playback
+- [x] Better error handling for expired YouTube URLs
+- [x] Some thumbnail optimizations
+- [x] Add `FFmpeg` automatic HTTP reconnection flags for resilient streaming over unstable networks
+- [x] Add watchdog timer that detects stalled `FFmpeg` processes and restarts streams automatically
+- [x] Retry on all transient errors (403, 404, 429, 5xx, connection resets, timeouts)
+- [x] Increase max fetch retries from 2 to 3
+- [x] Add audio line retry with backoff when multiple displays compete for audio resources
+- [x] Fix frame buffers preallocation to reduce GC pressure during playback
+- [ ] Fix language selector ([#73](https://github.com/arsmotorin/dreamdisplays/issues/73))
+- [ ] Fix video loading with Content ID ([#74](https://github.com/arsmotorin/dreamdisplays/issues/74))
+- [ ] Fix volume reset after leaving active display distance ([#76](https://github.com/arsmotorin/dreamdisplays/issues/76))
+- [ ] Discontinue to use INotSleep's utils library for safety and stability reasons
+
+Plugin:
+
+- [x] Rate-limit sync packet broadcasting to prevent flooding when owner seeks rapidly
+- [x] Batch display info packets on player join to prevent client overload on servers with many displays
+- [x] Validate sync packet time values to reject out-of-range data
+- [ ] Discontinue to use INotSleep's utils library for safety and stability reasons
+
 # Version 1.6.1
 
 Mod:
