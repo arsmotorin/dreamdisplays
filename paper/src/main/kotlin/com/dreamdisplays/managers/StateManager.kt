@@ -10,12 +10,12 @@ import org.jspecify.annotations.NullMarked
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
-/**
- * Manages the state of displays being played by players.
- */
 @NullMarked
 object StateManager {
     private val playStates: MutableMap<UUID, StateData> = ConcurrentHashMap()
+    private val lastSyncBroadcast: MutableMap<UUID, Long> = ConcurrentHashMap()
+
+    private const val SYNC_MIN_INTERVAL_MS = 250L
 
     @JvmStatic
     fun processSyncPacket(packet: SyncData, player: Player) {
@@ -25,6 +25,7 @@ object StateManager {
 
         if (!packet.isSync) {
             playStates.remove(displayId)
+            lastSyncBroadcast.remove(displayId)
             return
         }
 
@@ -37,9 +38,21 @@ object StateManager {
             return
         }
 
+        if (packet.currentTime < 0 || packet.limitTime < 0
+            || packet.currentTime > 24L * 60 * 60 * 1_000_000_000L) {
+            return
+        }
+
         val state = playStates.computeIfAbsent(displayId) { id -> StateData(id) }
         state.update(packet)
         data.duration = packet.limitTime
+
+        val now = System.currentTimeMillis()
+        val lastBroadcast = lastSyncBroadcast[displayId] ?: 0L
+        if (now - lastBroadcast < SYNC_MIN_INTERVAL_MS) {
+            return
+        }
+        lastSyncBroadcast[displayId] = now
 
         val receivers = getReceivers(data)
 
