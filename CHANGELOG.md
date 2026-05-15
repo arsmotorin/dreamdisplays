@@ -1,3 +1,29 @@
+# Version 1.7.0
+
+Mod:
+
+- [ ] Support 26.1.2 version and Java 25
+- [ ] Support YouTube shorts (separate button)
+- [ ] Support Fabric servers
+- [ ] Support singleplayer mode
+- [ ] Remove `/display` command. The new functionality is available by interacting with the display and is more intuitive and user-friendly
+- [ ] Improve UI / UX of display configuration and controls
+
+Plugin:
+
+- [ ] Remove `/display` command. The new functionality is available by interacting with the display and is more intuitive and user-friendly
+
+# Version 1.6.3
+
+Mod:
+
+- [x] Use different browser list for macOS to avoid false security messages
+- [x] Add `yt-dlp` proxy in config
+
+Plugin:
+
+- [x] No changes
+
 # Version 1.6.2
 
 Mod:
