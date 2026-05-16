@@ -65,7 +65,7 @@ object Initializer {
     fun onModInit(dreamDisplaysMod: Mod) {
         mod = dreamDisplaysMod
         LoggingManager.setLogger(LoggerFactory.getLogger(MOD_ID))
-        LoggingManager.info("Starting Dream Displays...")
+        LoggingManager.info("[Initializer] Starting Dream Displays...")
         config.reload()
 
         DisplaySettings.load()
@@ -80,8 +80,6 @@ object Initializer {
 
     fun onDisplayInfoPacket(packet: Packets.Info) {
         if (!displaysEnabled) return
-
-        YtDlp.prefetchFormats(packet.url)
 
         if (DisplayManager.screens.containsKey(packet.uuid)) {
             val displayScreen = DisplayManager.screens[packet.uuid]
@@ -119,6 +117,7 @@ object Initializer {
             if (distance > renderDistance) return
         }
 
+        YtDlp.prefetchFormats(packet.url)
         DisplayManager.unloadedScreens.remove(packet.uuid)
 
         createScreen(
@@ -177,7 +176,7 @@ object Initializer {
         try {
             sendPacket(Packets.Version(GeneralUtil.getModVersion()))
         } catch (e: Exception) {
-            LoggingManager.error("Unable to get version", e)
+            LoggingManager.error("[Initializer] Unable to get version", e)
         }
     }
 
@@ -290,7 +289,7 @@ object Initializer {
         DisplayManager.screens[packet.uuid]?.let { DisplayManager.unregisterScreen(it) }
         DisplayManager.unloadedScreens.remove(packet.uuid)
         DisplaySettings.removeDisplay(packet.uuid)
-        LoggingManager.info("Display deleted and removed from saved data: ${packet.uuid}")
+        LoggingManager.info("[Initializer] Display deleted and removed from saved data: ${packet.uuid}")
     }
 
     fun onStop() {
