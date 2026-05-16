@@ -38,7 +38,7 @@ object VideoMetadataCache {
         try {
             YouTubeInnerTube.metadata(videoId)?.let { put(videoId, it) }
         } catch (e: Exception) {
-            LoggingManager.warn("Metadata fetch failed for $videoId: ${e.message}")
+            LoggingManager.warn("[VideoMetadataCache] Metadata fetch failed for $videoId: ${e.message}")
         } finally {
             IN_FLIGHT.remove(videoId)
         }

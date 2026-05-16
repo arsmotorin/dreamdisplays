@@ -377,7 +377,7 @@ class DisplayScreen(
         val parsed = quality.replace("p", "").toInt()
         if (parsed > 0) parsed else DEFAULT_QUALITY
     } catch (_: NumberFormatException) {
-        LoggingManager.warn("Invalid quality value '$quality' for display $uuid, using ${DEFAULT_QUALITY}p")
+        LoggingManager.warn("[DisplayScreen] Invalid quality value '$quality' for display $uuid, using ${DEFAULT_QUALITY}p.")
         DEFAULT_QUALITY
     }
 

@@ -266,12 +266,12 @@ class MediaPlayer(
         try {
             val videoId = GeneralUtil.extractVideoId(youtubeUrl)
             if (videoId.isNullOrEmpty()) {
-                LoggingManager.error("Could not extract video ID from URL: $youtubeUrl")
+                LoggingManager.error("[MediaPlayer] Could not extract video ID from URL: $youtubeUrl.")
                 displayScreen.errored = true
                 return
             }
             if (FFmpegBinary.getPath() == null) {
-                LoggingManager.error("[MediaPlayer] FFmpeg binary not available")
+                LoggingManager.error("[MediaPlayer] FFmpeg binary not available.")
                 displayScreen.errored = true
                 return
             }
@@ -280,7 +280,7 @@ class MediaPlayer(
             val all = YtDlp.fetch(cleanUrl)
             if (terminated.get()) return
             if (all.isEmpty()) {
-                LoggingManager.error("No streams available for $cleanUrl")
+                LoggingManager.error("[MediaPlayer] No streams available for $cleanUrl.")
                 displayScreen.errored = true
                 return
             }
@@ -299,7 +299,7 @@ class MediaPlayer(
                 ?: videoStreams.firstOrNull()
             val pickedAudio = MediaStreamSelector.pickAudio(audioStreams, lang, pickedVideo)
             if (pickedVideo == null || pickedAudio == null) {
-                LoggingManager.error("No usable streams for $cleanUrl")
+                LoggingManager.error("[MediaPlayer] No usable streams for $cleanUrl.")
                 displayScreen.errored = true
                 return
             }
@@ -312,8 +312,8 @@ class MediaPlayer(
             success = true
 
             if (DEBUG) {
-                LoggingManager.info("[MP $debugLabel] video=$pickedVideo audio=$pickedAudio")
-                LoggingManager.info("[MP $debugLabel] live=$liveStream seekable=$seekable dur=$durationHintNanos")
+                LoggingManager.info("[MediaPlayer $debugLabel] video=$pickedVideo audio=$pickedAudio")
+                LoggingManager.info("[MediaPlayer $debugLabel] live=$liveStream seekable=$seekable dur=$durationHintNanos")
                 startStatsReporter()
             }
 
@@ -321,7 +321,7 @@ class MediaPlayer(
                 if (!terminated.get()) startStreams(pickedVideo, pickedAudio, 0)
             }
         } catch (e: Exception) {
-            LoggingManager.error("Failed to initialize MediaPlayer", e)
+            LoggingManager.error("[MediaPlayer] Failed to initialize MediaPlayer", e)
             displayScreen.errored = true
         } finally {
             drainInitCallbacks(run = success)
@@ -354,7 +354,7 @@ class MediaPlayer(
 
         try {
             if (DEBUG) {
-                LoggingManager.info("[MP $debugLabel] starting ffmpeg ${frameW}x${frameH} offset=${offsetNanos / 1_000_000L}ms")
+                LoggingManager.info("[MediaPlayer $debugLabel] starting FFmpeg ${frameW}x${frameH} offset=${offsetNanos / 1_000_000L}ms")
             }
             val vp = MediaProcess.buildVideo(ffmpeg, video.url, frameW, frameH, offsetNanos)
             val ap = MediaProcess.buildAudio(ffmpeg, audio.url, offsetNanos, AUDIO_SAMPLE_RATE)
@@ -371,7 +371,7 @@ class MediaPlayer(
             playing = true
             startWatchdog()
         } catch (e: IOException) {
-            LoggingManager.error("[MediaPlayer $debugLabel] Failed to start ffmpeg", e)
+            LoggingManager.error("[MediaPlayer $debugLabel] Failed to start FFmpeg", e)
             displayScreen.errored = true
         }
     }
@@ -417,7 +417,7 @@ class MediaPlayer(
                     r.lineSequence().forEach { line ->
                         synchronized(stderrBuf) { stderrBuf.append(line).append('\n') }
                         if (MediaUtils.isInterestingStderr(line)) {
-                            LoggingManager.warn("[ffmpeg-v $debugLabel] $line")
+                            LoggingManager.warn("[FFmpeg[V] $debugLabel] $line")
                         }
                     }
                 }
@@ -437,7 +437,7 @@ class MediaPlayer(
                     if (!firstFrameLogged) {
                         firstFrameLogged = true
                         startWallNanos = System.nanoTime()
-                        if (DEBUG) LoggingManager.info("[MP $debugLabel] first frame ${w}x${h}")
+                        if (DEBUG) LoggingManager.info("[MediaPlayer $debugLabel] First frame ${w}x${h}")
                     }
 
                     val frameNs = videoFrameNs
@@ -478,7 +478,7 @@ class MediaPlayer(
             }
         } catch (e: IOException) {
             if (DEBUG && !terminated.get() && !stopFlag.get()) {
-                LoggingManager.warn("[MP $debugLabel] video read: ${e.message}")
+                LoggingManager.warn("[MediaPlayer $debugLabel] Video read: ${e.message}")
             }
         }
 
@@ -531,7 +531,7 @@ class MediaPlayer(
                 )
                 val info = DataLine.Info(SourceDataLine::class.java, fmt)
                 if (!AudioSystem.isLineSupported(info)) {
-                    LoggingManager.warn("[MediaPlayer $debugLabel] javax.sound: PCM line not supported")
+                    LoggingManager.warn("[MediaPlayer $debugLabel] PCM line not supported.")
                     return
                 }
                 line = openAudioLine(info, fmt) ?: return
@@ -554,11 +554,11 @@ class MediaPlayer(
             }
         } catch (e: IOException) {
             if (DEBUG && !terminated.get() && !stopFlag.get()) {
-                LoggingManager.warn("[MP $debugLabel] audio read: ${e.message}")
+                LoggingManager.warn("[MediaPlayer $debugLabel] Audio read: ${e.message}")
             }
         } catch (e: Exception) {
             if (!terminated.get() && !stopFlag.get()) {
-                LoggingManager.warn("[MP $debugLabel] audio pipeline: ${e.message}")
+                LoggingManager.warn("[MediaPlayer $debugLabel] Audio pipeline: ${e.message}")
             }
         } finally {
             line?.let {
@@ -578,7 +578,7 @@ class MediaPlayer(
                 }
             } catch (e: LineUnavailableException) {
                 if (attempt == AUDIO_LINE_OPEN_RETRIES - 1) {
-                    LoggingManager.warn("[MediaPlayer $debugLabel] javax.sound: line unavailable: ${e.message}")
+                    LoggingManager.warn("[MediaPlayer $debugLabel] Line unavailable: ${e.message}")
                     return null
                 }
                 try { Thread.sleep(AUDIO_LINE_RETRY_DELAY_MS * (attempt + 1)) }
@@ -599,7 +599,7 @@ class MediaPlayer(
         if (isTransient && !is403or404 && fetchRetries < MAX_FETCH_RETRIES) { scheduleRetry(false); return }
 
         if (normalEos && liveStream && fetchRetries < MAX_FETCH_RETRIES) {
-            LoggingManager.warn("[MediaPlayer $debugLabel] live EOS, retrying")
+            LoggingManager.warn("[MediaPlayer $debugLabel] Live EOS, retrying...")
             scheduleRetry(true)
             return
         }
@@ -624,7 +624,7 @@ class MediaPlayer(
         }
 
         if (stderr.isNotEmpty()) {
-            LoggingManager.error("[MediaPlayer $debugLabel] unrecoverable stream error: ${MediaUtils.truncate(stderr)}")
+            LoggingManager.error("[MediaPlayer $debugLabel] Unrecoverable stream error: ${MediaUtils.truncate(stderr)}.")
         }
         displayScreen.errored = true
     }
@@ -632,8 +632,8 @@ class MediaPlayer(
     private fun scheduleRetry(invalidateCache: Boolean) {
         val attempt = fetchRetries++
         val delayMs = RETRY_BACKOFF_MS[attempt.coerceAtMost(RETRY_BACKOFF_MS.lastIndex)]
-        val reason = if (invalidateCache) "cache invalidated" else "transient error"
-        LoggingManager.warn("[MediaPlayer $debugLabel] $reason — retry $fetchRetries/$MAX_FETCH_RETRIES in ${delayMs}ms")
+        val reason = if (invalidateCache) "Cache invalidated" else "Transient error"
+        LoggingManager.warn("[MediaPlayer $debugLabel] $reason – retry $fetchRetries/$MAX_FETCH_RETRIES in ${delayMs} ms.")
         if (invalidateCache) YtDlp.invalidateCache(youtubeUrl)
         _initialized = false
         INIT_EXECUTOR.submit {
@@ -720,7 +720,7 @@ class MediaPlayer(
                 if (lastFrame == 0L) return@scheduleAtFixedRate
                 val elapsed = System.nanoTime() - lastFrame
                 if (elapsed > WATCHDOG_TIMEOUT_NS) {
-                    LoggingManager.warn("[MediaPlayer $debugLabel] watchdog: no frames for ${elapsed / 1_000_000L}ms — restarting")
+                    LoggingManager.warn("[Watchdog $debugLabel] No frames for ${elapsed / 1_000_000L} ms. Restarting...")
                     lastFrameReceivedNanos.set(System.nanoTime())
                     safeExecute {
                         if (terminated.get()) return@safeExecute
@@ -760,7 +760,7 @@ class MediaPlayer(
             val dropN = framesDropped.getAndSet(0)
             val sec = STATS_INTERVAL_MS / 1000.0
             LoggingManager.info(String.format(
-                "[MP %s] decode=%.1ffps gpu=%.1ffps dropped=%.1f/s pos=%dms live=%s",
+                "[MediaPlayer %s] decode=%.1ffps gpu=%.1ffps dropped=%.1f/s pos=%dms live=%s",
                 debugLabel, inN / sec, outN / sec, dropN / sec, getCurrentTime() / 1_000_000L, liveStream,
             ))
         } catch (_: Throwable) {}

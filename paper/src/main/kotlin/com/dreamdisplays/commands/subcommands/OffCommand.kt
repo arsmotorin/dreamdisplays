@@ -5,7 +5,7 @@ import com.dreamdisplays.managers.PlayerManager.isDisplaysEnabled
 import com.dreamdisplays.managers.PlayerManager.setDisplaysEnabled
 import com.dreamdisplays.utils.MessageUtil.sendColoredMessage
 import com.dreamdisplays.utils.MessageUtil.sendMessage
-import com.dreamdisplays.utils.net.PacketUtils.sendDisplayEnabled
+import com.dreamdisplays.utils.net.PacketUtil.sendDisplayEnabled
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player

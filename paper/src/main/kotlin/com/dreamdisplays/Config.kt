@@ -52,7 +52,7 @@ class Config(private val plugin: Main) {
         toml = try {
             Toml().read(configFile)
         } catch (e: Exception) {
-            LoggingManager.error("Failed to parse config.toml", e)
+            LoggingManager.error("[Config] Failed to parse config.toml", e)
             Toml()
         }
 
@@ -105,7 +105,7 @@ class Config(private val plugin: Main) {
                     )
                     languages[langCode] = msgs
                 }.onFailure {
-                    LoggingManager.error("Error loading language file: $fileName", it)
+                    LoggingManager.error("[Config] Error loading language file: $fileName.", it)
                 }
             }
         }

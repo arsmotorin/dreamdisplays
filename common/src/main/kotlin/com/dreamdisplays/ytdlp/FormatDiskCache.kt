@@ -78,7 +78,7 @@ object FormatDiskCache {
             Files.move(tmp.toPath(), target.toPath(),
                 StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
         } catch (e: IOException) {
-            LoggingManager.warn("FormatDiskCache write failed: ${e.message}")
+            LoggingManager.warn("[FormatDiskCache] Write failed: ${e.message}")
         }
     }
 

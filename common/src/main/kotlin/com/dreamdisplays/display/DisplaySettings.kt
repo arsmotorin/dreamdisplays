@@ -22,7 +22,7 @@ object DisplaySettings {
 
     fun load() {
         if (!SETTINGS_DIR.exists() && !SETTINGS_DIR.mkdirs()) {
-            LoggingManager.error("Failed to create settings directory.")
+            LoggingManager.error("[DisplaySettings] Failed to create settings directory.")
             return
         }
         val clientSettingsFile = File(SETTINGS_DIR, "client-display-settings.json")
@@ -36,14 +36,14 @@ object DisplaySettings {
                         try {
                             displaySettings[UUID.fromString(key)] = value
                         } catch (_: IllegalArgumentException) {
-                            LoggingManager.error("Invalid UUID in client display settings: $key")
+                            LoggingManager.error("[DisplaySettings] Invalid UUID in client display settings: $key.")
                         }
                     }
                 }
             }
         } catch (_: FileNotFoundException) {
         } catch (e: IOException) {
-            LoggingManager.error("Failed to load client display settings", e)
+            LoggingManager.error("[DisplaySettings] Failed to load client display settings", e)
         }
     }
 
@@ -61,17 +61,17 @@ object DisplaySettings {
                         try {
                             displays[UUID.fromString(key)] = value
                         } catch (_: IllegalArgumentException) {
-                            LoggingManager.error("Invalid UUID in server displays: $key")
+                            LoggingManager.error("[DisplaySettings] Invalid UUID in server displays: $key.")
                         }
                     }
                 }
                 serverDisplays[serverId] = displays
-                LoggingManager.info("Loaded ${displays.size} displays for server: $serverId")
+                LoggingManager.info("[DisplaySettings] Loaded ${displays.size} displays for server: $serverId.")
             }
         } catch (_: FileNotFoundException) {
             serverDisplays[serverId] = HashMap()
         } catch (e: IOException) {
-            LoggingManager.error("Failed to load server displays for $serverId", e)
+            LoggingManager.error("[DisplaySettings] Failed to load server displays for $serverId", e)
             serverDisplays[serverId] = HashMap()
         }
     }
@@ -80,7 +80,7 @@ object DisplaySettings {
     fun save() {
         try {
             if (!SETTINGS_DIR.exists() && !SETTINGS_DIR.mkdirs()) {
-                LoggingManager.error("Failed to create settings directory.")
+                LoggingManager.error("[DisplaySettings] Failed to create settings directory.")
                 return
             }
             val toSave = displaySettings.entries.associate { (k, v) -> k.toString() to v }
@@ -88,7 +88,7 @@ object DisplaySettings {
                 GSON.toJson(toSave, writer)
             }
         } catch (e: IOException) {
-            LoggingManager.error("Failed to save client display settings", e)
+            LoggingManager.error("[DisplaySettings] Failed to save client display settings", e)
         }
     }
 
@@ -96,7 +96,7 @@ object DisplaySettings {
     fun saveServerDisplays(serverId: String) {
         try {
             if (!SETTINGS_DIR.exists() && !SETTINGS_DIR.mkdirs()) {
-                LoggingManager.error("Failed to create settings directory.")
+                LoggingManager.error("[DisplaySettings] Failed to create settings directory.")
                 return
             }
             val displays = serverDisplays[serverId] ?: HashMap()
@@ -105,7 +105,7 @@ object DisplaySettings {
                 GSON.toJson(toSave, writer)
             }
         } catch (e: IOException) {
-            LoggingManager.error("Failed to save server displays for $serverId", e)
+            LoggingManager.error("[DisplaySettings] Failed to save server displays for $serverId", e)
         }
     }
 

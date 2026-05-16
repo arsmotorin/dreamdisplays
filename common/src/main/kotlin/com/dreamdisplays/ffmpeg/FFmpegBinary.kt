@@ -39,13 +39,13 @@ object FFmpegBinary {
 
     fun prewarmAsync() {
         Thread({
-            try { getPath() } catch (e: Exception) { LoggingManager.warn("[Ffmpeg] prewarm failed", e) }
+            try { getPath() } catch (e: Exception) { LoggingManager.warn("[FFmpeg] prewarm failed", e) }
         }, "Ffmpeg-prewarm").apply { isDaemon = true }.start()
     }
 
     private fun resolve(): String? {
         val p = detectPlatform() ?: run {
-            LoggingManager.warn("[Ffmpeg] No bundled binary URL for this OS/arch; trying system ffmpeg")
+            LoggingManager.warn("[FFmpeg] No bundled binary URL for this OS / arch; trying system ffmpeg.")
             return findSystemFfmpeg()
         }
 
@@ -53,36 +53,36 @@ object FFmpegBinary {
         val binary = File(cacheDir, p.binaryName)
 
         if (binary.isFile && binary.length() > 0 && binary.canExecute()) {
-            LoggingManager.info("[Ffmpeg] Using cached binary: ${binary.absolutePath}")
+            LoggingManager.info("[FFmpeg] Using binary: ${binary.absolutePath}.")
             return binary.absolutePath
         }
 
         return try {
             if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-                throw IOException("Cannot create cache dir: $cacheDir")
+                throw IOException("[FFmpeg] Cannot create cache dir: $cacheDir.")
             }
             downloadAndExtract(p, binary)
             if (!binary.isFile || binary.length() == 0L) {
-                throw IOException("Extracted binary is missing or empty")
+                throw IOException("[FFmpeg] Extracted binary is missing or empty.")
             }
             markExecutable(binary)
             removeMacQuarantine(binary)
-            LoggingManager.info("[Ffmpeg] Ready at ${binary.absolutePath} (${binary.length()} bytes)")
+            LoggingManager.info("[FFmpeg] Ready to work.")
             binary.absolutePath
         } catch (e: Exception) {
-            LoggingManager.error("[Ffmpeg] Download failed, falling back to system ffmpeg", e)
+            LoggingManager.error("[FFmpeg] Download failed, falling back to system ffmpeg", e)
             findSystemFfmpeg()
         }
     }
 
     @Throws(IOException::class)
     private fun downloadAndExtract(p: Platform, destBinary: File) {
-        LoggingManager.info("[Ffmpeg] Downloading ${p.url}")
+        LoggingManager.info("[FFmpeg] Downloading ${p.url}...")
         val parent = destBinary.parentFile
         val tempArchive = File(parent, "_download" + if (p.isTarXz) ".tar.xz" else ".zip")
         try {
             downloadWithRedirects(p.url, tempArchive)
-            LoggingManager.info("[Ffmpeg] Downloaded ${tempArchive.length()} bytes, extracting '${p.entrySuffix}'")
+            LoggingManager.info("[Ffmpeg] Downloaded ${tempArchive.length()} bytes, extracting '${p.entrySuffix}'...")
             if (p.isTarXz) extractFromTarXz(tempArchive, p.entrySuffix, destBinary)
             else extractFromZip(tempArchive, p.entrySuffix, destBinary)
         } finally {
@@ -103,13 +103,13 @@ object FFmpegBinary {
             if (status in 300..399) {
                 val loc = conn.getHeaderField("Location")
                 conn.disconnect()
-                if (loc == null) throw IOException("Redirect without Location at $currentUrl")
+                if (loc == null) throw IOException("[FFmpeg] Redirect without Location at $currentUrl.")
                 currentUrl = loc
                 continue
             }
             if (status != 200) {
                 conn.disconnect()
-                throw IOException("HTTP $status for $currentUrl")
+                throw IOException("[FFmpeg] HTTP $status for $currentUrl.")
             }
             try {
                 conn.inputStream.use { input ->
@@ -120,7 +120,7 @@ object FFmpegBinary {
             }
             return
         }
-        throw IOException("Too many redirects: $url")
+        throw IOException("[FFmpeg] Too many redirects: $url.")
     }
 
     @Throws(IOException::class)
@@ -136,7 +136,7 @@ object FFmpegBinary {
                 e = zis.nextEntry
             }
         }
-        throw IOException("'$suffix' not found in ${archive.name}")
+        throw IOException("[FFmpeg] '$suffix' not found in ${archive.name}.")
     }
 
     @Throws(IOException::class)
@@ -155,7 +155,7 @@ object FFmpegBinary {
                 }
             }
         }
-        throw IOException("'$suffix' not found in ${archive.name}")
+        throw IOException("[FFmpeg] '$suffix' not found in ${archive.name}")
     }
 
     private fun markExecutable(binary: File) {
@@ -168,6 +168,10 @@ object FFmpegBinary {
         }
     }
 
+    // Hack: this operation is needed for safe FFmpeg execution on macOS, since otherwise the quarantine flag may prevent
+    // it from running. It doesn't matter if this fails, since the binary will still work in most cases, but removing the
+    // quarantine flag can help avoid some weird issues on macOS where the OS prevents the binary from running due to
+    // security concerns.
     private fun removeMacQuarantine(binary: File) {
         if (!isMac()) return
         try {
@@ -186,13 +190,13 @@ object FFmpegBinary {
                     try { p.inputStream.transferTo(OutputStream.nullOutputStream()) } catch (_: Exception) {}
                 }.apply { isDaemon = true }.start()
                 if (p.waitFor(3, TimeUnit.SECONDS) && p.exitValue() == 0) {
-                    LoggingManager.info("[Ffmpeg] Using system ffmpeg: $candidate")
+                    LoggingManager.info("[FFmpeg] Using system ffmpeg: $candidate.")
                     return candidate
                 }
                 p.destroyForcibly()
             } catch (_: Exception) {}
         }
-        LoggingManager.error("[Ffmpeg] ffmpeg not found (no download succeeded, no system binary)")
+        LoggingManager.error("[FFmpeg] FFmpeg not found (no download succeeded, no system binary).")
         return null
     }
 

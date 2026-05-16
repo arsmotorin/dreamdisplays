@@ -31,13 +31,13 @@ class StorageManager(var plugin: Main) {
             try {
                 connection = BaseConnection.createConnection(config.storage, plugin.dataFolder)
                 connection?.connect() ?: run {
-                    error("Failed to create database connection")
+                    error("[StorageManager] Failed to create database connection")
                     disablePlugin()
                     return@Runnable
                 }
                 onConnect()
             } catch (e: SQLException) {
-                error("Could not connect to database", e)
+                error("[StorageManager] Could not connect to database", e)
                 disablePlugin()
             }
         }
@@ -47,7 +47,7 @@ class StorageManager(var plugin: Main) {
 
     @Throws(SQLException::class)
     private fun onConnect() {
-        val conn = connection ?: throw SQLException("Connection is null")
+        val conn = connection ?: throw SQLException("[StorageManager] Connection is null.")
 
         conn.executeUpdate(
             "CREATE TABLE IF NOT EXISTS " + tablePrefix + "displays (" +
@@ -83,7 +83,7 @@ class StorageManager(var plugin: Main) {
             save { data: DisplayData -> this.saveDisplay(data) }
             conn.disconnect()
         } catch (e: SQLException) {
-            error("Unable to save data", e)
+            error("[StorageManager] Unable to save data", e)
         }
     }
 
@@ -95,7 +95,7 @@ class StorageManager(var plugin: Main) {
     }
 
     private fun bytesToUuid(bytes: ByteArray): UUID {
-        if (bytes.size != 16) throw IllegalArgumentException("UUID byte array must be 16 bytes, got ${bytes.size}.")
+        if (bytes.size != 16) throw IllegalArgumentException("[StorageManager] UUID byte array must be 16 bytes, got ${bytes.size}.")
         val buf = ByteBuffer.wrap(bytes)
         val msb = buf.getLong()
         val lsb = buf.getLong()
@@ -104,12 +104,12 @@ class StorageManager(var plugin: Main) {
 
     fun saveDisplay(data: DisplayData) {
         val conn = connection ?: run {
-            error("Cannot save display: connection is null")
+            error("[StorageManager] Cannot save display: connection is null.")
             return
         }
 
         val world = data.pos1.world ?: run {
-            error("Cannot save display: world is null for display ${data.id}")
+            error("[StorageManager] Cannot save display: world is null for display ${data.id}.")
             return
         }
 
@@ -141,7 +141,7 @@ class StorageManager(var plugin: Main) {
                 data.lang
             )
         } catch (e: SQLException) {
-            error("Could not save display to database", e)
+            error("[StorageManager] Could not save display to database", e)
             disablePlugin()
         }
     }
@@ -150,7 +150,7 @@ class StorageManager(var plugin: Main) {
         // Fetch all displays from the database
         get() {
             val conn = connection ?: run {
-                error("Cannot fetch displays: connection is null")
+                error("[StorageManager] Cannot fetch displays: connection is null.")
                 return mutableListOf()
             }
 
@@ -164,30 +164,30 @@ class StorageManager(var plugin: Main) {
                     while (rs.next()) {
                         val idBytes = rs.getBytes("id")
                         if (idBytes == null) {
-                            error("Skipping display row with null id.")
+                            error("[StorageManager] Skipping display row with null id.")
                             continue
                         }
                         val ownerBytes = rs.getBytes("ownerId")
                         if (ownerBytes == null) {
-                            error("Skipping display row with null ownerId.")
+                            error("[StorageManager] Skipping display row with null ownerId.")
                             continue
                         }
                         val id = try {
                             bytesToUuid(idBytes)
                         } catch (e: Exception) {
-                            error("Invalid UUID bytes for display id, skipping row", e)
+                            error("[StorageManager] Invalid UUID bytes for display id, skipping row", e)
                             continue
                         }
                         val ownerId = try {
                             bytesToUuid(ownerBytes)
                         } catch (e: Exception) {
-                            error("Invalid UUID bytes for ownerId, skipping row", e)
+                            error("[StorageManager] Invalid UUID bytes for ownerId, skipping row", e)
                             continue
                         }
                         val videoCode = rs.getString("videoCode") ?: ""
                         val worldName = rs.getString("world")
                         if (worldName == null) {
-                            error("Skipping display $id because world name is null")
+                            error("[StorageManager] Skipping display $id because world name is null. This is very strange.")
                             continue
                         }
 
@@ -203,7 +203,7 @@ class StorageManager(var plugin: Main) {
                         }
 
                         if (world == null) {
-                            error("Skipping display $id because world '$worldName' not found on server")
+                            error("[StorageManager] Skipping display $id because world '$worldName' not found on server.")
                             continue
                         }
 
@@ -243,7 +243,7 @@ class StorageManager(var plugin: Main) {
                     }
                 }
             } catch (e: SQLException) {
-                error("Could not fetch from database", e)
+                error("[StorageManager] Could not fetch from database", e)
                 disablePlugin()
             }
 
@@ -252,7 +252,7 @@ class StorageManager(var plugin: Main) {
 
     fun deleteDisplay(data: DisplayData) {
         val conn = connection ?: run {
-            error("Cannot delete display: connection is null")
+            error("[StorageManager] Cannot delete display: connection is null.")
             return
         }
 
@@ -260,7 +260,7 @@ class StorageManager(var plugin: Main) {
         try {
             conn.executeUpdate(sql, uuidToBytes(data.id))
         } catch (e: SQLException) {
-            error("Could not delete display from database", e)
+            error("[StorageManager] Could not delete display from database", e)
             disablePlugin()
         }
     }

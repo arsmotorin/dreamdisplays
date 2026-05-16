@@ -1,7 +1,6 @@
 package com.dreamdisplays.ytdlp
 
 import com.dreamdisplays.Initializer
-import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -109,14 +108,14 @@ object YouTubeInnerTube {
                 val errBody = try {
                     conn.errorStream?.readAllBytes()?.toString(StandardCharsets.UTF_8)?.take(500) ?: ""
                 } catch (_: Exception) { "" }
-                throw IOException("InnerTube $endpoint returned HTTP $status: $errBody")
+                throw IOException("[InnerTube] $endpoint returned HTTP $status: $errBody")
             }
             conn.inputStream.use { input ->
                 val raw = String(input.readAllBytes(), StandardCharsets.UTF_8)
                 return try {
                     JsonParser.parseString(raw).asJsonObject
                 } catch (e: Exception) {
-                    throw IOException("Failed to parse InnerTube $endpoint response", e)
+                    throw IOException("[InnerTube] Failed to parse InnerTube $endpoint response", e)
                 }
             }
         } finally {
@@ -131,7 +130,7 @@ object YouTubeInnerTube {
             return uri.toURL().openConnection() as HttpURLConnection
         }
         val proxyUri = try { URI.create(proxyStr) } catch (_: Exception) {
-            LoggingManager.warn("[InnerTube] invalid proxy URL: $proxyStr")
+            LoggingManager.warn("[InnerTube] invalid proxy URL: $proxyStr.")
             return uri.toURL().openConnection() as HttpURLConnection
         }
         val type = when (proxyUri.scheme?.lowercase()) {
@@ -180,7 +179,7 @@ object YouTubeInnerTube {
                 }
             }
         } catch (e: Exception) {
-            LoggingManager.warn("[InnerTube] search parse failed: ${e.message}")
+            LoggingManager.warn("[InnerTube] Search parse failed: ${e.message}")
         }
         return out
     }
@@ -242,7 +241,7 @@ object YouTubeInnerTube {
             if (title == null) return null
             return MetaHolder(title, channel, views, likes, publishedText, daysAgo)
         } catch (e: Exception) {
-            LoggingManager.warn("[InnerTube] watch metadata parse failed: ${e.message}")
+            LoggingManager.warn("[InnerTube] Watch metadata parse failed: ${e.message}")
             return null
         }
     }
@@ -264,7 +263,7 @@ object YouTubeInnerTube {
                 }
             }
         } catch (e: Exception) {
-            LoggingManager.warn("[InnerTube] related parse failed: ${e.message}")
+            LoggingManager.warn("[InnerTube] Related parse failed: ${e.message}")
         }
         return out
     }

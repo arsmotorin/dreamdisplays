@@ -9,8 +9,8 @@ import com.dreamdisplays.utils.RegionUtil.calculateRegion
 import com.dreamdisplays.utils.ReporterUtil.sendReport
 import com.dreamdisplays.meta.Scheduler.runAsync
 import com.dreamdisplays.meta.Scheduler.runSync
-import com.dreamdisplays.utils.net.PacketUtils
-import com.dreamdisplays.utils.net.PacketUtils.sendDelete
+import com.dreamdisplays.utils.net.PacketUtil
+import com.dreamdisplays.utils.net.PacketUtil.sendDelete
 import org.bukkit.Bukkit.getOfflinePlayer
 import org.bukkit.Location
 import org.bukkit.entity.Player
@@ -107,7 +107,7 @@ object DisplayManager {
 
     fun sendUpdate(display: DisplayData, players: List<Player>) {
         @Suppress("UNCHECKED_CAST")
-        PacketUtils.sendDisplayInfo(
+        PacketUtil.sendDisplayInfo(
             players as MutableList<Player?>,
             display.id,
             display.ownerId,

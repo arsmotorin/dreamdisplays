@@ -21,7 +21,7 @@ object Updater {
             val releases = GitHubFetcherUtil.fetchReleases(repoOwner, repoName)
 
             if (releases.isEmpty()) {
-                warn("No releases found on GitHub. This may be due to network issues or API problems.")
+                warn("[Updater] No releases found on GitHub. This may be due to network issues or API problems.")
                 return
             }
 
@@ -40,13 +40,13 @@ object Updater {
                 .maxOrNull() ?: modVersion?.toString()
 
         } catch (_: UnknownHostException) {
-            warn("Cannot reach GitHub (DNS resolution failed). It seems that your hosting environment cannot resolve GitHub's domain.")
+            warn("[Updater] Cannot reach GitHub (DNS resolution failed). It seems that your hosting environment cannot resolve GitHub's domain.")
         } catch (_: ConnectException) {
-            warn("Cannot connect to GitHub. It seems that your hosting environment is blocking connections or 443 port is closed.")
+            warn("[Updater] Cannot connect to GitHub. It seems that your hosting environment is blocking connections or 443 port is closed.")
         } catch (_: SocketTimeoutException) {
-            warn("GitHub connection timed out. The GitHub API may be experiencing issues or your hosting environment has a very slow connection.")
+            warn("[Updater] GitHub connection timed out. The GitHub API may be experiencing issues or your hosting environment has a very slow connection.")
         } catch (e: Exception) {
-            warn("Unable to load versions from GitHub: ${e.javaClass.simpleName}: ${e.message}")
+            warn("[Updater] Unable to load versions from GitHub: ${e.javaClass.simpleName}: ${e.message}")
         }
     }
 

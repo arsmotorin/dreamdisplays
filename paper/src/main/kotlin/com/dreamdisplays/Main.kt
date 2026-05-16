@@ -36,7 +36,7 @@ class Main : JavaPlugin() {
 
     fun doEnable() {
         @Suppress("DEPRECATION")
-        log("Enabling DreamDisplays ${description.version}...")
+        log("[Main] Enabling DreamDisplays ${description.version}...")
 
         Scheduler.init(this)
 
@@ -50,7 +50,7 @@ class Main : JavaPlugin() {
     }
 
     fun doDisable() {
-        log("Disabling Dream Displays ${pluginMeta.version}...")
+        log("[Main] Disabling Dream Displays ${pluginMeta.version}...")
         storage.onDisable()
     }
 

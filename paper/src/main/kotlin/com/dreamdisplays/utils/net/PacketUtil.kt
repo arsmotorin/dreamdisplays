@@ -21,7 +21,7 @@ import java.util.*
  * including display info, sync data, delete commands, and settings updates.
  */
 @NullMarked
-object PacketUtils {
+object PacketUtil {
     private const val CHANNEL_DISPLAY_INFO = "dreamdisplays:display_info"
     private const val CHANNEL_SYNC = "dreamdisplays:sync"
     private const val CHANNEL_DELETE = "dreamdisplays:delete"
@@ -61,7 +61,7 @@ object PacketUtils {
 
             sendPacket(players, CHANNEL_DISPLAY_INFO, packet)
         }.onFailure { error ->
-            warn("Failed to send display info packet", error)
+            warn("[PacketUtil] Failed to send display info packet", error)
         }
     }
 
@@ -79,7 +79,7 @@ object PacketUtils {
 
             sendPacket(players, CHANNEL_SYNC, packet)
         }.onFailure { error ->
-            warn("Failed to send sync packet", error)
+            warn("[PacketUtil] Failed to send sync packet", error)
         }
     }
 
@@ -91,7 +91,7 @@ object PacketUtils {
 
             sendPacket(players, CHANNEL_DELETE, packet)
         }.onFailure { error ->
-            warn("Failed to send delete packet", error)
+            warn("[PacketUtil] Failed to send delete packet", error)
         }
     }
 
@@ -120,7 +120,7 @@ object PacketUtils {
 
             sendPacket(players, CHANNEL_CLEAR_CACHE, packet)
         }.onFailure { error ->
-            warn("Failed to send clear cache packet", error)
+            warn("[PacketUtil] Failed to send clear cache packet", error)
         }
     }
 
@@ -131,7 +131,7 @@ object PacketUtils {
             }
             player.sendPluginMessage(plugin, channel, packet)
         }.onFailure { error ->
-            warn("Failed to send $channel packet", error)
+            warn("[PacketUtil] Failed to send $channel packet", error)
         }
     }
 
@@ -202,7 +202,7 @@ object PacketUtils {
         var byte: Int
 
         do {
-            if (shift >= 35) throw IOException("VarInt too big")
+            if (shift >= 35) throw IOException("[PacketUtil] VarInt too big")
 
             byte = readUnsignedByte()
             result = result or ((byte and 0x7F) shl shift)
@@ -218,7 +218,7 @@ object PacketUtils {
         var byte: Byte
 
         do {
-            if (shift >= 70) throw RuntimeException("VarLong too big")
+            if (shift >= 70) throw RuntimeException("[PacketUtil] VarLong too big")
 
             byte = readByte()
             result = result or ((byte.toInt() and 0x7F).toLong() shl shift)

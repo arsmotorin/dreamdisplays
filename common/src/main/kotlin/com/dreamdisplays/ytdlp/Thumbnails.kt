@@ -46,7 +46,7 @@ object Thumbnails {
         try {
             ImageIO.scanForPlugins()
         } catch (t: Throwable) {
-            LoggingManager.warn("ImageIO.scanForPlugins failed: ${t.message}")
+            LoggingManager.warn("[Thumbnails] ImageIO.scanForPlugins failed: ${t.message}. This should never happen.")
         }
     }
 
@@ -70,7 +70,7 @@ object Thumbnails {
             writeDiskCacheAsync(videoId, bytes)
             Minecraft.getInstance().execute { register(videoId, bytes) }
         } catch (e: Exception) {
-            LoggingManager.warn("Thumbnail fetch failed for $videoId: ${e.message}")
+            LoggingManager.warn("[Thumbnails] Fetch failed for $videoId: ${e.message}")
             IN_FLIGHT.remove(videoId)
         }
     }
@@ -116,7 +116,7 @@ object Thumbnails {
             Minecraft.getInstance().textureManager.register(id, tex)
             READY[videoId] = id
         } catch (e: IOException) {
-            LoggingManager.warn("Thumbnail decode failed for $videoId: ${e.message}")
+            LoggingManager.warn("[Thumbnails] Decode failed for $videoId: ${e.message}")
         } finally {
             IN_FLIGHT.remove(videoId)
         }
@@ -130,7 +130,7 @@ object Thumbnails {
                     bytes[0].toInt() and 0xFF, bytes[1].toInt() and 0xFF,
                     bytes[2].toInt() and 0xFF, bytes[3].toInt() and 0xFF)
             else "<empty>"
-            throw IOException("Unsupported image format (first bytes: $head, size=${bytes.size})")
+            throw IOException("[Thumbnails] Unsupported image format (first bytes: $head, size=${bytes.size}).")
         }
         val w = src.width
         val h = src.height

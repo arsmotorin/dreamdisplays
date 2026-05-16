@@ -22,9 +22,9 @@ import com.dreamdisplays.meta.Scheduler
 import com.dreamdisplays.utils.MessageUtil.sendColoredMessage
 import com.dreamdisplays.utils.MessageUtil.sendMessage
 import com.dreamdisplays.utils.YouTubeUtil.sanitize
-import com.dreamdisplays.utils.net.PacketUtils.sendDisplayInfo
-import com.dreamdisplays.utils.net.PacketUtils.sendPremium
-import com.dreamdisplays.utils.net.PacketUtils.sendReportEnabled
+import com.dreamdisplays.utils.net.PacketUtil.sendDisplayInfo
+import com.dreamdisplays.utils.net.PacketUtil.sendPremium
+import com.dreamdisplays.utils.net.PacketUtil.sendReportEnabled
 import com.github.zafarkhaja.semver.Version
 import com.github.zafarkhaja.semver.Version.parse
 import com.google.gson.Gson
@@ -72,7 +72,7 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
                 processSyncPacket(syncData, player)
             }
         }.onFailure { error ->
-            warn("Failed to decode sync packet", error)
+            warn("[PacketReceiver] Failed to decode sync packet", error)
         }
     }
 
@@ -108,12 +108,12 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
     private fun handleVersion(player: Player, message: ByteArray) {
         runCatching {
             val version = readVersionString(message)
-            log("${player.name} joined with Dream Displays $version")
+            log("[PacketReceiver] ${player.name} joined with Dream Displays $version.")
 
             initializePlayer(player, version)
             checkForUpdates(player, version)
         }.onFailure { error ->
-            warn("Failed to process version packet", error)
+            warn("[PacketReceiver] Failed to process version packet", error)
         }
     }
 
@@ -124,7 +124,7 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
                 setDisplaysEnabled(player, enabled)
             }
         }.onFailure { error ->
-            warn("Failed to decode display enabled packet", error)
+            warn("[PacketReceiver] Failed to decode display enabled packet", error)
         }
     }
 
@@ -211,8 +211,7 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
     }
 
     private fun sendPluginUpdateMessage(player: Player, version: String) {
-        val template = config.getMessageForPlayer(player, "newPluginVersion") as? String
-            ?: "A new plugin version is available: %s"
+        val template = config.getMessageForPlayer(player, "newPluginVersion") as? String ?: return
         val message = String.format(template, version)
         sendColoredMessage(player, message)
     }
@@ -273,7 +272,7 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
                 sendUpdate(displayData, getReceivers(displayData))
             }
         }.onFailure { error ->
-            warn("Failed to decode set_video packet", error)
+            warn("[PacketReceiver] Failed to decode set_video packet", error)
         }
     }
 
@@ -283,7 +282,7 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
                 input.readUUID()
             }
         }.onFailure { error ->
-            error("Failed to decode UUID packet", error)
+            error("[PacketReceiver] Failed to decode UUID packet", error)
         }.getOrNull()
     }
 
@@ -291,10 +290,10 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
         return DataInputStream(ByteArrayInputStream(message)).use { input ->
             val length = input.readVarInt()
             require(length in 1..maxVersionBytes) {
-                "Invalid version packet length: $length"
+                "[PacketReceiver] Invalid version packet length: $length."
             }
             require(length <= input.available()) {
-                "Invalid version packet size: declared=$length available=${input.available()}"
+                "[PacketReceiver] Invalid version packet size: declared = $length, but available = ${input.available()}."
             }
             val data = ByteArray(length)
             input.readFully(data)
@@ -308,9 +307,9 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
     }
 
     // Extension functions for DataInputStream to read custom data types
-    private fun DataInputStream.readUUID() = PacketUtils.run { readUUID() }
-    private fun DataInputStream.readVarInt() = PacketUtils.run { readVarInt() }
-    private fun DataInputStream.readVarLong() = PacketUtils.run { readVarLong() }
+    private fun DataInputStream.readUUID() = PacketUtil.run { readUUID() }
+    private fun DataInputStream.readVarInt() = PacketUtil.run { readVarInt() }
+    private fun DataInputStream.readVarLong() = PacketUtil.run { readVarLong() }
     private fun DataInputStream.readString(): String {
         val length = readVarInt()
         val data = ByteArray(length)

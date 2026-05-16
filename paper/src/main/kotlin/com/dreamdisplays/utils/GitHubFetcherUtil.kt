@@ -32,7 +32,7 @@ object GitHubFetcherUtil {
         val response = try {
             client.send(request, ofString())
         } catch (e: Exception) {
-            error("Failed to connect to GitHub API: ${e.message}")
+            error("[Fetcher] Failed to connect to GitHub API: ${e.message}")
             throw e
         }
 
@@ -42,8 +42,8 @@ object GitHubFetcherUtil {
                 500, 502, 503 -> "GitHub servers are experiencing issues"
                 else -> "Unexpected error"
             }
-            error("GitHub API returned status ${response.statusCode()}: $errorMsg")
-            warn("Response body: ${response.body().take(200)}")
+            error("[Fetcher] GitHub API returned status ${response.statusCode()}: $errorMsg")
+            warn("[Fetcher] Response body: ${response.body().take(200)}")
             return emptyList()
         }
 

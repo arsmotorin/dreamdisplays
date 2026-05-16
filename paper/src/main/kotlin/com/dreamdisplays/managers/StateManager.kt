@@ -4,7 +4,7 @@ import com.dreamdisplays.datatypes.StateData
 import com.dreamdisplays.datatypes.SyncData
 import com.dreamdisplays.managers.DisplayManager.getDisplayData
 import com.dreamdisplays.managers.DisplayManager.getReceivers
-import com.dreamdisplays.utils.net.PacketUtils
+import com.dreamdisplays.utils.net.PacketUtil
 import org.bukkit.entity.Player
 import org.jspecify.annotations.NullMarked
 import java.util.*
@@ -56,7 +56,7 @@ object StateManager {
 
         val receivers = getReceivers(data)
 
-        PacketUtils.sendSync(
+        PacketUtil.sendSync(
             receivers.filter { it.uniqueId != player.uniqueId }.toMutableList(),
             packet.copy(id = displayId)
         )
@@ -68,6 +68,6 @@ object StateManager {
         val state = playStates[displayId] ?: return
 
         val packet = state.createPacket()
-        PacketUtils.sendSync(mutableListOf(player), packet)
+        PacketUtil.sendSync(mutableListOf(player), packet)
     }
 }

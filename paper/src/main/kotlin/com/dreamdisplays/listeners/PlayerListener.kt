@@ -9,7 +9,7 @@ import com.dreamdisplays.managers.PlayerManager.setModRequiredNotified
 import com.dreamdisplays.utils.MessageUtil.sendMessage
 import com.dreamdisplays.utils.PlatformUtil.isFolia
 import com.dreamdisplays.meta.Scheduler
-import com.dreamdisplays.utils.net.PacketUtils
+import com.dreamdisplays.utils.net.PacketUtil
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -33,7 +33,7 @@ class PlayerListener : Listener {
                 val removedDisplayUuids = DisplayManager.validateDisplaysAndCleanup()
                 if (removedDisplayUuids.isNotEmpty()) {
                     @Suppress("UNCHECKED_CAST")
-                    PacketUtils.sendClearCache(Bukkit.getOnlinePlayers().toMutableList(), removedDisplayUuids)
+                    PacketUtil.sendClearCache(Bukkit.getOnlinePlayers().toMutableList(), removedDisplayUuids)
                 }
             }
         }

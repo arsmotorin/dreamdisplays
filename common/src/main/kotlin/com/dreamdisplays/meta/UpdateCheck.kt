@@ -73,7 +73,7 @@ object UpdateCheck {
                 updateAvailable = true
             }
         } catch (e: Exception) {
-            LoggingManager.warn("Update check failed: ${e.message}")
+            LoggingManager.warn("[UpdateChecker] Update check failed: ${e.message}")
         } finally {
             conn?.disconnect()
         }

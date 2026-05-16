@@ -122,7 +122,7 @@ class SuggestionsPanelWidget(
                 val r = YtDlp.search(q, RESULT_LIMIT)
                 publish(seq, r, null)
             } catch (e: Exception) {
-                LoggingManager.warn("[Suggestions] search failed '$q': ${e.message}")
+                LoggingManager.warn("[Suggestions] Search failed '$q': ${e.message}")
                 publish(seq, null, "dreamdisplays.suggestions.error")
             }
         }
@@ -136,7 +136,7 @@ class SuggestionsPanelWidget(
                 val r = YtDlp.related(videoId, RESULT_LIMIT)
                 publish(seq, r, null)
             } catch (e: Exception) {
-                LoggingManager.warn("[Suggestions] related failed $videoId: ${e.message}")
+                LoggingManager.warn("[Suggestions] Related failed $videoId: ${e.message}")
                 publish(seq, null, "dreamdisplays.suggestions.error")
             }
         }
