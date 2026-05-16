@@ -6,7 +6,7 @@ import kotlin.math.abs
  * Per-sample / pixel adjustments applied to raw RGBA video frames and S16LE
  * audio before they reach the GPU / audio line.
  *
- * Both operate on heap `ByteArray`s using 8.8 fixed-point integer math –
+ * Both operate on heap `ByteArray`s using 8.8 fixed-point integer math,
  * orders of magnitude faster than per-byte `ByteBuffer.get`/`put` calls,
  * especially in the hot 1080p+ video path.
  */
