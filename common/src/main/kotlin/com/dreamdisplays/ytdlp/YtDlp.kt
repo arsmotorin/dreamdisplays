@@ -17,6 +17,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.PosixFilePermissions
+import java.util.Collections
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
@@ -60,12 +61,17 @@ object YtDlp {
         Thread(r, "YtDlp-search").apply { isDaemon = true }
     }
 
-    private val FORMAT_CACHE: ConcurrentMap<String, CacheEntry> = ConcurrentHashMap()
+    private val FORMAT_CACHE: MutableMap<String, CacheEntry> = lruCache(200)
     private val IN_FLIGHT_FETCHES: ConcurrentMap<String, CompletableFuture<List<YtStream>>> = ConcurrentHashMap()
-    private val SEARCH_CACHE: ConcurrentMap<String, InfoCacheEntry> = ConcurrentHashMap()
-    private val RELATED_CACHE: ConcurrentMap<String, InfoCacheEntry> = ConcurrentHashMap()
+    private val SEARCH_CACHE: MutableMap<String, InfoCacheEntry> = lruCache(100)
+    private val RELATED_CACHE: MutableMap<String, InfoCacheEntry> = lruCache(200)
     private val IN_FLIGHT_SEARCHES: ConcurrentMap<String, CompletableFuture<List<YtVideoInfo>>> = ConcurrentHashMap()
     private val IN_FLIGHT_RELATED: ConcurrentMap<String, CompletableFuture<List<YtVideoInfo>>> = ConcurrentHashMap()
+
+    private fun <K, V> lruCache(maxSize: Int): MutableMap<K, V> =
+        Collections.synchronizedMap(object : LinkedHashMap<K, V>(maxSize + 1, 0.75f, true) {
+            override fun removeEldestEntry(eldest: Map.Entry<K, V>) = size > maxSize
+        })
 
     @Volatile private var resolvedBinary: String? = null
     @Volatile private var resolvedCookieBrowser: String? = null
