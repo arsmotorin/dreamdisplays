@@ -24,7 +24,7 @@ object MediaProcess {
                 listOf(
                     "-an",
                     "-vf", "scale=$w:$h:force_original_aspect_ratio=increase,crop=$w:$h,format=rgba",
-                    "-f", "rawvideo", "-pix_fmt", "rgba", "-",
+                    "-f", "rawvideo", "-pix_fmt", "rgb24", "-",
                 )
             )
         }
