@@ -64,8 +64,10 @@ object YouTubeInnerTube {
         }
         val root = post("next", body)
         val meta = extractWatchMetadata(root, videoId) ?: return null
-        return YtVideoInfo(videoId, meta.title ?: return null, meta.uploader, null,
-            meta.viewCountRaw, meta.likeCountRaw, meta.publishedText, meta.daysAgo)
+        return YtVideoInfo(
+            videoId, meta.title ?: return null, meta.uploader, null,
+            meta.viewCountRaw, meta.likeCountRaw, meta.publishedText, meta.daysAgo
+        )
     }
 
     data class NextResult(
@@ -107,7 +109,9 @@ object YouTubeInnerTube {
             if (status !in 200..299) {
                 val errBody = try {
                     conn.errorStream?.readAllBytes()?.toString(StandardCharsets.UTF_8)?.take(500) ?: ""
-                } catch (_: Exception) { "" }
+                } catch (_: Exception) {
+                    ""
+                }
                 throw IOException("[InnerTube] $endpoint returned HTTP $status: $errBody")
             }
             conn.inputStream.use { input ->
@@ -125,11 +129,17 @@ object YouTubeInnerTube {
 
     private fun openConnection(url: String): HttpURLConnection {
         val uri = URI.create(url)
-        val proxyStr = try { Initializer.config.ytdlpProxy.trim() } catch (_: Exception) { "" }
+        val proxyStr = try {
+            Initializer.config.ytdlpProxy.trim()
+        } catch (_: Exception) {
+            ""
+        }
         if (proxyStr.isEmpty()) {
             return uri.toURL().openConnection() as HttpURLConnection
         }
-        val proxyUri = try { URI.create(proxyStr) } catch (_: Exception) {
+        val proxyUri = try {
+            URI.create(proxyStr)
+        } catch (_: Exception) {
             LoggingManager.warn("[InnerTube] invalid proxy URL: $proxyStr.")
             return uri.toURL().openConnection() as HttpURLConnection
         }
@@ -160,8 +170,10 @@ object YouTubeInnerTube {
     private fun extractSearchVideos(root: JsonObject, limit: Int): List<YtVideoInfo> {
         val out = ArrayList<YtVideoInfo>()
         try {
-            val sections = path(root, "contents", "twoColumnSearchResultsRenderer", "primaryContents",
-                "sectionListRenderer", "contents")
+            val sections = path(
+                root, "contents", "twoColumnSearchResultsRenderer", "primaryContents",
+                "sectionListRenderer", "contents"
+            )
             if (!sections.isJsonArray) return out
             for (sec in sections.asJsonArray) {
                 if (!sec.isJsonObject) continue
@@ -202,8 +214,10 @@ object YouTubeInnerTube {
 
     private fun extractWatchMetadata(root: JsonObject, videoId: String): MetaHolder? {
         try {
-            val contents = path(root, "contents", "twoColumnWatchNextResults", "results",
-                "results", "contents")
+            val contents = path(
+                root, "contents", "twoColumnWatchNextResults", "results",
+                "results", "contents"
+            )
             if (!contents.isJsonArray) return null
             var title: String? = null
             var channel: String? = null
@@ -249,8 +263,10 @@ object YouTubeInnerTube {
     private fun extractRelatedVideos(root: JsonObject, selfId: String, limit: Int): List<YtVideoInfo> {
         val out = ArrayList<YtVideoInfo>()
         try {
-            val results = path(root, "contents", "twoColumnWatchNextResults", "secondaryResults",
-                "secondaryResults", "results")
+            val results = path(
+                root, "contents", "twoColumnWatchNextResults", "secondaryResults",
+                "secondaryResults", "results"
+            )
             if (!results.isJsonArray) return out
             for (el in results.asJsonArray) {
                 if (!el.isJsonObject) continue
@@ -344,7 +360,11 @@ object YouTubeInnerTube {
 
     private fun optString(obj: JsonObject, key: String): String? {
         if (!obj.has(key) || obj.get(key).isJsonNull) return null
-        return try { obj.get(key).asString } catch (_: Exception) { null }
+        return try {
+            obj.get(key).asString
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun runsText(obj: JsonObject?): String? {
@@ -380,18 +400,34 @@ object YouTubeInnerTube {
         if (t.isEmpty()) return null
         var mult = 1.0
         when (t.last()) {
-            'k' -> { mult = 1_000.0; t = t.dropLast(1) }
-            'm' -> { mult = 1_000_000.0; t = t.dropLast(1) }
-            'b' -> { mult = 1_000_000_000.0; t = t.dropLast(1) }
+            'k' -> {
+                mult = 1_000.0; t = t.dropLast(1)
+            }
+
+            'm' -> {
+                mult = 1_000_000.0; t = t.dropLast(1)
+            }
+
+            'b' -> {
+                mult = 1_000_000_000.0; t = t.dropLast(1)
+            }
         }
-        return try { (t.trim().toDouble() * mult).toLong() } catch (_: NumberFormatException) { null }
+        return try {
+            (t.trim().toDouble() * mult).toLong()
+        } catch (_: NumberFormatException) {
+            null
+        }
     }
 
     private fun parseDaysAgo(s: String?): Int? {
         if (s == null) return null
         val m = AGE_PATTERN.matcher(s)
         if (!m.find()) return null
-        val n = try { m.group(1).toInt() } catch (_: NumberFormatException) { return null }
+        val n = try {
+            m.group(1).toInt()
+        } catch (_: NumberFormatException) {
+            return null
+        }
         return when (m.group(2).lowercase()) {
             "second", "minute", "hour" -> 0
             "day" -> n

@@ -13,7 +13,7 @@ import net.minecraft.client.renderer.rendertype.RenderType
 import net.minecraft.client.renderer.texture.DynamicTexture
 import net.minecraft.core.BlockPos
 import net.minecraft.resources.Identifier
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.abs
 import kotlin.math.max
@@ -73,7 +73,9 @@ class DisplayScreen(
     var videoUrl: String? = null
         private set
     private var clientUrlOverride: Boolean = false
-    @Transient private var blockPos: BlockPos? = null
+
+    @Transient
+    private var blockPos: BlockPos? = null
     var lang: String? = null
         private set
 
@@ -305,7 +307,10 @@ class DisplayScreen(
         val mc = Minecraft.getInstance()
         textureId?.let { id ->
             mc.execute {
-                try { mc.textureManager.release(id) } catch (_: Exception) {}
+                try {
+                    mc.textureManager.release(id)
+                } catch (_: Exception) {
+                }
             }
         }
 

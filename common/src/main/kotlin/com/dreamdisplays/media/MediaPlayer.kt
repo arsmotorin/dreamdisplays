@@ -18,21 +18,13 @@ import java.io.InputStreamReader
 import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.LockSupport
-import javax.sound.sampled.AudioFormat
-import javax.sound.sampled.AudioSystem
-import javax.sound.sampled.DataLine
-import javax.sound.sampled.LineUnavailableException
-import javax.sound.sampled.SourceDataLine
+import javax.sound.sampled.*
 
 /**
  * Media player for a single `YouTube` video. It handles stream selection, manages `FFmpeg` processes for video and audio,
@@ -96,47 +88,97 @@ class MediaPlayer(
     // Cached as a single instance to avoid per-frame allocation.
     private val fitTextureTask: Runnable = Runnable { displayScreen.fitTexture() }
 
-    @Volatile private var statsExecutor: ScheduledExecutorService? = null
-    @Volatile private var watchdogExecutor: ScheduledExecutorService? = null
+    @Volatile
+    private var statsExecutor: ScheduledExecutorService? = null
 
-    @Volatile private var availableVideoStreams: List<YtStream>? = null
-    @Volatile private var availableAudioStreams: List<YtStream>? = null
-    @Volatile private var currentVideoStream: YtStream? = null
-    @Volatile private var currentAudioStream: YtStream? = null
+    @Volatile
+    private var watchdogExecutor: ScheduledExecutorService? = null
 
-    @Volatile private var _initialized = false
+    @Volatile
+    private var availableVideoStreams: List<YtStream>? = null
+
+    @Volatile
+    private var availableAudioStreams: List<YtStream>? = null
+
+    @Volatile
+    private var currentVideoStream: YtStream? = null
+
+    @Volatile
+    private var currentAudioStream: YtStream? = null
+
+    @Volatile
+    private var _initialized = false
     private val initCallbacks = CopyOnWriteArrayList<Runnable>()
 
-    @Volatile private var liveStream = false
-    @Volatile private var seekable = false
-    @Volatile private var durationHintNanos = 0L
-    private var lastQuality = 0
-    @Volatile private var fetchRetries = 0
+    @Volatile
+    private var liveStream = false
 
-    @Volatile private var videoProcess: Process? = null
-    @Volatile private var audioProcess: Process? = null
-    @Volatile private var videoThread: Thread? = null
-    @Volatile private var audioThread: Thread? = null
-    @Volatile private var videoStopFlag: AtomicBoolean? = null
-    @Volatile private var audioStopFlag: AtomicBoolean? = null
-    @Volatile private var currentAudioLine: SourceDataLine? = null
-    @Volatile private var playing = false
-    @Volatile private var seekOffsetNanos = 0L
-    @Volatile private var startWallNanos = CLOCK_NOT_STARTED
+    @Volatile
+    private var seekable = false
+
+    @Volatile
+    private var durationHintNanos = 0L
+    private var lastQuality = 0
+
+    @Volatile
+    private var fetchRetries = 0
+
+    @Volatile
+    private var videoProcess: Process? = null
+
+    @Volatile
+    private var audioProcess: Process? = null
+
+    @Volatile
+    private var videoThread: Thread? = null
+
+    @Volatile
+    private var audioThread: Thread? = null
+
+    @Volatile
+    private var videoStopFlag: AtomicBoolean? = null
+
+    @Volatile
+    private var audioStopFlag: AtomicBoolean? = null
+
+    @Volatile
+    private var currentAudioLine: SourceDataLine? = null
+
+    @Volatile
+    private var playing = false
+
+    @Volatile
+    private var seekOffsetNanos = 0L
+
+    @Volatile
+    private var startWallNanos = CLOCK_NOT_STARTED
 
     // Frame pipeline: producer-consumer with two pre-allocated direct buffers.
     // The reader thread fills the "spare" buffer, then atomically swaps it
     // into `readyBufferRef`; the render thread reads from `readyBufferRef`.
     private val readyBufferRef = AtomicReference<ByteBuffer?>(null)
     private val frameAvailable = AtomicBoolean(false)
-    @Volatile private var frameW = 0
-    @Volatile private var frameH = 0
-    @Volatile private var videoFrameNs: Long = (1_000_000_000.0 / DEFAULT_VIDEO_FPS).toLong()
 
-    @Volatile private var userVolume = Initializer.config.defaultDisplayVolume
-    @Volatile private var lastAttenuation = 1.0
-    @Volatile private var currentVolume = Initializer.config.defaultDisplayVolume
-    @Volatile private var brightness = 1.0
+    @Volatile
+    private var frameW = 0
+
+    @Volatile
+    private var frameH = 0
+
+    @Volatile
+    private var videoFrameNs: Long = (1_000_000_000.0 / DEFAULT_VIDEO_FPS).toLong()
+
+    @Volatile
+    private var userVolume = Initializer.config.defaultDisplayVolume
+
+    @Volatile
+    private var lastAttenuation = 1.0
+
+    @Volatile
+    private var currentVolume = Initializer.config.defaultDisplayVolume
+
+    @Volatile
+    private var brightness = 1.0
 
     init {
         INIT_EXECUTOR.submit { initialize() }
@@ -185,7 +227,9 @@ class MediaPlayer(
     fun isInitialized(): Boolean = _initialized
 
     fun whenInitialized(cb: Runnable) {
-        if (_initialized) { cb.run(); return }
+        if (_initialized) {
+            cb.run(); return
+        }
         initCallbacks.add(cb)
         // Guard against race: initialized between the check above and add
         if (_initialized && initCallbacks.remove(cb)) cb.run()
@@ -366,7 +410,8 @@ class MediaPlayer(
             videoStopFlag = vStop
             audioStopFlag = aStop
 
-            videoThread = daemon({ videoReaderLoop(vp, frameW, frameH, vStop) }, "MediaPlayer-video").also { it.start() }
+            videoThread =
+                daemon({ videoReaderLoop(vp, frameW, frameH, vStop) }, "MediaPlayer-video").also { it.start() }
             audioThread = daemon({ audioReaderLoop(ap, aStop) }, "MediaPlayer-audio").also { it.start() }
             playing = true
             startWatchdog()
@@ -379,9 +424,12 @@ class MediaPlayer(
     private fun stopStreams() {
         playing = false
         stopWatchdog()
-        val vp = videoProcess; val ap = audioProcess
-        val vt = videoThread; val at = audioThread
-        val vStop = videoStopFlag; val aStop = audioStopFlag
+        val vp = videoProcess
+        val ap = audioProcess
+        val vt = videoThread
+        val at = audioThread
+        val vStop = videoStopFlag
+        val aStop = audioStopFlag
         videoProcess = null; audioProcess = null
         videoThread = null; audioThread = null
         videoStopFlag = null; audioStopFlag = null
@@ -395,7 +443,11 @@ class MediaPlayer(
 
     private fun joinSafely(t: Thread?) {
         if (t != null && t != Thread.currentThread()) {
-            try { t.join(2000) } catch (_: InterruptedException) { Thread.currentThread().interrupt() }
+            try {
+                t.join(2000)
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt()
+            }
         }
     }
 
@@ -421,7 +473,8 @@ class MediaPlayer(
                         }
                     }
                 }
-            } catch (_: IOException) {}
+            } catch (_: IOException) {
+            }
         }, "MediaPlayer-vstderr").also { it.start() }
 
         var normalEos = false
@@ -431,7 +484,9 @@ class MediaPlayer(
             proc.inputStream.use { input ->
                 while (!terminated.get() && !stopFlag.get()) {
                     val n = MediaUtils.readFull(input, frameData, frameSize)
-                    if (n < frameSize) { normalEos = true; break }
+                    if (n < frameSize) {
+                        normalEos = true; break
+                    }
 
                     lastFrameReceivedNanos.set(System.nanoTime())
                     if (!firstFrameLogged) {
@@ -518,8 +573,10 @@ class MediaPlayer(
 
     private fun audioReaderLoop(proc: Process, stopFlag: AtomicBoolean) {
         daemon({
-            try { proc.errorStream.transferTo(OutputStream.nullOutputStream()) }
-            catch (_: IOException) {}
+            try {
+                proc.errorStream.transferTo(OutputStream.nullOutputStream())
+            } catch (_: IOException) {
+            }
         }, "MediaPlayer-astderr").also { it.start() }
 
         var line: SourceDataLine? = null
@@ -581,8 +638,11 @@ class MediaPlayer(
                     LoggingManager.warn("[MediaPlayer $debugLabel] Line unavailable: ${e.message}")
                     return null
                 }
-                try { Thread.sleep(AUDIO_LINE_RETRY_DELAY_MS * (attempt + 1)) }
-                catch (_: InterruptedException) { Thread.currentThread().interrupt(); return null }
+                try {
+                    Thread.sleep(AUDIO_LINE_RETRY_DELAY_MS * (attempt + 1))
+                } catch (_: InterruptedException) {
+                    Thread.currentThread().interrupt(); return null
+                }
             }
         }
         return null
@@ -595,8 +655,12 @@ class MediaPlayer(
                 || stderr.contains("404") || stderr.contains("Not Found")
         val isTransient = MediaUtils.isTransientError(stderr)
 
-        if (is403or404 && fetchRetries < MAX_FETCH_RETRIES) { scheduleRetry(true); return }
-        if (isTransient && !is403or404 && fetchRetries < MAX_FETCH_RETRIES) { scheduleRetry(false); return }
+        if (is403or404 && fetchRetries < MAX_FETCH_RETRIES) {
+            scheduleRetry(true); return
+        }
+        if (isTransient && !is403or404 && fetchRetries < MAX_FETCH_RETRIES) {
+            scheduleRetry(false); return
+        }
 
         if (normalEos && liveStream && fetchRetries < MAX_FETCH_RETRIES) {
             LoggingManager.warn("[MediaPlayer $debugLabel] Live EOS, retrying...")
@@ -637,7 +701,11 @@ class MediaPlayer(
         if (invalidateCache) YtDlp.invalidateCache(youtubeUrl)
         _initialized = false
         INIT_EXECUTOR.submit {
-            try { Thread.sleep(delayMs) } catch (_: InterruptedException) { Thread.currentThread().interrupt(); return@submit }
+            try {
+                Thread.sleep(delayMs)
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt(); return@submit
+            }
             if (!terminated.get()) initialize()
         }
     }
@@ -732,7 +800,8 @@ class MediaPlayer(
                         }
                     }
                 }
-            } catch (_: Throwable) {}
+            } catch (_: Throwable) {
+            }
         }, WATCHDOG_CHECK_INTERVAL_MS, WATCHDOG_CHECK_INTERVAL_MS, TimeUnit.MILLISECONDS)
     }
 
@@ -759,11 +828,14 @@ class MediaPlayer(
             val outN = framesToGpu.getAndSet(0)
             val dropN = framesDropped.getAndSet(0)
             val sec = STATS_INTERVAL_MS / 1000.0
-            LoggingManager.info(String.format(
-                "[MediaPlayer %s] decode=%.1ffps gpu=%.1ffps dropped=%.1f/s pos=%dms live=%s",
-                debugLabel, inN / sec, outN / sec, dropN / sec, getCurrentTime() / 1_000_000L, liveStream,
-            ))
-        } catch (_: Throwable) {}
+            LoggingManager.info(
+                String.format(
+                    "[MediaPlayer %s] decode=%.1ffps gpu=%.1ffps dropped=%.1f/s pos=%dms live=%s",
+                    debugLabel, inN / sec, outN / sec, dropN / sec, getCurrentTime() / 1_000_000L, liveStream,
+                )
+            )
+        } catch (_: Throwable) {
+        }
     }
 
     private fun safeExecute(action: Runnable) {

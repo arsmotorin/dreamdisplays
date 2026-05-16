@@ -16,7 +16,7 @@ import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import java.util.Locale
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -82,6 +82,7 @@ object Thumbnails {
             System.currentTimeMillis() - f.lastModified() > THUMB_CACHE_TTL_MS -> {
                 f.delete(); null
             }
+
             else -> Files.readAllBytes(f.toPath())
         }
     } catch (_: Exception) {
@@ -95,8 +96,10 @@ object Thumbnails {
                 val target = thumbFile(videoId)
                 val tmp = File(target.parentFile, target.name + ".tmp")
                 Files.write(tmp.toPath(), bytes)
-                Files.move(tmp.toPath(), target.toPath(),
-                    StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+                Files.move(
+                    tmp.toPath(), target.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
+                )
             } catch (_: Exception) {
             }
         }
@@ -126,9 +129,11 @@ object Thumbnails {
     private fun decode(bytes: ByteArray): NativeImage = ByteArrayInputStream(bytes).use { input ->
         val src: BufferedImage = ImageIO.read(input) ?: run {
             val head = if (bytes.size >= 4)
-                String.format("%02X %02X %02X %02X",
+                String.format(
+                    "%02X %02X %02X %02X",
                     bytes[0].toInt() and 0xFF, bytes[1].toInt() and 0xFF,
-                    bytes[2].toInt() and 0xFF, bytes[3].toInt() and 0xFF)
+                    bytes[2].toInt() and 0xFF, bytes[3].toInt() and 0xFF
+                )
             else "<empty>"
             throw IOException("[Thumbnails] Unsupported image format (first bytes: $head, size=${bytes.size}).")
         }

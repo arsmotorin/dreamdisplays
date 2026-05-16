@@ -1,6 +1,6 @@
 package com.dreamdisplays.display
 
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 /** Manager for all screen displays. */

@@ -14,7 +14,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
-import java.util.HexFormat
+import java.util.*
 import java.util.concurrent.Executors
 
 /**
@@ -75,8 +75,10 @@ object FormatDiskCache {
                 add("streams", GSON.toJsonTree(streams, STREAM_LIST_TYPE))
             }
             Files.writeString(tmp.toPath(), GSON.toJson(root), StandardCharsets.UTF_8)
-            Files.move(tmp.toPath(), target.toPath(),
-                StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+            Files.move(
+                tmp.toPath(), target.toPath(),
+                StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
+            )
         } catch (e: IOException) {
             LoggingManager.warn("[FormatDiskCache] Write failed: ${e.message}")
         }
@@ -88,7 +90,6 @@ object FormatDiskCache {
             runCatching { Files.deleteIfExists(fileFor(videoUrl).toPath()) }
         }
     }
-
 
 
     fun sweepExpired(maxAgeMs: Long = DEFAULT_TTL_MS) {

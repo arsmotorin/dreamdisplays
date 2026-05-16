@@ -9,9 +9,7 @@ import kotlin.math.abs
  */
 object MediaStreamSelector {
 
-
     fun parseQuality(stream: YtStream): Int = parseQualityValue(stream.resolution, Int.MAX_VALUE)
-
 
     fun parseQualityValue(raw: String?, fallback: Int): Int {
         if (raw == null) return fallback
@@ -24,7 +22,6 @@ object MediaStreamSelector {
         return raw.substring(start, i).toIntOrNull() ?: fallback
     }
 
-
     fun qualityToDims(quality: Int): IntArray = when {
         quality <= 240 -> intArrayOf(426, 240)
         quality <= 360 -> intArrayOf(640, 360)
@@ -34,7 +31,6 @@ object MediaStreamSelector {
         quality <= 1440 -> intArrayOf(2560, 1440)
         else -> intArrayOf(3840, 2160)
     }
-
 
     fun pickVideo(streams: List<YtStream>?, target: Int): YtStream? {
         if (streams.isNullOrEmpty()) return null
@@ -47,23 +43,16 @@ object MediaStreamSelector {
             )
     }
 
-
     fun pickAudio(audioStreams: List<YtStream>, lang: String, chosenVideo: YtStream?): YtStream? {
         val audioOnly = audioStreams.filter { !it.hasVideo() }
         val requested = lang.trim()
 
-        // Explicit language requested: match case-insensitively against the
-        // track id (e.g. "ru", "en-US") or the human-readable name (e.g.
-        // "Russian", "English (original)").  YouTube's audioTrackName for
-        // multilingual videos carries the language word, so this catches both
-        // codes and full names regardless of case.
+        // Additional languages
         if (requested.isNotEmpty()) {
             audioOnly.firstOrNull { matchesLanguage(it, requested) }?.let { return it }
         }
 
-        // No explicit language (or no match): prefer the track YouTube marks
-        // as the original / default, falling back to an unspecified ("und")
-        // language code, then the first audio stream.
+        // Default
         audioOnly.firstOrNull {
             it.audioTrackName?.lowercase()?.let { n -> "original" in n || "default" in n } == true
         }?.let { return it }
@@ -77,7 +66,6 @@ object MediaStreamSelector {
         }
         return audioStreams.firstOrNull()
     }
-
 
     fun matchesLanguage(stream: YtStream, lang: String): Boolean {
         val needle = lang.lowercase()

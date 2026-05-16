@@ -34,13 +34,16 @@ abstract class ToggleWidget(
 
     override fun renderWidget(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
         guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, getTexture(), x, y, width, height)
-        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, getHandleTexture(),
-            x + (dValue * (width - 8).toDouble()).toInt(), y, 8, height)
+        guiGraphics.blitSprite(
+            RenderPipelines.GUI_TEXTURED, getHandleTexture(),
+            x + (dValue * (width - 8).toDouble()).toInt(), y, 8, height
+        )
         val i = if (active) 16777215 else 10526880
         val msg: MutableComponent = message.copy().withStyle { it.withColor(i) }
         renderScrollingStringOverContents(
             guiGraphics.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.TOOLTIP_AND_CURSOR),
-            msg, 2)
+            msg, 2
+        )
     }
 
     override fun setFocused(focused: Boolean) {

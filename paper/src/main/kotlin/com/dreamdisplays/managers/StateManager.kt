@@ -39,7 +39,8 @@ object StateManager {
         }
 
         if (packet.currentTime < 0 || packet.limitTime < 0
-            || packet.currentTime > 24L * 60 * 60 * 1_000_000_000L) {
+            || packet.currentTime > 24L * 60 * 60 * 1_000_000_000L
+        ) {
             return
         }
 

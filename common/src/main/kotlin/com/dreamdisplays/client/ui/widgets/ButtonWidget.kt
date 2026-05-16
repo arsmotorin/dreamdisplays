@@ -23,8 +23,13 @@ abstract class ButtonWidget(
 
     private var setSprites: WidgetSprites? = null
 
-    fun setIconTextureId(id: Identifier) { iconTextureId = id }
-    fun setSprites(sprites: WidgetSprites) { setSprites = sprites }
+    fun setIconTextureId(id: Identifier) {
+        iconTextureId = id
+    }
+
+    fun setSprites(sprites: WidgetSprites) {
+        setSprites = sprites
+    }
 
     abstract fun onPress()
 
@@ -37,8 +42,10 @@ abstract class ButtonWidget(
 
     override fun renderWidget(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
         val sprite = setSprites?.get(active, isHoveredOrFocused) ?: SPRITES.get(active, isHoveredOrFocused)
-        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite,
-            x, y, width, height, ARGB.white(alpha))
+        guiGraphics.blitSprite(
+            RenderPipelines.GUI_TEXTURED, sprite,
+            x, y, width, height, ARGB.white(alpha)
+        )
 
         val dW = width - 2 * margin
         val dH = height - 2 * margin
@@ -50,8 +57,10 @@ abstract class ButtonWidget(
         val dx = x + width / 2 - iconW / 2
         val dy = y + height / 2 - iconH / 2
 
-        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, iconTextureId,
-            dx, dy, iconW, iconH, ARGB.white(alpha))
+        guiGraphics.blitSprite(
+            RenderPipelines.GUI_TEXTURED, iconTextureId,
+            dx, dy, iconW, iconH, ARGB.white(alpha)
+        )
     }
 
     companion object {

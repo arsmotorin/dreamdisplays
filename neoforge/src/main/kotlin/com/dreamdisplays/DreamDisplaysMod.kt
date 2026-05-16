@@ -28,7 +28,8 @@ class DreamDisplaysMod(modEventBus: IEventBus) : com.dreamdisplays.Mod {
     fun registerPayloads(event: RegisterPayloadHandlersEvent) {
         val registrar = event.registrar(Initializer.MOD_ID).optional().versioned("1")
 
-        registrar.playBidirectional(Packets.Delete.PACKET_ID, Packets.Delete.PACKET_CODEC,
+        registrar.playBidirectional(
+            Packets.Delete.PACKET_ID, Packets.Delete.PACKET_CODEC,
             { _, _ -> },
             { payload, _ -> Initializer.onDeletePacket(payload) })
         registrar.playToClient(Packets.Info.PACKET_ID, Packets.Info.PACKET_CODEC) { payload, _ ->
@@ -46,7 +47,8 @@ class DreamDisplaysMod(modEventBus: IEventBus) : com.dreamdisplays.Mod {
         registrar.playToClient(Packets.ClearCache.PACKET_ID, Packets.ClearCache.PACKET_CODEC) { payload, _ ->
             Initializer.onClearCachePacket(payload)
         }
-        registrar.playBidirectional(Packets.Sync.PACKET_ID, Packets.Sync.PACKET_CODEC,
+        registrar.playBidirectional(
+            Packets.Sync.PACKET_ID, Packets.Sync.PACKET_CODEC,
             { _, _ -> },
             { payload, _ -> Initializer.onSyncPacket(payload) })
         registrar.playToServer(Packets.RequestSync.PACKET_ID, Packets.RequestSync.PACKET_CODEC) { _, _ -> }

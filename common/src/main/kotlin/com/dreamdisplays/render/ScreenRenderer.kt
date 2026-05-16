@@ -2,11 +2,7 @@ package com.dreamdisplays.render
 
 import com.dreamdisplays.display.DisplayManager
 import com.dreamdisplays.display.DisplayScreen
-import com.mojang.blaze3d.vertex.BufferBuilder
-import com.mojang.blaze3d.vertex.DefaultVertexFormat
-import com.mojang.blaze3d.vertex.PoseStack
-import com.mojang.blaze3d.vertex.Tesselator
-import com.mojang.blaze3d.vertex.VertexFormat
+import com.mojang.blaze3d.vertex.*
 import net.minecraft.client.Camera
 import net.minecraft.client.renderer.rendertype.RenderType
 import net.minecraft.world.phys.Vec3
@@ -16,7 +12,6 @@ import kotlin.math.sin
 
 /** Renders screens in the world. */
 object ScreenRenderer {
-
 
     fun render(stack: PoseStack, camera: Camera) {
         val cameraPos = camera.position()
@@ -46,10 +41,12 @@ object ScreenRenderer {
                 moveHorizontal(stack, "NORTH", -displayScreen.width.toFloat())
                 moveForward(stack, "NORTH", 1f)
             }
+
             "SOUTH" -> {
                 moveHorizontal(stack, "SOUTH", 1f)
                 moveForward(stack, "SOUTH", 1f)
             }
+
             "EAST" -> {
                 moveHorizontal(stack, "EAST", -(displayScreen.width - 1).toFloat())
                 moveForward(stack, "EAST", 2f)
@@ -78,12 +75,15 @@ object ScreenRenderer {
             "NORTH" -> Quaternionf().rotationY(Math.toRadians(180.0).toFloat()).also {
                 stack.translate(0f, 0f, 1f)
             }
+
             "WEST" -> Quaternionf().rotationY(Math.toRadians(-90.0).toFloat()).also {
                 stack.translate(0f, 0f, 0f)
             }
+
             "EAST" -> Quaternionf().rotationY(Math.toRadians(90.0).toFloat()).also {
                 stack.translate(-1f, 0f, 1f)
             }
+
             else -> Quaternionf().also { stack.translate(-1f, 0f, 0f) }
         }
         stack.mulPose(rotation)
@@ -111,10 +111,14 @@ object ScreenRenderer {
         val pose = stack.last().pose()
         val builder: BufferBuilder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK)
 
-        builder.addVertex(pose, 0f, 0f, 0f).setColor(255, 255, 255, 255).setUv(0f, 1f).setLight(0xF000F0).setNormal(0f, 0f, 1f)
-        builder.addVertex(pose, 1f, 0f, 0f).setColor(255, 255, 255, 255).setUv(1f, 1f).setLight(0xF000F0).setNormal(0f, 0f, 1f)
-        builder.addVertex(pose, 1f, 1f, 0f).setColor(255, 255, 255, 255).setUv(1f, 0f).setLight(0xF000F0).setNormal(0f, 0f, 1f)
-        builder.addVertex(pose, 0f, 1f, 0f).setColor(255, 255, 255, 255).setUv(0f, 0f).setLight(0xF000F0).setNormal(0f, 0f, 1f)
+        builder.addVertex(pose, 0f, 0f, 0f).setColor(255, 255, 255, 255).setUv(0f, 1f).setLight(0xF000F0)
+            .setNormal(0f, 0f, 1f)
+        builder.addVertex(pose, 1f, 0f, 0f).setColor(255, 255, 255, 255).setUv(1f, 1f).setLight(0xF000F0)
+            .setNormal(0f, 0f, 1f)
+        builder.addVertex(pose, 1f, 1f, 0f).setColor(255, 255, 255, 255).setUv(1f, 0f).setLight(0xF000F0)
+            .setNormal(0f, 0f, 1f)
+        builder.addVertex(pose, 0f, 1f, 0f).setColor(255, 255, 255, 255).setUv(0f, 0f).setLight(0xF000F0)
+            .setNormal(0f, 0f, 1f)
 
         type.draw(builder.buildOrThrow())
     }
@@ -123,10 +127,14 @@ object ScreenRenderer {
         val pose = stack.last().pose()
         val builder: BufferBuilder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK)
 
-        builder.addVertex(pose, 0f, 0f, 0f).setColor(r, g, b, 255).setUv(0f, 1f).setLight(0xF000F0).setNormal(0f, 0f, 1f)
-        builder.addVertex(pose, 1f, 0f, 0f).setColor(r, g, b, 255).setUv(1f, 1f).setLight(0xF000F0).setNormal(0f, 0f, 1f)
-        builder.addVertex(pose, 1f, 1f, 0f).setColor(r, g, b, 255).setUv(1f, 0f).setLight(0xF000F0).setNormal(0f, 0f, 1f)
-        builder.addVertex(pose, 0f, 1f, 0f).setColor(r, g, b, 255).setUv(0f, 0f).setLight(0xF000F0).setNormal(0f, 0f, 1f)
+        builder.addVertex(pose, 0f, 0f, 0f).setColor(r, g, b, 255).setUv(0f, 1f).setLight(0xF000F0)
+            .setNormal(0f, 0f, 1f)
+        builder.addVertex(pose, 1f, 0f, 0f).setColor(r, g, b, 255).setUv(1f, 1f).setLight(0xF000F0)
+            .setNormal(0f, 0f, 1f)
+        builder.addVertex(pose, 1f, 1f, 0f).setColor(r, g, b, 255).setUv(1f, 0f).setLight(0xF000F0)
+            .setNormal(0f, 0f, 1f)
+        builder.addVertex(pose, 0f, 1f, 0f).setColor(r, g, b, 255).setUv(0f, 0f).setLight(0xF000F0)
+            .setNormal(0f, 0f, 1f)
 
         type.draw(builder.buildOrThrow())
     }

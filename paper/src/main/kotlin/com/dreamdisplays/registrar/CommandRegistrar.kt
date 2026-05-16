@@ -20,9 +20,21 @@ object CommandRegistrar {
             Command.SINGLE_SUCCESS
         }
         .then(simple("help", HelpCommand()))
-        .then(simple("create", CreateCommand()) { it.sender is Player && it.sender.hasPermission(Main.config.permissions.create) })
-        .then(simple("delete", DeleteCommand()) { it.sender is Player && it.sender.hasPermission(Main.config.permissions.delete) })
-        .then(simple("info", InfoCommand()) { it.sender is Player && it.sender.hasPermission(Main.config.permissions.info) })
+        .then(
+            simple(
+                "create",
+                CreateCommand()
+            ) { it.sender is Player && it.sender.hasPermission(Main.config.permissions.create) })
+        .then(
+            simple(
+                "delete",
+                DeleteCommand()
+            ) { it.sender is Player && it.sender.hasPermission(Main.config.permissions.delete) })
+        .then(
+            simple(
+                "info",
+                InfoCommand()
+            ) { it.sender is Player && it.sender.hasPermission(Main.config.permissions.info) })
         .then(simple("stats", StatsCommand()) { it.sender.hasPermission(Main.config.permissions.stats) })
         .then(simple("reload", ReloadCommand()) { it.sender.hasPermission(Main.config.permissions.reload) })
         .then(videoSubCommand())
@@ -129,7 +141,10 @@ object CommandRegistrar {
                                     .suggests { ctx, builder ->
                                         val filter = StringArgumentType.getString(ctx, "filter")
                                         val value = StringArgumentType.getString(ctx, "value")
-                                        cmd.complete(ctx.source.sender, arrayOf("list", filter, value, builder.remaining))
+                                        cmd.complete(
+                                            ctx.source.sender,
+                                            arrayOf("list", filter, value, builder.remaining)
+                                        )
                                             .filter { it.startsWith(builder.remaining, ignoreCase = true) }
                                             .forEach { builder.suggest(it) }
                                         builder.buildFuture()

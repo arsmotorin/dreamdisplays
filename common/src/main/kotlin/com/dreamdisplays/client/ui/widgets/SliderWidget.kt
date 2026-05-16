@@ -34,22 +34,29 @@ abstract class SliderWidget(
     override fun updateWidgetNarration(builder: NarrationElementOutput) {
         builder.add(NarratedElementType.TITLE, createNarrationMessage())
         if (active) {
-            if (isFocused) builder.add(NarratedElementType.USAGE,
-                Component.translatable("narration.slider.usage.focused"))
-            else builder.add(NarratedElementType.USAGE,
-                Component.translatable("narration.slider.usage.hovered"))
+            if (isFocused) builder.add(
+                NarratedElementType.USAGE,
+                Component.translatable("narration.slider.usage.focused")
+            )
+            else builder.add(
+                NarratedElementType.USAGE,
+                Component.translatable("narration.slider.usage.hovered")
+            )
         }
     }
 
     override fun renderWidget(graphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
         graphics.blitSprite(RenderPipelines.GUI_TEXTURED, getTexture(), x, y, width, height)
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, getHandleTexture(),
-            x + (value * (width - 8).toDouble()).toInt(), y, 8, height)
+        graphics.blitSprite(
+            RenderPipelines.GUI_TEXTURED, getHandleTexture(),
+            x + (value * (width - 8).toDouble()).toInt(), y, 8, height
+        )
         val i = if (active) 16777215 else 10526880
         val msg = message.copy().withStyle { it.withColor(i) }
         renderScrollingStringOverContents(
             graphics.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.TOOLTIP_AND_CURSOR),
-            msg, 2)
+            msg, 2
+        )
     }
 
     override fun onClick(event: MouseButtonEvent, doubleClick: Boolean) {

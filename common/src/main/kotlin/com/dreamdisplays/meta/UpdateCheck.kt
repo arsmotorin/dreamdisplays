@@ -11,26 +11,27 @@ import java.nio.charset.StandardCharsets
 /** Checks mod updates. **/
 object UpdateCheck {
 
-    private const val API =
-        "https://api.github.com/repos/arsmotorin/dreamdisplays/releases/latest"
+    private const val API = "https://api.github.com/repos/arsmotorin/dreamdisplays/releases/latest"
 
-    @Volatile private var checked = false
-    @Volatile private var updateAvailable = false
-    @Volatile private var latestVersion: String? = null
+    @Volatile
+    private var checked = false
 
+    @Volatile
+    private var updateAvailable = false
+
+    @Volatile
+    private var latestVersion: String? = null
 
     fun isUpdateAvailable(): Boolean {
         if (!checked) startCheck()
         return updateAvailable
     }
 
-
     fun shouldShowArrow(): Boolean {
         if (!checked) startCheck()
         val latest = latestVersion ?: return false
         return !latest.equals(GeneralUtil.getModVersion(), ignoreCase = true)
     }
-
 
     fun latestVersion(): String = latestVersion ?: GeneralUtil.getModVersion()
 
@@ -61,10 +62,12 @@ object UpdateCheck {
                     val obj = root.asJsonObject
                     optString(obj, "tag_name") ?: optString(obj, "name")
                 }
+
                 root.isJsonArray -> {
                     val arr = root.asJsonArray
                     if (!arr.isEmpty && arr[0].isJsonObject) optString(arr[0].asJsonObject, "tag_name") else null
                 }
+
                 else -> null
             } ?: return
             val tag = if (rawTag.startsWith("v") || rawTag.startsWith("V")) rawTag.substring(1) else rawTag

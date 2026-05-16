@@ -39,7 +39,8 @@ class ProgressSliderWidget(
         val label = buildLabel(cur, dur)
         renderScrollingStringOverContents(
             g.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.TOOLTIP_AND_CURSOR),
-            label, 4)
+            label, 4
+        )
     }
 
     private fun buildLabel(cur: Long, dur: Long): MutableComponent {
@@ -55,8 +56,10 @@ class ProgressSliderWidget(
         if (!isHovered && !sliderFocused) HANDLE_TEXTURE_ID else HANDLE_HIGHLIGHTED_TEXTURE_ID
 
     override fun createNarrationMessage(): MutableComponent =
-        Component.translatable("gui.narrate.slider",
-            buildLabel(currentSupplier.asLong, durationSupplier.asLong))
+        Component.translatable(
+            "gui.narrate.slider",
+            buildLabel(currentSupplier.asLong, durationSupplier.asLong)
+        )
 
     override fun updateWidgetNarration(builder: NarrationElementOutput) {
         builder.add(NarratedElementType.TITLE, createNarrationMessage())

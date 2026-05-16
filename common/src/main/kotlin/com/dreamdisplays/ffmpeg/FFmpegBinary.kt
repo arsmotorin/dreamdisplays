@@ -3,18 +3,12 @@ package com.dreamdisplays.ffmpeg
 import me.inotsleep.utils.logging.LoggingManager
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.IOException
-import java.io.OutputStream
+import java.io.*
 import java.net.HttpURLConnection
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.attribute.PosixFilePermissions
-import java.util.Locale
+import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipInputStream
 
@@ -24,7 +18,8 @@ object FFmpegBinary {
     private const val CACHE_ROOT = "./dreamdisplays/ffmpeg"
     private const val BTBN_BASE = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest"
 
-    @Volatile private var cachedPath: String? = null
+    @Volatile
+    private var cachedPath: String? = null
 
 
     fun getPath(): String? {
@@ -39,7 +34,11 @@ object FFmpegBinary {
 
     fun prewarmAsync() {
         Thread({
-            try { getPath() } catch (e: Exception) { LoggingManager.warn("[FFmpeg] prewarm failed", e) }
+            try {
+                getPath()
+            } catch (e: Exception) {
+                LoggingManager.warn("[FFmpeg] prewarm failed", e)
+            }
         }, "Ffmpeg-prewarm").apply { isDaemon = true }.start()
     }
 
@@ -187,14 +186,18 @@ object FFmpegBinary {
             try {
                 val p = ProcessBuilder(candidate, "-version").redirectErrorStream(true).start()
                 Thread {
-                    try { p.inputStream.transferTo(OutputStream.nullOutputStream()) } catch (_: Exception) {}
+                    try {
+                        p.inputStream.transferTo(OutputStream.nullOutputStream())
+                    } catch (_: Exception) {
+                    }
                 }.apply { isDaemon = true }.start()
                 if (p.waitFor(3, TimeUnit.SECONDS) && p.exitValue() == 0) {
                     LoggingManager.info("[FFmpeg] Using system ffmpeg: $candidate.")
                     return candidate
                 }
                 p.destroyForcibly()
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+            }
         }
         LoggingManager.error("[FFmpeg] FFmpeg not found (no download succeeded, no system binary).")
         return null
@@ -210,24 +213,34 @@ object FFmpegBinary {
 
         if ("win" in os) {
             if (isArm) return null
-            return Platform("windows-x64",
+            return Platform(
+                "windows-x64",
                 "$BTBN_BASE/ffmpeg-master-latest-win64-gpl.zip",
-                "ffmpeg.exe", "/bin/ffmpeg.exe", false)
+                "ffmpeg.exe", "/bin/ffmpeg.exe", false
+            )
         }
         if ("mac" in os) {
             return if (isArm)
-                Platform("macos-aarch64", "https://www.osxexperts.net/ffmpeg71arm.zip",
-                    "ffmpeg", "ffmpeg", false)
+                Platform(
+                    "macos-aarch64", "https://www.osxexperts.net/ffmpeg71arm.zip",
+                    "ffmpeg", "ffmpeg", false
+                )
             else
-                Platform("macos-x64", "https://evermeet.cx/ffmpeg/getrelease/zip",
-                    "ffmpeg", "ffmpeg", false)
+                Platform(
+                    "macos-x64", "https://evermeet.cx/ffmpeg/getrelease/zip",
+                    "ffmpeg", "ffmpeg", false
+                )
         }
         return if (isArm)
-            Platform("linux-aarch64", "$BTBN_BASE/ffmpeg-master-latest-linuxarm64-gpl.tar.xz",
-                "ffmpeg", "/bin/ffmpeg", true)
+            Platform(
+                "linux-aarch64", "$BTBN_BASE/ffmpeg-master-latest-linuxarm64-gpl.tar.xz",
+                "ffmpeg", "/bin/ffmpeg", true
+            )
         else
-            Platform("linux-x64", "$BTBN_BASE/ffmpeg-master-latest-linux64-gpl.tar.xz",
-                "ffmpeg", "/bin/ffmpeg", true)
+            Platform(
+                "linux-x64", "$BTBN_BASE/ffmpeg-master-latest-linux64-gpl.tar.xz",
+                "ffmpeg", "/bin/ffmpeg", true
+            )
     }
 
     private data class Platform(

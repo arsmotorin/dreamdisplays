@@ -24,7 +24,7 @@ object MediaBufferEffects {
             val r = ((buf[i].toInt() and 0xFF) * factor) shr 8
             val g = ((buf[i + 1].toInt() and 0xFF) * factor) shr 8
             val b = ((buf[i + 2].toInt() and 0xFF) * factor) shr 8
-            buf[i]     = (if (r > 255) 255 else r).toByte()
+            buf[i] = (if (r > 255) 255 else r).toByte()
             buf[i + 1] = (if (g > 255) 255 else g).toByte()
             buf[i + 2] = (if (b > 255) 255 else b).toByte()
             // buf[i+3] = alpha

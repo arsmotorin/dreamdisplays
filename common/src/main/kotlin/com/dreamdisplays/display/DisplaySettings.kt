@@ -3,12 +3,8 @@ package com.dreamdisplays.display
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import me.inotsleep.utils.logging.LoggingManager
-import java.io.File
-import java.io.FileNotFoundException
-import java.io.FileReader
-import java.io.FileWriter
-import java.io.IOException
-import java.util.UUID
+import java.io.*
+import java.util.*
 
 /** Manages loading and saving of display settings and data. */
 object DisplaySettings {
@@ -173,7 +169,7 @@ object DisplaySettings {
         var langOverride: String? = null
     }
 
-    class FullDisplayData constructor(
+    class FullDisplayData(
         var uuid: UUID,
         var x: Int,
         var y: Int,

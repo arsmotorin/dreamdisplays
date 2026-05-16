@@ -4,7 +4,7 @@ package com.dreamdisplays.ytdlp
  * Data class representing `YouTube` video information, as returned by `yt-dlp`. It includes methods to format the
  * duration, view count, and like count.
  */
-class YtVideoInfo constructor(
+class YtVideoInfo(
     val id: String,
     val title: String,
     val uploader: String?,

@@ -3,7 +3,7 @@ package com.dreamdisplays.util
 import java.io.IOException
 import java.net.URI
 import java.net.URISyntaxException
-import java.util.Locale
+import java.util.*
 
 /** General utility functions for the mod. */
 object GeneralUtil {
@@ -11,7 +11,6 @@ object GeneralUtil {
     private val DIRECT_ID = Regex("[a-zA-Z0-9_-]{11}")
     private val FABRIC_VERSION = Regex("\"version\"\\s*:\\s*\"([^\"]+)\"")
     private val NEOFORGE_VERSION = Regex("version\\s*=\\s*\"([^\"]+)\"")
-
 
     fun detectPlatform(): String {
         val os = System.getProperty("os.name").lowercase(Locale.ENGLISH)
@@ -22,7 +21,6 @@ object GeneralUtil {
             else -> throw UnsupportedOperationException("Unsupported OS: $os")
         }
     }
-
 
     fun extractVideoId(youtubeUrl: String): String? {
         if (youtubeUrl.isEmpty()) return null
@@ -61,14 +59,12 @@ object GeneralUtil {
         return DIRECT_ID.find(youtubeUrl)?.value
     }
 
-
     @Throws(IOException::class)
     fun readResource(resourcePath: String): String {
         val stream = GeneralUtil::class.java.getResourceAsStream(resourcePath)
             ?: throw IOException("[GeneralUtil] Can't find the resource: $resourcePath.")
         return stream.bufferedReader().use { it.readText() }
     }
-
 
     fun getModVersion(): String {
         runCatching {

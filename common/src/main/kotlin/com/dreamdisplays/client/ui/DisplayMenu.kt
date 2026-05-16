@@ -1,22 +1,14 @@
 package com.dreamdisplays.client.ui
 
 import com.dreamdisplays.Initializer
-import com.dreamdisplays.client.ui.widgets.ButtonWidget
-import com.dreamdisplays.client.ui.widgets.ProgressSliderWidget
-import com.dreamdisplays.client.ui.widgets.SliderWidget
-import com.dreamdisplays.client.ui.widgets.SuggestionsPanelWidget
-import com.dreamdisplays.client.ui.widgets.ToggleWidget
+import com.dreamdisplays.client.ui.widgets.*
 import com.dreamdisplays.display.DisplayManager
 import com.dreamdisplays.display.DisplayScreen
 import com.dreamdisplays.display.DisplaySettings
 import com.dreamdisplays.meta.UpdateCheck
 import com.dreamdisplays.net.Packets
 import com.dreamdisplays.util.GeneralUtil
-import com.dreamdisplays.ytdlp.Thumbnails
-import com.dreamdisplays.ytdlp.VideoMetadataCache
-import com.dreamdisplays.ytdlp.VideoTitleCache
-import com.dreamdisplays.ytdlp.YtDlp
-import com.dreamdisplays.ytdlp.YtVideoInfo
+import com.dreamdisplays.ytdlp.*
 import net.minecraft.ChatFormatting
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
@@ -30,12 +22,7 @@ import net.minecraft.network.chat.Style
 import net.minecraft.resources.Identifier
 import java.awt.Desktop
 import java.net.URI
-import kotlin.math.abs
-import kotlin.math.floor
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.roundToInt
-import kotlin.math.sin
+import kotlin.math.*
 
 /** Configuration of a display screen GUI. */
 class DisplayMenu private constructor() : Screen(Component.translatable("dreamdisplays.ui.title")) {
@@ -73,38 +60,60 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
     override fun init() {
         val ds = displayScreen ?: return
 
-        volume = object : SliderWidget(0, 0, 0, 0,
+        volume = object : SliderWidget(
+            0, 0, 0, 0,
             Component.literal("${floor(ds.volume.toDouble() * 200).toInt()}%"),
-            ds.volume.toDouble()) {
+            ds.volume.toDouble()
+        ) {
             override fun updateMessage() {
                 message = Component.literal("${floor(value * 200).toInt()}%")
             }
-            override fun applyValue() { ds.volume = value.toFloat() }
+
+            override fun applyValue() {
+                ds.volume = value.toFloat()
+            }
         }
 
         backButtonWidget = iconButton("left") { ds.seekBackward() }
         forwardButtonWidget = iconButton("right") { ds.seekForward() }
-        pauseButtonWidget = object : ButtonWidget(0, 0, 0, 0, 64, 64,
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "pause"), 2) {
+        pauseButtonWidget = object : ButtonWidget(
+            0, 0, 0, 0, 64, 64,
+            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "pause"), 2
+        ) {
             override fun onPress() {
                 ds.setPaused(!ds.getPaused())
-                setIconTextureId(Identifier.fromNamespaceAndPath(Initializer.MOD_ID,
-                    if (ds.getPaused()) "play" else "pause"))
+                setIconTextureId(
+                    Identifier.fromNamespaceAndPath(
+                        Initializer.MOD_ID,
+                        if (ds.getPaused()) "play" else "pause"
+                    )
+                )
             }
         }
-        pauseButtonWidget!!.setIconTextureId(Identifier.fromNamespaceAndPath(Initializer.MOD_ID,
-            if (ds.getPaused()) "play" else "pause"))
+        pauseButtonWidget!!.setIconTextureId(
+            Identifier.fromNamespaceAndPath(
+                Initializer.MOD_ID,
+                if (ds.getPaused()) "play" else "pause"
+            )
+        )
 
-        muteButtonWidget = object : ButtonWidget(0, 0, 0, 0, 64, 64,
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, if (ds.muted) "mute" else "sound"), 2) {
+        muteButtonWidget = object : ButtonWidget(
+            0, 0, 0, 0, 64, 64,
+            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, if (ds.muted) "mute" else "sound"), 2
+        ) {
             override fun onPress() {
                 ds.mute(!ds.muted)
-                setIconTextureId(Identifier.fromNamespaceAndPath(Initializer.MOD_ID,
-                    if (ds.muted) "mute" else "sound"))
+                setIconTextureId(
+                    Identifier.fromNamespaceAndPath(
+                        Initializer.MOD_ID,
+                        if (ds.muted) "mute" else "sound"
+                    )
+                )
             }
         }
 
-        progress = ProgressSliderWidget(0, 0, 100, CTRL_BTN,
+        progress = ProgressSliderWidget(
+            0, 0, 100, CTRL_BTN,
             { displayScreen?.currentTimeNanos ?: 0L },
             { displayScreen?.mediaPlayerDurationNanos ?: 0L },
             { nanos ->
@@ -114,34 +123,47 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
                 }
             })
 
-        renderD = object : SliderWidget(0, 0, 0, 0,
+        renderD = object : SliderWidget(
+            0, 0, 0, 0,
             Component.literal("${ds.renderDistance} blocks"),
-            (ds.renderDistance - 24) / (128 - 24).toDouble()) {
+            (ds.renderDistance - 24) / (128 - 24).toDouble()
+        ) {
             override fun updateMessage() {
                 message = Component.literal("${(value * (128 - 24)).toInt() + 24} blocks")
             }
+
             override fun applyValue() {
                 ds.setRenderDistance((value * (128 - 24) + 24).toInt())
                 DisplayManager.saveScreenData(ds)
             }
         }
 
-        quality = object : SliderWidget(0, 0, 0, 0,
+        quality = object : SliderWidget(
+            0, 0, 0, 0,
             Component.literal("${ds.quality}p"),
-            qualityFraction(ds.quality)) {
+            qualityFraction(ds.quality)
+        ) {
             override fun updateMessage() {
                 message = Component.literal("${qualityFromFraction(value)}p")
             }
-            override fun applyValue() { ds.quality = qualityFromFraction(value) }
+
+            override fun applyValue() {
+                ds.quality = qualityFromFraction(value)
+            }
         }
 
-        brightness = object : SliderWidget(0, 0, 0, 0,
+        brightness = object : SliderWidget(
+            0, 0, 0, 0,
             Component.literal("${floor(ds.brightness.toDouble() * 100).toInt()}%"),
-            ds.brightness / 2.0) {
+            ds.brightness / 2.0
+        ) {
             override fun updateMessage() {
                 message = Component.literal("${floor(value * 200).toInt()}%")
             }
-            override fun applyValue() { ds.brightness = (value * 2.0).toFloat() }
+
+            override fun applyValue() {
+                ds.brightness = (value * 2.0).toFloat()
+            }
         }
 
         renderDReset = resetButton {
@@ -174,12 +196,16 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
             }
         }
 
-        sync = object : ToggleWidget(0, 0, 0, 0,
+        sync = object : ToggleWidget(
+            0, 0, 0, 0,
             Component.translatable(if (ds.isSync) "dreamdisplays.button.enabled" else "dreamdisplays.button.disabled"),
-            ds.isSync) {
+            ds.isSync
+        ) {
             override fun updateMessage() {
-                message = Component.translatable(if (value) "dreamdisplays.button.enabled" else "dreamdisplays.button.disabled")
+                message =
+                    Component.translatable(if (value) "dreamdisplays.button.enabled" else "dreamdisplays.button.disabled")
             }
+
             override fun applyValue() {
                 if (ds.owner && syncReset != null) {
                     ds.isSync = value
@@ -200,10 +226,13 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
         val red = WidgetSprites(
             Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "widgets/red_button"),
             Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "widgets/red_button_disabled"),
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "widgets/red_button_highlighted"))
+            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "widgets/red_button_highlighted")
+        )
 
-        deleteButtonWidget = object : ButtonWidget(0, 0, 0, 0, 64, 64,
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "delete"), 2) {
+        deleteButtonWidget = object : ButtonWidget(
+            0, 0, 0, 0, 64, 64,
+            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "delete"), 2
+        ) {
             override fun onPress() {
                 DisplaySettings.removeDisplay(ds.uuid)
                 DisplayManager.unregisterScreen(ds)
@@ -215,8 +244,10 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
         deleteButtonWidget!!.active = ds.owner
 
         reportButtonWidget = if (Initializer.isReportingEnabled) {
-            object : ButtonWidget(0, 0, 0, 0, 64, 64,
-                Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "report"), 2) {
+            object : ButtonWidget(
+                0, 0, 0, 0, 64, 64,
+                Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "report"), 2
+            ) {
                 override fun onPress() {
                     Initializer.sendPacket(Packets.Report(ds.uuid))
                     onClose()
@@ -247,15 +278,23 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
     }
 
     private fun iconButton(icon: String, action: Runnable): ButtonWidget =
-        object : ButtonWidget(0, 0, 0, 0, 64, 64,
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, icon), 2) {
-            override fun onPress() { action.run() }
+        object : ButtonWidget(
+            0, 0, 0, 0, 64, 64,
+            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, icon), 2
+        ) {
+            override fun onPress() {
+                action.run()
+            }
         }
 
     private fun resetButton(action: Runnable): ButtonWidget =
-        object : ButtonWidget(0, 0, 0, 0, 64, 64,
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "refresh"), 2) {
-            override fun onPress() { action.run() }
+        object : ButtonWidget(
+            0, 0, 0, 0, 64, 64,
+            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "refresh"), 2
+        ) {
+            override fun onPress() {
+                action.run()
+            }
         }
 
     private fun onPickSuggested(info: YtVideoInfo) {
@@ -308,9 +347,18 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
         val compact = !wide && totalW < 600
 
         val leftX = PADDING
-        val previewX: Int; val previewY: Int; val previewW: Int; val previewH: Int
-        val settingsX: Int; val settingsY: Int; val settingsW: Int; val settingsH: Int
-        val suggestionsX: Int; val suggestionsY: Int; val suggestionsW: Int; val suggestionsH: Int
+        val previewX: Int
+        val previewY: Int
+        val previewW: Int
+        val previewH: Int
+        val settingsX: Int
+        val settingsY: Int
+        val settingsW: Int
+        val settingsH: Int
+        val suggestionsX: Int
+        val suggestionsY: Int
+        val suggestionsW: Int
+        val suggestionsH: Int
         var suggestionsVertical = false
 
         if (wide) {
@@ -327,7 +375,9 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
             val minSh = 120
             var topRowH = max(220, (totalH * 6) / 10)
             var sH = totalH - topRowH - PANEL_GAP
-            if (sH < minSh) { sH = minSh; topRowH = totalH - sH - PANEL_GAP }
+            if (sH < minSh) {
+                sH = minSh; topRowH = totalH - sH - PANEL_GAP
+            }
             val showSuggestions = topRowH >= 160
 
             if (compact) {
@@ -353,10 +403,14 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
             suggestionsH = if (showSuggestions) sH else 0
         }
 
-        drawPanel(g, previewX, previewY, previewW, previewH,
-            Component.translatable("dreamdisplays.ui.preview").string)
-        drawPanel(g, settingsX, settingsY, settingsW, settingsH,
-            Component.translatable("dreamdisplays.ui.settings").string)
+        drawPanel(
+            g, previewX, previewY, previewW, previewH,
+            Component.translatable("dreamdisplays.ui.preview").string
+        )
+        drawPanel(
+            g, settingsX, settingsY, settingsW, settingsH,
+            Component.translatable("dreamdisplays.ui.settings").string
+        )
 
         renderPreviewSection(g, previewX, previewY, previewW, previewH)
         renderSettingsSection(g, settingsX, settingsY, settingsW, settingsH)
@@ -388,8 +442,10 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
             w?.active = false; w?.visible = false
         }
         sync?.let { it.active = false; it.visible = false }
-        listOf(backButtonWidget, forwardButtonWidget, pauseButtonWidget,
-            renderDReset, qualityReset, brightnessReset, volumeReset, syncReset, muteButtonWidget).forEach { w ->
+        listOf(
+            backButtonWidget, forwardButtonWidget, pauseButtonWidget,
+            renderDReset, qualityReset, brightnessReset, volumeReset, syncReset, muteButtonWidget
+        ).forEach { w ->
             w?.active = false; w?.visible = false
         }
         progress?.let { it.active = false; it.visible = false }
@@ -397,13 +453,17 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
         val panelW = min(420, this.width - 40)
         val panelX = this.width / 2 - panelW / 2
         val panelY = this.height / 2 - 70
-        drawPanel(g, panelX, panelY, panelW, 130,
-            Component.translatable("dreamdisplays.ui.error").string)
+        drawPanel(
+            g, panelX, panelY, panelW, 130,
+            Component.translatable("dreamdisplays.ui.error").string
+        )
         val lines = listOf(
             Component.translatable("dreamdisplays.error.loadingerror.1").withStyle { it.withColor(ChatFormatting.RED) },
             Component.translatable("dreamdisplays.error.loadingerror.2").withStyle { it.withColor(ChatFormatting.RED) },
-            Component.translatable("dreamdisplays.error.loadingerror.4").withStyle { it.withColor(ChatFormatting.GRAY) },
-            Component.translatable("dreamdisplays.error.loadingerror.5").withStyle { it.withColor(ChatFormatting.GRAY) },
+            Component.translatable("dreamdisplays.error.loadingerror.4")
+                .withStyle { it.withColor(ChatFormatting.GRAY) },
+            Component.translatable("dreamdisplays.error.loadingerror.5")
+                .withStyle { it.withColor(ChatFormatting.GRAY) },
         )
         var y = panelY + headerHeight() + 8
         for (line in lines) {
@@ -438,7 +498,8 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
         g.fill(innerX, innerY, innerX + innerW, innerY + previewMaxH, 0xFF000000.toInt())
 
         val ratio = scr.width / max(1f, scr.height.toFloat())
-        val videoW: Int; val videoH: Int
+        val videoW: Int
+        val videoH: Int
         if (innerW / previewMaxH.toFloat() > ratio) {
             videoH = previewMaxH; videoW = (videoH * ratio).toInt()
         } else {
@@ -450,21 +511,27 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
         val texId = scr.textureId
         if (scr.isVideoStarted && scr.texture != null && texId != null) {
             scr.fitTexture()
-            g.blit(RenderPipelines.GUI_TEXTURED, texId,
+            g.blit(
+                RenderPipelines.GUI_TEXTURED, texId,
                 videoX, videoY, 0f, 0f, videoW, videoH,
                 scr.textureWidth, scr.textureHeight,
-                scr.textureWidth, scr.textureHeight)
+                scr.textureWidth, scr.textureHeight
+            )
         } else {
             currentThumbnail()?.let { thumb ->
-                g.blit(RenderPipelines.GUI_TEXTURED, thumb,
-                    videoX, videoY, 0f, 0f, videoW, videoH, 320, 180)
+                g.blit(
+                    RenderPipelines.GUI_TEXTURED, thumb,
+                    videoX, videoY, 0f, 0f, videoW, videoH, 320, 180
+                )
                 g.fill(videoX, videoY, videoX + videoW, videoY + videoH, 0x80000000.toInt())
             }
             val waiting = Component.translatable("dreamdisplays.ui.waiting").string
-            g.drawString(font, waiting,
+            g.drawString(
+                font, waiting,
                 innerX + innerW / 2 - font.width(waiting) / 2,
                 innerY + previewMaxH / 2 - font.lineHeight / 2,
-                0xFFCCCCCC.toInt(), true)
+                0xFFCCCCCC.toInt(), true
+            )
         }
 
         renderTitleOverlay(g, scr, innerX, innerY + previewMaxH, innerW)
@@ -484,15 +551,23 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
             it.x = innerX + CTRL_BTN * 2 + 8; it.y = controlsRowY
             it.width = CTRL_BTN; it.height = CTRL_BTN
             it.active = !(scr.isSync && !scr.owner)
-            it.setIconTextureId(Identifier.fromNamespaceAndPath(Initializer.MOD_ID,
-                if (scr.muted) "mute" else "sound"))
+            it.setIconTextureId(
+                Identifier.fromNamespaceAndPath(
+                    Initializer.MOD_ID,
+                    if (scr.muted) "mute" else "sound"
+                )
+            )
         }
         pauseButtonWidget?.let {
             it.x = controlsRight - CTRL_BTN; it.y = controlsRowY
             it.width = CTRL_BTN; it.height = CTRL_BTN
             it.active = !(scr.isSync && !scr.owner)
-            it.setIconTextureId(Identifier.fromNamespaceAndPath(Initializer.MOD_ID,
-                if (scr.getPaused()) "play" else "pause"))
+            it.setIconTextureId(
+                Identifier.fromNamespaceAndPath(
+                    Initializer.MOD_ID,
+                    if (scr.getPaused()) "play" else "pause"
+                )
+            )
         }
         progress?.let {
             val progX = innerX + CTRL_BTN * 3 + 12
@@ -609,8 +684,10 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
         return HoverArea(x, textY, w, font.lineHeight)
     }
 
-    private fun renderRow(g: GuiGraphics, x: Int, y: Int, w: Int, key: String,
-                          control: AbstractWidget?, reset: ButtonWidget?): Int {
+    private fun renderRow(
+        g: GuiGraphics, x: Int, y: Int, w: Int, key: String,
+        control: AbstractWidget?, reset: ButtonWidget?
+    ): Int {
         g.fill(x, y, x + w, y + ROW_H, ROW_BG)
         val label = Component.translatable(key)
         g.drawString(font, label, x + 6, y + ROW_H / 2 - font.lineHeight / 2, 0xFFFFFFFF.toInt(), false)
@@ -652,7 +729,8 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
 
     override fun mouseClicked(event: MouseButtonEvent, dbl: Boolean): Boolean {
         if (modLabelHover != null && UpdateCheck.shouldShowArrow()
-            && modLabelHover!!.contains(event.x().toInt(), event.y().toInt())) {
+            && modLabelHover!!.contains(event.x().toInt(), event.y().toInt())
+        ) {
             try {
                 Desktop.getDesktop().browse(URI.create(MODRINTH_URL))
             } catch (_: Exception) {
@@ -672,80 +750,115 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
         if (scr.errored) return
 
         if (volumeHover?.contains(mouseX, mouseY) == true) {
-            g.setComponentTooltipForNextFrame(font, listOf(
-                Component.translatable("dreamdisplays.button.volume.tooltip.1").withStyle { it.withColor(ChatFormatting.WHITE).withBold(true) },
-                Component.translatable("dreamdisplays.button.volume.tooltip.2").withStyle { it.withColor(ChatFormatting.GRAY) },
-                Component.translatable("dreamdisplays.button.volume.tooltip.3").withStyle { it.withColor(ChatFormatting.GRAY) },
-                Component.translatable("dreamdisplays.button.volume.tooltip.4",
-                    volume?.let { (it.value * 200).toInt() } ?: 0)
-                    .withStyle { it.withColor(ChatFormatting.GOLD) },
-            ), mouseX, mouseY)
+            g.setComponentTooltipForNextFrame(
+                font, listOf(
+                    Component.translatable("dreamdisplays.button.volume.tooltip.1")
+                        .withStyle { it.withColor(ChatFormatting.WHITE).withBold(true) },
+                    Component.translatable("dreamdisplays.button.volume.tooltip.2")
+                        .withStyle { it.withColor(ChatFormatting.GRAY) },
+                    Component.translatable("dreamdisplays.button.volume.tooltip.3")
+                        .withStyle { it.withColor(ChatFormatting.GRAY) },
+                    Component.translatable(
+                        "dreamdisplays.button.volume.tooltip.4",
+                        volume?.let { (it.value * 200).toInt() } ?: 0)
+                        .withStyle { it.withColor(ChatFormatting.GOLD) },
+                ), mouseX, mouseY
+            )
         }
         if (renderDHover?.contains(mouseX, mouseY) == true) {
-            g.setComponentTooltipForNextFrame(font, listOf(
-                Component.translatable("dreamdisplays.button.render-distance.tooltip.1").withStyle { it.withColor(ChatFormatting.WHITE).withBold(true) },
-                Component.translatable("dreamdisplays.button.render-distance.tooltip.2").withStyle { it.withColor(ChatFormatting.GRAY) },
-                Component.translatable("dreamdisplays.button.render-distance.tooltip.3").withStyle { it.withColor(ChatFormatting.GRAY) },
-                Component.literal(""),
-                Component.translatable("dreamdisplays.button.render-distance.tooltip.8",
-                    renderD?.let { (it.value * (128 - 24) + 24).toInt() } ?: 0)
-                    .withStyle { it.withColor(ChatFormatting.GOLD) },
-            ), mouseX, mouseY)
+            g.setComponentTooltipForNextFrame(
+                font, listOf(
+                    Component.translatable("dreamdisplays.button.render-distance.tooltip.1")
+                        .withStyle { it.withColor(ChatFormatting.WHITE).withBold(true) },
+                    Component.translatable("dreamdisplays.button.render-distance.tooltip.2")
+                        .withStyle { it.withColor(ChatFormatting.GRAY) },
+                    Component.translatable("dreamdisplays.button.render-distance.tooltip.3")
+                        .withStyle { it.withColor(ChatFormatting.GRAY) },
+                    Component.literal(""),
+                    Component.translatable(
+                        "dreamdisplays.button.render-distance.tooltip.8",
+                        renderD?.let { (it.value * (128 - 24) + 24).toInt() } ?: 0)
+                        .withStyle { it.withColor(ChatFormatting.GOLD) },
+                ), mouseX, mouseY
+            )
         }
         if (qualityHover?.contains(mouseX, mouseY) == true && quality != null) {
             val tip = mutableListOf<Component>(
-                Component.translatable("dreamdisplays.button.quality.tooltip.1").withStyle { it.withColor(ChatFormatting.WHITE).withBold(true) },
-                Component.translatable("dreamdisplays.button.quality.tooltip.2").withStyle { it.withColor(ChatFormatting.GRAY) },
+                Component.translatable("dreamdisplays.button.quality.tooltip.1")
+                    .withStyle { it.withColor(ChatFormatting.WHITE).withBold(true) },
+                Component.translatable("dreamdisplays.button.quality.tooltip.2")
+                    .withStyle { it.withColor(ChatFormatting.GRAY) },
                 Component.literal(""),
                 Component.translatable("dreamdisplays.button.quality.tooltip.4", qualityFromFraction(quality!!.value))
                     .withStyle { it.withColor(ChatFormatting.GOLD) },
             )
             try {
                 if (scr.quality.toInt() >= 1080) {
-                    tip.add(Component.translatable("dreamdisplays.button.quality.tooltip.5")
-                        .withStyle { it.withColor(ChatFormatting.YELLOW) })
+                    tip.add(
+                        Component.translatable("dreamdisplays.button.quality.tooltip.5")
+                            .withStyle { it.withColor(ChatFormatting.YELLOW) })
                 }
             } catch (_: NumberFormatException) {
             }
             g.setComponentTooltipForNextFrame(font, tip, mouseX, mouseY)
         }
         if (brightnessHover?.contains(mouseX, mouseY) == true) {
-            g.setComponentTooltipForNextFrame(font, listOf(
-                Component.translatable("dreamdisplays.button.brightness.tooltip.1").withStyle { it.withColor(ChatFormatting.WHITE).withBold(true) },
-                Component.translatable("dreamdisplays.button.brightness.tooltip.2").withStyle { it.withColor(ChatFormatting.GRAY) },
-                Component.literal(""),
-                Component.translatable("dreamdisplays.button.brightness.tooltip.3",
-                    brightness?.let { floor(it.value * 200).toInt() } ?: 100)
-                    .withStyle { it.withColor(ChatFormatting.GOLD) },
-            ), mouseX, mouseY)
+            g.setComponentTooltipForNextFrame(
+                font, listOf(
+                    Component.translatable("dreamdisplays.button.brightness.tooltip.1")
+                        .withStyle { it.withColor(ChatFormatting.WHITE).withBold(true) },
+                    Component.translatable("dreamdisplays.button.brightness.tooltip.2")
+                        .withStyle { it.withColor(ChatFormatting.GRAY) },
+                    Component.literal(""),
+                    Component.translatable(
+                        "dreamdisplays.button.brightness.tooltip.3",
+                        brightness?.let { floor(it.value * 200).toInt() } ?: 100)
+                        .withStyle { it.withColor(ChatFormatting.GOLD) },
+                ), mouseX, mouseY
+            )
         }
         if (syncHover?.contains(mouseX, mouseY) == true && sync != null) {
-            g.setComponentTooltipForNextFrame(font, listOf(
-                Component.translatable("dreamdisplays.button.synchronization.tooltip.1").withStyle { it.withColor(ChatFormatting.WHITE).withBold(true) },
-                Component.translatable("dreamdisplays.button.synchronization.tooltip.2").withStyle { it.withColor(ChatFormatting.GRAY) },
-                Component.translatable("dreamdisplays.button.synchronization.tooltip.3").withStyle { it.withColor(ChatFormatting.GRAY) },
-                Component.literal(""),
-                Component.translatable("dreamdisplays.button.synchronization.tooltip.5",
-                    if (sync!!.value) Component.translatable("dreamdisplays.button.enabled")
-                    else Component.translatable("dreamdisplays.button.disabled"))
-                    .withStyle { it.withColor(ChatFormatting.GOLD) },
-            ), mouseX, mouseY)
+            g.setComponentTooltipForNextFrame(
+                font, listOf(
+                    Component.translatable("dreamdisplays.button.synchronization.tooltip.1")
+                        .withStyle { it.withColor(ChatFormatting.WHITE).withBold(true) },
+                    Component.translatable("dreamdisplays.button.synchronization.tooltip.2")
+                        .withStyle { it.withColor(ChatFormatting.GRAY) },
+                    Component.translatable("dreamdisplays.button.synchronization.tooltip.3")
+                        .withStyle { it.withColor(ChatFormatting.GRAY) },
+                    Component.literal(""),
+                    Component.translatable(
+                        "dreamdisplays.button.synchronization.tooltip.5",
+                        if (sync!!.value) Component.translatable("dreamdisplays.button.enabled")
+                        else Component.translatable("dreamdisplays.button.disabled")
+                    )
+                        .withStyle { it.withColor(ChatFormatting.GOLD) },
+                ), mouseX, mouseY
+            )
         }
 
         deleteButtonWidget?.let {
             if (hovered(mouseX, mouseY, it)) {
-                g.setComponentTooltipForNextFrame(font, listOf(
-                    Component.translatable("dreamdisplays.button.delete.tooltip.1").withStyle { s -> s.withColor(ChatFormatting.WHITE).withBold(true) },
-                    Component.translatable("dreamdisplays.button.delete.tooltip.2").withStyle { s -> s.withColor(ChatFormatting.GRAY) },
-                ), mouseX, mouseY)
+                g.setComponentTooltipForNextFrame(
+                    font, listOf(
+                        Component.translatable("dreamdisplays.button.delete.tooltip.1")
+                            .withStyle { s -> s.withColor(ChatFormatting.WHITE).withBold(true) },
+                        Component.translatable("dreamdisplays.button.delete.tooltip.2")
+                            .withStyle { s -> s.withColor(ChatFormatting.GRAY) },
+                    ), mouseX, mouseY
+                )
             }
         }
         reportButtonWidget?.let {
             if (hovered(mouseX, mouseY, it)) {
-                g.setComponentTooltipForNextFrame(font, listOf(
-                    Component.translatable("dreamdisplays.button.report.tooltip.1").withStyle { s -> s.withColor(ChatFormatting.WHITE).withBold(true) },
-                    Component.translatable("dreamdisplays.button.report.tooltip.2").withStyle { s -> s.withColor(ChatFormatting.GRAY) },
-                ), mouseX, mouseY)
+                g.setComponentTooltipForNextFrame(
+                    font, listOf(
+                        Component.translatable("dreamdisplays.button.report.tooltip.1")
+                            .withStyle { s -> s.withColor(ChatFormatting.WHITE).withBold(true) },
+                        Component.translatable("dreamdisplays.button.report.tooltip.2")
+                            .withStyle { s -> s.withColor(ChatFormatting.GRAY) },
+                    ), mouseX, mouseY
+                )
             }
         }
     }
@@ -764,12 +877,18 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
         val ds = displayScreen ?: return 0.0
         val list = ds.qualityList
         if (list.isEmpty()) return 0.0
-        val target = try { q.replace("p", "").toInt() } catch (_: Exception) { 720 }
+        val target = try {
+            q.replace("p", "").toInt()
+        } catch (_: Exception) {
+            720
+        }
         var closest = list[0]
         var minDiff = abs(target - closest)
         for (v in list) {
             val d = abs(target - v)
-            if (d < minDiff) { minDiff = d; closest = v }
+            if (d < minDiff) {
+                minDiff = d; closest = v
+            }
         }
         return list.indexOf(closest) / max(1, list.size - 1).toDouble()
     }

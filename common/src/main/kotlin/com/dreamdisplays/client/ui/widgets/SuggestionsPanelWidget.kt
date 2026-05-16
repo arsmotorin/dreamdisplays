@@ -51,26 +51,39 @@ class SuggestionsPanelWidget(
 
     init {
         val f = Minecraft.getInstance().font
-        searchBox = EditBox(f, x + 10, y + searchY(),
+        searchBox = EditBox(
+            f, x + 10, y + searchY(),
             searchBoxWidth(width), SEARCH_H,
-            Component.translatable("dreamdisplays.suggestions.search"))
+            Component.translatable("dreamdisplays.suggestions.search")
+        )
         searchBox.setHint(Component.translatable("dreamdisplays.suggestions.search"))
         searchBox.setMaxLength(200)
-        clearButtonWidget = object : ButtonWidget(0, 0, ACTION_W, SEARCH_H, 64, 64,
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "cross"), 4) {
+        clearButtonWidget = object : ButtonWidget(
+            0, 0, ACTION_W, SEARCH_H, 64, 64,
+            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "cross"), 4
+        ) {
             override fun onPress() {
                 searchBox.value = ""
                 searchBox.isFocused = true
             }
         }
-        searchActionButtonWidget = object : ButtonWidget(0, 0, ACTION_W, SEARCH_H, 64, 64,
-            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "search"), 4) {
-            override fun onPress() { runSearch() }
+        searchActionButtonWidget = object : ButtonWidget(
+            0, 0, ACTION_W, SEARCH_H, 64, 64,
+            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "search"), 4
+        ) {
+            override fun onPress() {
+                runSearch()
+            }
         }
     }
 
-    fun setVertical(v: Boolean) { vertical = v }
-    fun setCompactCards(c: Boolean) { compactCards = c }
+    fun setVertical(v: Boolean) {
+        vertical = v
+    }
+
+    fun setCompactCards(c: Boolean) {
+        compactCards = c
+    }
 
     private fun searchY(): Int = 10 + HEADER_H + 6
     private fun searchBoxWidth(panelW: Int): Int = panelW - 20 - (ACTION_W + ACTION_GAP) * 2
@@ -105,12 +118,24 @@ class SuggestionsPanelWidget(
                 try {
                     val meta = YouTubeInnerTube.metadata(maybeId)
                     if (meta != null) publish(seq2, listOf(meta), null)
-                    else publish(seq2, listOf(YtVideoInfo(maybeId,
-                        "https://youtu.be/$maybeId", null, null, null)), null)
+                    else publish(
+                        seq2, listOf(
+                            YtVideoInfo(
+                                maybeId,
+                                "https://youtu.be/$maybeId", null, null, null
+                            )
+                        ), null
+                    )
                 } catch (e: Exception) {
                     LoggingManager.warn("[Suggestions] URL meta fetch failed: ${e.message}")
-                    publish(seq2, listOf(YtVideoInfo(maybeId,
-                        "https://youtu.be/$maybeId", null, null, null)), null)
+                    publish(
+                        seq2, listOf(
+                            YtVideoInfo(
+                                maybeId,
+                                "https://youtu.be/$maybeId", null, null, null
+                            )
+                        ), null
+                    )
                 }
             }
             return
@@ -314,8 +339,10 @@ class SuggestionsPanelWidget(
         return max(80, (th * CARD_W / THUMB_H.toDouble()).toInt())
     }
 
-    private fun renderCardSized(g: GuiGraphics, f: Font, info: YtVideoInfo, x: Int, y: Int,
-                                w: Int, thumbH: Int, cardH: Int, hover: Boolean) {
+    private fun renderCardSized(
+        g: GuiGraphics, f: Font, info: YtVideoInfo, x: Int, y: Int,
+        w: Int, thumbH: Int, cardH: Int, hover: Boolean
+    ) {
         val bg = if (hover) {
             val pulse = (sin(System.currentTimeMillis() / 400.0 * Math.PI) * 0.5 + 0.5).toFloat()
             val alpha = (0x60 + pulse * 0x30).toInt()
@@ -328,8 +355,10 @@ class SuggestionsPanelWidget(
         val thumbW = w - 4
         val thumb = Thumbnails.get(info.id)
         if (thumb != null) {
-            g.blit(RenderPipelines.GUI_TEXTURED, thumb,
-                thumbX, thumbY, 0f, 0f, thumbW, thumbH, thumbW, thumbH)
+            g.blit(
+                RenderPipelines.GUI_TEXTURED, thumb,
+                thumbX, thumbY, 0f, 0f, thumbW, thumbH, thumbW, thumbH
+            )
         } else {
             g.fill(thumbX, thumbY, thumbX + thumbW, thumbY + thumbH, 0xFF000000.toInt())
         }
@@ -401,7 +430,10 @@ class SuggestionsPanelWidget(
         val mouseX = event.x()
         val mouseY = event.y()
         if (clearButtonWidget.isMouseOver(mouseX, mouseY)) return clearButtonWidget.mouseClicked(event, dbl)
-        if (searchActionButtonWidget.isMouseOver(mouseX, mouseY)) return searchActionButtonWidget.mouseClicked(event, dbl)
+        if (searchActionButtonWidget.isMouseOver(mouseX, mouseY)) return searchActionButtonWidget.mouseClicked(
+            event,
+            dbl
+        )
         if (searchBox.isMouseOver(mouseX, mouseY)) {
             val handled = searchBox.mouseClicked(event, dbl)
             searchBox.isFocused = true
