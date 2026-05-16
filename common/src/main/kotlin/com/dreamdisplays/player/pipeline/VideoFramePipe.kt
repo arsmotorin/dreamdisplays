@@ -62,19 +62,36 @@ internal class VideoFramePipe(private val debugLabel: String) {
     /**
      * Uploads the ready frame to [texture] if one is available.
      * [actualW] / [actualH] must match the dimensions this pipe was started with.
+     *
+     * Warning: this is one of the most expensive operations in the pipeline. It's critical to call this as soon as
+     * possible after [textureFilled] returns true, to minimize the chance of the reader thread overwriting the ready
+     * buffer before upload.
+     *
+     * You should also never call this method more than once per frame, or call it when [textureFilled] is false.
+     * It does not block or wait for a frame to be ready, and it does not guarantee that the same frame will still be
+     * ready by the time it executes.
      */
     fun updateFrame(texture: GpuTexture, actualW: Int, actualH: Int) {
         if (!frameAvailable.compareAndSet(true, false)) return
         val buf = readyBufferRef.get() ?: return
         if (actualW != expectedW || actualH != expectedH) return
         buf.rewind()
+        val start = System.nanoTime()
         if (!texture.isClosed) {
             RenderSystem.getDevice().createCommandEncoder().writeToTexture(
-                texture, buf, NativeImage.Format.RGBA,
+                texture, buf, NativeImage.Format.RGB,
                 0, 0, 0, 0, texture.getWidth(0), texture.getHeight(0),
             )
         }
-        if (MediaPlayer.DEBUG) MediaPlayer.framesToGpu.incrementAndGet()
+        if (MediaPlayer.DEBUG) {
+            uploadTotalNs += System.nanoTime() - start
+            MediaPlayer.framesToGpu.incrementAndGet()
+            if (++uploadCount >= 60) {
+                val avgMs = uploadTotalNs / 60 / 1_000_000.0
+                LoggingManager.info("[VideoFramePipe $debugLabel] Upload avg. ${String.format("%.3f", avgMs)} ms / frame")
+                uploadTotalNs = 0L; uploadCount = 0
+            }
+        }
     }
 
     /** Discards the current ready frame. Call when stopping or seeking. */
