@@ -18,7 +18,6 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.locks.LockSupport
 
 /**
  * Producer-consumer frame buffer and FFmpeg video reader loop.
@@ -32,8 +31,8 @@ internal class VideoFramePipe(private val debugLabel: String) {
         /** Default frame rate when the source doesn't report one or reports an invalid one. */
         private const val DEFAULT_FPS = 30.0
 
-        /** Park the video thread when it's more than 10 ms ahead of the audio clock. */
-        private const val SYNC_THRESHOLD_NS = 10_000_000L
+        /** Threshold under which we use busy-wait (spin) instead of sleep for precise timing. */
+        private const val SPIN_THRESHOLD_NS = 2L * 1_000_000L
 
         /** Drop a frame when it's more than 80 ms behind the audio clock. */
         private const val DROP_THRESHOLD_NS = 80_000_000L
@@ -178,7 +177,16 @@ internal class VideoFramePipe(private val debugLabel: String) {
 
                     val audioClock = getAudioClock()
                     val diff = videoPts - if (audioClock >= 0) audioClock else videoPts
-                    if (diff > SYNC_THRESHOLD_NS) LockSupport.parkNanos(diff)
+                    if (diff > 0) {
+                        val target = System.nanoTime() + diff
+                        if (diff > SPIN_THRESHOLD_NS) {
+                            Thread.sleep(diff / 1_000_000)
+                        } else {
+                            while (System.nanoTime() < target) {
+                                Thread.onSpinWait()
+                            }
+                        }
+                    }
                     if (diff < -DROP_THRESHOLD_NS) {
                         if (MediaPlayer.DEBUG) MediaPlayer.framesDropped.incrementAndGet()
                         videoPts += frameNs
