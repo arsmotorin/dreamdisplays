@@ -172,6 +172,7 @@ class PacketReceiver(private val plugin: Main) : PluginMessageListener {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun checkPluginUpdate(player: Player) {
         val latestPluginVersion = Main.pluginLatestVersion ?: return
 

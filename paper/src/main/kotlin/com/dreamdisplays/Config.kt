@@ -238,6 +238,7 @@ class Config(private val plugin: Main) {
         )
     }
 
+    @Suppress("DEPRECATION")
     fun getMessageForPlayer(player: Player?, key: String): Any? {
         val locale = player?.locale ?: "en_us"
         val langCode = mapLocaleToLang(locale)
