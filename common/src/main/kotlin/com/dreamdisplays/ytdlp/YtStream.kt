@@ -1,7 +1,7 @@
 package com.dreamdisplays.ytdlp
 
 /**
- * `YouTube` stream information, as returned by `yt-dlp`. It includes methods to check if the stream has video / audio and
+ * YouTube stream information, as returned by `yt-dlp`. It includes methods to check if the stream has video / audio and
  * if it's muxed (because it can be a stream or première or etc.)
  */
 class YtStream(

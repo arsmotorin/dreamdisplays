@@ -18,7 +18,7 @@ import java.util.*
 import java.util.concurrent.Executors
 
 /**
- * Persistent on-disk cache for resolved `YouTube` format URLs.
+ * Persistent on-disk cache for resolved YouTube format URLs.
  */
 object FormatDiskCache {
 

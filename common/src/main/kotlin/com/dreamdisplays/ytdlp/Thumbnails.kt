@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import javax.imageio.ImageIO
 
 /**
- * Thumbnail manager that handles downloading, caching, and registering `YouTube` video thumbnails as Minecraft textures.
+ * Thumbnail manager that handles downloading, caching, and registering YouTube video thumbnails as Minecraft textures.
  * Thumbnails are cached both in memory and on disk (in `config/dreamdisplays/thumb-cache`) with a TTL of 7 days.
  * The cache file names are derived from the video ID, sanitized to be filesystem-safe. Thumbnail downloads and decodes
  * are performed asynchronously to avoid blocking the main thread.

@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
 
 /**
- * Direct client for `YouTube`'s InnerTube API.
+ * Direct client for YouTube's InnerTube API.
  */
 object YouTubeInnerTube {
 
