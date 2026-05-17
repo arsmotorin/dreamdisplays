@@ -5,7 +5,8 @@ plugins {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.1.2.build.63-stable")
+    // TODO: update to fix CVE-2025-67030, CVE-2025-48924
+    compileOnly("io.papermc.paper:paper-api:26.1.2.build.64-stable")
     compileOnly(libs.jspecify)
     implementation("me.inotsleep:utils:1.4.10")
     implementation("com.github.zafarkhaja:java-semver:0.10.2")
