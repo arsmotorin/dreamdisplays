@@ -27,7 +27,6 @@ import kotlin.math.sqrt
 
 /** Main mod initializer. */
 object Initializer {
-
     const val MOD_ID: String = "dreamdisplays"
 
     private var wasPressed = false

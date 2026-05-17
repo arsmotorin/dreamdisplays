@@ -25,6 +25,7 @@ import java.net.URI
 import kotlin.math.*
 
 /** Configuration of a display screen GUI. */
+// TODO: rewrite this class entirely in 1.8.0
 class DisplayMenu private constructor() : Screen(Component.translatable("dreamdisplays.ui.title")) {
 
     var displayScreen: DisplayScreen? = null

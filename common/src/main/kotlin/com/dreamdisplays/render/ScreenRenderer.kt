@@ -12,7 +12,6 @@ import kotlin.math.sin
 
 /** Renders screens in the world. */
 object ScreenRenderer {
-
     fun render(stack: PoseStack, camera: Camera) {
         val cameraPos = camera.position()
         for (displayScreen in DisplayManager.getScreens()) {

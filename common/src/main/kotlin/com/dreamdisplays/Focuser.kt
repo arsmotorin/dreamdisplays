@@ -5,7 +5,6 @@ import net.minecraft.client.Minecraft
 
 /** Background thread that mutes / unmutes screens based on window focus. */
 class Focuser : Thread() {
-
     init {
         isDaemon = true
         instance = this
@@ -33,7 +32,6 @@ class Focuser : Thread() {
     }
 
     companion object {
-
         var instance: Focuser = Focuser()
     }
 }

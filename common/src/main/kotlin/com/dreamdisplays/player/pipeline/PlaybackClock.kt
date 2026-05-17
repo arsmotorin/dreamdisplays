@@ -2,7 +2,6 @@ package com.dreamdisplays.player.pipeline
 
 /** Tracks playback position as seek offset + elapsed wall time. It's thread-safe for reads. */
 internal class PlaybackClock {
-
     companion object {
         private const val NOT_STARTED = Long.MIN_VALUE
     }

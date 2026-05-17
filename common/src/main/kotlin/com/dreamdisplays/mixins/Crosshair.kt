@@ -12,7 +12,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 @Suppress("UNUSED")
 @Mixin(Gui::class)
 open class Crosshair {
-
     @Inject(method = ["extractCrosshair"], at = [At("HEAD")], cancellable = true)
     open fun extractCrosshair(
         guiGraphics: GuiGraphicsExtractor,

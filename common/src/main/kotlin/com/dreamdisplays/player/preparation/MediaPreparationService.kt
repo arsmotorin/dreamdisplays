@@ -11,7 +11,6 @@ import com.dreamdisplays.ytdlp.YtStream
  * Runs on a background thread; throws on failure so the caller can handle retries.
  */
 internal object MediaPreparationService {
-
     /**
      * Resolves the video ID, fetches streams, analyses metadata, and picks the best tracks.
      *

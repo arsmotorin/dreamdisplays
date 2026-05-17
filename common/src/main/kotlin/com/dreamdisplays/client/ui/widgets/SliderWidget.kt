@@ -14,6 +14,7 @@ import net.minecraft.resources.Identifier
 import net.minecraft.util.Mth
 
 /** Slider widget. **/
+// TODO: rewrite this class entirely in 1.8.0
 abstract class SliderWidget(
     x: Int, y: Int, width: Int, height: Int,
     message: Component,

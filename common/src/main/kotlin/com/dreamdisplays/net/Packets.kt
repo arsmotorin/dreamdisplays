@@ -10,7 +10,6 @@ import org.joml.Vector3i
 import java.util.*
 
 object Packets {
-
     private fun <T : CustomPacketPayload> createType(path: String): CustomPacketPayload.Type<T> =
         CustomPacketPayload.Type(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, path))
 

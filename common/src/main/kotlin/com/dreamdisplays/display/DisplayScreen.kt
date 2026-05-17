@@ -33,7 +33,6 @@ class DisplayScreen(
     var height: Int,
     var isSync: Boolean,
 ) {
-
     private val mediaPlayerGeneration = AtomicLong()
 
     private val savedSettings = DisplaySettings.getSettings(uuid)

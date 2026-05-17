@@ -11,9 +11,7 @@ private fun DisplayScreen.toFullDisplayData() = DisplaySettings.FullDisplayData(
 
 /** Manager for all screen displays. */
 object DisplayManager {
-
     val screens = ConcurrentHashMap<UUID, DisplayScreen>()
-
     val unloadedScreens = ConcurrentHashMap<UUID, DisplaySettings.FullDisplayData>()
 
     fun getScreens(): Collection<DisplayScreen> = screens.values

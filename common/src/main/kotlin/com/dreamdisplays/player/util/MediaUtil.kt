@@ -5,7 +5,6 @@ import java.io.InputStream
 
 /** Stateless helpers used by the media pipeline. */
 object MediaUtil {
-
     private val BORING_STDERR = arrayOf(
         "Broken pipe",
         "Error muxing a packet",

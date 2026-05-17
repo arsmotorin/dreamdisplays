@@ -7,7 +7,6 @@ import com.dreamdisplays.player.util.MediaUtil
  * the `yt-dlp` URL cache, and provides the exponential back-off delay for the next attempt.
  */
 internal class RetryPolicy(private val maxRetries: Int = 3) {
-
     private val backoffMs = longArrayOf(1000, 3000, 8000)
 
     /** Number of retry attempts made so far. */

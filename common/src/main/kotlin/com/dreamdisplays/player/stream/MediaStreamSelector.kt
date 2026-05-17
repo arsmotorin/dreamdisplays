@@ -8,7 +8,6 @@ import kotlin.math.abs
  * tracks from the candidate lists returned by `yt-dlp`.
  */
 object MediaStreamSelector {
-
     /** Parses a stream's resolution label (e.g. "720p") into an integer quality value (e.g. 720). */
     fun parseQuality(stream: YtStream): Int = parseQualityValue(stream.resolution, Int.MAX_VALUE)
 

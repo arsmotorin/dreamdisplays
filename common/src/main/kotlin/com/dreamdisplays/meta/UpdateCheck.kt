@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets
 
 /** Checks mod updates. **/
 object UpdateCheck {
-
     private const val API = "https://api.github.com/repos/arsmotorin/dreamdisplays/releases/latest"
 
     @Volatile

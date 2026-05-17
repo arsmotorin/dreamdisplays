@@ -7,7 +7,6 @@ import java.util.*
 
 /** General utility functions for the mod. */
 object GeneralUtil {
-
     private val DIRECT_ID = Regex("[a-zA-Z0-9_-]{11}")
     private val FABRIC_VERSION = Regex("\"version\"\\s*:\\s*\"([^\"]+)\"")
     private val NEOFORGE_VERSION = Regex("version\\s*=\\s*\"([^\"]+)\"")

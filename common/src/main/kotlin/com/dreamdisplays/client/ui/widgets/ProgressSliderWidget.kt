@@ -16,6 +16,7 @@ import java.util.function.LongConsumer
 import java.util.function.LongSupplier
 
 /** Progress slider widget **/
+// TODO: rewrite this class entirely in 1.8.0
 class ProgressSliderWidget(
     x: Int, y: Int, width: Int, height: Int,
     private val currentSupplier: LongSupplier,

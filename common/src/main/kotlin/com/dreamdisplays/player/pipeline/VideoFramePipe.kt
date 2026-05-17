@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.AtomicReference
  * the render thread reads from [readyBufferRef] without blocking the reader.
  */
 internal class VideoFramePipe(private val debugLabel: String) {
-
     companion object {
         /** Default frame rate when the source doesn't report one or reports an invalid one. */
         private const val DEFAULT_FPS = 30.0

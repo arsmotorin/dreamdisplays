@@ -12,7 +12,6 @@ import javax.sound.sampled.*
 
 /** Manages the `javax.sound` PCM pipeline for one `FFmpeg` audio process. */
 internal class AudioSink(private val debugLabel: String) {
-
     companion object {
         const val SAMPLE_RATE = 44100
         private const val CHUNK_BYTES = SAMPLE_RATE * 2 * 2 / 20

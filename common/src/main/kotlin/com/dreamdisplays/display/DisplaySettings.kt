@@ -8,13 +8,11 @@ import java.util.*
 
 /** Manages loading and saving of display settings and data. */
 object DisplaySettings {
-
     private val SETTINGS_DIR = File("./config/dreamdisplays")
     private val GSON = GsonBuilder().setPrettyPrinting().create()
     private val displaySettings = HashMap<UUID, ClientDisplaySettings>()
     private val serverDisplays = HashMap<String, MutableMap<UUID, FullDisplayData>>()
     private var currentServerId: String? = null
-
 
     fun load() {
         if (!SETTINGS_DIR.exists() && !SETTINGS_DIR.mkdirs()) {
@@ -40,7 +38,6 @@ object DisplaySettings {
         }
     }
 
-
     fun loadServerDisplays(serverId: String) {
         currentServerId = serverId
         val serverFile = File(SETTINGS_DIR, "server-$serverId-displays.json")
@@ -64,7 +61,6 @@ object DisplaySettings {
         }
     }
 
-
     fun save() {
         try {
             if (!SETTINGS_DIR.exists() && !SETTINGS_DIR.mkdirs()) {
@@ -79,7 +75,6 @@ object DisplaySettings {
             LoggingManager.error("[DisplaySettings] Failed to save client display settings", e)
         }
     }
-
 
     fun saveServerDisplays(serverId: String) {
         try {
@@ -97,10 +92,8 @@ object DisplaySettings {
         }
     }
 
-
     fun getSettings(displayUuid: UUID): ClientDisplaySettings =
         displaySettings.getOrPut(displayUuid) { ClientDisplaySettings() }
-
 
     fun updateSettings(
         displayUuid: UUID,
@@ -119,7 +112,6 @@ object DisplaySettings {
         save()
     }
 
-
     fun setUrlOverride(displayUuid: UUID, url: String?, lang: String?) {
         val settings = getSettings(displayUuid)
         settings.urlOverride = url
@@ -127,19 +119,16 @@ object DisplaySettings {
         save()
     }
 
-
     fun getDisplayData(displayUuid: UUID): FullDisplayData? {
         val server = currentServerId ?: return null
         return serverDisplays[server]?.get(displayUuid)
     }
-
 
     fun saveDisplayData(displayUuid: UUID, data: FullDisplayData) {
         val server = currentServerId ?: return
         serverDisplays.getOrPut(server) { HashMap() }[displayUuid] = data
         saveServerDisplays(server)
     }
-
 
     fun removeDisplay(displayUuid: UUID) {
         for ((serverId, displays) in serverDisplays) {

@@ -7,8 +7,6 @@ import net.minecraft.world.phys.HitResult
 
 /** Ray-casting utilities for block interaction and placement. */
 object RayCastingUtil {
-
-
     fun rCBlock(maxDistance: Double): BlockHitResult? {
         val mc = Minecraft.getInstance()
         val player = mc.player ?: return null
