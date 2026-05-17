@@ -4,14 +4,34 @@ Mod:
 
 - [x] Support 26.1.2 version and Java 25
 - [ ] Support YouTube shorts (separate button)
-- [ ] Support Fabric servers
+- [x] Support Fabric servers
 - [ ] Support singleplayer mode
-- [ ] Remove `/display` command. The new functionality is available by interacting with the display and is more intuitive and user-friendly
+- [ ] Remove `/display` command in favor of direct in-world interaction with displays
 - [ ] Improve UI / UX of display configuration and controls
+- [ ] Add full in-code documentation across the codebase
+- [x] Switch from RGBA to RGB24 for improved rendering performance
+- [x] Reduce maximum brightness from 200% to 100%
+- [ ] Refactor and modularize the codebase for better maintainability
+- [x] Videos now stop rendering (but still plays) when Minecraft is minimized
 
 Plugin:
 
-- [ ] Remove `/display` command. The new functionality is available by interacting with the display and is more intuitive and user-friendly
+- [ ] Remove `/display` command in favor of direct in-world interaction with displays
+- [x] Some documentation standardization
+
+# Version 1.7.0-SNAPSHOT.1
+
+Mod:
+
+- [x] Support 26.1.2 version and Java 25
+- [x] Support Fabric servers
+- [x] Switch from RGBA to RGB24 for improved rendering performance
+- [x] Reduce maximum brightness from 200% to 100%
+- [x] Videos now stop rendering (but still plays) when Minecraft is minimized
+
+Plugin:
+
+- [x] Some documentation standardization
 
 # Version 1.6.3
 
