@@ -74,6 +74,7 @@ internal class VideoFramePipe(private val debugLabel: String) {
         if (!frameAvailable.compareAndSet(true, false)) return
         val buf = readyBufferRef.get() ?: return
         if (actualW != expectedW || actualH != expectedH) return
+        if (Minecraft.getInstance().window.isMinimized) return
         buf.rewind()
         val start = System.nanoTime()
         if (!texture.isClosed) {
