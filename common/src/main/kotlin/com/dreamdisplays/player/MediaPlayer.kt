@@ -70,6 +70,7 @@ class MediaPlayer(
     private val watchdog = StreamWatchdog(
         debugLabel = debugLabel,
         isActive = { sessionManager.isPlaying && !terminated.get() },
+        getLastFrameNanos = { sessionManager.lastFrameNanos.get() },
         onStall = {
             val ss = streams
             if (ss != null) {
