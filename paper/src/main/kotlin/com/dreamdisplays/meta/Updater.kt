@@ -12,6 +12,8 @@ import java.util.regex.Pattern
 
 /**
  * Checks for updates of the plugin and mod from GitHub releases.
+ *
+ * `Paper` implementation.
  */
 object Updater {
     private val tailPattern = Pattern.compile("\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?")

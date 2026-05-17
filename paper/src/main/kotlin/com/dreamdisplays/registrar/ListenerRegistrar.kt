@@ -8,6 +8,8 @@ import org.bukkit.Bukkit
 
 /**
  * Registers event listeners.
+ *
+ * `Paper` implementation.
  */
 object ListenerRegistrar {
     fun registerListeners(plugin: Main) {
