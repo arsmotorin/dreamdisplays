@@ -116,6 +116,7 @@ internal class VideoFramePipe(private val debugLabel: String) {
     ): Thread {
         expectedW = w
         expectedH = h
+        lastFrameReceivedNanos.set(System.nanoTime())
         val frameNs = (1_000_000_000.0 / (sourceFps.takeIf { it > 1.0 } ?: DEFAULT_FPS)).toLong()
         return daemon(
             { read(proc, w, h, frameNs, seekOffsetNanos, stopFlag, terminated, getAudioClock, onFirstFrame, getBrightness, onEos, fitTexture) },
