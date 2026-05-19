@@ -3,21 +3,35 @@
 Mod:
 
 - [x] Support 26.1.2 version and Java 25
-- [ ] Support YouTube shorts (separate button)
+- [ ] Support YouTube shorts
 - [x] Support Fabric servers
-- [ ] Support singleplayer mode
+- [x] Windowed and Picture-in-Picture mode
 - [ ] Remove `/display` command in favor of direct in-world interaction with displays
-- [ ] Improve UI / UX of display configuration and controls
 - [ ] Add full in-code documentation across the codebase
 - [x] Switch from RGBA to RGB24 for improved rendering performance
 - [x] Reduce maximum brightness from 200% to 100%
 - [ ] Refactor and modularize the codebase for better maintainability
+- [x] Enhance watchdog logic for low connection networks and stability
+- [x] Enhance YouTube's cache for stability
 - [x] Videos now stop rendering (but still plays) when Minecraft is minimized
 
 Plugin:
 
 - [ ] Remove `/display` command in favor of direct in-world interaction with displays
 - [x] Some documentation standardization
+
+# Version 1.7.0-SNAPSHOT.2
+
+Mod:
+
+- [x] Windowed and Picture-in-Picture mode
+- [x] Enhance YouTube's cache for stability
+- [x] Enhance watchdog logic for low connection networks and stability
+- [x] Fix OpenGL `GL_INVALID_VALUE` error
+
+Plugin:
+
+- [x] No changes
 
 # Version 1.7.0-SNAPSHOT.1
 

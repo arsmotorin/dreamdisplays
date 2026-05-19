@@ -8,8 +8,10 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
 import net.minecraft.client.Minecraft
+import net.minecraft.resources.Identifier
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 
 @Suppress("UNUSED")
@@ -48,6 +50,15 @@ class Client : ClientModInitializer, Mod {
             if (mc.level != null && mc.player != null) {
                 ScreenRenderer.render(context.poseStack(), mc.gameRenderer.mainCamera)
             }
+        }
+
+        HudElementRegistry.addLast(
+            Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "pip_overlay")
+        ) { graphics, deltaTracker ->
+            Initializer.onRenderHud(
+                Minecraft.getInstance(), graphics,
+                deltaTracker.getGameTimeDeltaPartialTick(false)
+            )
         }
 
         ClientTickEvents.END_CLIENT_TICK.register { Initializer.onEndTick(it) }

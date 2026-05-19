@@ -4,7 +4,8 @@
   "package": "com.dreamdisplays.mixins",
   "compatibilityLevel": "JAVA_25",
   "client": [
-    "Crosshair"
+    "Crosshair",
+    "ScreenOverlay"
   ],
   "injectors": {
     "defaultRequire": 1

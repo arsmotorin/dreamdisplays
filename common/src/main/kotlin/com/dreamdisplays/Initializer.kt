@@ -1,6 +1,7 @@
 package com.dreamdisplays
 
 import com.dreamdisplays.client.ui.DisplayMenu
+import com.dreamdisplays.client.ui.PipOverlayManager
 import com.dreamdisplays.display.DisplayManager
 import com.dreamdisplays.display.DisplayScreen
 import com.dreamdisplays.display.DisplaySettings
@@ -13,6 +14,7 @@ import com.dreamdisplays.ytdlp.FormatDiskCache
 import com.dreamdisplays.ytdlp.YtDlp
 import me.inotsleep.utils.logging.LoggingManager
 import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.multiplayer.ClientLevel
 import net.minecraft.core.BlockPos
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
@@ -185,6 +187,7 @@ object Initializer {
             if (level !== lastLevel) {
                 lastLevel = level
                 DisplayManager.unloadAll()
+                PipOverlayManager.clear()
                 hoveredDisplayScreen = null
                 checkVersionAndSendPacket()
             }
@@ -193,6 +196,7 @@ object Initializer {
             if (wasInMultiplayer) {
                 wasInMultiplayer = false
                 DisplayManager.unloadAll()
+                PipOverlayManager.clear()
                 hoveredDisplayScreen = null
                 lastLevel = null
                 return
@@ -220,7 +224,7 @@ object Initializer {
         for (displayScreen in DisplayManager.getScreens()) {
             val displayRenderDistance = displayScreen.renderDistance.toDouble()
 
-            if (displayRenderDistance < displayScreen.getDistanceToScreen(player.blockPosition()) || !displaysEnabled) {
+            if ((displayRenderDistance < displayScreen.getDistanceToScreen(player.blockPosition()) || !displaysEnabled) && !displayScreen.isPopoutActive) {
                 DisplayManager.saveScreenData(displayScreen)
                 DisplayManager.unregisterScreen(displayScreen)
                 if (hoveredDisplayScreen === displayScreen) {
@@ -244,6 +248,7 @@ object Initializer {
         }
         wasPressed = pressed
 
+
         if (focusMode && hoveredDisplayScreen != null) {
             player.addEffect(MobEffectInstance(MobEffects.BLINDNESS, 20 * 2, 1, false, false, false))
             wasFocused = true
@@ -255,6 +260,12 @@ object Initializer {
 
     private fun checkAndOpenScreen() {
         hoveredDisplayScreen?.let { DisplayMenu.open(it) }
+    }
+
+    fun onRenderHud(mc: Minecraft, graphics: GuiGraphicsExtractor, partialTick: Float) {
+        if (mc.level == null || mc.player == null) return
+        if (mc.screen != null) return
+        PipOverlayManager.renderAll(mc, graphics, -1, -1, false, partialTick)
     }
 
     fun sendPacket(packet: CustomPacketPayload) {

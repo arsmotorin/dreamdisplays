@@ -2,6 +2,9 @@ package com.dreamdisplays.display
 
 import com.dreamdisplays.Initializer
 import com.dreamdisplays.client.ui.DisplayMenu
+import com.dreamdisplays.client.ui.PipCorner
+import com.dreamdisplays.client.ui.PipOverlay
+import com.dreamdisplays.client.ui.PipOverlayManager
 import com.dreamdisplays.client.ui.VideoPopoutWindow
 import com.dreamdisplays.player.MediaPlayer
 import com.dreamdisplays.net.Packets
@@ -79,8 +82,12 @@ class DisplayScreen(
     var lang: String? = null
         private set
     private var popoutWindow: VideoPopoutWindow? = null
+    private var pipOverlay: PipOverlay? = null
 
     val isVideoStarted: Boolean get() = mediaPlayer?.textureFilled() == true
+
+    val isPopoutActive: Boolean
+        get() = (popoutWindow?.isOpen == true) || (pipOverlay != null)
 
     val pos: BlockPos
         get() = blockPos ?: BlockPos(x, y, z).also { blockPos = it }
@@ -131,10 +138,18 @@ class DisplayScreen(
         this.videoUrl = videoUrl
         this.lang = lang
         val shouldBePaused = preservePausedState && paused
-        mediaPlayer = MediaPlayer(videoUrl, lang, this)
+        val newPlayer = MediaPlayer(videoUrl, lang, this)
+        mediaPlayer = newPlayer
         val qualityInt = parseQualityOrDefault()
         textureWidth = ((width / height.toDouble()) * qualityInt).toInt()
         textureHeight = qualityInt
+
+        popoutWindow?.let { win ->
+            if (win.isOpen) newPlayer.setPopoutSink { buf, fw, fh -> win.updateFrame(buf, fw, fh) }
+        }
+        pipOverlay?.let { overlay ->
+            newPlayer.setPopoutSink { buf, fw, fh -> overlay.updateFrame(buf, fw, fh) }
+        }
 
         waitForMFInit(generation) {
             startVideo()
@@ -254,13 +269,15 @@ class DisplayScreen(
         mediaPlayer?.setVolume(volume)
     }
 
-    fun togglePopout() {
+    /** Opens or focuses the `GLFW` window mode. Closes PiP if active. */
+    fun activateWindowMode() {
         if (!VideoPopoutWindow.isAvailable) return
         val mp = mediaPlayer ?: return
+        pipOverlay?.startClose()
+        pipOverlay = null
         val win = popoutWindow
         if (win != null && win.isOpen) {
-            mp.setPopoutSink(null)
-            win.close()
+            win.open(textureWidth.takeIf { it > 0 } ?: 1280, textureHeight.takeIf { it > 0 } ?: 720)
             return
         }
         try {
@@ -272,8 +289,31 @@ class DisplayScreen(
             mp.setPopoutSink { buf, fw, fh -> newWin.updateFrame(buf, fw, fh) }
             newWin.open(w, h)
         } catch (e: Exception) {
-            LoggingManager.warn("[DisplayScreen] Could not open popout: ${e.message}")
+            LoggingManager.warn("[DisplayScreen] Could not open window: ${e.message}")
         }
+    }
+
+    /** Shows the in-game PiP overlay at [corner]. Closes window mode if active. */
+    fun activatePipMode(corner: PipCorner = PipCorner.BOTTOM_RIGHT) {
+        val mp = mediaPlayer ?: return
+        popoutWindow?.let { win -> if (win.isOpen) { mp.setPopoutSink(null); win.close() } }
+        pipOverlay?.startClose()
+        pipOverlay = null
+        val overlay = PipOverlay(this, corner)
+        if (PipOverlayManager.add(overlay)) {
+            pipOverlay = overlay
+            mp.setPopoutSink { buf, fw, fh -> overlay.updateFrame(buf, fw, fh) }
+        } else {
+            LoggingManager.warn("[DisplayScreen] No PiP corners available (max 4).")
+        }
+    }
+
+    /** Closes whichever popout mode is active. */
+    fun deactivatePopout() {
+        mediaPlayer?.setPopoutSink(null)
+        popoutWindow?.let { if (it.isOpen) it.close() }
+        pipOverlay?.startClose()
+        pipOverlay = null
     }
 
     fun startVideo() {
@@ -327,6 +367,9 @@ class DisplayScreen(
         val currentPlayer = mediaPlayer
         mediaPlayer = null
         currentPlayer?.setPopoutSink(null)
+        popoutWindow?.let { if (it.isOpen) it.close() }
+        PipOverlayManager.remove(this)
+        pipOverlay = null
         currentPlayer?.stop()
 
         val mc = Minecraft.getInstance()
@@ -360,7 +403,7 @@ class DisplayScreen(
             t.close()
             textureId?.let { Minecraft.getInstance().textureManager.release(it) }
         }
-        texture = DynamicTexture({ UUID.randomUUID().toString() }, NativeImage(NativeImage.Format.RGB, textureWidth, textureHeight, false))
+        texture = DynamicTexture({ UUID.randomUUID().toString() }, NativeImage(NativeImage.Format.RGBA, textureWidth, textureHeight, false))
         textureId = Identifier.fromNamespaceAndPath(
             Initializer.MOD_ID,
             "screen-main-texture-$uuid-${UUID.randomUUID()}"
@@ -404,7 +447,8 @@ class DisplayScreen(
     }
 
     fun tick(pos: BlockPos) {
-        mediaPlayer?.tick(pos, Initializer.config.defaultDistance.toDouble())
+        val maxRadius = if (isPopoutActive) Double.MAX_VALUE else Initializer.config.defaultDistance.toDouble()
+        mediaPlayer?.tick(pos, maxRadius)
     }
 
     fun afterSeek() {

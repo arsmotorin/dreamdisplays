@@ -11,6 +11,7 @@ import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.Mod
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent
 import net.neoforged.neoforge.client.event.ClientTickEvent
+import net.neoforged.neoforge.client.event.RenderGuiEvent
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent
 import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent
@@ -84,6 +85,15 @@ class DreamDisplaysMod(modEventBus: IEventBus) : com.dreamdisplays.Mod {
     @SubscribeEvent
     fun onEndTick(event: ClientTickEvent.Post) {
         Initializer.onEndTick(Minecraft.getInstance())
+    }
+
+    @SubscribeEvent
+    fun onRenderGui(event: RenderGuiEvent.Post) {
+        Initializer.onRenderHud(
+            Minecraft.getInstance(),
+            event.guiGraphics,
+            event.partialTick.getGameTimeDeltaPartialTick(false)
+        )
     }
 
     override fun sendPacket(packet: CustomPacketPayload) {

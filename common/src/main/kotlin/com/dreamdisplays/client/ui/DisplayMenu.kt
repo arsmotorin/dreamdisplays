@@ -51,6 +51,9 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
     private var suggestions: SuggestionsPanelWidget? = null
     private var lastSuggestedVideoId: String? = null
 
+    private var popoutDropdownVisible = false
+    private var ddX = 0; private var ddY = 0; private val ddW = 80; private val ddItemH = 18
+
     private var volumeHover: HoverArea? = null
     private var renderDHover: HoverArea? = null
     private var qualityHover: HoverArea? = null
@@ -119,7 +122,13 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
             Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "popout"), 2
         ) {
             override fun onPress() {
-                ds.togglePopout()
+                val cur = displayScreen ?: return
+                if (cur.isPopoutActive) {
+                    cur.deactivatePopout()
+                    popoutDropdownVisible = false
+                } else {
+                    popoutDropdownVisible = !popoutDropdownVisible
+                }
             }
         }
 
@@ -331,14 +340,15 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
         renderModLabel(g, PADDING, titleY)
 
         val videoReady = ds.isVideoStarted && !ds.errored
+        val popoutLocked = ds.isPopoutActive
         syncReset?.active = videoReady && ds.owner && ds.isSync
-        renderDReset?.active = videoReady && ds.renderDistance != Initializer.config.defaultDistance
+        renderDReset?.active = videoReady && !popoutLocked && ds.renderDistance != Initializer.config.defaultDistance
         qualityReset?.active = videoReady && ds.quality != "720"
         brightness?.let { brightnessReset?.active = videoReady && abs(it.value - 0.5) > 0.01 }
         volume?.let { volumeReset?.active = videoReady && abs(it.value - 0.5) > 0.01 }
 
         volume?.active = videoReady
-        renderD?.active = videoReady
+        renderD?.active = videoReady && !popoutLocked
         quality?.active = videoReady
         brightness?.active = videoReady && (!ds.isSync || ds.owner)
         sync?.active = videoReady && ds.owner
@@ -346,6 +356,7 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
         progress?.active = videoReady && ds.canSeek() && !ds.isLive
 
         if (ds.errored) {
+            popoutDropdownVisible = false
             renderErroredOverlay(g, mouseX, mouseY, delta)
             return
         }
@@ -575,6 +586,20 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
             it.x = innerX + CTRL_BTN * 3 + 12; it.y = controlsRowY
             it.width = CTRL_BTN; it.height = CTRL_BTN
             it.active = scr.isVideoStarted && !scr.errored
+            if (popoutDropdownVisible) {
+                val bx = it.x; val by = it.y
+                val dTop = by - ddItemH * 2 - 2
+                ddX = bx; ddY = dTop
+                g.fill(ddX, ddY, ddX + ddW, ddY + ddItemH * 2, 0xFF1C1C1C.toInt())
+                g.fill(ddX, ddY, ddX + ddW, ddY + 1, 0xFF555555.toInt())
+                g.fill(ddX, ddY + ddItemH, ddX + ddW, ddY + ddItemH + 1, 0xFF333333.toInt())
+                g.fill(ddX, ddY + ddItemH * 2 - 1, ddX + ddW, ddY + ddItemH * 2, 0xFF555555.toInt())
+                g.fill(ddX, ddY, ddX + 1, ddY + ddItemH * 2, 0xFF555555.toInt())
+                g.fill(ddX + ddW - 1, ddY, ddX + ddW, ddY + ddItemH * 2, 0xFF555555.toInt())
+                val fy = ddY + (ddItemH - font.lineHeight) / 2
+                g.text(font, "Window", ddX + 6, fy, 0xFFFFFFFF.toInt(), false)
+                g.text(font, "In-game", ddX + 6, fy + ddItemH, 0xFFDDDDDD.toInt(), false)
+            }
         }
         pauseButtonWidget?.let {
             it.x = controlsRight - CTRL_BTN; it.y = controlsRowY
@@ -746,8 +771,24 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
     private fun headerHeight(): Int = PANEL_PADDING_Y + font.lineHeight + 6
 
     override fun mouseClicked(event: MouseButtonEvent, dbl: Boolean): Boolean {
+        val mx = event.x().toInt(); val my = event.y().toInt()
+
+        if (popoutDropdownVisible && event.button() == 0) {
+            val ds = displayScreen
+            if (ds != null && mx in ddX..(ddX + ddW) && my in ddY..(ddY + ddItemH * 2)) {
+                popoutDropdownVisible = false
+                if (my < ddY + ddItemH) {
+                    ds.activateWindowMode()
+                } else {
+                    ds.activatePipMode()
+                }
+                return true
+            }
+            popoutDropdownVisible = false
+        }
+
         if (modLabelHover != null && UpdateCheck.shouldShowArrow()
-            && modLabelHover!!.contains(event.x().toInt(), event.y().toInt())
+            && modLabelHover!!.contains(mx, my)
         ) {
             try {
                 Desktop.getDesktop().browse(URI.create(MODRINTH_URL))
