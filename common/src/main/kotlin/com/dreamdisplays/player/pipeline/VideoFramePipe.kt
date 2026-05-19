@@ -6,6 +6,7 @@ import com.dreamdisplays.player.util.daemon
 import com.mojang.blaze3d.platform.NativeImage
 import com.mojang.blaze3d.systems.RenderSystem
 import com.mojang.blaze3d.textures.GpuTexture
+import org.lwjgl.opengl.GL11
 import me.inotsleep.utils.logging.LoggingManager
 import net.minecraft.client.Minecraft
 import java.io.BufferedReader
@@ -80,10 +81,13 @@ internal class VideoFramePipe(private val debugLabel: String) {
         buf.rewind()
         val start = System.nanoTime()
         if (!texture.isClosed) {
+            // Fix: GL_INVALID_VALUE error
+            GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1)
             RenderSystem.getDevice().createCommandEncoder().writeToTexture(
                 texture, buf, NativeImage.Format.RGB,
                 0, 0, 0, 0, texture.getWidth(0), texture.getHeight(0),
             )
+            GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 4)
         }
         if (MediaPlayer.DEBUG) {
             uploadTotalNs += System.nanoTime() - start
