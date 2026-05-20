@@ -20,6 +20,18 @@ Plugin:
 - [ ] Remove `/display` command in favor of direct in-world interaction with displays
 - [x] Some documentation standardization
 
+Version 1.7.0-SNAPSHOT.3
+
+Mod:
+
+- [x] Use RGB format instead of RGBA for Picture-in-Picture mode
+- [x] Fix OpenGL `GL_INVALID_VALUE` error in windowed mode
+- [x] Fix `EXCEPTION_ACCESS_VIOLATION` crash because of `GL_INVALID_VALUE` errors
+
+Plugin:
+
+- [x] No changes
+
 # Version 1.7.0-SNAPSHOT.2
 
 Mod:
