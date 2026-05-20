@@ -3,11 +3,13 @@ package com.dreamdisplays.client.ui
 import com.dreamdisplays.Initializer
 import com.dreamdisplays.display.DisplayScreen
 import com.mojang.blaze3d.platform.NativeImage
+import com.mojang.blaze3d.systems.RenderSystem
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.client.renderer.texture.DynamicTexture
 import net.minecraft.resources.Identifier
+import org.lwjgl.opengl.GL11
 import java.nio.ByteBuffer
 import java.util.UUID
 
@@ -77,6 +79,7 @@ class PipOverlay(
     private var dynamicTexture: DynamicTexture? = null
     private var textureId: Identifier? = null
     private var texW = 0; private var texH = 0
+    private var uploadBuf: ByteBuffer = ByteBuffer.allocateDirect(0)
 
     var anchor: PipAnchor = PipAnchor.fromCorner(initialCorner)
     private var sizeFraction: Float = 0.25f
@@ -141,16 +144,19 @@ class PipOverlay(
             dynamicTexture = tex; texW = fw; texH = fh
         }
 
-        val img = tex.pixels
-        var base = 0
-        for (i in 0 until fw * fh) {
-            val r = bytes[base].toInt() and 0xFF
-            val g = bytes[base + 1].toInt() and 0xFF
-            val b = bytes[base + 2].toInt() and 0xFF
-            img.setPixelABGR(i % fw, i / fw, r or (g shl 8) or (b shl 16) or (0xFF shl 24))
-            base += 3
+        val size = fw * fh * 3
+        if (uploadBuf.capacity() < size) uploadBuf = ByteBuffer.allocateDirect(size)
+        uploadBuf.clear(); uploadBuf.put(bytes, 0, size); uploadBuf.flip()
+
+        val gpuTex = tex.getTexture()
+        if (!gpuTex.isClosed) {
+            GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1)
+            RenderSystem.getDevice().createCommandEncoder().writeToTexture(
+                gpuTex, uploadBuf, NativeImage.Format.RGB,
+                0, 0, 0, 0, fw, fh,
+            )
+            GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 4)
         }
-        tex.upload()
     }
 
     /** Returns false when the close animation has finished – caller should discard. */
