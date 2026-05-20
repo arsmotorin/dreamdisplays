@@ -20,6 +20,18 @@ Plugin:
 - [ ] Remove `/display` command in favor of direct in-world interaction with displays
 - [x] Some documentation standardization
 
+Version 1.7.0-SNAPSHOT.4
+
+Mod:
+
+- [x] New async texture uploader with a triple-buffered PBO ring
+- [x] Reimplement fix of OpenGL `GL_INVALID_VALUE` error in all modes
+- [x] GPU optimizations
+
+Plugin:
+
+- [x] No changes
+
 Version 1.7.0-SNAPSHOT.3
 
 Mod:

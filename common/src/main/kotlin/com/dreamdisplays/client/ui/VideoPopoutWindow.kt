@@ -1,5 +1,6 @@
 package com.dreamdisplays.client.ui
 
+import com.dreamdisplays.render.AsyncTextureUploader
 import me.inotsleep.utils.logging.LoggingManager
 import net.minecraft.client.Minecraft
 import org.lwjgl.glfw.GLFW
@@ -10,7 +11,9 @@ import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GLCapabilities
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Detached window that mirrors the decoded video, backed by a dedicated `GLFW` window.
@@ -25,10 +28,12 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 class VideoPopoutWindow(private val onClose: () -> Unit) {
 
-    @Volatile private var frontBytes: ByteArray = ByteArray(0)
-    private var backBytes: ByteArray = ByteArray(0)
+    @Volatile private var frontBuf: ByteBuffer = EMPTY_DIRECT
+    private var backBuf: ByteBuffer = EMPTY_DIRECT
     @Volatile private var frameW = 0
     @Volatile private var frameH = 0
+    private val frameVersion = AtomicLong(0)
+    private var uploadedVersion = 0L
 
     @Volatile private var windowHandle = 0L
     private val winW = AtomicInteger(0)
@@ -45,16 +50,27 @@ class VideoPopoutWindow(private val onClose: () -> Unit) {
 
     val isOpen: Boolean get() = windowHandle != 0L
 
-    /** Fast byte-copy frame updater. */
+    /** Direct -> direct memcpy frame updater. Called on the video reader thread. */
     fun updateFrame(buf: ByteBuffer, w: Int, h: Int) {
         if (windowHandle == 0L) return
         val size = w * h * 3
-        if (backBytes.size != size) backBytes = ByteArray(size)
-        buf.get(backBytes)
-        val tmp = frontBytes
-        frontBytes = backBytes
-        backBytes = if (tmp.size == size) tmp else ByteArray(size)
+        if (size <= 0 || buf.remaining() < size) return
+        var back = backBuf
+        if (back.capacity() < size) back = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+        back.clear()
+        val savedLimit = buf.limit()
+        val savedPos = buf.position()
+        buf.limit(savedPos + size)
+        back.put(buf)
+        buf.limit(savedLimit)
+        buf.position(savedPos)
+        back.flip()
+
+        val prev = frontBuf
+        frontBuf = back
+        backBuf = if (prev.capacity() >= size) prev else ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
         frameW = w; frameH = h
+        frameVersion.incrementAndGet()
     }
 
     /**
@@ -65,9 +81,15 @@ class VideoPopoutWindow(private val onClose: () -> Unit) {
     fun renderFrame() {
         val handle = windowHandle
         if (handle == 0L) return
-        val fw = frameW; val fh = frameH; val bytes = frontBytes
+        val fw = frameW; val fh = frameH; val buf = frontBuf
         val vw = winW.get(); val vh = winH.get()
-        if (fw <= 0 || fh <= 0 || bytes.size < fw * fh * 3 || vw <= 0 || vh <= 0) return
+        val size = fw * fh * 3
+        if (fw <= 0 || fh <= 0 || buf.remaining() < size || vw <= 0 || vh <= 0) return
+
+        val version = frameVersion.get()
+        // The window must redraw even when no new frame arrived (resize, refresh) but skip the GPU
+        // upload itself unless the frame actually changed.
+        val haveNewFrame = version != uploadedVersion
 
         val mainCaps = GL.getCapabilities()
 
@@ -80,7 +102,10 @@ class VideoPopoutWindow(private val onClose: () -> Unit) {
         }
 
         val r = renderer ?: QuadRenderer().also { renderer = it }
-        r.upload(bytes, fw, fh)
+        if (haveNewFrame) {
+            r.upload(buf, fw, fh)
+            uploadedVersion = version
+        }
         r.draw(vw, vh, fw, fh)
         GLFW.glfwSwapBuffers(handle)
 
@@ -182,6 +207,7 @@ class VideoPopoutWindow(private val onClose: () -> Unit) {
 
     companion object {
         const val isAvailable: Boolean = true
+        private val EMPTY_DIRECT: ByteBuffer = ByteBuffer.allocateDirect(0).order(ByteOrder.nativeOrder())
     }
 }
 
@@ -192,9 +218,9 @@ private class QuadRenderer {
     private val vao: Int = GL30.glGenVertexArrays()
     private val vbo: Int = GL15.glGenBuffers()
     private val program: Int = buildProgram()
+    private val uploader = AsyncTextureUploader(stateCache = false)
 
     private var texW = 0; private var texH = 0
-    private var uploadBuf: ByteBuffer = ByteBuffer.allocateDirect(0)
 
     init {
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId)
@@ -220,25 +246,25 @@ private class QuadRenderer {
         GL30.glBindVertexArray(0)
     }
 
-    fun upload(bytes: ByteArray, w: Int, h: Int) {
-        val size = bytes.size
-        if (uploadBuf.capacity() < size) uploadBuf = ByteBuffer.allocateDirect(size)
-        uploadBuf.clear(); uploadBuf.put(bytes, 0, size); uploadBuf.flip()
-
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId)
-        // Fix: GL_INVALID_VALUE error
-        // See too: https://forums.developer.nvidia.com/t/how-does-gl-unpack-alignment-work/39432/4
-        GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1)
+    fun upload(buf: ByteBuffer, w: Int, h: Int) {
         if (texW != w || texH != h) {
+            // Allocate the texture storage once per resolution change. The driver may reject a 0-sized
+            // initial upload, so we hand it the real ByteBuffer for the first frame and then switch to
+            // the PBO path on subsequent frames.
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId)
+            GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1)
+            val savedPos = buf.position()
+            val savedLimit = buf.limit()
+            buf.limit(savedPos + w * h * 3)
             GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, w, h, 0,
-                GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, uploadBuf)
+                GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, buf)
+            buf.limit(savedLimit); buf.position(savedPos)
+            GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 4)
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
             texW = w; texH = h
-        } else {
-            GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, w, h,
-                GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, uploadBuf)
+            return
         }
-        GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 4)
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
+        uploader.upload(texId, buf, w, h)
     }
 
     fun draw(vw: Int, vh: Int, fw: Int, fh: Int) {
@@ -261,6 +287,7 @@ private class QuadRenderer {
     }
 
     fun cleanup() {
+        uploader.cleanup()
         GL11.glDeleteTextures(texId)
         GL15.glDeleteBuffers(vbo)
         GL30.glDeleteVertexArrays(vao)

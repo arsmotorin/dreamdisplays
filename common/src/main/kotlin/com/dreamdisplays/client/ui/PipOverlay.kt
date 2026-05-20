@@ -2,15 +2,16 @@ package com.dreamdisplays.client.ui
 
 import com.dreamdisplays.Initializer
 import com.dreamdisplays.display.DisplayScreen
+import com.dreamdisplays.render.AsyncTextureUploader
+import com.mojang.blaze3d.opengl.GlTexture
 import com.mojang.blaze3d.platform.NativeImage
-import com.mojang.blaze3d.systems.RenderSystem
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.client.renderer.texture.DynamicTexture
 import net.minecraft.resources.Identifier
-import org.lwjgl.opengl.GL11
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.UUID
 
 // Test
@@ -71,15 +72,17 @@ class PipOverlay(
     val displayScreen: DisplayScreen,
     initialCorner: PipCorner = PipCorner.BOTTOM_RIGHT,
 ) {
-    @Volatile private var frontBytes: ByteArray = ByteArray(0)
-    private var backBytes: ByteArray = ByteArray(0)
+    @Volatile private var frontBuf: ByteBuffer = EMPTY_DIRECT
+    private var backBuf: ByteBuffer = EMPTY_DIRECT
     @Volatile var frameW = 0
     @Volatile var frameH = 0
+    @Volatile private var frameVersion = 0L
+    private var uploadedVersion = 0L
 
     private var dynamicTexture: DynamicTexture? = null
     private var textureId: Identifier? = null
     private var texW = 0; private var texH = 0
-    private var uploadBuf: ByteBuffer = ByteBuffer.allocateDirect(0)
+    private val uploader = AsyncTextureUploader(stateCache = true)
 
     var anchor: PipAnchor = PipAnchor.fromCorner(initialCorner)
     private var sizeFraction: Float = 0.25f
@@ -119,17 +122,34 @@ class PipOverlay(
 
     fun updateFrame(buf: ByteBuffer, w: Int, h: Int) {
         val size = w * h * 3
-        if (backBytes.size != size) backBytes = ByteArray(size)
-        buf.get(backBytes)
-        val tmp = frontBytes
-        frontBytes = backBytes
-        backBytes = if (tmp.size == size) tmp else ByteArray(size)
+        if (size <= 0 || buf.remaining() < size) return
+        var back = backBuf
+        if (back.capacity() < size) {
+            back = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+        }
+        back.clear()
+        val savedLimit = buf.limit()
+        val savedPos = buf.position()
+        buf.limit(savedPos + size)
+        back.put(buf)
+        buf.limit(savedLimit)
+        buf.position(savedPos)
+        back.flip()
+
+        val prev = frontBuf
+        frontBuf = back
+        backBuf = if (prev.capacity() >= size) prev else ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
         frameW = w; frameH = h
+        frameVersion++
     }
 
     fun uploadFrame() {
-        val fw = frameW; val fh = frameH; val bytes = frontBytes
-        if (fw <= 0 || fh <= 0 || bytes.size < fw * fh * 3) return
+        val fw = frameW; val fh = frameH
+        val v = frameVersion
+        if (v == uploadedVersion) return
+        val buf = frontBuf
+        val size = fw * fh * 3
+        if (fw <= 0 || fh <= 0 || buf.remaining() < size) return
 
         val mc = Minecraft.getInstance()
         var tex = dynamicTexture
@@ -144,19 +164,11 @@ class PipOverlay(
             dynamicTexture = tex; texW = fw; texH = fh
         }
 
-        val size = fw * fh * 3
-        if (uploadBuf.capacity() < size) uploadBuf = ByteBuffer.allocateDirect(size)
-        uploadBuf.clear(); uploadBuf.put(bytes, 0, size); uploadBuf.flip()
-
         val gpuTex = tex.getTexture()
-        if (!gpuTex.isClosed) {
-            GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1)
-            RenderSystem.getDevice().createCommandEncoder().writeToTexture(
-                gpuTex, uploadBuf, NativeImage.Format.RGB,
-                0, 0, 0, 0, fw, fh,
-            )
-            GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 4)
+        if (!gpuTex.isClosed && gpuTex is GlTexture) {
+            uploader.upload(gpuTex.glId(), buf, fw, fh)
         }
+        uploadedVersion = v
     }
 
     /** Returns false when the close animation has finished – caller should discard. */
@@ -376,6 +388,7 @@ class PipOverlay(
     fun startClose() { closing = true }
 
     fun cleanup(mc: Minecraft) {
+        try { uploader.cleanup() } catch (_: Exception) {}
         val id = textureId ?: return
         textureId = null
         try { mc.textureManager.release(id) } catch (_: Exception) {}
@@ -383,6 +396,8 @@ class PipOverlay(
     }
 
     companion object {
+        private val EMPTY_DIRECT: ByteBuffer = ByteBuffer.allocateDirect(0).order(ByteOrder.nativeOrder())
+
         private const val MARGIN = 12
         private const val DRAG_THRESHOLD = 4
         private const val MIN_SIZE_FRAC = 0.12f
