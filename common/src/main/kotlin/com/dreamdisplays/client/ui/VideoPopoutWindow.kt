@@ -226,6 +226,8 @@ private class QuadRenderer {
         uploadBuf.clear(); uploadBuf.put(bytes, 0, size); uploadBuf.flip()
 
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId)
+        // Fix: GL_INVALID_VALUE error
+        // See too: https://forums.developer.nvidia.com/t/how-does-gl-unpack-alignment-work/39432/4
         GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1)
         if (texW != w || texH != h) {
             GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, w, h, 0,

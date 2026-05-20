@@ -82,6 +82,7 @@ internal class VideoFramePipe(private val debugLabel: String) {
         val start = System.nanoTime()
         if (!texture.isClosed) {
             // Fix: GL_INVALID_VALUE error
+            // See too: https://forums.developer.nvidia.com/t/how-does-gl-unpack-alignment-work/39432/4
             GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1)
             RenderSystem.getDevice().createCommandEncoder().writeToTexture(
                 texture, buf, NativeImage.Format.RGB,
