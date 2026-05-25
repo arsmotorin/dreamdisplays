@@ -26,6 +26,7 @@ For this mod to work, players install the client mod, while server admins can in
 - **Seamless multiplayer synchronization (beta)**
 - **Livestreams and premières support**
 - **Direct YouTube search and suggestions**
+- **Hardware acceleration for smooth video playback**
 - Adjustable resolutions from 144p up to 4K
 - Volume control from 0% to 200%
 - Brightness control from 0% to 100%
