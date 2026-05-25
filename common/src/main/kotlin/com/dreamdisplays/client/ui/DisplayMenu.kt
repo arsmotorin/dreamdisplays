@@ -573,7 +573,7 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
         muteButtonWidget?.let {
             it.x = innerX + CTRL_BTN * 2 + 8; it.y = controlsRowY
             it.width = CTRL_BTN; it.height = CTRL_BTN
-            it.active = !(scr.isSync && !scr.owner)
+            it.active = scr.isVideoStarted && !scr.errored
             it.setIconTextureId(
                 Identifier.fromNamespaceAndPath(
                     Initializer.MOD_ID,
