@@ -12,6 +12,8 @@ import net.minecraft.commands.CommandSourceStack
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.level.ClipContext
+import net.minecraft.world.phys.HitResult
 import java.util.*
 
 // TODO: for removing in stable 1.7.0
@@ -78,17 +80,9 @@ object ServerVideoCommand {
 
     private fun getTargetBlockPos(player: ServerPlayer): net.minecraft.core.BlockPos? {
         val level = player.level()
-        val eyePos = player.eyePosition
-        val lookVec = player.lookAngle
-        for (i in 1..32) {
-            val checkPos = net.minecraft.core.BlockPos.containing(
-                eyePos.x + lookVec.x * i,
-                eyePos.y + lookVec.y * i,
-                eyePos.z + lookVec.z * i
-            )
-            val state = level.getBlockState(checkPos)
-            if (!state.isAir) return checkPos
-        }
-        return null
+        val start = player.eyePosition
+        val end = start.add(player.lookAngle.scale(32.0))
+        val hit = level.clip(ClipContext(start, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player))
+        return if (hit.type == HitResult.Type.BLOCK) hit.blockPos else null
     }
 }
