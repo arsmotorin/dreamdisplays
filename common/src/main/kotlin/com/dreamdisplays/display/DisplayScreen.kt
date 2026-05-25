@@ -418,6 +418,7 @@ class DisplayScreen(
     }
 
     fun restoreSavedTime() {
+        if (isSync) return
         val mp = mediaPlayer ?: return
         if (savedTimeNanos > 0) mp.seekTo(savedTimeNanos, false)
     }
