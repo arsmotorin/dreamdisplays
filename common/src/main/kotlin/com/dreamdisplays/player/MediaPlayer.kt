@@ -9,6 +9,7 @@ import com.dreamdisplays.player.managers.StreamWatchdog
 import com.dreamdisplays.player.pipeline.AudioSink
 import com.dreamdisplays.player.pipeline.PlaybackClock
 import com.dreamdisplays.player.policy.RetryPolicy
+import com.dreamdisplays.player.process.HwAccelBackend
 import com.dreamdisplays.player.preparation.MediaPreparationService
 import com.dreamdisplays.player.stream.MediaStreamSelector
 import com.dreamdisplays.player.stream.StreamSet
@@ -40,6 +41,8 @@ class MediaPlayer(
         internal val framesDropped = AtomicLong()
         private const val STOP_WAIT_TIMEOUT_SECONDS = 3L
         private const val MAX_FETCH_RETRIES = 3
+        /** Hwaccel failures show up within the first few seconds — past this window assume the stream is just unreliable. */
+        private const val HWACCEL_FAIL_WINDOW_NS = 5_000_000_000L
         private val INIT_THREAD_COUNTER = AtomicInteger()
         private val INIT_EXECUTOR: ExecutorService = Executors.newFixedThreadPool(
             Runtime.getRuntime().availableProcessors().coerceIn(2, 4),
@@ -100,6 +103,8 @@ class MediaPlayer(
     @Volatile private var brightness = 1.0
     @Volatile private var userVolume = Initializer.config.defaultDisplayVolume
     @Volatile private var lastAttenuation = 1.0
+    @Volatile private var hwAccelDisabled = false
+    @Volatile private var sessionStartNanos = 0L
 
     init { INIT_EXECUTOR.submit { initialize() } }
 
@@ -259,7 +264,11 @@ class MediaPlayer(
      */
     private fun startStreams(streamSet: StreamSet, offsetNanos: Long) {
         if (terminated.get()) return
-        sessionManager.start(streamSet, offsetNanos, lastQuality)
+        val hwAccel =
+            if (Initializer.config.useHwAccel && !hwAccelDisabled) HwAccelBackend.detectDefault()
+            else HwAccelBackend.NONE
+        sessionStartNanos = System.nanoTime()
+        sessionManager.start(streamSet, offsetNanos, lastQuality, hwAccel)
         if (sessionManager.isPlaying) {
             state.set(PlaybackState.PLAYING)
             watchdog.start()
@@ -281,6 +290,16 @@ class MediaPlayer(
      */
     private fun handleStreamEnd(stderr: String, normalEos: Boolean) {
         if (terminated.get()) return
+        if (!hwAccelDisabled && !normalEos && !clock.isRunning
+            && System.nanoTime() - sessionStartNanos < HWACCEL_FAIL_WINDOW_NS
+            && HwAccelBackend.looksLikeHwAccelFailure(stderr)
+        ) {
+            hwAccelDisabled = true
+            LoggingManager.warn("[MediaPlayer $debugLabel] Hardware decode failed for this stream. Falling back to software. Stderr: ${MediaUtil.truncate(stderr)}")
+            val ss = streams
+            if (ss != null) safeExecute { if (!terminated.get()) startStreams(ss, 0) }
+            return
+        }
 
         val decision = retryPolicy.evaluate(stderr, normalEos, liveStream)
         if (decision != null) {

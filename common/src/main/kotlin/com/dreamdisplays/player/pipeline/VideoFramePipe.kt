@@ -10,10 +10,10 @@ import me.inotsleep.utils.logging.LoggingManager
 import net.minecraft.client.Minecraft
 import java.io.BufferedReader
 import java.io.IOException
+import java.io.InputStream
 import java.io.InputStreamReader
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.nio.channels.Channels
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -159,16 +159,21 @@ internal class VideoFramePipe(private val debugLabel: String) {
         val mc = Minecraft.getInstance()
 
         try {
-            Channels.newChannel(proc.inputStream).use { channel ->
+            proc.inputStream.use { input ->
+                val rowBuf = ByteArray(w * 3)
                 while (!terminated.get() && !stopFlag.get()) {
-                    spare.clear()
-                    while (spare.hasRemaining()) {
-                        val n = channel.read(spare)
-                        if (n < 0) { normalEos = true
-                            break
-                        }
+                    if (!skipToP6(input)) { normalEos = true; break }
+                    val pw = readAsciiInt(input)
+                    val ph = readAsciiInt(input)
+                    val maxVal = readAsciiInt(input)
+                    if (pw != w || ph != h || maxVal != 255) {
+                        LoggingManager.warn("[VideoFramePipe $debugLabel] PPM header mismatch: ${pw}x$ph max=$maxVal (expected ${w}x$h max=255)")
+                        val skip = pw.toLong() * ph * 3
+                        if (pw <= 0 || ph <= 0 || skip <= 0 || !skipBytes(input, skip)) { normalEos = true; break }
+                        continue
                     }
-                    if (normalEos) break
+                    spare.clear()
+                    if (!readFully(input, spare, rowBuf, w * h * 3)) { normalEos = true; break }
                     spare.flip()
 
                     lastFrameReceivedNanos.set(System.nanoTime())
@@ -233,5 +238,72 @@ internal class VideoFramePipe(private val debugLabel: String) {
             val stderr = synchronized(stderrBuf) { stderrBuf.toString() }
             onEos(stderr, exitCode == 0)
         }
+    }
+
+    /** Scans [input] forward until the PPM magic `P6` is consumed (followed by whitespace). Returns false on EOF. */
+    private fun skipToP6(input: InputStream): Boolean {
+        var state = 0 // 0: looking for 'P', 1: saw 'P', expecting '6'
+        while (true) {
+            val b = input.read()
+            if (b < 0) return false
+            when (state) {
+                0 -> if (b == 'P'.code) state = 1
+                1 -> state = if (b == '6'.code) {
+                    val w = input.read()
+                    if (w < 0) return false
+                    if (isWhitespace(w)) return true
+                    if (w == 'P'.code) 1 else 0
+                } else if (b == 'P'.code) 1 else 0
+            }
+        }
+    }
+
+    /** Reads an ASCII unsigned int from PPM header, skipping leading whitespace and `#` comments. */
+    private fun readAsciiInt(input: InputStream): Int {
+        var b = input.read()
+        while (b >= 0) {
+            if (b == '#'.code) {
+                while (b >= 0 && b != '\n'.code) b = input.read()
+                b = input.read()
+            } else if (isWhitespace(b)) {
+                b = input.read()
+            } else break
+        }
+        if (b < 0 || b < '0'.code || b > '9'.code) return -1
+        var n = 0
+        while (b in '0'.code..'9'.code) {
+            n = n * 10 + (b - '0'.code)
+            b = input.read()
+            if (b < 0) break
+        }
+        return n
+    }
+
+    private fun isWhitespace(b: Int): Boolean = b == ' '.code || b == '\t'.code || b == '\n'.code || b == '\r'.code
+
+    /** Reads exactly [size] bytes from [input] into [dst] using [tmp] as a scratch buffer. Returns false on premature EOF. */
+    private fun readFully(input: InputStream, dst: ByteBuffer, tmp: ByteArray, size: Int): Boolean {
+        var remaining = size
+        while (remaining > 0) {
+            val want = minOf(tmp.size, remaining)
+            val n = input.read(tmp, 0, want)
+            if (n < 0) return false
+            dst.put(tmp, 0, n)
+            remaining -= n
+        }
+        return true
+    }
+
+    /** Drops exactly [size] bytes from [input]. Returns false on premature EOF. */
+    private fun skipBytes(input: InputStream, size: Long): Boolean {
+        var remaining = size
+        while (remaining > 0) {
+            val skipped = input.skip(remaining)
+            if (skipped <= 0) {
+                if (input.read() < 0) return false
+                remaining -= 1
+            } else remaining -= skipped
+        }
+        return true
     }
 }

@@ -5,6 +5,7 @@ import com.dreamdisplays.player.events.PlayerEvents
 import com.dreamdisplays.player.pipeline.AudioSink
 import com.dreamdisplays.player.pipeline.PlaybackClock
 import com.dreamdisplays.player.pipeline.VideoFramePipe
+import com.dreamdisplays.player.process.HwAccelBackend
 import com.dreamdisplays.player.process.MediaProcess
 import com.dreamdisplays.player.stream.MediaStreamSelector
 import com.dreamdisplays.player.stream.StreamSet
@@ -77,7 +78,7 @@ internal class PlaybackSessionManager(
      *
      * @param lastQuality last confirmed quality in pixels; 0 = derive from stream metadata
      */
-    fun start(streamSet: StreamSet, offsetNanos: Long, lastQuality: Int) {
+    fun start(streamSet: StreamSet, offsetNanos: Long, lastQuality: Int, hwAccel: HwAccelBackend) {
         stop()
         if (terminated.get()) return
 
@@ -94,7 +95,7 @@ internal class PlaybackSessionManager(
 
         try {
             val vStop = AtomicBoolean(); val aStop = AtomicBoolean()
-            val vp = MediaProcess.buildVideo(ffmpeg, streamSet.currentVideo.url, w, h, offsetNanos)
+            val vp = MediaProcess.buildVideo(ffmpeg, streamSet.currentVideo.url, w, h, offsetNanos, hwAccel)
             val ap = MediaProcess.buildAudio(ffmpeg, streamSet.currentAudio.url, offsetNanos, AudioSink.SAMPLE_RATE)
             val vt = video.start(
                 proc = vp, w = w, h = h, seekOffsetNanos = offsetNanos,

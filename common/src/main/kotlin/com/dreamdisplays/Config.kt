@@ -13,6 +13,7 @@ class Config(baseDir: File) : AbstractConfig(baseDir, "config.yml") {
     @Path("displays-enabled") var displaysEnabled: Boolean = true
     @Path("ytdlp-cookies-from-browser") var ytdlpCookiesFromBrowser: String = "auto"
     @Path("ytdlp-proxy") var ytdlpProxy: String = ""
+    @Path("use-hw-accel") var useHwAccel: Boolean = true
 
     companion object {
         init {

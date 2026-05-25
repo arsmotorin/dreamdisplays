@@ -14,16 +14,23 @@ object MediaProcess {
 
     /**
      * Builds an `FFmpeg` process to read video frames from [url] at the given [offsetNanos], scaled and cropped to [w]x[h].
-     * @throws IOException if the process fails to start. The caller is responsible for destroying the process when done.
+     *
+     * When [hwAccel] is anything other than [HwAccelBackend.NONE], the decoder is asked to run on
+     * the GPU's video block. The pipeline still pulls RGB out via a pipe, so `FFmpeg` inserts an
+     * implicit `hwdownload`; the win is that the heavy decoding step no longer burns a CPU core.
+     *
+     * @throws IOException if the process fails to start. the caller is responsible for destroying the process when done.
      */
     @Throws(IOException::class)
-    fun buildVideo(ffmpeg: String, url: String, w: Int, h: Int, offsetNanos: Long): Process {
-        val cmd = baseCommand(ffmpeg, url, offsetNanos).apply {
+    fun buildVideo(ffmpeg: String, url: String, w: Int, h: Int, offsetNanos: Long, hwAccel: HwAccelBackend): Process {
+        val swPrefix = if (hwAccel.hwOutputFormat != null) "hwdownload,format=nv12," else ""
+        val vf = "${swPrefix}scale=w=$w:h=$h:force_original_aspect_ratio=decrease:flags=lanczos,pad=$w:$h:-1:-1"
+        val cmd = baseCommand(ffmpeg, url, offsetNanos, hwAccel).apply {
             addAll(
                 listOf(
                     "-an",
-                    "-vf", "scale=$w:$h:force_original_aspect_ratio=increase,crop=$w:$h",
-                    "-f", "rawvideo", "-pix_fmt", "rgb24", "-",
+                    "-vf", vf,
+                    "-f", "image2pipe", "-c:v", "ppm", "-",
                 )
             )
         }
@@ -36,7 +43,7 @@ object MediaProcess {
      */
     @Throws(IOException::class)
     fun buildAudio(ffmpeg: String, url: String, offsetNanos: Long, sampleRate: Int): Process {
-        val cmd = baseCommand(ffmpeg, url, offsetNanos).apply {
+        val cmd = baseCommand(ffmpeg, url, offsetNanos, HwAccelBackend.NONE).apply {
             addAll(listOf("-vn", "-f", "s16le", "-ar", sampleRate.toString(), "-ac", "2", "-"))
         }
         return ProcessBuilder(cmd).start()
@@ -59,10 +66,14 @@ object MediaProcess {
     }
 
     /** Builds the common part of the `FFmpeg` command line for both video and audio processes. */
-    private fun baseCommand(ffmpeg: String, url: String, offsetNanos: Long): MutableList<String> =
+    private fun baseCommand(ffmpeg: String, url: String, offsetNanos: Long, hwAccel: HwAccelBackend): MutableList<String> =
         mutableListOf<String>().apply {
             add(ffmpeg)
             addAll(listOf("-hide_banner", "-loglevel", "error", "-nostats"))
+            if (hwAccel.ffmpegName != null) {
+                addAll(listOf("-hwaccel", hwAccel.ffmpegName))
+            }
+            hwAccel.hwOutputFormat?.let { addAll(listOf("-hwaccel_output_format", it)) }
             addAll(listOf("-headers", "User-Agent: $USER_AGENT\r\nReferer: https://www.youtube.com/\r\n"))
             addAll(
                 listOf(
