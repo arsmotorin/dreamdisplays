@@ -7,32 +7,66 @@ Mod:
 - [x] Support Fabric servers
 - [x] Windowed and Picture-in-Picture mode
 - [ ] Remove `/display` command in favor of direct in-world interaction with displays
-- [ ] Add full in-code documentation across the codebase
 - [x] Switch from RGBA to RGB24 for improved rendering performance
+- [x] Hardware-accelerated `FFmpeg` video decoding
 - [x] Reduce maximum brightness from 200% to 100%
 - [ ] Refactor and modularize the codebase for better maintainability
+- [ ] Add full in-code documentation across the codebase
+- [x] Videos now stop rendering (but still play) when Minecraft is minimized
 - [x] Enhance watchdog logic for low connection networks and stability
 - [x] Enhance YouTube's cache for stability
-- [x] Videos now stop rendering (but still plays) when Minecraft is minimized
+- [x] Skip restoring saved time if sync is active
+- [x] Preserve sync mode when switching videos
+- [x] Broadcast synced display state every 2 seconds
+- [x] Fix cropping at display edges
+- [x] Fix mute logic and allow players to mute displays in sync mode
+- [x] Fix admins can't delete displays through the menu
+- [x] Fix the "You have to look at the display block" error when there is actually display ([#79](https://github.com/arsmotorin/dreamdisplays/issues/79))
+- [x] Fix a strange version number in the menu ([#81](https://github.com/arsmotorin/dreamdisplays/issues/81))
+- [x] Fix tiled thumbnail rendering in the menu
+- [x] Fix texture race crash in some rare cases
+- [x] Fix a locked quality bug ([#80](https://github.com/arsmotorin/dreamdisplays/issues/80))
+- [x] Fix seek time overwriting the current playback time
+- [x] Fix hanging `yt-dlp` when cookies are unavailable
+- [x] Fix no display territories translations (you need to use axe, not pickaxe)
 
 Plugin:
 
+- [x] Follow client's feature of lock / unlock displays
 - [ ] Remove `/display` command in favor of direct in-world interaction with displays
+- [x] Preserve sync mode when switching videos
+- [x] Broadcast synced display state every 2 seconds
 - [x] Some documentation standardization
 
-Version 1.7.0-SNAPSHOT.4
+# Version 1.7.0-SNAPSHOT.4
 
 Mod:
 
+- [x] Now you can decide whether to lock or unlock a display from modifying by other players in the menu (works only on servers with the new plugin version)
 - [x] New async texture uploader with a triple-buffered PBO ring
+- [x] Hardware-accelerated `FFmpeg` video decoding
 - [x] Reimplement fix of OpenGL `GL_INVALID_VALUE` error in all modes
-- [x] GPU optimizations
+- [x] Skip restoring saved time if sync is active
+- [x] Fix cropping at display edges
+- [x] Fix tiled thumbnail rendering in the menu
+- [x] Fix mute logic and allow players to mute displays in sync mode
+- [x] Fix admins can't delete displays through the menu
+- [x] Fix the "You have to look at the display block" error when there is actually display ([#79](https://github.com/arsmotorin/dreamdisplays/issues/79))
+- [x] Fix a locked quality bug ([#80](https://github.com/arsmotorin/dreamdisplays/issues/80))
+- [x] Fix a strange version number in the menu ([#81](https://github.com/arsmotorin/dreamdisplays/issues/81))
+- [x] Fix texture race crash in some rare cases
+- [x] Fix seek time overwriting the current playback time
+- [x] Fix hanging `yt-dlp` when cookies are unavailable
+- [x] Fix no display territories translations (you need to use axe, not pickaxe)
 
 Plugin:
 
-- [x] No changes
+- [x] Follow the client's feature of lock / unlock displays
+- [x] Preserve sync mode when switching videos
+- [x] Broadcast synced display state every 2 seconds
+- [x] Update Paper API to the 65-stable build
 
-Version 1.7.0-SNAPSHOT.3
+# Version 1.7.0-SNAPSHOT.3
 
 Mod:
 
