@@ -104,21 +104,38 @@ jobs:
         id: changelog
         run: |
           VERSION=${{ needs.build.outputs.version }}
-          
-          # Parse changelog
-          sed -n "/^# Version $VERSION$/,/^# Version /p" CHANGELOG.md \
-            | sed -n '/^Mod:/,/^Plugin:/p' \
-            | sed '1d;$d' \
-            | sed 's/^- \[[x ]\]\s*//' \
-            | sed '/^$/d' \
-            | sed 's/^/- /' > mod_changelog.md
-          
-          sed -n "/^# Version $VERSION$/,/^# Version /p" CHANGELOG.md \
-            | sed -n '/^Plugin:/,/^# Version /p' \
-            | sed '1d;$d' \
-            | sed 's/^- \[[x ]\]\s*//' \
-            | sed '/^$/d' \
-            | sed 's/^/- /' > plugin_changelog.md
+          python3 - <<'EOF'
+          import re, sys
+
+          with open("CHANGELOG.md") as f:
+              content = f.read()
+
+          version = "${{ needs.build.outputs.version }}"
+          pattern = rf"^# Version {re.escape(version)}\s*\n(.*?)(?=\n# Version |\Z)"
+          match = re.search(pattern, content, re.DOTALL | re.MULTILINE)
+          if not match:
+              sys.exit(f"Version {version} not found in CHANGELOG.md")
+
+          block = match.group(1)
+          sections = re.split(r"^## ", block, flags=re.MULTILINE)
+          lines = []
+          for section in sections:
+              if not section.strip():
+                  continue
+              header, _, body = section.partition("\n")
+              lines.append(f"## {header.strip()}")
+              for item in body.splitlines():
+                  item = item.strip()
+                  if not item:
+                      continue
+                  # Strip checkbox: - [x] / - [ ]
+                  item = re.sub(r"^- \[[x ]\]\s*", "- ", item)
+                  lines.append(item)
+              lines.append("")
+
+          with open("changelog.md", "w") as f:
+              f.write("\n".join(lines).strip() + "\n")
+          EOF
 
       - name: Publish Fabric
         # Remove if snapshot
@@ -131,7 +148,7 @@ jobs:
 
           files: build/libs/dreamdisplays-fabric-*.jar
 
-          changelog-file: mod_changelog.md
+          changelog-file: changelog.md
 
           modrinth-id: dreamdisplays
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
@@ -159,7 +176,7 @@ jobs:
 
           files: build/libs/dreamdisplays-neoforge-*.jar
 
-          changelog-file: mod_changelog.md
+          changelog-file: changelog.md
 
           modrinth-id: dreamdisplays
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
@@ -182,7 +199,7 @@ jobs:
 
           files: build/libs/dreamdisplays-paper-*.jar
 
-          changelog-file: plugin_changelog.md
+          changelog-file: changelog.md
 
           modrinth-id: dreamdisplays
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
@@ -199,7 +216,7 @@ jobs:
 
       - name: Create GitHub Release
         # Remove if snapshot
-        # if: "!contains(needs.build.outputs.version, '-SNAPSHOT')"
+        if: "!contains(needs.build.outputs.version, '-SNAPSHOT')"
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -212,5 +229,4 @@ jobs:
 
           files: build/libs/dreamdisplays-*.jar
 
-          changelog: |
-            Check changelogs in [Modrinth](https://modrinth.com/plugin/dreamdisplays/changelog).
+          changelog-file: changelog.md

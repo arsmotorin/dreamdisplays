@@ -21,5 +21,5 @@ plugins {
 rootProject.name = "displays"
 include(":common")
 include(":fabric")
-// include(":neoforge") // Comment NeoForge out when working with Gradle in IDE
+include(":neoforge") // Comment NeoForge out when working with Gradle in IDE
 include(":server")

@@ -1,23 +1,25 @@
 # Version 1.7.0
 
-Mod:
+## Mod
 
 - [x] Support 26.1.2 version and Java 25
-- [ ] Support YouTube shorts
-- [x] Support Fabric servers
+- [x] Support YouTube shorts
+- [x] Support `Fabric` servers
+- [x] Use `OFRAT` for merging `Fabric` and `Paper` server implementations
 - [x] Windowed and Picture-in-Picture mode
-- [ ] Remove `/display` command in favor of direct in-world interaction with displays
+- [x] Deprecate `/display` command (in future versions it will be replaced by direct interaction with displays)
 - [x] Switch from RGBA to RGB24 for improved rendering performance
 - [x] Hardware-accelerated `FFmpeg` video decoding
 - [x] Reduce maximum brightness from 200% to 100%
-- [ ] Refactor and modularize the codebase for better maintainability
-- [ ] Add full in-code documentation across the codebase
+- [x] Refactor and modularize some parts of codebase for better maintainability
+- [x] Add full in-code documentation across the codebase
 - [x] Videos now stop rendering (but still play) when Minecraft is minimized
 - [x] Enhance watchdog logic for low connection networks and stability
 - [x] Enhance YouTube's cache for stability
 - [x] Skip restoring saved time if sync is active
 - [x] Preserve sync mode when switching videos
-- [x] Broadcast synced display state every 2 seconds
+- [x] Add dynamic material messages
+- [x] Enhance changelog formatting
 - [x] Fix cropping at display edges
 - [x] Fix mute logic and allow players to mute displays in sync mode
 - [x] Fix admins can't delete displays through the menu
@@ -28,19 +30,39 @@ Mod:
 - [x] Fix a locked quality bug ([#80](https://github.com/arsmotorin/dreamdisplays/issues/80))
 - [x] Fix seek time overwriting the current playback time
 - [x] Fix hanging `yt-dlp` when cookies are unavailable
-- [x] Fix no display territories translations (you need to use axe, not pickaxe)
 
-Plugin:
+## Server
 
 - [x] Follow client's feature of lock / unlock displays
-- [ ] Remove `/display` command in favor of direct in-world interaction with displays
+- [x] Deprecate `/display` command (in future versions it will be replaced by direct interaction with displays)
 - [x] Preserve sync mode when switching videos
 - [x] Broadcast synced display state every 2 seconds
+- [x] Add full in-code documentation across the codebase
 - [x] Some documentation standardization
+- [x] Enhance changelog formatting
+- [x] Add dynamic material messages
+
+# Version 1.7.0-SNAPSHOT.5
+
+## Mod
+
+- [ ] Support YouTube shorts
+- [x] Use `OFRAT` for merging `Fabric` and `Paper` server implementations
+- [ ] Add full in-code documentation across the codebase
+- [x] Add dynamic material messages
+- [x] Enhance changelog formatting
+- [x] Reimplement fix of the "You have to look at the display block" error when there is actually a display ([#79](https://github.com/arsmotorin/dreamdisplays/issues/79))
+
+## Server
+
+- [x] Use `OFRAT` for merging `Fabric` and `Paper` server implementations
+- [x] Enhance changelog formatting
+- [x] Add full in-code documentation across the codebase
+- [x] Add dynamic material messages
 
 # Version 1.7.0-SNAPSHOT.4
 
-Mod:
+## Mod
 
 - [x] Now you can decide whether to lock or unlock a display from modifying by other players in the menu (works only on servers with the new plugin version)
 - [x] New async texture uploader with a triple-buffered PBO ring
@@ -59,7 +81,7 @@ Mod:
 - [x] Fix hanging `yt-dlp` when cookies are unavailable
 - [x] Fix no display territories translations (you need to use axe, not pickaxe)
 
-Plugin:
+## Server
 
 - [x] Follow the client's feature of lock / unlock displays
 - [x] Preserve sync mode when switching videos
@@ -68,32 +90,32 @@ Plugin:
 
 # Version 1.7.0-SNAPSHOT.3
 
-Mod:
+## Mod
 
 - [x] Use RGB format instead of RGBA for Picture-in-Picture mode
 - [x] Fix OpenGL `GL_INVALID_VALUE` error in windowed mode
 - [x] Fix `EXCEPTION_ACCESS_VIOLATION` crash because of `GL_INVALID_VALUE` errors
 
-Plugin:
+## Server
 
 - [x] No changes
 
 # Version 1.7.0-SNAPSHOT.2
 
-Mod:
+## Mod
 
 - [x] Windowed and Picture-in-Picture mode
 - [x] Enhance YouTube's cache for stability
 - [x] Enhance watchdog logic for low connection networks and stability
 - [x] Fix OpenGL `GL_INVALID_VALUE` error
 
-Plugin:
+## Server
 
 - [x] No changes
 
 # Version 1.7.0-SNAPSHOT.1
 
-Mod:
+## Mod
 
 - [x] Support 26.1.2 version and Java 25
 - [x] Support Fabric servers
@@ -101,13 +123,13 @@ Mod:
 - [x] Reduce maximum brightness from 200% to 100%
 - [x] Videos now stop rendering (but still plays) when Minecraft is minimized
 
-Plugin:
+## Server
 
 - [x] Some documentation standardization
 
 # Version 1.6.3
 
-Mod:
+## Mod
 
 - [x] Faster YouTube web operations and video loading
 - [x] Show max 24 recommended videos based on the current video instead of 12
@@ -119,14 +141,14 @@ Mod:
 - [x] Standardize logs, warnings and errors
 - [x] Reformat codebase
 
-Plugin:
+## Server
 
 - [x] Standardize logs, warnings and errors
 - [x] Reformat codebase
 
 # Version 1.6.2
 
-Mod:
+## Mod
 
 - [x] Switch from `GStreamer` to `FFmpeg` which is more reliable and performant library for video playback
 - [x] Rewrite mod in Kotlin for better maintainability
@@ -147,7 +169,7 @@ Mod:
 - [x] Fix volume reset after leaving active display distance ([#76](https://github.com/arsmotorin/dreamdisplays/issues/76))
 - [x] Enhance project structure and code quality in some places
 
-Plugin:
+## Server
 
 - [x] Rate-limit sync packet broadcasting to prevent flooding when owner seeks rapidly
 - [x] Batch display info packets on player join to prevent client overload on servers with many displays
@@ -155,20 +177,20 @@ Plugin:
 
 # Version 1.6.1
 
-Mod:
+## Mod
 
 - [x] Correct suggestion translations
 - [x] Fix video playback failing with a 403 Forbidden error when cached YouTube URLs expire – the player now automatically invalidates the stale cache entry and re-fetches fresh URLs from `yt-dlp` instead of permanently marking the screen as errored
 - [x] Reduce format URL cache TTL from 5 hours to 2 hours to avoid serving near-expired YouTube CDN links
 - [x] Improve error handling and timeout management in `yt-dlp` process execution
 
-Plugin:
+## Server
 
 - [x] No changes
 
 # Version 1.6.0
 
-Mod:
+## Mod
 
 - [x] Switch mod channel from Beta to Release
 - [x] Support YouTube livestreams (live, première, and regular streams)
@@ -188,7 +210,7 @@ Mod:
 - [x] Various optimizations and some small bug fixes
 - [x] Update dependencies
 
-Plugin:
+## Server
 
 - [x] Switch to Paper plugin
 - [x] Drop Bukkit and Spigot support
@@ -197,7 +219,7 @@ Plugin:
 
 # Version 1.5.0
 
-Mod:
+## Mod
 
 - [x] Switch YouTube playback to `yt-dlp`
 - [x] Improve video playback stability and reduce some lags
@@ -206,17 +228,17 @@ Mod:
 - [x] Better detection of system GStreamer library path on macOS and Linux
 - [x] Update Gradle to 9.4.0
 
-Plugin:
+## Server
 
 - [x] No changes
 
 # Version 1.4.4
 
-Mod:
+## Mod
 
 - [x] Add Spanish, French and Italian translations
 
-Plugin:
+## Server
 
 - [x] Add `/display info` command for quick display information
 - [x] Add `/display list` filters (`mine`, `world <name>`, `owner <name>`, `sync`)
@@ -228,7 +250,7 @@ Plugin:
 
 # Version 1.4.3
 
-Mod:
+## Mod
 
 - [x] Update concurrency settings in build workflow
 - [x] Update dependencies
@@ -236,7 +258,7 @@ Mod:
 - [x] Use thread-safe `ConcurrentHashMap` for display management
 - [x] Improved display sync stability
 
-Plugin:
+## Server
 
 - [x] Improved `/display video` URL parsing: now accepts direct video IDs and more YouTube link formats (
   watch/shorts/embed/live/youtu.be).
@@ -251,14 +273,14 @@ Plugin:
 
 # Version 1.4.2
 
-Mod:
+## Mod
 
 - [x] Update dependencies
 - [x] Fix remaining displays when world resets
 - [x] Fix floating displays without base material
 - [x] Remove unnecessary warnings and logs
 
-Plugin:
+## Server
 
 - [x] Fix remaining displays when world resets
 - [x] Fix floating displays without base material
@@ -267,13 +289,13 @@ Plugin:
 
 # Version 1.4.1
 
-Mod:
+## Mod
 
 - [x] Fix releasing snapshots when pull requesting
 - [x] Add Kolyakot33 as a contributor
 - [x] Cleanup codebase
 
-Plugin:
+## Server
 
 - [x] Fix Bukkit/Spigot server support
 - [x] Fix selection visualizer for Folia servers
@@ -283,44 +305,44 @@ Plugin:
 
 # Version 1.4.0
 
-Mod:
+## Mod
 
 - [x] Support Quilt
 - [x] Update dependencies
 - [x] Improve building workflow
 - [x] Cleanup codebase
 
-Plugin:
+## Server
 
 - [x] Fix display directions not being created properly in some cases
 - [x] Cleanup codebase
 
 # Version 1.3.2
 
-Mod:
+## Mod
 
 - [x] Fix display deletion not working properly
 
-Plugin:
+## Server
 
 - [x] No changes
 
 # Version 1.3.1
 
-Mod:
+## Mod
 
 - [x] Fix displays disappearing permanently when player walks out of render distance
 - [x] Displays now load immediately when entering render distance
 - [x] Fewer logs
 - [x] Updated dependencies
 
-Plugin:
+## Server
 
 - [x] Detect snapshot versions correctly
 
 # Version 1.3.0
 
-Mod:
+## Mod
 
 - [x] We've created [Discord server](https://discord.gg/uwMMZ2KWk6)!
 - [x] Smoother video playback and some optimizations
@@ -332,7 +354,7 @@ Mod:
 - [x] Support CurseForge releases
 - [x] Documentation in codebase of the mod
 
-Plugin:
+## Server
 
 - [x] Refactors and small improvements
 - [x] Documentation in codebase of the plugin
@@ -340,7 +362,7 @@ Plugin:
 
 # Version 1.2.0
 
-Mod:
+## Mod
 
 - [x] New, refreshed logo
 - [x] All messages from plugin are in client's language now
@@ -350,7 +372,7 @@ Mod:
 - [x] Show report button only if server has configured webhook URL
 - [x] Fix an issue when after re-enabling displays they don't load until relog
 
-Plugin:
+## Server
 
 - [x] New languages: Belarusian, Czech, German and Hebrew for plugin messages
 - [x] Improve permissions handling for `/display create` and `/display video`
@@ -363,47 +385,47 @@ Plugin:
 
 # Version 1.1.3
 
-Mod:
+## Mod
 
 - [x] Fix sync packet registration issues
 - [x] Fix video playback time saving for non-synced displays
 - [x] Fix texture errors when changing video quality
 - [x] Fix NeoForge screen loading on server join
 
-Plugin:
+## Server
 
 - [x] No changes
 
 # Version 1.1.2
 
-Mod:
+## Mod
 
 - [x] Fix missing translations
 - [x] Fix snapshot version detection as stable
 - [x] Better releases system of mod
 - [x] Update mappings
 
-Plugin:
+## Server
 
 - [x] Add message when client doesn't have the mod installed
 - [x] Better releases system of mod
 
 # Version 1.1.1
 
-Mod:
+## Mod
 
 - [x] Fix display desynchronization with server and client
 - [x] A bit improved screen rendering
 - [x] Less logging
 - [x] Code cleanup
 
-Plugin:
+## Server
 
 - [x] Fix display desynchronization with server and client
 
 # Version 1.1.0
 
-Mod:
+## Mod
 
 - [x] Support 1.21.11 version
 - [x] Support NeoForge
@@ -417,7 +439,7 @@ Mod:
 - [x] Enhanced logging
 - [x] Improved wiki
 
-Plugin:
+## Server
 
 - [x] Fixed repeated update notifications when switching dimensions
 - [x] Refined, new configuration
@@ -432,13 +454,13 @@ Plugin:
 
 # Version 1.0.8
 
-Mod:
+## Mod
 
 - [x] Expanded max quality from 1080p to 4K
 - [x] Tips for removing and reporting display
 - [x] Warn player when switching to 1080p+
 
-Plugin:
+## Server
 
 - [x] Support Spigot and Bukkit servers
 - [x] New commands: /display list and /display reload
@@ -447,11 +469,11 @@ Plugin:
 
 # Version 1.0.7
 
-Mod:
+## Mod
 
 - [x] Discontinue FrogDisplays channel support
 
-Plugin:
+## Server
 
 - [x] Folia support
 - [x] Better comments in plugin configuration
@@ -459,7 +481,7 @@ Plugin:
 
 # Version 1.0.6
 
-Mod:
+## Mod
 
 - [x] Added Hebrew, Czech and Belarussian languages support
 - [x] Disabled volume relativity to Minecraft's volume
@@ -468,23 +490,23 @@ Mod:
 - [x] Default video quality is now 720p instead of 480p
 - [x] Fixed GStreamer dead link
 
-Plugin:
+## Server
 
 - [x] Bump version
 
 # Version 1.0.5
 
-Mod:
+## Mod
 
 - [x] Added multi-language support for Russian, Ukrainian, Polish and German
 
-Plugin:
+## Server
 
 - [x] Bump version
 
 # Version 1.0.4
 
-Mod:
+## Mod
 
 - [x] Release channel is now Beta for Fabric
 - [x] Project is now pen-source with LGPL-3.0 license
@@ -495,7 +517,7 @@ Mod:
 - [x] Added mod information
 - [x] New icon
 
-Plugin:
+## Server
 
 - [x] Release channel is now Release
 - [x] English as the default language
@@ -506,40 +528,40 @@ Plugin:
 
 # Version 1.0.3
 
-Mod:
+## Mod
 
 - [x] Ignore GStreamer library if macOS
 
-Plugin:
+## Server
 
 - [x] First public version
 
 # Version 1.0.2
 
-Mod:
+## Mod
 
 - [x] Added other languages for videos
 
-Plugin:
+## Server
 
 - [x] Bump version (not public)
 
 # Version 1.0.1
 
-Mod:
+## Mod
 
 - [x] Fix client crash
 
-Plugin:
+## Server
 
 - [x] Bump version (not public)
 
 # Version 1.0.0
 
-Mod:
+## Mod
 
 - [x] First version
 
-Plugin:
+## Server
 
 - [x] First version (not public)
