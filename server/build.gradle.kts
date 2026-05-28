@@ -85,4 +85,5 @@ tasks.shadowJar {
     ).forEach { pack ->
         relocate(pack, "$prefix.$pack")
     }
+    mergeServiceFiles()
 }
