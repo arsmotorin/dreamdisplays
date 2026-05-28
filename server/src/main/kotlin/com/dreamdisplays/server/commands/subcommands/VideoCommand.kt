@@ -65,7 +65,8 @@ import java.util.*
 
         val wasSync = data.isSync
         data.apply {
-            url = "https://youtube.com/watch?v=$code"
+            url = if ("/shorts/" in (args[1] ?: "")) "https://www.youtube.com/shorts/$code"
+                  else "https://www.youtube.com/watch?v=$code"
             lang = normalizeLangCode(args.getOrNull(2).orEmpty())
         }
 
@@ -154,7 +155,8 @@ import java.util.*
         }
 
         val wasSync = data.isSync
-        data.url = "https://youtube.com/watch?v=$code"
+        data.url = if ("/shorts/" in urlRaw) "https://www.youtube.com/shorts/$code"
+                   else "https://www.youtube.com/watch?v=$code"
         data.lang = normalizeLangCode(langRaw)
 
         val receivers = DisplayManager.getReceivers(data, ctx.source.server)

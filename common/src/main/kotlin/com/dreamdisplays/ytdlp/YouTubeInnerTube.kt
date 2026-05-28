@@ -204,7 +204,6 @@ object YouTubeInnerTube {
         val uploader = runsText(vr.getAsJsonObject("ownerText"))
             ?: runsText(vr.getAsJsonObject("longBylineText"))
         val duration = parseDuration(simpleText(vr.getAsJsonObject("lengthText")))
-        if (duration != null && duration < 65) return null
         val views = parseViews(simpleText(vr.getAsJsonObject("viewCountText")))
             ?: parseViews(simpleText(vr.getAsJsonObject("shortViewCountText")))
         val publishedText = simpleText(vr.getAsJsonObject("publishedTimeText"))
@@ -291,7 +290,6 @@ object YouTubeInnerTube {
         val uploader = simpleText(cvr.getAsJsonObject("longBylineText"))
             ?: simpleText(cvr.getAsJsonObject("shortBylineText"))
         val duration = parseDuration(simpleText(cvr.getAsJsonObject("lengthText")))
-        if (duration != null && duration < 65) return null
         val views = parseViews(simpleText(cvr.getAsJsonObject("viewCountText")))
             ?: parseViews(simpleText(cvr.getAsJsonObject("shortViewCountText")))
         val publishedText = simpleText(cvr.getAsJsonObject("publishedTimeText"))
