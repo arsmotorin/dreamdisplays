@@ -119,6 +119,7 @@ internal class AudioSink(private val debugLabel: String) {
         return null
     }
 
+    /** Drains the process's stderr stream to /dev/null. */
     private fun drainStderr(proc: Process) = daemon({
         try { proc.errorStream.transferTo(OutputStream.nullOutputStream()) } catch (_: IOException) {}
     }, "MediaPlayer-astderr").start()

@@ -9,11 +9,16 @@ import net.minecraft.resources.Identifier
 import org.joml.Vector3i
 import java.util.*
 
+/**
+ * Packets used for communication between the client and the server.
+ */
 object Packets {
+    /** Creates a [CustomPacketPayload.Type] with the given [path]. */
     private fun <T : CustomPacketPayload> createType(path: String): CustomPacketPayload.Type<T> =
         CustomPacketPayload.Type(Identifier.fromNamespaceAndPath(Initializer.MOD_ID, path))
 
     data class Delete(val uuid: UUID) : CustomPacketPayload {
+        /** The packet type. */
         override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = PACKET_ID
 
         companion object {
@@ -26,6 +31,7 @@ object Packets {
     }
 
     data class DisplayEnabled(val enabled: Boolean) : CustomPacketPayload {
+        /** The packet type. */
         override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = PACKET_ID
 
         companion object {
@@ -49,6 +55,7 @@ object Packets {
         val lang: String,
         val isLocked: Boolean? = null,
     ) : CustomPacketPayload {
+        /** The packet type. */
         override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = PACKET_ID
 
         companion object {
@@ -87,6 +94,7 @@ object Packets {
     }
 
     data class SetLocked(val uuid: UUID, val locked: Boolean) : CustomPacketPayload {
+        /** The packet type. */
         override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = PACKET_ID
 
         companion object {
@@ -99,6 +107,7 @@ object Packets {
     }
 
     data class IsAdmin(val isAdmin: Boolean) : CustomPacketPayload {
+        /** The packet type. */
         override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = PACKET_ID
 
         companion object {
@@ -111,6 +120,7 @@ object Packets {
     }
 
     data class Premium(val premium: Boolean) : CustomPacketPayload {
+        /** The packet type. */
         override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = PACKET_ID
 
         companion object {
@@ -123,6 +133,7 @@ object Packets {
     }
 
     data class Report(val uuid: UUID) : CustomPacketPayload {
+        /** The packet type. */
         override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = PACKET_ID
 
         companion object {
@@ -135,6 +146,7 @@ object Packets {
     }
 
     data class RequestSync(val uuid: UUID) : CustomPacketPayload {
+        /** The packet type. */
         override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = PACKET_ID
 
         companion object {
@@ -153,6 +165,7 @@ object Packets {
         val currentTime: Long,
         val limitTime: Long
     ) : CustomPacketPayload {
+        /** The packet type. */
         override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = PACKET_ID
 
         companion object {
@@ -179,6 +192,7 @@ object Packets {
     }
 
     data class Version(val version: String) : CustomPacketPayload {
+        /** The packet type. */
         override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = PACKET_ID
 
         companion object {
@@ -191,6 +205,7 @@ object Packets {
     }
 
     data class ReportEnabled(val enabled: Boolean) : CustomPacketPayload {
+        /** The packet type. */
         override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = PACKET_ID
 
         companion object {
@@ -203,6 +218,7 @@ object Packets {
     }
 
     data class SetVideo(val uuid: UUID, val url: String, val lang: String) : CustomPacketPayload {
+        /** The packet type. */
         override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = PACKET_ID
 
         companion object {
@@ -219,6 +235,7 @@ object Packets {
     }
 
     data class ClearCache(val displayUuids: List<UUID>) : CustomPacketPayload {
+        /** The packet type. */
         override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = PACKET_ID
 
         companion object {
