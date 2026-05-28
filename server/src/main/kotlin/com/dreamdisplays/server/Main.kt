@@ -92,8 +92,10 @@ import org.slf4j.LoggerFactory
     /** Persists state and tears down resources. Safe to call from a reload. */
     fun doDisable() {
         LoggingManager.log("[Dream Displays] Disabling Dream Displays ${pluginMeta.version}...")
-        DisplayManager.save { storage.saveDisplay(it) }
-        storage.disconnect()
+        if (::storage.isInitialized) {
+            DisplayManager.save { storage.saveDisplay(it) }
+            storage.disconnect()
+        }
     }
 
     companion object {
