@@ -38,6 +38,7 @@ object Initializer {
 
     var config: Config = Config(File("./config/$MOD_ID"))
 
+    /** Background thread that periodically re-evaluates quality settings for all active screens. */
     val timerThread: Thread = Thread({
         var running = true
         while (running) {
@@ -62,6 +63,7 @@ object Initializer {
     private var hoveredDisplayScreen: DisplayScreen? = null
     private lateinit var mod: Mod
 
+    /** Called once during mod startup; initializes config, `yt-dlp`, `FFmpeg`, disk cache, and the focuser thread. */
     fun onModInit(dreamDisplaysMod: Mod) {
         mod = dreamDisplaysMod
         LoggingManager.setLogger(LoggerFactory.getLogger(MOD_ID))
@@ -78,6 +80,7 @@ object Initializer {
         timerThread.start()
     }
 
+    /** Handles an incoming [Packets.Info] packet: updates an existing screen or creates a new one if within render distance. */
     fun onDisplayInfoPacket(packet: Packets.Info) {
         if (!displaysEnabled) return
 
@@ -105,12 +108,14 @@ object Initializer {
         )
     }
 
+    /** Toggles global display rendering on / off as instructed by the server. */
     fun onDisplayEnabledPacket(packet: Packets.DisplayEnabled) {
         displaysEnabled = packet.enabled
         config.displaysEnabled = packet.enabled
         config.save()
     }
 
+    /** Constructs a [DisplayScreen], registers it, and starts video playback if a URL is provided. */
     fun createScreen(
         uuid: UUID, ownerUuid: UUID, pos: Vector3i, facingUtil: FacingUtil,
         width: Int, height: Int, code: String, lang: String, isSync: Boolean,
@@ -128,10 +133,12 @@ object Initializer {
         if (code != "") displayScreen.loadVideo(code, lang)
     }
 
+    /** Forwards a [Packets.Sync] packet to the matching display screen. */
     fun onSyncPacket(packet: Packets.Sync) {
         DisplayManager.screens[packet.uuid]?.updateData(packet)
     }
 
+    /** Re-creates a display screen from previously saved [data] (used when the player re-enters render distance). */
     private fun restoreScreen(data: DisplaySettings.FullDisplayData) {
         val displayScreen = DisplayScreen(
             data.uuid, data.ownerUuid, data.x, data.y, data.z, data.facing,
@@ -152,6 +159,7 @@ object Initializer {
         }
     }
 
+    /** Computes the shortest distance from [playerPos] to the nearest block in the screen's axis-aligned bounding box. */
     private fun distanceToScreen(
         x: Int, y: Int, z: Int, width: Int, height: Int, facing: String, playerPos: BlockPos
     ): Double {
@@ -169,9 +177,11 @@ object Initializer {
         )))
     }
 
+    /** Convenience wrapper over [distanceToScreen] that takes a [DisplaySettings.FullDisplayData] instead. */
     private fun distanceToData(data: DisplaySettings.FullDisplayData, playerPos: BlockPos) =
         distanceToScreen(data.x, data.y, data.z, data.width, data.height, data.facing, playerPos)
 
+    /** Reads the mod version from resources and sends it to the server via [Packets.Version]. */
     private fun checkVersionAndSendPacket() {
         try {
             sendPacket(Packets.Version(GeneralUtil.getModVersion()))
@@ -180,6 +190,10 @@ object Initializer {
         }
     }
 
+    /**
+     * Main client tick handler. Detects level changes, manages render-distance unloading / restoring,
+     * handles the right-click shortcut to open [DisplayMenu], and applies focus-mode blindness.
+     */
     fun onEndTick(minecraft: Minecraft) {
         val level = minecraft.level
         if (level != null && minecraft.currentServer != null) {
@@ -261,20 +275,24 @@ object Initializer {
         }
     }
 
+    /** Opens the [DisplayMenu] for the currently hovered display screen, if any. */
     private fun checkAndOpenScreen() {
         hoveredDisplayScreen?.let { DisplayMenu.open(it) }
     }
 
+    /** Renders all active PiP overlays on the HUD when the player is in-world and no screen is open. */
     fun onRenderHud(mc: Minecraft, graphics: GuiGraphicsExtractor, partialTick: Float) {
         if (mc.level == null || mc.player == null) return
         if (mc.screen != null) return
         PipOverlayManager.renderAll(mc, graphics, -1, -1, false, partialTick)
     }
 
+    /** Delegates packet sending to the platform-specific [Mod] implementation. */
     fun sendPacket(packet: CustomPacketPayload) {
         mod.sendPacket(packet)
     }
 
+    /** Unregisters and removes all data for the display identified by [Packets.Delete.uuid]. */
     fun onDeletePacket(packet: Packets.Delete) {
         DisplayManager.screens[packet.uuid]?.let { DisplayManager.unregisterScreen(it) }
         DisplayManager.unloadedScreens.remove(packet.uuid)
@@ -282,6 +300,7 @@ object Initializer {
         LoggingManager.info("[Initializer] Display deleted and removed from saved data: ${packet.uuid}")
     }
 
+    /** Saves screen data to disk, stops all players, and interrupts background threads on mod shutdown. */
     fun onStop() {
         DisplayManager.saveAllScreens()
         timerThread.interrupt()
@@ -289,18 +308,22 @@ object Initializer {
         Focuser.instance.interrupt()
     }
 
+    /** Updates the local premium flag from a server [Packets.Premium] packet. */
     fun onPremiumPacket(packet: Packets.Premium) {
         isPremium = packet.premium
     }
 
+    /** Updates the local admin flag from a server [Packets.IsAdmin] packet. */
     fun onIsAdminPacket(packet: Packets.IsAdmin) {
         isAdmin = packet.isAdmin
     }
 
+    /** Enables or disables the reporting feature based on a server [Packets.ReportEnabled] packet. */
     fun onReportEnabledPacket(packet: Packets.ReportEnabled) {
         isReportingEnabled = packet.enabled
     }
 
+    /** Unregisters and clears saved data for the UUIDs listed in a [Packets.ClearCache] packet. */
     fun onClearCachePacket(packet: Packets.ClearCache) {
         packet.displayUuids.forEach { uuid ->
             DisplayManager.screens.remove(uuid)?.unregister()

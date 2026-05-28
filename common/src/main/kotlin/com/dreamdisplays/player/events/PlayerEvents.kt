@@ -1,7 +1,7 @@
 package com.dreamdisplays.player.events
 
 /**
- * Callbacks emitted by [MediaPlayer] to decouple playback logic from the rendering / UI layer.
+ * Callbacks emitted by `MediaPlayer` to decouple playback logic from the rendering / UI layer.
  * Lambdas are invoked from the control executor unless noted otherwise.
  */
 internal data class PlayerEvents(

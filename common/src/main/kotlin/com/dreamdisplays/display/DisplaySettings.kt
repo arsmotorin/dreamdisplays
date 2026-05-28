@@ -14,6 +14,7 @@ object DisplaySettings {
     private val serverDisplays = HashMap<String, MutableMap<UUID, FullDisplayData>>()
     private var currentServerId: String? = null
 
+    /** Loads per-display client settings from `client-display-settings.json` into the in-memory map. */
     fun load() {
         if (!SETTINGS_DIR.exists() && !SETTINGS_DIR.mkdirs()) {
             LoggingManager.error("[DisplaySettings] Failed to create settings directory.")
@@ -38,6 +39,7 @@ object DisplaySettings {
         }
     }
 
+    /** Loads the display registry for [serverId] from `server-{serverId}-displays.json` and sets it as current. */
     fun loadServerDisplays(serverId: String) {
         currentServerId = serverId
         val serverFile = File(SETTINGS_DIR, "server-$serverId-displays.json")
@@ -61,6 +63,7 @@ object DisplaySettings {
         }
     }
 
+    /** Persists the current in-memory client display settings map to `client-display-settings.json`. */
     fun save() {
         try {
             if (!SETTINGS_DIR.exists() && !SETTINGS_DIR.mkdirs()) {
@@ -76,6 +79,7 @@ object DisplaySettings {
         }
     }
 
+    /** Persists the display registry for [serverId] to `server-{serverId}-displays.json`. */
     fun saveServerDisplays(serverId: String) {
         try {
             if (!SETTINGS_DIR.exists() && !SETTINGS_DIR.mkdirs()) {
@@ -92,9 +96,11 @@ object DisplaySettings {
         }
     }
 
+    /** Returns the [ClientDisplaySettings] for [displayUuid], creating a default entry if absent. */
     fun getSettings(displayUuid: UUID): ClientDisplaySettings =
         displaySettings.getOrPut(displayUuid) { ClientDisplaySettings() }
 
+    /** Updates all playback settings for [displayUuid] and immediately persists them to disk. */
     fun updateSettings(
         displayUuid: UUID,
         volume: Float,
@@ -112,6 +118,7 @@ object DisplaySettings {
         save()
     }
 
+    /** Sets the client-side URL and language override for [displayUuid] and saves. */
     fun setUrlOverride(displayUuid: UUID, url: String?, lang: String?) {
         val settings = getSettings(displayUuid)
         settings.urlOverride = url
@@ -119,17 +126,20 @@ object DisplaySettings {
         save()
     }
 
+    /** Returns the cached [FullDisplayData] for [displayUuid] on the current server, or null if absent. */
     fun getDisplayData(displayUuid: UUID): FullDisplayData? {
         val server = currentServerId ?: return null
         return serverDisplays[server]?.get(displayUuid)
     }
 
+    /** Stores [data] for [displayUuid] in the current server's registry and persists it to disk. */
     fun saveDisplayData(displayUuid: UUID, data: FullDisplayData) {
         val server = currentServerId ?: return
         serverDisplays.getOrPut(server) { HashMap() }[displayUuid] = data
         saveServerDisplays(server)
     }
 
+    /** Removes [displayUuid] from all server registries and from client settings, then saves both. */
     fun removeDisplay(displayUuid: UUID) {
         for ((serverId, displays) in serverDisplays) {
             if (displays.remove(displayUuid) != null) {

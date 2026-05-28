@@ -5,7 +5,10 @@ package com.dreamdisplays.player.util
  * prevent the JVM from exiting if the main thread finishes. The `joinSafely` function is a helper for joining threads
  * with a timeout and proper interruption handling, to avoid hanging the shutdown process if a thread is stuck.
  */
+/** Creates a daemon thread (non-runnable) with [name] that runs [r]. */
 internal fun daemon(r: () -> Unit, name: String): Thread = Thread(r, name).apply { isDaemon = true }
+
+/** Creates a daemon thread (runnable) with [name] that runs [r]. */
 internal fun daemon(r: Runnable, name: String): Thread = Thread(r, name).apply { isDaemon = true }
 
 /**

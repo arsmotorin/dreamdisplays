@@ -1,6 +1,6 @@
 package com.dreamdisplays.player.pipeline
 
-/** Tracks playback position as seek offset + elapsed wall time. It's thread-safe for reads. */
+/** Tracks playback position as seek offset and elapsed wall time. It's thread-safe for reads. */
 internal class PlaybackClock {
     companion object {
         private const val NOT_STARTED = Long.MIN_VALUE
@@ -11,9 +11,7 @@ internal class PlaybackClock {
 
     val isRunning: Boolean get() = startWallNanos != NOT_STARTED
 
-    /**
-     * Returns the current playback position in nanos, based on the seek offset and elapsed wall time.
-     */
+    /** Returns the current playback position in nanos, based on the seek offset and elapsed wall time. */
     fun currentTime(): Long {
         val start = startWallNanos
         return if (start == NOT_STARTED) seekOffsetNanos

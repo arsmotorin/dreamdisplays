@@ -50,15 +50,17 @@ object Thumbnails {
     }
 
 
+    /** Returns the registered Minecraft texture [Identifier] for [videoId], or null if not yet loaded. */
     fun get(videoId: String): Identifier? = READY[videoId]
 
-
+    /** Schedules a background download of the thumbnail at [url] for [videoId] if not already in flight or ready. */
     fun request(videoId: String, url: String) {
         if (READY.containsKey(videoId)) return
         if (IN_FLIGHT.putIfAbsent(videoId, true) != null) return
         EXECUTOR.submit { download(videoId, url) }
     }
 
+    /** Fetches the thumbnail for [videoId] from [url] (or disk cache) and registers it on the render thread. */
     private fun download(videoId: String, url: String) {
         try {
             readDiskCache(videoId)?.let { bytes ->
@@ -74,6 +76,7 @@ object Thumbnails {
         }
     }
 
+    /** Reads the cached thumbnail bytes for [videoId] from disk; returns null if absent or expired. */
     private fun readDiskCache(videoId: String): ByteArray? = try {
         val f = thumbFile(videoId)
         when {
@@ -88,6 +91,7 @@ object Thumbnails {
         null
     }
 
+    /** Atomically writes [bytes] to the disk cache for [videoId] via a temp-file rename on the executor. */
     private fun writeDiskCacheAsync(videoId: String, bytes: ByteArray) {
         EXECUTOR.submit {
             try {
@@ -104,11 +108,13 @@ object Thumbnails {
         }
     }
 
+    /** Returns the cache file for [videoId], using a sanitized lowercase filename. */
     private fun thumbFile(videoId: String): File {
         val safe = videoId.lowercase(Locale.ROOT).replace(Regex("[^a-z0-9_-]"), "_")
         return File(THUMB_CACHE_DIR.toFile(), "$safe.jpg")
     }
 
+    /** Decodes [bytes] into a [NativeImage], registers it with Minecraft's texture manager, and marks the entry ready. */
     private fun register(videoId: String, bytes: ByteArray) {
         try {
             val image = decode(bytes)
@@ -124,6 +130,7 @@ object Thumbnails {
         }
     }
 
+    /** Decodes [bytes] as a JPEG / PNG image and converts it to an RGBA [NativeImage] suitable for OpenGL upload. */
     @Throws(IOException::class)
     private fun decode(bytes: ByteArray): NativeImage = ByteArrayInputStream(bytes).use { input ->
         val src: BufferedImage = ImageIO.read(input) ?: run {
@@ -151,6 +158,7 @@ object Thumbnails {
         image
     }
 
+    /** Downloads raw image bytes from [url]; returns null on any HTTP or network error. */
     private fun fetch(url: String): ByteArray? {
         var conn: HttpURLConnection? = null
         return try {

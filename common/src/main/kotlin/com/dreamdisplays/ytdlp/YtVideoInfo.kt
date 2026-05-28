@@ -15,13 +15,17 @@ class YtVideoInfo(
     private val publishedDaysAgo: Int? = null,
 ) {
 
+    /** Returns true if the video is published within the last [daysWindow] days. */
     fun isRecent(daysWindow: Int): Boolean =
         publishedDaysAgo != null && publishedDaysAgo >= 0 && publishedDaysAgo <= daysWindow
 
+    /** Returns the YouTube watch URL for this video. */
     fun getWatchUrl(): String = "https://www.youtube.com/watch?v=$id"
 
+    /** Returns the YouTube thumbnail URL for this video. */
     fun getThumbnailUrl(): String = "https://i.ytimg.com/vi/$id/mqdefault.jpg"
 
+    /** Returns a formatted string representation of the video duration in HH:MM:SS format. */
     fun formatDuration(): String {
         val s = durationSec ?: return ""
         if (s <= 0) return ""
@@ -32,6 +36,7 @@ class YtVideoInfo(
         else String.format("%d:%02d", m, sec)
     }
 
+    /** Returns a formatted string representation of the video view count. */
     fun formatViews(): String {
         val v = viewCount ?: return ""
         if (v <= 0) return ""
@@ -43,6 +48,7 @@ class YtVideoInfo(
         }
     }
 
+    /** Returns a formatted string representation of the video like count. */
     fun formatLikes(): String {
         val l = likeCount ?: return ""
         if (l <= 0) return ""

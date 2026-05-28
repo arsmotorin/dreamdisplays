@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 
+/** Mixin that injects PiP overlay rendering at the tail of every Screen render call. */
 @Suppress("UNUSED")
 @Mixin(Screen::class)
 open class ScreenOverlay {
@@ -17,6 +18,7 @@ open class ScreenOverlay {
         method = ["extractRenderStateWithTooltipAndSubtitles"],
         at = [At("RETURN")]
     )
+    /** Renders all active PiP overlays on top of the current screen after the normal render pass. */
     open fun onRenderReturn(graphics: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, partialTick: Float, ci: CallbackInfo) {
         if (PipOverlayManager.isEmpty) return
         val mc = Minecraft.getInstance()

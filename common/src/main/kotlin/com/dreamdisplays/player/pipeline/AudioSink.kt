@@ -19,10 +19,8 @@ internal class AudioSink(private val debugLabel: String) {
         private const val OPEN_RETRIES = 3
         private const val RETRY_DELAY_MS = 200L
     }
-
     /** Current volume multiplier applied to each audio chunk. */
     @Volatile var currentVolume: Double = 1.0
-
     /**
      * Frame position of the open audio line, or -1 when no line is active.
      * Used by [PlaybackClock.audioClockNanos] for A / V sync.
@@ -31,12 +29,10 @@ internal class AudioSink(private val debugLabel: String) {
 
     @Volatile private var line: SourceDataLine? = null
 
-    /** Starts the audio pipeline thread for [proc] and returns it (already running). */
     fun start(proc: Process, terminated: AtomicBoolean, stopFlag: AtomicBoolean): Thread {
         drainStderr(proc)
         return daemon({ run(proc, terminated, stopFlag) }, "MediaPlayer-audio").also { it.start() }
     }
-
     /** Flushes and closes the audio line immediately. Safe to call from any thread. */
     fun stop() {
         val ln = line ?: return
@@ -45,7 +41,6 @@ internal class AudioSink(private val debugLabel: String) {
         runCatching { ln.stop() }
         runCatching { ln.close() }
     }
-
     /**
      * Runs the audio reading / writing loop until the process ends or [terminated] / [stopFlag] is set.
      */
@@ -97,7 +92,6 @@ internal class AudioSink(private val debugLabel: String) {
             }
         }
     }
-
     /**
      * Opens and returns a [SourceDataLine] with the specified format, retrying a few times if the line is temporarily unavailable.
      */
@@ -120,10 +114,6 @@ internal class AudioSink(private val debugLabel: String) {
         return null
     }
 
-    /**
-     * Continuously reads and discards the process's stderr output in a separate thread, to prevent blocking if `FFmpeg`
-     * writes a lot of logs.
-     */
     private fun drainStderr(proc: Process) = daemon({
         try { proc.errorStream.transferTo(OutputStream.nullOutputStream()) } catch (_: IOException) {}
     }, "MediaPlayer-astderr").start()

@@ -31,6 +31,7 @@ object FormatDiskCache {
         Thread(r, "DD-FormatCache-writer").apply { isDaemon = true }
     }
 
+    /** Reads the cached streams for [videoUrl] from disk; returns null if absent, expired, or schema-mismatched. */
     fun load(videoUrl: String, maxAgeMs: Long): List<YtStream>? {
         val f = fileFor(videoUrl)
         if (!f.isFile) return null
@@ -55,11 +56,13 @@ object FormatDiskCache {
         }
     }
 
+    /** Serialises [streams] to disk for [videoUrl] asynchronously via the single-threaded writer executor. */
     fun saveAsync(videoUrl: String, streams: List<YtStream>) {
         if (streams.isEmpty()) return
         WRITER.submit { writeNow(videoUrl, streams) }
     }
 
+    /** Atomically writes the stream JSON to disk using a temp file and rename. */
     private fun writeNow(videoUrl: String, streams: List<YtStream>) {
         try {
             Files.createDirectories(CACHE_DIR)
@@ -81,12 +84,14 @@ object FormatDiskCache {
         }
     }
 
+    /** Deletes the cache entry for [videoUrl] asynchronously. */
     fun deleteEntry(videoUrl: String) {
         WRITER.submit {
             runCatching { Files.deleteIfExists(fileFor(videoUrl).toPath()) }
         }
     }
 
+    /** Scans the cache directory and deletes all `.json` entries older than [maxAgeMs] milliseconds. */
     fun sweepExpired(maxAgeMs: Long = DEFAULT_TTL_MS) {
         try {
             if (!Files.isDirectory(CACHE_DIR)) return
@@ -107,8 +112,10 @@ object FormatDiskCache {
         }
     }
 
+    /** Returns the cache file path for [videoUrl] by hashing the URL to a stable filename. */
     private fun fileFor(videoUrl: String): File = File(CACHE_DIR.toFile(), hash(videoUrl) + ".json")
 
+    /** Returns a SHA-1 hex digest of [s], falling back to `hashCode` if SHA-1 is unavailable. */
     private fun hash(s: String): String = try {
         val md = MessageDigest.getInstance("SHA-1")
         HexFormat.of().formatHex(md.digest(s.toByteArray(StandardCharsets.UTF_8)))

@@ -29,6 +29,7 @@ object YouTubeInnerTube {
         Pattern.CASE_INSENSITIVE
     )
 
+    /** Searches YouTube for [query] and returns up to [limit] video results via the InnerTube search endpoint. */
     @Throws(IOException::class)
     fun search(query: String, limit: Int): List<YtVideoInfo> {
         val body = baseContext().apply {
@@ -38,6 +39,7 @@ object YouTubeInnerTube {
         return extractSearchVideos(root, limit)
     }
 
+    /** Fetches watch-next metadata and related videos for [videoId] via the InnerTube `next` endpoint. */
     @Throws(IOException::class)
     fun next(videoId: String): NextResult {
         val body = baseContext().apply {
@@ -49,6 +51,7 @@ object YouTubeInnerTube {
         return NextResult(meta?.title, meta?.uploader, meta?.viewCountRaw, meta?.likeCountRaw, related)
     }
 
+    /** Returns up to [limit] related videos for [videoId], excluding the video itself. */
     @Throws(IOException::class)
     fun related(videoId: String, limit: Int): List<YtVideoInfo> {
         val result = next(videoId)
@@ -57,6 +60,7 @@ object YouTubeInnerTube {
         return if (list.size > limit) list.subList(0, limit) else list
     }
 
+    /** Fetches title, uploader, and view / like counts for a single [videoId]; returns null if the video is unavailable. */
     @Throws(IOException::class)
     fun metadata(videoId: String): YtVideoInfo? {
         val body = baseContext().apply {
@@ -87,6 +91,7 @@ object YouTubeInnerTube {
         val daysAgo: Int?,
     )
 
+    /** Sends a POST request to the InnerTube [endpoint] with [body] and returns the parsed JSON response. */
     @Throws(IOException::class)
     private fun post(endpoint: String, body: JsonObject): JsonObject {
         val url = "$BASE_URL/$endpoint?prettyPrint=false"
@@ -127,6 +132,7 @@ object YouTubeInnerTube {
         }
     }
 
+    /** Opens an [HttpURLConnection] for [url], routing through the configured proxy if one is set. */
     private fun openConnection(url: String): HttpURLConnection {
         val uri = URI.create(url)
         val proxyStr = try {
@@ -153,6 +159,7 @@ object YouTubeInnerTube {
         return uri.toURL().openConnection(proxy) as HttpURLConnection
     }
 
+    /** Builds the base InnerTube request body with client context (name, version, language). */
     private fun baseContext(): JsonObject {
         val client = JsonObject().apply {
             addProperty("clientName", CLIENT_NAME)
@@ -167,6 +174,7 @@ object YouTubeInnerTube {
         }
     }
 
+    /** Walks the InnerTube search response JSON and collects up to [limit] parsed video entries. */
     private fun extractSearchVideos(root: JsonObject, limit: Int): List<YtVideoInfo> {
         val out = ArrayList<YtVideoInfo>()
         try {
@@ -196,6 +204,7 @@ object YouTubeInnerTube {
         return out
     }
 
+    /** Parses a single `videoRenderer` JSON object from search results; returns null for Shorts or missing IDs. */
     private fun parseVideoRenderer(vr: JsonObject): YtVideoInfo? {
         val id = optString(vr, "videoId") ?: return null
         if (looksLikeShorts(vr)) return null
@@ -211,6 +220,7 @@ object YouTubeInnerTube {
         return YtVideoInfo(id, title, uploader, duration, views, null, publishedText, daysAgo)
     }
 
+    /** Extracts title, channel, view count, and like count from a `next` endpoint response for [videoId]. */
     private fun extractWatchMetadata(root: JsonObject, videoId: String): MetaHolder? {
         try {
             val contents = path(
@@ -259,6 +269,7 @@ object YouTubeInnerTube {
         }
     }
 
+    /** Parses up to [limit] related videos from a `next` response, skipping the video with id [selfId]. */
     private fun extractRelatedVideos(root: JsonObject, selfId: String, limit: Int): List<YtVideoInfo> {
         val out = ArrayList<YtVideoInfo>()
         try {
@@ -283,6 +294,7 @@ object YouTubeInnerTube {
         return out
     }
 
+    /** Parses a `compactVideoRenderer` JSON object from the related-video sidebar; returns null for Shorts or missing IDs. */
     private fun parseCompactVideoRenderer(cvr: JsonObject): YtVideoInfo? {
         val id = optString(cvr, "videoId") ?: return null
         if (looksLikeShorts(cvr)) return null
@@ -297,6 +309,7 @@ object YouTubeInnerTube {
         return YtVideoInfo(id, title, uploader, duration, views, null, publishedText, daysAgo)
     }
 
+    /** Navigates the nested `viewCount.videoViewCountRenderer.viewCount` path in [vp]; returns null if absent. */
     private fun maybeViewCountText(vp: JsonObject): JsonObject? {
         if (!vp.has("viewCount")) return null
         val vc = vp.getAsJsonObject("viewCount") ?: return null
@@ -307,6 +320,7 @@ object YouTubeInnerTube {
         return null
     }
 
+    /** Drills through the deeply nested like-button view model in [vp] to extract a numeric like count. */
     private fun extractLikeCount(vp: JsonObject): Long? {
         val menu = vp.getAsJsonObject("videoActions") ?: return null
         val mr = menu.getAsJsonObject("menuRenderer") ?: return null
@@ -328,6 +342,7 @@ object YouTubeInnerTube {
         return null
     }
 
+    /** Returns true if [vr] appears to be a YouTube Shorts entry based on its navigation URL or JSON markers. */
     private fun looksLikeShorts(vr: JsonObject): Boolean {
         try {
             val nav = vr.getAsJsonObject("navigationEndpoint")
@@ -347,6 +362,7 @@ object YouTubeInnerTube {
         return "\"label\":\"Shorts\"" in s || "shortsLockupViewModel" in s
     }
 
+    /** Traverses [obj] along [keys] and returns the element at the end, or an empty object if any step is missing. */
     private fun path(obj: JsonObject, vararg keys: String): JsonElement {
         var cur: JsonElement? = obj
         for (k in keys) {
@@ -356,6 +372,7 @@ object YouTubeInnerTube {
         return cur ?: JsonObject()
     }
 
+    /** Returns the string value of [key] in [obj], or null if absent, null, or not a string. */
     private fun optString(obj: JsonObject, key: String): String? {
         if (!obj.has(key) || obj.get(key).isJsonNull) return null
         return try {
@@ -365,6 +382,7 @@ object YouTubeInnerTube {
         }
     }
 
+    /** Concatenates all `text` values from the `runs` array in [obj]; returns null if the array is absent or empty. */
     private fun runsText(obj: JsonObject?): String? {
         if (obj == null || !obj.has("runs") || !obj.get("runs").isJsonArray) return null
         val sb = StringBuilder()
@@ -375,11 +393,13 @@ object YouTubeInnerTube {
         return if (sb.isEmpty()) null else sb.toString()
     }
 
+    /** Returns the `simpleText` field of [obj], falling back to [runsText] if absent. */
     private fun simpleText(obj: JsonObject?): String? {
         if (obj == null) return null
         return optString(obj, "simpleText") ?: runsText(obj)
     }
 
+    /** Parses a colon-separated duration string (e.g. "1:23:45") into total seconds, or null on failure. */
     private fun parseDuration(s: String?): Long? {
         if (s == null) return null
         val parts = s.split(":")
@@ -392,6 +412,7 @@ object YouTubeInnerTube {
         }
     }
 
+    /** Parses a human-readable view count string (e.g. "1.2M views", "45K") into a raw long, or null on failure. */
     private fun parseViews(s: String?): Long? {
         if (s == null) return null
         var t = s.lowercase().replace(",", "").replace("views", "").trim()
@@ -417,6 +438,7 @@ object YouTubeInnerTube {
         }
     }
 
+    /** Converts a relative age string (e.g. "3 days ago", "2 weeks ago") to an approximate day count, or null. */
     private fun parseDaysAgo(s: String?): Int? {
         if (s == null) return null
         val m = AGE_PATTERN.matcher(s)

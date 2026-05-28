@@ -12,6 +12,7 @@ import kotlin.math.sin
 
 /** Renders screens in the world. */
 object ScreenRenderer {
+    /** Iterates all registered screens and renders each one relative to [camera]. */
     fun render(stack: PoseStack, camera: Camera) {
         val cameraPos = camera.position()
         for (displayScreen in DisplayManager.getScreens()) {
@@ -31,6 +32,7 @@ object ScreenRenderer {
         }
     }
 
+    /** Translates and rotates the pose for [displayScreen]'s facing direction, then renders the video or fallback color. */
     private fun renderScreenTexture(displayScreen: DisplayScreen, stack: PoseStack, tessellator: Tesselator) {
         // Upload the latest decoded frame to the GPU texture (if a new one is ready).
         // Done here on the render thread instead of via mc.execute() per frame.
@@ -73,6 +75,7 @@ object ScreenRenderer {
         stack.popPose()
     }
 
+    /** Applies the quaternion rotation and position correction so the quad faces the correct direction for [facing]. */
     private fun fixRotation(stack: PoseStack, facing: String) {
         val rotation: Quaternionf = when (facing) {
             "NORTH" -> Quaternionf().rotationY(Math.toRadians(180.0).toFloat()).also {
@@ -92,6 +95,7 @@ object ScreenRenderer {
         stack.mulPose(rotation)
     }
 
+    /** Translates [stack] by [amount] blocks in the forward axis of [facing]. */
     private fun moveForward(stack: PoseStack, facing: String, amount: Float) {
         when (facing) {
             "NORTH" -> stack.translate(0f, 0f, -amount)
@@ -101,6 +105,7 @@ object ScreenRenderer {
         }
     }
 
+    /** Translates [stack] by [amount] blocks along the horizontal axis perpendicular to [facing]. */
     private fun moveHorizontal(stack: PoseStack, facing: String, amount: Float) {
         when (facing) {
             "NORTH" -> stack.translate(-amount, 0f, 0f)
@@ -110,6 +115,7 @@ object ScreenRenderer {
         }
     }
 
+    /** Draws a unit quad using the screen's GPU texture, with vertex color scaled by [brightness]. */
     private fun renderGpuTexture(stack: PoseStack, tesselator: Tesselator, type: RenderType, brightness: Float) {
         val pose = stack.last().pose()
         val c = (brightness.coerceIn(0f, 1f) * 255f + 0.5f).toInt()
@@ -123,6 +129,7 @@ object ScreenRenderer {
         type.draw(builder.buildOrThrow())
     }
 
+    /** Draws a unit quad filled with a solid RGB color (used for loading / error state). */
     private fun renderColor(stack: PoseStack, tesselator: Tesselator, type: RenderType, r: Int, g: Int, b: Int) {
         val pose = stack.last().pose()
         val builder: BufferBuilder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK)

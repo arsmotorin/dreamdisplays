@@ -16,25 +16,30 @@ object UpdateCheck {
     @Volatile private var updateAvailable = false
     @Volatile private var latestVersion: String? = null
 
+    /** Returns true if a newer release was detected; triggers the background check on the first call. */
     fun isUpdateAvailable(): Boolean {
         if (!checked) startCheck()
         return updateAvailable
     }
 
+    /** Returns true if the latest version differs from the installed version (used to show the update arrow in UI). */
     fun shouldShowArrow(): Boolean {
         if (!checked) startCheck()
         val latest = latestVersion ?: return false
         return !latest.equals(GeneralUtil.getModVersion(), ignoreCase = true)
     }
 
+    /** Returns the latest release version string, or the installed version if the check has not completed yet. */
     fun latestVersion(): String = latestVersion ?: GeneralUtil.getModVersion()
 
+    /** Starts the background update check exactly once; subsequent calls are no-ops. */
     @Synchronized private fun startCheck() {
         if (checked) return
         checked = true
         Thread(::doCheck, "dreamdisplays-update-check").apply { isDaemon = true }.start()
     }
 
+    /** Queries the GitHub releases API and sets [latestVersion] and [updateAvailable] based on the response. */
     private fun doCheck() {
         var conn: HttpURLConnection? = null
         try {
@@ -75,11 +80,13 @@ object UpdateCheck {
         }
     }
 
+    /** Returns the string value of [key] in [obj], or null if absent or null. */
     private fun optString(obj: JsonObject, key: String): String? {
         if (!obj.has(key) || obj.get(key).isJsonNull) return null
         return runCatching { obj.get(key).asString }.getOrNull()
     }
 
+    /** Compares two dot-separated version strings; returns positive if [a] is newer than [b]. */
     private fun compareVersions(a: String, b: String): Int = runCatching {
         val aa = a.split('.', '-', '+')
         val bb = b.split('.', '-', '+')

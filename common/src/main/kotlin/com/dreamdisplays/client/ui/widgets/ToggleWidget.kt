@@ -22,9 +22,11 @@ abstract class ToggleWidget(
     private var dValue: Double = if (value) 1.0 else 0.0
     private var sliderFocused: Boolean = false
 
+    /** Returns the track sprite, highlighted when the widget has keyboard focus. */
     private fun getTexture(): Identifier =
         if (isFocused && !sliderFocused) HIGHLIGHTED_TEXTURE_ID else TEXTURE_ID
 
+    /** Returns the handle sprite, highlighted when hovered or slider-focused. */
     private fun getHandleTexture(): Identifier =
         if (!isHovered && !sliderFocused) HANDLE_TEXTURE_ID else HANDLE_HIGHLIGHTED_TEXTURE_ID
 
@@ -57,6 +59,7 @@ abstract class ToggleWidget(
         }
     }
 
+    /** Flips the boolean value and updates the visual position of the handle. */
     private fun setValueFromMouse() {
         value = !value
         dValue = if (value) 1.0 else 0.0

@@ -35,6 +35,7 @@ internal class StatsReporter(
     /** Stops the reporting task. */
     fun stop() { executor?.shutdownNow(); executor = null }
 
+    /** Samples the current frame counters, formats a one-line stats string, and logs it. */
     private fun report() {
         runCatching {
             val (inN, outN, dropN) = pollCounters()

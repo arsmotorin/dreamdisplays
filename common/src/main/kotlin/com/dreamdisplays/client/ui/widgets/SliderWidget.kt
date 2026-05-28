@@ -23,9 +23,11 @@ abstract class SliderWidget(
 
     private var sliderFocused: Boolean = false
 
+    /** Returns the track sprite, highlighted when the widget has keyboard focus. */
     private fun getTexture(): Identifier =
         if (isFocused && !sliderFocused) HIGHLIGHTED_TEXTURE_ID else TEXTURE_ID
 
+    /** Returns the handle sprite, highlighted when hovered or slider-focused. */
     private fun getHandleTexture(): Identifier =
         if (!isHovered && !sliderFocused) HANDLE_TEXTURE_ID else HANDLE_HIGHLIGHTED_TEXTURE_ID
 
@@ -80,10 +82,12 @@ abstract class SliderWidget(
         }
     }
 
+    /** Converts [mouseX] to a fractional slider position and applies it. */
     private fun setValueFromMouse(mouseX: Double) {
         setFractionalValue((mouseX - (x + 4).toDouble()) / (width - 8).toDouble())
     }
 
+    /** Clamps [fractional] to [0, 1], updates [value], and calls [applyValue] if the value changed. */
     private fun setFractionalValue(fractional: Double) {
         val old = value
         value = Mth.clamp(fractional, 0.0, 1.0)

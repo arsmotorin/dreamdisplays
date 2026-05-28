@@ -44,15 +44,18 @@ class ProgressSliderWidget(
         )
     }
 
+    /** Formats the current / total time as a colored text component for display on the slider. */
     private fun buildLabel(cur: Long, dur: Long): MutableComponent {
         val color = if (active) 0xFFFFFFFF.toInt() else 0xFFA0A0A0.toInt()
         return Component.literal("${formatTime(cur)} / ${formatTime(dur)}")
             .copy().withStyle { it.withColor(color) }
     }
 
+    /** Returns the track sprite, highlighted when the widget has keyboard focus. */
     private fun getTrackSprite(): Identifier =
         if (isFocused && !sliderFocused) HIGHLIGHTED_TEXTURE_ID else TEXTURE_ID
 
+    /** Returns the handle sprite, highlighted when hovered or dragging. */
     private fun getHandleSprite(): Identifier =
         if (!isHovered && !sliderFocused) HANDLE_TEXTURE_ID else HANDLE_HIGHLIGHTED_TEXTURE_ID
 
@@ -89,6 +92,7 @@ class ProgressSliderWidget(
         return true
     }
 
+    /** Converts a mouse X coordinate to a playback position in nanoseconds within [dur]. */
     private fun positionFromMouse(mouseX: Double, dur: Long): Long {
         val pct = Mth.clamp((mouseX - (x + 4).toDouble()) / (width - 8).toDouble(), 0.0, 1.0)
         return (pct * dur).toLong()

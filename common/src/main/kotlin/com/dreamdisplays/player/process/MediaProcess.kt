@@ -13,7 +13,7 @@ object MediaProcess {
             "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
     /**
-     * Builds an `FFmpeg` process to read video frames from [url] at the given [offsetNanos], scaled and cropped to [w]x[h].
+     * Builds an `FFmpeg` process to read video frames from [url] at the given [offsetNanos], scaled and cropped to [w] x [h].
      *
      * When [hwAccel] is anything other than [HwAccelBackend.NONE], the decoder is asked to run on
      * the GPU's video block. The pipeline still pulls RGB out via a pipe, so `FFmpeg` inserts an

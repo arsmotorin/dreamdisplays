@@ -38,7 +38,6 @@ class DisplayScreen(
     var isSync: Boolean,
 ) {
     private val mediaPlayerGeneration = AtomicLong()
-
     private val savedSettings = DisplaySettings.getSettings(uuid)
 
     var owner: Boolean = Minecraft.getInstance().player?.gameProfile?.id?.toString() == ownerUuid.toString()
@@ -86,8 +85,7 @@ class DisplayScreen(
         private set
     private var clientUrlOverride: Boolean = false
 
-    @Transient
-    private var blockPos: BlockPos? = null
+    @Transient private var blockPos: BlockPos? = null
     var lang: String? = null
         private set
     private var popoutWindow: VideoPopoutWindow? = null
@@ -114,17 +112,20 @@ class DisplayScreen(
         if (isSync) sendRequestSyncPacket()
     }
 
+    /** Loads a new video from [videoUrl], preserving the current paused state. */
     fun loadVideo(videoUrl: String, lang: String) {
         if (!clientUrlOverride) DisplaySettings.setUrlOverride(uuid, null, null)
         loadVideoInternal(videoUrl, lang, true)
     }
 
+    /** Loads and immediately starts [videoUrl] from the beginning, ignoring the saved paused state. */
     fun playVideoNow(videoUrl: String, lang: String) {
         paused = false
         savedTimeNanos = 0L
         loadVideoInternal(videoUrl, lang, false)
     }
 
+    /** Overrides the server-assigned video with a client-side suggestion, sends a [Packets.SetVideo] packet, and starts playback. */
     fun playSuggestedVideo(videoUrl: String, lang: String) {
         clientUrlOverride = true
         DisplaySettings.setUrlOverride(uuid, videoUrl, lang)
@@ -132,6 +133,7 @@ class DisplayScreen(
         playVideoNow(videoUrl, lang)
     }
 
+    /** Internal loader: stops any current player, creates a fresh [MediaPlayer], and wires up texture and popout sinks. */
     private fun loadVideoInternal(videoUrl: String, lang: String, preservePausedState: Boolean) {
         if (videoUrl == "") return
 
@@ -173,6 +175,7 @@ class DisplayScreen(
         Minecraft.getInstance().execute { reloadTexture() }
     }
 
+    /** Updates position, dimensions, and video URL from an incoming [Packets.Info] packet. */
     fun updateData(packet: Packets.Info) {
         x = packet.pos.x
         y = packet.pos.y
@@ -204,10 +207,12 @@ class DisplayScreen(
         }
     }
 
+    /** Sends a [Packets.RequestSync] packet to ask the server for the current playback state. */
     private fun sendRequestSyncPacket() {
         Initializer.sendPacket(Packets.RequestSync(uuid))
     }
 
+    /** Applies a sync packet from the server: adjusts pause state and seeks if the owner made a real jump. */
     fun updateData(packet: Packets.Sync) {
         isSync = packet.isSync
         if (!isSync) return
@@ -250,12 +255,15 @@ class DisplayScreen(
         }
     }
 
+    /** Recreates the GPU texture (e.g. after a resolution change). */
     fun reloadTexture() = createTexture()
 
+    /** Pushes the current quality setting to the media player. */
     fun reloadQuality() {
         mediaPlayer?.setQuality(quality)
     }
 
+    /** Returns true if [pos] falls within the screen's block bounding box. */
     fun isInScreen(pos: BlockPos): Boolean {
         var maxX = x
         val maxY = y + height - 1
@@ -269,6 +277,7 @@ class DisplayScreen(
                 z <= pos.z && maxZ >= pos.z
     }
 
+    /** Returns the shortest Euclidean distance from [pos] to any block in the screen's bounding box. */
     fun getDistanceToScreen(pos: BlockPos): Double {
         var maxX = x
         val maxY = y + height - 1
@@ -283,6 +292,7 @@ class DisplayScreen(
         return sqrt(pos.distSqr(BlockPos(clampedX, clampedY, clampedZ)))
     }
 
+    /** Uploads the latest decoded frame to the GPU texture. Called on the render thread once per frame. */
     fun fitTexture() {
         val mp = mediaPlayer ?: return
         val tex = texture ?: return
@@ -294,6 +304,7 @@ class DisplayScreen(
         popoutWindow?.renderFrame()
     }
 
+    /** Passes [volume] directly to the media player without persisting to settings. */
     fun setVideoVolume(volume: Float) {
         mediaPlayer?.setVolume(volume)
     }
@@ -345,6 +356,7 @@ class DisplayScreen(
         pipOverlay = null
     }
 
+    /** Applies volume, brightness, and paused state to the media player, then seeks to the saved position. */
     fun startVideo() {
         val mp = mediaPlayer ?: return
         videoStarted = true
@@ -362,7 +374,7 @@ class DisplayScreen(
      * For sync displays, the server's clock only exists once *someone* (the owner) has sent a
      * Sync packet. If a fresh server / no-one's-been-owner-yet situation leaves playStates empty,
      * RequestSync returns nothing and clients sit at 0 forever. So the owner sends a Sync ~1.5s
-     * after startVideo — but only if no server Sync arrived in that window (otherwise we'd
+     * after startVideo, but only if no server Sync arrived in that window (otherwise we'd
      * overwrite the server's ticking clock with our local time=0 on every reconnect).
      */
     private fun bootstrapServerSyncIfNeeded() {
@@ -379,6 +391,7 @@ class DisplayScreen(
 
     val isPaused: Boolean get() = paused
 
+    /** Pauses or resumes the media player; if the video hasn't started yet, defers until initialization completes. */
     fun setPaused(paused: Boolean) {
         if (!videoStarted) {
             this.paused = paused
@@ -392,19 +405,25 @@ class DisplayScreen(
         if (owner && isSync) sendSync()
     }
 
+    /** Seeks 5 seconds forward. */
     fun seekForward() = seekVideoRelative(5.0)
+
+    /** Seeks 5 seconds backward. */
     fun seekBackward() = seekVideoRelative(-5.0)
 
+    /** Seeks [seconds] seconds relative to the current playback position (negative = backward). */
     fun seekVideoRelative(seconds: Double) {
         val mp = mediaPlayer ?: return
         if (mp.canSeek()) mp.seekRelative(seconds)
     }
 
+    /** Seeks to an absolute position [nanos] without firing the sync event (used for incoming sync packets). */
     fun seekVideoTo(nanos: Long) {
         val mp = mediaPlayer ?: return
         if (mp.canSeek()) mp.seekTo(nanos, false)
     }
 
+    /** Seeks to [ms] milliseconds and fires the sync event so other clients follow. */
     fun seekToMillis(ms: Long) {
         val mp = mediaPlayer ?: return
         // fire=true so events.onSeek -> afterSeek -> sendSync propagates the seek to other
@@ -412,6 +431,7 @@ class DisplayScreen(
         if (mp.canSeek()) mp.seekTo(ms * 1_000_000L, true)
     }
 
+    /** Stops the media player, releases GPU texture, closes any popout, and closes the display menu if open. */
     fun unregister() {
         mediaPlayerGeneration.incrementAndGet()
         videoStarted = false
@@ -437,6 +457,7 @@ class DisplayScreen(
         if (screen is DisplayMenu && screen.displayScreen === this) screen.onClose()
     }
 
+    /** Mutes or unmutes the screen; no-op if already in the requested state. */
     fun mute(status: Boolean) {
         if (muted == status) return
         muted = status
@@ -445,6 +466,7 @@ class DisplayScreen(
     }
 
 
+    /** Allocates (or reallocates) the [DynamicTexture] and [RenderType] for the current quality setting. */
     fun createTexture() {
         val qualityInt = parseQualityOrDefault()
         textureWidth = ((width / height.toDouble()) * qualityInt).toInt()
@@ -463,21 +485,26 @@ class DisplayScreen(
         renderType = createRenderType(textureId!!)
     }
 
+    /** Sends the current playback state to the server as a [Packets.Sync] packet. */
     fun sendSync() {
         val mp = mediaPlayer ?: return
         Initializer.sendPacket(Packets.Sync(uuid, isSync, paused, mp.getCurrentTime(), mp.getDuration()))
     }
 
+    /** Seeks to the saved playback position after reconnection; skipped for sync displays. */
     fun restoreSavedTime() {
         if (isSync) return
         val mp = mediaPlayer ?: return
         if (savedTimeNanos > 0) mp.seekTo(savedTimeNanos, false)
     }
 
+    /** Returns true if the media player is ready and the stream supports seeking. */
     fun canSeek(): Boolean = mediaPlayer?.canSeek() == true
 
+    /** Runs [action] once the current media player is initialized; guards against stale generations. */
     fun waitForMFInit(action: () -> Unit) = waitForMFInit(mediaPlayerGeneration.get(), action)
 
+    /** Runs [action] when the player is initialized, only if [expectedGeneration] still matches (i.e. video hasn't changed). */
     private fun waitForMFInit(expectedGeneration: Long, action: () -> Unit) {
         val mp = mediaPlayer ?: return
         mp.whenInitialized {
@@ -488,6 +515,7 @@ class DisplayScreen(
         }
     }
 
+    /** Parses the quality string (e.g. "720p") to an integer; falls back to [DEFAULT_QUALITY] if unparseable. */
     private fun parseQualityOrDefault(): Int = try {
         val parsed = quality.replace("p", "").toInt()
         if (parsed > 0) parsed else DEFAULT_QUALITY
@@ -496,11 +524,13 @@ class DisplayScreen(
         DEFAULT_QUALITY
     }
 
+    /** Called every game tick to update distance-based volume attenuation from [pos]. */
     fun tick(pos: BlockPos) {
         val maxRadius = if (isPopoutActive) Double.MAX_VALUE else Initializer.config.defaultDistance.toDouble()
         mediaPlayer?.tick(pos, maxRadius)
     }
 
+    /** Called after a seek completes; broadcasts the new position to the server if this client is the owner. */
     fun afterSeek() {
         if (owner && isSync) sendSync()
     }
@@ -510,6 +540,7 @@ class DisplayScreen(
         private const val SYNC_SEEK_TOLERANCE_NS = 750_000_000L
         private const val SYNC_JUMP_THRESHOLD_NS = 1_500_000_000L
 
+        /** Creates a custom [RenderType] that samples texture [id] through the solid-block pipeline. */
         private fun createRenderType(id: Identifier): RenderType = RenderType.create(
             "dream-displays",
             RenderSetup.builder(RenderPipelines.SOLID_BLOCK)

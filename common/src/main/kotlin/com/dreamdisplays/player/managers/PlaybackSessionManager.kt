@@ -19,8 +19,10 @@ import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Owns and manages the lifecycle of one `FFmpeg` video + audio session: processes, reader threads,
- * stop flags, [AudioSink], and [VideoFramePipe]. [MediaPlayer] calls [start] / [stop] and
- * delegates rendering queries here. The [StreamWatchdog] is coordinated by [MediaPlayer] externally.
+ * stop flags, [AudioSink], and [VideoFramePipe].
+ *
+ * `MediaPlayer` calls [start] / [stop] and
+ * delegates rendering queries here. The [StreamWatchdog] is coordinated by `MediaPlayer` externally.
  */
 internal class PlaybackSessionManager(
     private val debugLabel: String,
@@ -50,6 +52,8 @@ internal class PlaybackSessionManager(
     @Volatile var isPlaying = false
         private set
 
+    @Volatile private var session: Session? = null
+
     /** True once the first decoded frame is ready for GPU upload. */
     fun textureFilled(): Boolean = video.textureFilled()
 
@@ -62,7 +66,7 @@ internal class PlaybackSessionManager(
     /** Frame position of the open audio line, or -1 when no line is active. */
     val audioFramePosition: Long get() = audio.framePosition
 
-    /** Sets the effective volume (user volume × distance attenuation). */
+    /** Sets the effective volume (user volume * distance attenuation). */
     fun setVolume(volume: Double) { audio.currentVolume = volume }
 
     /** Timestamp of the last decoded video frame; read by [StreamWatchdog]. */
@@ -134,12 +138,10 @@ internal class PlaybackSessionManager(
 
     /**
      * Releases the PBO ring held by [video]. Must be called once when this session manager is
-     * permanently discarded (i.e., when the owning [MediaPlayer] is stopping for good).
+     * permanently discarded (i.e., when the owning `MediaPlayer` is stopping for good).
      * Schedules the GL cleanup on the render thread.
      */
     fun cleanup() {
         Minecraft.getInstance().execute { video.cleanup() }
     }
-
-    @Volatile private var session: Session? = null
 }

@@ -15,14 +15,17 @@ object VideoMetadataCache {
         Thread(r, "DD-VideoMeta").apply { isDaemon = true }
     }
 
+    /** Stores [info] in the cache under [videoId] and also updates [VideoTitleCache]. */
     fun put(videoId: String, info: YtVideoInfo) {
         if (videoId.isEmpty()) return
         CACHE[videoId] = info
         VideoTitleCache.put(videoId, info.title)
     }
 
+    /** Returns the cached [YtVideoInfo] for [videoId], or null if not yet fetched. */
     fun get(videoId: String): YtVideoInfo? = CACHE[videoId]
 
+    /** Fetches and caches metadata for [videoId] in the background if it is not already cached or in flight. */
     fun requestAsync(videoId: String) {
         if (videoId.isEmpty()) return
         if (CACHE.containsKey(videoId)) return
@@ -30,6 +33,7 @@ object VideoMetadataCache {
         EXEC.submit { fetchAndStore(videoId) }
     }
 
+    /** Calls [YouTubeInnerTube.metadata] for [videoId] and stores the result; logs a warning on failure. */
     private fun fetchAndStore(videoId: String) {
         try {
             YouTubeInnerTube.metadata(videoId)?.let { put(videoId, it) }

@@ -72,6 +72,11 @@ object YtDlp {
     @Volatile private var cookieHeaderExportedAt: Long = 0
     @Volatile private var cookieBrowserResolvedAt: Long = 0
 
+    /**
+     * Returns the stream list for [videoUrl], hitting the in-memory cache, then disk cache, then running `yt-dlp`.
+     * Blocks the calling thread until the result is available.
+     * @throws IOException on `yt-dlp` failure or timeout.
+     */
     @Throws(IOException::class)
     fun fetch(videoUrl: String): List<YtStream> {
         val cached = FORMAT_CACHE[videoUrl]
@@ -96,6 +101,7 @@ object YtDlp {
         }
     }
 
+    /** Resolves the binary path, cookie browser, and cookie header in the background to reduce first-fetch latency. */
     fun prewarmAsync() {
         if (resolvedBinary != null && cookieBrowserResolved && cachedCookieHeader != null) return
         PREWARM_EXECUTOR.submit {
@@ -109,6 +115,7 @@ object YtDlp {
         }
     }
 
+    /** Fires a background fetch for [videoUrl] if not already cached, so it is ready before [fetch] is called. */
     fun prefetchFormats(videoUrl: String) {
         if (videoUrl.isBlank()) return
         val cached = FORMAT_CACHE[videoUrl]
@@ -117,6 +124,7 @@ object YtDlp {
         startFetchInternal(videoUrl)
     }
 
+    /** Returns a shared [CompletableFuture] for [videoUrl], deduplicating concurrent requests via [IN_FLIGHT_FETCHES]. */
     private fun startFetchInternal(videoUrl: String): CompletableFuture<List<YtStream>> =
         IN_FLIGHT_FETCHES.computeIfAbsent(videoUrl) {
             CompletableFuture.supplyAsync({
@@ -131,6 +139,7 @@ object YtDlp {
             }, FETCH_EXECUTOR)
         }
 
+    /** Searches YouTube for [query] via InnerTube, returning up to [limit] results; uses a 30-minute in-memory cache. */
     @Throws(IOException::class)
     fun search(query: String, limit: Int): List<YtVideoInfo> {
         if (query.isBlank()) return ArrayList()
@@ -157,6 +166,7 @@ object YtDlp {
         return waitForInfoFuture(future, "search '$query'") { IN_FLIGHT_SEARCHES.remove(key, future) }
     }
 
+    /** Fetches up to [limit] related videos for [videoId] via InnerTube; falls back to title search if none found. */
     @Throws(IOException::class)
     fun related(videoId: String, limit: Int): List<YtVideoInfo> {
         if (videoId.isBlank()) return ArrayList()
@@ -192,6 +202,7 @@ object YtDlp {
         return waitForInfoFuture(future, "related $videoId") { IN_FLIGHT_RELATED.remove(key, future) }
     }
 
+    /** Extracts the 11-character YouTube video ID from a full URL, short URL, or bare ID. Returns null if not recognized. */
     fun extractVideoId(url: String?): String? {
         if (url == null) return null
         val s = url.trim()
@@ -221,6 +232,11 @@ object YtDlp {
         return null
     }
 
+    /**
+     * Appends proxy and cookie arguments to the `yt-dlp` command [args].
+     * Prefers a materialized cookies.txt file; falls back to `--cookies-from-browser` if the file doesn't exist.
+     * Returns the path to a temp cookie copy (to be deleted after the process exits), or null.
+     */
     private fun addCookieArgs(args: MutableList<String>): Path? {
         val proxy = Initializer.config.ytdlpProxy.trim()
         if (proxy.isNotEmpty()) {
@@ -305,6 +321,7 @@ object YtDlp {
 
     private val cookieRefreshInProgress = AtomicBoolean(false)
 
+    /** Re-exports the browser cookie file in the background if not already in progress. */
     private fun refreshCookiesAsync() {
         if (!cookieRefreshInProgress.compareAndSet(false, true)) return
         PREWARM_EXECUTOR.submit {
@@ -317,6 +334,7 @@ object YtDlp {
         }
     }
 
+    /** Waits up to 30 seconds for [future] to complete, unwraps the exception if it fails, and calls [cleanup] in both cases. */
     @Throws(IOException::class)
     private fun waitForInfoFuture(
         future: CompletableFuture<List<YtVideoInfo>>,
@@ -334,6 +352,7 @@ object YtDlp {
         }
     }
 
+    /** Runs `yt-dlp` for [videoUrl] with one automatic retry on non-timeout errors. */
     @Throws(IOException::class)
     private fun fetchUncached(videoUrl: String): List<YtStream> {
         var lastError: IOException? = null
@@ -356,6 +375,10 @@ object YtDlp {
         throw lastError!!
     }
 
+    /**
+     * Single `yt-dlp` invocation for [videoUrl]. On [attempt] 0 uses web / ios / mweb clients;
+     * on [attempt] 1 falls back to android / tv_embedded / mweb for better bot resistance.
+     */
     @Throws(IOException::class)
     private fun fetchUncachedOnce(videoUrl: String, attempt: Int = 0): List<YtStream> {
         val binary = resolveBinary()
@@ -428,6 +451,7 @@ object YtDlp {
         return parseFormats(stdout.toString())
     }
 
+    /** Creates a daemon thread that drains [input] into [sink]; call [Thread.start] on the result. */
     private fun streamReader(input: InputStream, sink: StringBuilder, name: String): Thread {
         val t = Thread({
             try {
@@ -443,14 +467,17 @@ object YtDlp {
         return t
     }
 
+    /** Removes [videoUrl] from the in-memory format cache, in-flight map, and disk cache. */
     fun invalidateCache(videoUrl: String) {
         FORMAT_CACHE.remove(videoUrl)
         IN_FLIGHT_FETCHES.remove(videoUrl)
         FormatDiskCache.deleteEntry(videoUrl)
     }
 
+    /** Returns a cached YouTube cookie header string for use by HTTP clients other than `yt-dlp`. */
     fun getPublicCookieHeader(): String? = getCookieHeader()
 
+    /** Returns the cached cookie header, re-exporting from the browser if the TTL has expired. Thread-safe. */
     private fun getCookieHeader(): String? {
         val cached = cachedCookieHeader
         val now = System.currentTimeMillis()
@@ -471,6 +498,7 @@ object YtDlp {
         }
     }
 
+    /** Runs `yt-dlp --cookies-from-browser` to write cookies.txt, then parses relevant YouTube / Google cookie lines into a header string. */
     @Throws(IOException::class)
     private fun exportCookieHeader(): String? {
         val browser = resolveCookieBrowser() ?: return null
@@ -525,6 +553,7 @@ object YtDlp {
         return result
     }
 
+    /** Parses the JSON output of `yt-dlp -J` into a flat list of [YtStream] descriptors. */
     @Throws(IOException::class)
     private fun parseFormats(json: String): List<YtStream> {
         val result = ArrayList<YtStream>()
@@ -583,6 +612,7 @@ object YtDlp {
         return result
     }
 
+    /** Returns true if the `yt-dlp` output object indicates a live or upcoming stream. */
     private fun isLive(obj: JsonObject): Boolean {
         if (optBoolean(obj)) return true
         val liveStatus = optString(obj, "live_status") ?: return false
@@ -592,6 +622,7 @@ object YtDlp {
         }
     }
 
+    /** Reads the `duration` field from the JSON object and converts seconds to nanoseconds; returns 0 for live or missing values. */
     private fun getDurationNanos(obj: JsonObject): Long {
         val durationSeconds = optDouble(obj, "duration") ?: return 0L
         if (durationSeconds <= 0.0) return 0L
@@ -600,6 +631,7 @@ object YtDlp {
         return max(0L, round(nanos).toLong())
     }
 
+    /** Returns true if the stream protocol (or fallback URL extension) is one we can pipe through FFmpeg. */
     private fun isSupportedProtocol(protocol: String?, url: String): Boolean {
         if (protocol.isNullOrBlank()) return true
         if (protocol.startsWith("http")) return true
@@ -609,6 +641,7 @@ object YtDlp {
         return ".m3u8" in lowerUrl || ".mpd" in lowerUrl
     }
 
+    /** Tries each [candidates] string in order, returning the first one that contains a parseable resolution (e.g. "720p"). */
     private fun extractResolution(vararg candidates: String?): String? {
         for (candidate in candidates) {
             if (candidate.isNullOrBlank()) continue
@@ -620,6 +653,7 @@ object YtDlp {
         return null
     }
 
+    /** Safely reads a string field [key] from [obj], returning null if absent, null-valued, or not a string. */
     private fun optString(obj: JsonObject, key: String): String? {
         if (!obj.has(key) || obj.get(key).isJsonNull) return null
         return try {
@@ -629,6 +663,7 @@ object YtDlp {
         }
     }
 
+    /** Reads the `height` field from [obj] as an int, returning null if absent or not parseable. */
     private fun optInt(obj: JsonObject): Int? {
         if (!obj.has("height") || obj.get("height").isJsonNull) return null
         return try {
@@ -638,6 +673,7 @@ object YtDlp {
         }
     }
 
+    /** Safely reads a double field [key] from [obj], returning null if absent or not parseable. */
     private fun optDouble(obj: JsonObject, key: String): Double? {
         if (!obj.has(key) || obj.get(key).isJsonNull) return null
         return try {
@@ -647,6 +683,7 @@ object YtDlp {
         }
     }
 
+    /** Reads the `is_live` boolean field from [obj], returning false if absent or not parseable. */
     private fun optBoolean(obj: JsonObject): Boolean {
         if (!obj.has("is_live") || obj.get("is_live").isJsonNull) return false
         return try {
@@ -656,6 +693,10 @@ object YtDlp {
         }
     }
 
+    /**
+     * Returns the path to a usable `yt-dlp` binary, checking well-known system paths first,
+     * then the bundled directory, and downloading from GitHub as a last resort.
+     */
     @Throws(IOException::class)
     private fun resolveBinary(): String {
         resolvedBinary?.let { return it }
@@ -684,6 +725,10 @@ object YtDlp {
         }
     }
 
+    /**
+     * Resolves the browser to use for `--cookies-from-browser`, respecting the config setting.
+     * The result is cached; null means cookies are disabled or no suitable browser was found.
+     */
     private fun resolveCookieBrowser(): String? {
         val now = System.currentTimeMillis()
         if (cookieBrowserResolved && resolvedCookieBrowser != null) return resolvedCookieBrowser
@@ -738,6 +783,7 @@ object YtDlp {
         }
     }
 
+    /** Runs `yt-dlp --dump-user-agent` with [browser] cookies and checks whether the cookie file was produced. */
     private fun testCookieBrowser(binary: String, browser: String): Boolean {
         return try {
             val safeName = browser.replace(Regex("[^A-Za-z0-9_-]"), "_")
@@ -773,11 +819,13 @@ object YtDlp {
         }
     }
 
+    /** Returns the expected filename of the bundled binary for the current OS (e.g. `yt-dlp.exe` on Windows). */
     private fun bundledBinaryName(): String {
         val os = System.getProperty("os.name", "").lowercase(Locale.ENGLISH)
         return if ("win" in os) "yt-dlp.exe" else "yt-dlp"
     }
 
+    /** Returns the GitHub release asset name to download for the current OS and architecture. */
     private fun downloadAssetName(): String {
         val os = System.getProperty("os.name", "").lowercase(Locale.ENGLISH)
         val arch = System.getProperty("os.arch", "").lowercase(Locale.ENGLISH)
@@ -788,6 +836,7 @@ object YtDlp {
         return "yt-dlp_linux"
     }
 
+    /** Downloads `yt-dlp` from GitHub to [target], marks it executable, and removes the macOS quarantine flag. */
     @Throws(IOException::class)
     private fun downloadBundled(target: Path): String {
         Files.createDirectories(target.parent)
@@ -830,6 +879,7 @@ object YtDlp {
         return path
     }
 
+    /** Returns true if [path] refers to a file that can be executed (or a command on PATH that exits 0). */
     private fun canExecute(path: String): Boolean {
         return try {
             val f = File(path)

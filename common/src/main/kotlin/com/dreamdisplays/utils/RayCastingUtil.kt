@@ -7,6 +7,7 @@ import net.minecraft.world.phys.HitResult
 
 /** Ray-casting utilities for block interaction and placement. */
 object RayCastingUtil {
+    /** Casts a ray from the player's eye position up to [maxDistance] blocks and returns the hit block, or null. */
     fun rCBlock(maxDistance: Double): BlockHitResult? {
         val mc = Minecraft.getInstance()
         val player = mc.player ?: return null

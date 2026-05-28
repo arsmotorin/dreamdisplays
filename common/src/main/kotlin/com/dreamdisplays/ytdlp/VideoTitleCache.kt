@@ -6,10 +6,12 @@ import java.util.concurrent.ConcurrentHashMap
 object VideoTitleCache {
     private val TITLES = ConcurrentHashMap<String, String>()
 
+    /** Stores [title] in the cache under [videoId]. */
     fun put(videoId: String, title: String) {
         if (videoId.isEmpty() || title.isEmpty()) return
         TITLES[videoId] = title
     }
 
+    /** Returns the cached title for [videoId], or null if not yet fetched. */
     fun get(videoId: String): String? = TITLES[videoId]
 }

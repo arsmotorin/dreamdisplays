@@ -24,10 +24,12 @@ abstract class ButtonWidget(
 
     private var setSprites: WidgetSprites? = null
 
+    /** Replaces the icon texture with [id]. */
     fun setIconTextureId(id: Identifier) {
         iconTextureId = id
     }
 
+    /** Overrides the default button sprites with [sprites]. */
     fun setSprites(sprites: WidgetSprites) {
         setSprites = sprites
     }

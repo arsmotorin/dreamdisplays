@@ -11,7 +11,7 @@ object MediaStreamSelector {
     /** Parses a stream's resolution label (e.g. "720p") into an integer quality value (e.g. 720). */
     fun parseQuality(stream: YtStream): Int = parseQualityValue(stream.resolution, Int.MAX_VALUE)
 
-    /** Parses quality value. */
+    /** Extracts the leading integer from a resolution string like "720p" or "1080"; returns [fallback] if unparseable. */
     fun parseQualityValue(raw: String?, fallback: Int): Int {
         if (raw == null) return fallback
         var i = 0
@@ -24,7 +24,7 @@ object MediaStreamSelector {
     }
 
     /**
-     * Maps a quality value (e.g. 720) to a standard video dimension (e.g. 1280x720). This is used to pick the best
+     * Maps a quality value (e.g. 720) to a standard video dimension (e.g. 1280 x 720). This is used to pick the best
      * matching stream when the quality label is missing or unparseable.
      */
     fun qualityToDims(quality: Int): IntArray = when {

@@ -12,13 +12,14 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipInputStream
 
-/** FFmpeg binary downloader. **/
+/** `FFmpeg` binary downloader. **/
 object FFmpegBinary {
     private const val CACHE_ROOT = "./dreamdisplays/ffmpeg"
     private const val BTBN_BASE = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest"
 
     @Volatile private var cachedPath: String? = null
 
+    /** Returns the path to a usable `FFmpeg` binary, resolving and caching it on the first call. */
     fun getPath(): String? {
         cachedPath?.let { return it }
         synchronized(this) {
@@ -28,6 +29,7 @@ object FFmpegBinary {
         }
     }
 
+    /** Resolves the `FFmpeg` binary in the background to minimize latency on first use. */
     fun prewarmAsync() {
         Thread({
             try {
@@ -35,12 +37,16 @@ object FFmpegBinary {
             } catch (e: Exception) {
                 LoggingManager.warn("[FFmpeg] prewarm failed", e)
             }
-        }, "Ffmpeg-prewarm").apply { isDaemon = true }.start()
+        }, "FFmpeg-prewarm").apply { isDaemon = true }.start()
     }
 
+    /**
+     * Checks the cache directory for an existing binary, downloads and extracts one if not found,
+     * and falls back to the system `FFmpeg` on any failure.
+     */
     private fun resolve(): String? {
         val p = detectPlatform() ?: run {
-            LoggingManager.warn("[FFmpeg] No bundled binary URL for this OS / arch; trying system ffmpeg.")
+            LoggingManager.warn("[FFmpeg] No bundled binary URL for this OS / arch; trying system FFmpeg.")
             return findSystemFfmpeg()
         }
 
@@ -70,6 +76,7 @@ object FFmpegBinary {
         }
     }
 
+    /** Downloads the archive for [p] to a temp file, extracts the binary to [destBinary], and cleans up the temp file. */
     @Throws(IOException::class)
     private fun downloadAndExtract(p: Platform, destBinary: File) {
         LoggingManager.info("[FFmpeg] Downloading ${p.url}...")
@@ -85,6 +92,7 @@ object FFmpegBinary {
         }
     }
 
+    /** Downloads [url] to [dest], following up to 10 HTTP redirects manually (GitHub releases use multiple hops). */
     @Throws(IOException::class)
     private fun downloadWithRedirects(url: String, dest: File) {
         var currentUrl = url
@@ -118,6 +126,7 @@ object FFmpegBinary {
         throw IOException("[FFmpeg] Too many redirects: $url.")
     }
 
+    /** Extracts the first ZIP entry whose name ends with [suffix] from [archive] to [dest]. */
     @Throws(IOException::class)
     private fun extractFromZip(archive: File, suffix: String, dest: File) {
         ZipInputStream(BufferedInputStream(FileInputStream(archive))).use { zis ->
@@ -134,6 +143,7 @@ object FFmpegBinary {
         throw IOException("[FFmpeg] '$suffix' not found in ${archive.name}.")
     }
 
+    /** Extracts the first tar.xz entry whose name ends with [suffix] from [archive] to [dest]. */
     @Throws(IOException::class)
     private fun extractFromTarXz(archive: File, suffix: String, dest: File) {
         BufferedInputStream(FileInputStream(archive)).use { fis ->
@@ -153,6 +163,7 @@ object FFmpegBinary {
         throw IOException("[FFmpeg] '$suffix' not found in ${archive.name}")
     }
 
+    /** Sets the executable bit on [binary] using POSIX permissions when available, falling back to `setExecutable`. */
     private fun markExecutable(binary: File) {
         try {
             Files.setPosixFilePermissions(binary.toPath(), PosixFilePermissions.fromString("rwxr-xr-x"))
@@ -176,6 +187,7 @@ object FFmpegBinary {
         }
     }
 
+    /** Scans well-known system paths for a working `ffmpeg` binary; returns null if none responds with exit 0. */
     private fun findSystemFfmpeg(): String? {
         val candidates = arrayOf("ffmpeg", "/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg")
         for (candidate in candidates) {
@@ -199,9 +211,11 @@ object FFmpegBinary {
         return null
     }
 
+    /** Returns true when running on macOS. */
     private fun isMac(): Boolean =
         System.getProperty("os.name", "").lowercase(Locale.ENGLISH).contains("mac")
 
+    /** Returns a [Platform] descriptor for the current OS and architecture, or null if no bundled build is available. */
     private fun detectPlatform(): Platform? {
         val os = System.getProperty("os.name", "").lowercase(Locale.ENGLISH)
         val arch = System.getProperty("os.arch", "").lowercase(Locale.ENGLISH)

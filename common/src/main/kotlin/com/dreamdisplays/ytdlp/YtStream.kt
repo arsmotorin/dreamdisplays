@@ -23,10 +23,16 @@ class YtStream(
     val durationNanos: Long,
 ) {
 
+    /** Returns the stream's bitrate in kbps, or null if not available. */
     fun hasVideo(): Boolean = hasVideo
+
+    /** Returns true if the stream has audio, even if it's not a video stream. */
     fun hasAudio(): Boolean = hasAudio
+
+    /** Returns true if the stream is a muxed stream (video and audio in the same file). */
     val isMuxed: Boolean get() = hasVideo && hasAudio
 
+    /** Returns a human-readable string representation of the stream, including all available metadata. */
     override fun toString(): String = buildString {
         append("YtStream{").append(mimeType)
         container?.let { append(" container=").append(it) }

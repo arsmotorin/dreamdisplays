@@ -27,6 +27,15 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
 
+/**
+ * Manages the lifecycle of a single media playback instance, including stream selection, `FFmpeg`
+ * process management, playback state, and error handling. All public methods are thread-safe and
+ * should be called from the game thread.
+ *
+ * @param youtubeUrl YouTube video URL
+ * @param lang language code (e.g. "en", "ja")
+ * @param displayScreen the screen that will be displayed
+ */
 class MediaPlayer(
     private val youtubeUrl: String,
     private val lang: String,
@@ -182,7 +191,7 @@ class MediaPlayer(
     fun updateFrame(texture: GpuTexture) =
         sessionManager.updateFrame(texture, displayScreen.textureWidth, displayScreen.textureHeight)
 
-    /** Sets the user-controlled volume (0.0-2.0). Distance attenuation is applied on top. */
+    /** Sets the user-controlled volume (0.0–2.0). Distance attenuation is applied on top. */
     fun setVolume(volume: Float) {
         userVolume = volume.toDouble().coerceIn(0.0, 2.0)
         sessionManager.setVolume(userVolume * lastAttenuation)
@@ -209,8 +218,8 @@ class MediaPlayer(
     /**
      * Updates distance-based volume attenuation. Call every tick from the game thread.
      *
-     * @param playerPos  player block position
-     * @param maxRadius  radius beyond which the screen is silent
+     * @param playerPos player block position
+     * @param maxRadius radius beyond which the screen is silent
      */
     fun tick(playerPos: BlockPos, maxRadius: Double) {
         if (!isReady) return

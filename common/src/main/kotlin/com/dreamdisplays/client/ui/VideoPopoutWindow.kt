@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicLong
  *    that one thread, so `Metal`'s internal resource list is never touched concurrently.
  */
 class VideoPopoutWindow(private val onClose: () -> Unit) {
-
     @Volatile private var frontBuf: ByteBuffer = EMPTY_DIRECT
     private var backBuf: ByteBuffer = EMPTY_DIRECT
     @Volatile private var frameW = 0
@@ -130,6 +129,7 @@ class VideoPopoutWindow(private val onClose: () -> Unit) {
         Minecraft.getInstance().execute { destroyWindow() }
     }
 
+    /** Creates and configures a new GLFW window sized to [videoW] x [videoH]; must run on the render thread. */
     private fun createGlfwWindow(videoW: Int, videoH: Int) {
         val mc = Minecraft.getInstance()
         mcWindowHandle = mc.window.handle()
@@ -170,6 +170,7 @@ class VideoPopoutWindow(private val onClose: () -> Unit) {
         if (wArr[0] > 0 && hArr[0] > 0) { winW.set(wArr[0]); winH.set(hArr[0]) }
     }
 
+    /** Destroys the `GLFW` window and cleans up GL resources. Must be called from the render thread. */
     private fun destroyWindow() {
         val handle = windowHandle
         windowHandle = 0L
@@ -189,6 +190,7 @@ class VideoPopoutWindow(private val onClose: () -> Unit) {
         onClose()
     }
 
+    /** Toggles fullscreen mode for the popout. Safe to call from any thread, dispatches to render thread. */
     private fun toggleFullscreen(handle: Long) {
         if (!fullscreen) {
             val monitor = GLFW.glfwGetPrimaryMonitor()
@@ -211,9 +213,8 @@ class VideoPopoutWindow(private val onClose: () -> Unit) {
     }
 }
 
-/** Minimal OpenGL 3.2 renderer. */
+/** Minimal `OpenGL` 3.2 renderer. */
 private class QuadRenderer {
-
     private val texId: Int = GL11.glGenTextures()
     private val vao: Int = GL30.glGenVertexArrays()
     private val vbo: Int = GL15.glGenBuffers()
@@ -246,6 +247,7 @@ private class QuadRenderer {
         GL30.glBindVertexArray(0)
     }
 
+    /** Uploads a new frame to the texture. Must be called from the render thread. */
     fun upload(buf: ByteBuffer, w: Int, h: Int) {
         if (texW != w || texH != h) {
             // Allocate the texture storage once per resolution change. The driver may reject a 0-sized
@@ -267,6 +269,7 @@ private class QuadRenderer {
         uploader.upload(texId, buf, w, h)
     }
 
+    /** Draws the quad. Must be called from the render thread. */
     fun draw(vw: Int, vh: Int, fw: Int, fh: Int) {
         val scale = minOf(vw.toFloat() / fw, vh.toFloat() / fh)
         val dw = (fw * scale).toInt(); val dh = (fh * scale).toInt()
@@ -286,6 +289,7 @@ private class QuadRenderer {
         GL20.glUseProgram(0)
     }
 
+    /** Cleans up GL resources. Must be called from the render thread. */
     fun cleanup() {
         uploader.cleanup()
         GL11.glDeleteTextures(texId)
@@ -295,6 +299,7 @@ private class QuadRenderer {
     }
 
     companion object {
+        /** Build a shader program that renders a single quad. */
         private fun buildProgram(): Int {
             val vs = GL20.glCreateShader(GL20.GL_VERTEX_SHADER)
             GL20.glShaderSource(vs, """

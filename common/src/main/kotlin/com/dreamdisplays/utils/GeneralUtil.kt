@@ -9,6 +9,7 @@ import java.util.*
 object GeneralUtil {
     private val DIRECT_ID = Regex("[a-zA-Z0-9_-]{11}")
 
+    /** Extracts the 11-character YouTube video ID from a URL or returns null if the input is not recognisable. */
     fun extractVideoId(youtubeUrl: String): String? {
         if (youtubeUrl.isEmpty()) return null
 
@@ -46,6 +47,7 @@ object GeneralUtil {
         return DIRECT_ID.find(youtubeUrl)?.value
     }
 
+    /** Reads the classpath resource at [resourcePath] and returns its content as a UTF-8 string. */
     @Throws(IOException::class)
     fun readResource(resourcePath: String): String {
         val stream = GeneralUtil::class.java.getResourceAsStream(resourcePath)
@@ -53,6 +55,7 @@ object GeneralUtil {
         return stream.bufferedReader().use { it.readText() }
     }
 
+    /** Returns the mod version string from `version.txt`, or "unknown" if the resource is missing. */
     fun getModVersion(): String =
         runCatching { readResource("/assets/dreamdisplays/version.txt").trim() }
             .getOrDefault("unknown")
