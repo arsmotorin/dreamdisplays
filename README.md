@@ -2,9 +2,18 @@
 [![License](https://img.shields.io/github/license/arsmotorin/dreamdisplays)](https://github.com/arsmotorin/dreamdisplays/blob/master/LICENSE)
 [![Discord](http://img.shields.io/discord/1456716690879676501?label=Discord&style=flat&logo=discord)](https://discord.gg/uwMMZ2KWk6)
 
-<div align="center"> <img src="https://i.imgur.com/wAndZVq.png" alt="Dream Displays"> </div>
-
-Download from [Modrinth](https://modrinth.com/plugin/dreamdisplays)!
+<div align="center">
+  <img src="https://i.imgur.com/EquheHU.png" alt="Dream Displays"> 
+  <div>
+    <a href="https://modrinth.com/plugin/dreamdisplays">Modrinth</a>
+    <span> | </span>
+    <a href="https://www.curseforge.com/minecraft/mc-mods/dreamdisplays">CurseForge</a>
+    <span> | </span>
+    <a href="https://github.com/arsmotorin/display">GitHub</a>
+    <span> | </span>
+    <a href="https://discord.com/invite/uwMMZ2KWk6">Discord</a>
+  </div>
+</div>
 
 ## Available for Fabric, NeoForge, Quilt, and popular server forks
 
@@ -17,7 +26,7 @@ For this mod to work, players install the client mod, while server admins can in
 - Server plugin on Paper / Folia / Purpur or other fork
 - Fabric server mod on Fabric servers
 
-![img](https://i.imgur.com/mzaeKQN.png)
+![img](https://i.imgur.com/yyIKdp8.png)
 
 ## Features
 
@@ -53,7 +62,7 @@ Done! To customize the display, look at it and press `Shift + RMB`
 
 [Read more in our wiki](https://github.com/arsmotorin/dreamdisplays/wiki).
 
-![img](https://i.imgur.com/pOQT3KW.png)
+![img](https://i.imgur.com/6tEWQrv.png)
 
 ## For developers
 
