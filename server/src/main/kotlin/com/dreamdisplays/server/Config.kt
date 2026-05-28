@@ -2,7 +2,8 @@ package com.dreamdisplays.server
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.moandjiezana.toml.Toml
+import org.tomlj.Toml
+import org.tomlj.TomlTable
 import me.inotsleep.utils.logging.LoggingManager
 import me.inotsleep.utils.storage.StorageSettings
 import net.fabricmc.loader.api.FabricLoader
@@ -21,7 +22,6 @@ import java.nio.file.StandardCopyOption
  */
 @PaperOnly @NullMarked class Config(private val plugin: Main) {
     private val configFile = File(plugin.dataFolder, "config.toml")
-    private var toml = Toml()
 
     lateinit var language: LanguageSection
         private set
@@ -53,17 +53,63 @@ import java.nio.file.StandardCopyOption
 
     /** Parses `config.toml`, falling back to defaults when sections are missing or malformed. */
     private fun load() {
-        toml = try {
-            Toml().read(configFile)
-        } catch (e: Exception) {
-            LoggingManager.error("[Config] Failed to parse config.toml", e)
-            Toml()
-        }
+        val t: TomlTable? = runCatching { Toml.parse(configFile.toPath()) }
+            .onFailure { LoggingManager.error("[Config] Failed to parse config.toml", it) }
+            .getOrNull()
 
-        language = toml.to(LanguageSection::class.java) ?: LanguageSection()
-        settings = toml.to(SettingsSection::class.java)?.apply { initMaterials() } ?: SettingsSection()
-        storage = toml.to(StorageSection::class.java) ?: StorageSection()
-        permissions = toml.to(PermissionsSection::class.java) ?: PermissionsSection()
+        language = LanguageSection(
+            default_language = t?.getString("language.default_language") ?: "en"
+        )
+        settings = SettingsSection(
+            reports = SettingsSection.ReportsConfig(
+                webhook_url = t?.getString("reports.webhook_url") ?: "",
+                cooldown = t?.getLong("reports.cooldown")?.toInt() ?: 15
+            ),
+            updates = SettingsSection.UpdatesConfig(
+                enabled = t?.getBoolean("updates.enabled") ?: true,
+                repo_name = t?.getString("updates.repo_name") ?: "dreamdisplays",
+                repo_owner = t?.getString("updates.repo_owner") ?: "arsmotorin"
+            ),
+            display = SettingsSection.DisplayConfig(
+                selection_material = t?.getString("display.selection_material") ?: "DIAMOND_AXE",
+                base_material = t?.getString("display.base_material") ?: "BLACK_CONCRETE",
+                updates = t?.getBoolean("display.updates") ?: true,
+                particles = t?.getBoolean("display.particles") ?: true,
+                particles_color = t?.getString("display.particles_color") ?: "#00FFFF",
+                mod_detection_enabled = t?.getBoolean("display.mod_detection_enabled") ?: true,
+                min_width = t?.getLong("display.min_width")?.toInt() ?: 1,
+                min_height = t?.getLong("display.min_height")?.toInt() ?: 1,
+                max_width = t?.getLong("display.max_width")?.toInt() ?: 32,
+                max_height = t?.getLong("display.max_height")?.toInt() ?: 24,
+                max_render_distance = t?.getDouble("display.max_render_distance") ?: 96.0
+            )
+        ).apply { initMaterials() }
+        storage = StorageSection(
+            storage = StorageSection.StorageConfig(
+                type = t?.getString("storage.type") ?: "SQLITE",
+                host = t?.getString("storage.host") ?: "localhost",
+                port = t?.getString("storage.port") ?: "3306",
+                database = t?.getString("storage.database") ?: "my_database",
+                password = t?.getString("storage.password") ?: "veryStrongPassword",
+                username = t?.getString("storage.username") ?: "username",
+                table_prefix = t?.getString("storage.table_prefix") ?: ""
+            )
+        )
+        permissions = PermissionsSection(
+            permissions = PermissionsSection.PermissionsConfig(
+                create = t?.getString("permissions.create") ?: "dreamdisplays.create",
+                video = t?.getString("permissions.video") ?: "dreamdisplays.video",
+                info = t?.getString("permissions.info") ?: "dreamdisplays.info",
+                premium = t?.getString("permissions.premium") ?: "group.premium",
+                delete = t?.getString("permissions.delete") ?: "dreamdisplays.delete",
+                list = t?.getString("permissions.list") ?: "dreamdisplays.list",
+                reload = t?.getString("permissions.reload") ?: "dreamdisplays.reload",
+                updates = t?.getString("permissions.updates") ?: "dreamdisplays.updates",
+                help = t?.getString("permissions.help") ?: "dreamdisplays.help",
+                stats = t?.getString("permissions.stats") ?: "dreamdisplays.stats",
+                toggle_others = t?.getString("permissions.toggle_others") ?: "dreamdisplays.toggle.others"
+            )
+        )
     }
 
     /** Re-reads `config.toml`, re-extracts language files and refreshes the in-memory message map. */
@@ -300,7 +346,6 @@ import java.nio.file.StandardCopyOption
 
     private val configDir: File = FabricLoader.getInstance().configDir.resolve("dreamdisplays").toFile()
     private val configFile = File(configDir, "config.toml")
-    private var toml = Toml()
 
     lateinit var language: LanguageSection
         private set
@@ -337,16 +382,63 @@ import java.nio.file.StandardCopyOption
     }
 
     private fun load() {
-        toml = try {
-            Toml().read(configFile)
-        } catch (e: Exception) {
-            logger.error("[Config] Failed to parse config.toml", e)
-            Toml()
-        }
-        language = toml.to(LanguageSection::class.java) ?: LanguageSection()
-        settings = toml.to(SettingsSection::class.java) ?: SettingsSection()
-        storage = toml.to(StorageSection::class.java) ?: StorageSection()
-        permissions = toml.to(PermissionsSection::class.java) ?: PermissionsSection()
+        val t: TomlTable? = runCatching { Toml.parse(configFile.toPath()) }
+            .onFailure { logger.error("[Config] Failed to parse config.toml", it) }
+            .getOrNull()
+
+        language = LanguageSection(
+            default_language = t?.getString("language.default_language") ?: "en"
+        )
+        settings = SettingsSection(
+            reports = SettingsSection.ReportsConfig(
+                webhook_url = t?.getString("reports.webhook_url") ?: "",
+                cooldown = t?.getLong("reports.cooldown")?.toInt() ?: 15
+            ),
+            updates = SettingsSection.UpdatesConfig(
+                enabled = t?.getBoolean("updates.enabled") ?: true,
+                repo_name = t?.getString("updates.repo_name") ?: "dreamdisplays",
+                repo_owner = t?.getString("updates.repo_owner") ?: "arsmotorin"
+            ),
+            display = SettingsSection.DisplayConfig(
+                selection_material = t?.getString("display.selection_material") ?: "minecraft:diamond_axe",
+                base_material = t?.getString("display.base_material") ?: "minecraft:black_concrete",
+                updates = t?.getBoolean("display.updates") ?: true,
+                particles = t?.getBoolean("display.particles") ?: true,
+                particles_color = t?.getString("display.particles_color") ?: "#00FFFF",
+                mod_detection_enabled = t?.getBoolean("display.mod_detection_enabled") ?: true,
+                min_width = t?.getLong("display.min_width")?.toInt() ?: 1,
+                min_height = t?.getLong("display.min_height")?.toInt() ?: 1,
+                max_width = t?.getLong("display.max_width")?.toInt() ?: 32,
+                max_height = t?.getLong("display.max_height")?.toInt() ?: 24,
+                max_render_distance = t?.getDouble("display.max_render_distance") ?: 96.0
+            )
+        )
+        storage = StorageSection(
+            storage = StorageSection.StorageConfig(
+                type = t?.getString("storage.type") ?: "SQLITE",
+                host = t?.getString("storage.host") ?: "localhost",
+                port = t?.getString("storage.port") ?: "3306",
+                database = t?.getString("storage.database") ?: "my_database",
+                password = t?.getString("storage.password") ?: "veryStrongPassword",
+                username = t?.getString("storage.username") ?: "username",
+                table_prefix = t?.getString("storage.table_prefix") ?: ""
+            )
+        )
+        permissions = PermissionsSection(
+            permissions = PermissionsSection.PermissionsConfig(
+                create = t?.getString("permissions.create") ?: "dreamdisplays.create",
+                video = t?.getString("permissions.video") ?: "dreamdisplays.video",
+                info = t?.getString("permissions.info") ?: "dreamdisplays.info",
+                premium = t?.getString("permissions.premium") ?: "group.premium",
+                delete = t?.getString("permissions.delete") ?: "dreamdisplays.delete",
+                list = t?.getString("permissions.list") ?: "dreamdisplays.list",
+                reload = t?.getString("permissions.reload") ?: "dreamdisplays.reload",
+                updates = t?.getString("permissions.updates") ?: "dreamdisplays.updates",
+                help = t?.getString("permissions.help") ?: "dreamdisplays.help",
+                stats = t?.getString("permissions.stats") ?: "dreamdisplays.stats",
+                toggle_others = t?.getString("permissions.toggle_others") ?: "dreamdisplays.toggle.others"
+            )
+        )
     }
 
     fun reload() {

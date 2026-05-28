@@ -25,9 +25,7 @@ dependencies {
 
     implementation(libs.utils)
     implementation(libs.semver)
-    implementation(libs.toml4j) {
-        exclude(group = "com.google.code.gson", module = "gson")
-    }
+    implementation(libs.tomlj)
     implementation(libs.kotlinStdlib)
     implementation(libs.bstats)
 }
@@ -76,7 +74,7 @@ tasks.shadowJar {
     listOf(
         "me.inotsleep.utils",
         "org.bstats",
-        "com.moandjiezana.toml",
+        "org.tomlj",
         "com.github.zafarkhaja.semver",
     ).forEach { pack ->
         relocate(pack, "$prefix.$pack")

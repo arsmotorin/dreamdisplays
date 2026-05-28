@@ -21,7 +21,7 @@ dependencies {
     compileOnly(libs.paperApi)
     compileOnly(libs.bstats)
     compileOnly(libs.utils)
-    compileOnly(libs.toml4j)
+    compileOnly(libs.tomlj)
     compileOnly(libs.semver)
 
     minecraft(libs.fabricMinecraft)
@@ -29,9 +29,7 @@ dependencies {
     implementation(libs.fabricApi)
     shadow(project(":common"))
     shadow(libs.kotlinStdlib)
-    shadow(libs.toml4j) {
-        exclude(group = "com.google.code.gson", module = "gson")
-    }
+    shadow(libs.tomlj)
     shadow(libs.semver)
     shadow(libs.sqliteJdbc)
 }
@@ -86,7 +84,7 @@ tasks.shadowJar {
         include(dependency("org.apache.commons:commons-compress"))
         include(dependency("org.jetbrains.kotlin:kotlin-stdlib"))
         include(dependency("org.jetbrains:annotations"))
-        include(dependency("com.moandjiezana.toml:toml4j"))
+        include(dependency("org.tomlj:tomlj"))
         include(dependency("com.github.zafarkhaja:java-semver"))
     }
     val prefix = "com.dreamdisplays.libs"
@@ -97,7 +95,7 @@ tasks.shadowJar {
         "kotlin",
         "org.jetbrains.annotations",
         "org.intellij.lang.annotations",
-        "com.moandjiezana.toml",
+        "org.tomlj",
         "com.github.zafarkhaja.semver",
     ).forEach { pack ->
         relocate(pack, "$prefix.$pack")
