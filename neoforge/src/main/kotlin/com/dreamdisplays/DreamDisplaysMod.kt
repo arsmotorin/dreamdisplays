@@ -55,6 +55,7 @@ class DreamDisplaysMod(modEventBus: IEventBus) : com.dreamdisplays.Mod {
         registrar.playToServer(Packets.Report.PACKET_ID, Packets.Report.PACKET_CODEC) { _, _ -> }
         registrar.playToServer(Packets.Version.PACKET_ID, Packets.Version.PACKET_CODEC) { _, _ -> }
         registrar.playToServer(Packets.SetVideo.PACKET_ID, Packets.SetVideo.PACKET_CODEC) { _, _ -> }
+        registrar.playToServer(Packets.SetLocked.PACKET_ID, Packets.SetLocked.PACKET_CODEC) { _, _ -> }
     }
 
     @SubscribeEvent fun onLogin(event: ClientPlayerNetworkEvent.LoggingIn) {
