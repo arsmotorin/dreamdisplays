@@ -89,15 +89,14 @@ object SelectionManager {
             sel.isReady && sel.worldKey == worldKey && sel.contains(pos)
         }
 
-    /** Clears [player]'s current selection. */
-    @PaperOnly fun resetSelection(player: Player) {
-        selectionPoints.remove(player.uniqueId)?.reset()
-    }
+    /** Clears the selection for the player identified by [uuid]. */
+    fun resetSelection(uuid: UUID) = selectionPoints.remove(uuid)?.reset()
 
     /** Clears [player]'s current selection. */
-    @FabricOnly fun resetSelection(player: ServerPlayer) {
-        selectionPoints.remove(player.uuid)?.reset()
-    }
+    @PaperOnly fun resetSelection(player: Player) = resetSelection(player.uniqueId)
+
+    /** Clears [player]'s current selection. */
+    @FabricOnly fun resetSelection(player: ServerPlayer) = resetSelection(player.uuid)
 
     /** Returns true if [loc] is inside the bounding box defined by this selection. */
     @PaperOnly private fun PaperSelectionData.contains(loc: Location): Boolean {

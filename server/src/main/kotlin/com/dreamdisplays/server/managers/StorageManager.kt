@@ -96,7 +96,7 @@ class DisplaysTable(prefix: String = "") : Table("${prefix}displays") {
     }
 
     /** Deletes the display with the given [data] from the displays table. */
-    @PaperOnly fun deleteDisplay(data: PaperDisplayData) = delete(data.id)
+    fun deleteDisplay(data: DisplayData) = delete(data.id)
 
     /** Upserts all rows in [displays] into the displays table. */
     @PaperOnly fun saveAllPaper(displays: Collection<PaperDisplayData>) {
@@ -135,8 +135,6 @@ class DisplaysTable(prefix: String = "") : Table("${prefix}displays") {
             packPos(data.pos2.x, data.pos2.y, data.pos2.z),
             DIRECTION_TO_ORDINAL.getValue(data.facing))
     }
-
-    @FabricOnly fun deleteDisplay(data: FabricDisplayData) = delete(data.id)
 
     @FabricOnly fun saveAllFabric(displays: Collection<FabricDisplayData>) {
         displays.forEach(::saveDisplay)
