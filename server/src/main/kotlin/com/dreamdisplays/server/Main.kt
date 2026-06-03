@@ -1,6 +1,7 @@
 package com.dreamdisplays.server
 
 import com.dreamdisplays.net.Packets
+import com.dreamdisplays.server.datatypes.PaperDisplayData
 import com.dreamdisplays.server.listeners.FabricPlayerListener
 import com.dreamdisplays.server.listeners.FabricProtectionListener
 import com.dreamdisplays.server.listeners.FabricSelectionListener
@@ -93,7 +94,7 @@ import org.slf4j.LoggerFactory
     fun doDisable() {
         LoggingManager.log("[Dream Displays] Disabling Dream Displays ${pluginMeta.version}...")
         if (::storage.isInitialized) {
-            DisplayManager.save { storage.saveDisplay(it) }
+            DisplayManager.save { data: PaperDisplayData -> storage.saveDisplay(data) }
             storage.disconnect()
         }
     }
