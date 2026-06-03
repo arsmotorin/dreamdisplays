@@ -2,7 +2,7 @@
 
 ## Client
 
-### Feature
+### Features
 
 - A bit fresher mod icon
 
