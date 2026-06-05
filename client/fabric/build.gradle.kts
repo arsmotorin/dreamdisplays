@@ -23,6 +23,7 @@ dependencies {
     implementation(libs.semver4j)
     implementation(libs.exposedCore)
     implementation(libs.exposedJdbc)
+    implementation(libs.exposedMigrationJdbc)
     implementation(libs.hikari)
     runtimeOnly(libs.sqliteJdbc)
 
@@ -85,6 +86,8 @@ tasks.shadowJar {
         include(dependency("org.semver4j:semver4j"))
         include(dependency("org.jetbrains.exposed:exposed-core"))
         include(dependency("org.jetbrains.exposed:exposed-jdbc"))
+        include(dependency("org.jetbrains.exposed:exposed-migration-core"))
+        include(dependency("org.jetbrains.exposed:exposed-migration-jdbc"))
         include(dependency("com.zaxxer:HikariCP"))
     }
     val prefix = "com.dreamdisplays.libs"

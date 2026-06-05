@@ -9,9 +9,14 @@ import net.minecraft.core.Direction
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.BlockFace
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.*
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.replace
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 import org.jspecify.annotations.NullMarked
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -62,7 +67,9 @@ class DisplaysTable(prefix: String = "") : Table("${prefix}displays") {
             this.username = username
             this.password = password
         }
-        maximumPoolSize = 3
+        // Read more why SQLite should use a single connection:
+        // https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing
+        maximumPoolSize = if (type.uppercase() == "SQLITE") 1 else 3
         isAutoCommit = false
     })
 
@@ -73,7 +80,9 @@ class DisplaysTable(prefix: String = "") : Table("${prefix}displays") {
      * and loads previously stored displays into the runtime registry.
      */
     fun createSchema() {
-        transaction(db) { SchemaUtils.createMissingTablesAndColumns(table) }
+        transaction(db) {
+            MigrationUtils.statementsRequiredForDatabaseMigration(table).forEach { stmt -> exec(stmt) }
+        }
     }
 
     /** Persists all in-memory displays and closes the database connection on plugin shutdown. */

@@ -27,6 +27,7 @@ dependencies {
     implementation(libs.tomlj)
     implementation(libs.exposedCore)
     implementation(libs.exposedJdbc)
+    implementation(libs.exposedMigrationJdbc)
     implementation(libs.hikari)
     implementation(libs.sqliteJdbc)
     implementation(libs.kotlinStdlib)
