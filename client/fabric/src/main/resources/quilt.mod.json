@@ -19,7 +19,7 @@
     "intermediate_mappings": "net.fabricmc:intermediary",
     "entrypoints": {
       "client": [
-        "com.dreamdisplays.DreamDisplaysMod"
+        "com.dreamdisplays.Client"
       ]
     },
     "depends": [
