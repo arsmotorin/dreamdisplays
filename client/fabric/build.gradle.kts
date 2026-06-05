@@ -1,14 +1,12 @@
 plugins {
     id("net.fabricmc.fabric-loom") version libs.versions.loom
     id("maven-publish")
-    id("com.gradleup.shadow") version libs.versions.shadow
-    kotlin("jvm") version libs.versions.kotlin
+    id("dreamdisplays.kotlin-conventions")
+    id("dreamdisplays.shadow-conventions")
 }
 
-kotlin { jvmToolchain(providers.gradleProperty("java.version").get().toInt()) }
-
 sourceSets.main {
-    kotlin.srcDir("../server/src/main/kotlin")
+    kotlin.srcDir(project(":server").file("src/main/kotlin"))
 }
 
 loom {
@@ -19,17 +17,19 @@ dependencies {
     compileOnly(libs.ofratAnnotations)
     "kotlinCompilerPluginClasspath"(libs.ofratPlugin)
     compileOnly(libs.paperApi)
-    compileOnly(libs.bstats)
-    compileOnly(libs.utils)
-    compileOnly(libs.tomlj)
-    compileOnly(libs.semver4j)
-    compileOnly(libs.exposedCore)
-    compileOnly(libs.exposedJdbc)
-    compileOnly(libs.hikari)
+    implementation(libs.bstats)
+    implementation(libs.utils)
+    implementation(libs.tomlj)
+    implementation(libs.semver4j)
+    implementation(libs.exposedCore)
+    implementation(libs.exposedJdbc)
+    implementation(libs.hikari)
+    runtimeOnly(libs.sqliteJdbc)
 
     minecraft(libs.fabricMinecraft)
     implementation(libs.fabricLoader)
     implementation(libs.fabricApi)
+    implementation(project(":common"))
     shadow(project(":common"))
     shadow(libs.kotlinStdlib)
     shadow(libs.tomlj)
@@ -41,6 +41,7 @@ dependencies {
 }
 
 tasks.processResources {
+    from(project(":common").file("src/main/resources/dreamdisplays.classtweaker"))
     val projectVersion = project.version.toString()
     inputs.property("version", projectVersion)
     filesMatching("fabric.mod.json") {
@@ -56,21 +57,12 @@ tasks.processResources {
 
 java {
     withSourcesJar()
-    toolchain { languageVersion.set(JavaLanguageVersion.of(providers.gradleProperty("java.version").get().toInt())) }
-}
-
-tasks.withType<JavaCompile>().configureEach {
-    options.encoding = Charsets.UTF_8.name()
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     compilerOptions.freeCompilerArgs.addAll(
         "-P", "plugin:io.github.arsmotorin.ofrat:platform=fabric"
     )
-}
-
-tasks.jar {
-    from(rootProject.file("LICENSE"))
 }
 
 // Hack: it's a bug in Loom alpha where the validation task expects a named namespace but the classtweaker correctly uses
@@ -81,8 +73,6 @@ tasks.named("validateAccessWidener") { enabled = false }
 tasks.shadowJar {
     configurations = listOf(project.configurations.getByName("shadow"))
     archiveBaseName = "dreamdisplays-fabric"
-    archiveClassifier = ""
-    destinationDirectory.set(rootProject.layout.buildDirectory.dir("libs"))
     dependencies {
         include(project(":common"))
         include(dependency("me.inotsleep:utils"))
@@ -113,11 +103,6 @@ tasks.shadowJar {
     ).forEach { pack ->
         relocate(pack, "$prefix.$pack")
     }
-    mergeServiceFiles()
-    exclude("META-INF/versions/9/module-info.class")
-    exclude("META-INF/maven/**")
-    exclude("META-INF/proguard/**")
-    exclude("META-INF/*.kotlin_module")
     exclude("org/sqlite/native/Linux-Android/**")
     exclude("org/sqlite/native/Linux-Musl/x86/**")
     exclude("org/sqlite/native/FreeBSD/**")

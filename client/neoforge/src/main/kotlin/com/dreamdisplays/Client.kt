@@ -18,7 +18,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent
 
 @Suppress("UNUSED")
 @Mod(value = Initializer.MOD_ID, dist = [Dist.CLIENT])
-class DreamDisplaysMod(modEventBus: IEventBus) : com.dreamdisplays.Mod {
+class Client(modEventBus: IEventBus) : com.dreamdisplays.Mod {
     init {
         Initializer.onModInit(this)
         modEventBus.addListener(::registerPayloads)

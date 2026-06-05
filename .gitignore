@@ -27,8 +27,9 @@ bin/
 # Fabric
 run/
 
-# Java
+# Java / Kotlin
 hs_err_*.log
 replay_*.log
 *.hprof
 *.jfr
+.kotlin
