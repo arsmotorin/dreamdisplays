@@ -22,7 +22,6 @@ dependencies {
     compileOnly(libs.fabricLoader)
     compileOnly(libs.fabricApi)
 
-    implementation(libs.utils)
     implementation(libs.semver4j)
     implementation(libs.tomlj)
     implementation(libs.exposedCore)
@@ -72,7 +71,6 @@ tasks.shadowJar {
     }
     val prefix = "com.dreamdisplays.libs"
     listOf(
-        "me.inotsleep.utils",
         "org.bstats",
         "org.tomlj",
         "org.semver4j",

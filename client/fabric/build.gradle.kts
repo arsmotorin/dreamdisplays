@@ -18,7 +18,6 @@ dependencies {
     "kotlinCompilerPluginClasspath"(libs.ofratPlugin)
     compileOnly(libs.paperApi)
     implementation(libs.bstats)
-    implementation(libs.utils)
     implementation(libs.tomlj)
     implementation(libs.semver4j)
     implementation(libs.exposedCore)
@@ -76,7 +75,6 @@ tasks.shadowJar {
     archiveBaseName = "dreamdisplays-fabric"
     dependencies {
         include(project(":common"))
-        include(dependency("me.inotsleep:utils"))
         include(dependency("org.xerial:sqlite-jdbc"))
         include(dependency("org.apache.commons:commons-compress"))
         include(dependency("org.jetbrains.kotlin:kotlin-stdlib"))
@@ -92,7 +90,6 @@ tasks.shadowJar {
     }
     val prefix = "com.dreamdisplays.libs"
     listOf(
-        "me.inotsleep.utils",
         "org.apache.commons.compress",
         "org.tukaani.xz",
         "kotlin",

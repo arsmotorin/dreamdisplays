@@ -43,7 +43,6 @@ tasks.shadowJar {
     archiveBaseName = "dreamdisplays-neoforge"
     dependencies {
         include(project(":common"))
-        include(dependency("me.inotsleep:utils"))
         include(dependency("org.apache.commons:commons-compress"))
         include(dependency("org.semver4j:semver4j"))
         include(dependency("org.jetbrains.kotlin:kotlin-stdlib"))
@@ -51,7 +50,6 @@ tasks.shadowJar {
     }
     val prefix = "com.dreamdisplays.libs"
     listOf(
-        "me.inotsleep.utils",
         "org.apache.commons.compress",
         "org.tukaani.xz",
         "org.semver4j",

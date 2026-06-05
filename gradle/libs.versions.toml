@@ -10,7 +10,6 @@
 # Common
 jspecify = "1.0.0"
 ofrat = "1.0.0"
-utils = "1.4.10"
 commonsCompress = "1.28.0"
 tomlj = "1.1.1"
 semver4j = "6.0.0"
@@ -44,7 +43,6 @@ paperApi = "26.1.2.build.69-stable"
 jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
 ofratAnnotations = { module = "com.github.arsmotorin.ofrat:ofrat-annotations", version.ref = "ofrat" }
 ofratPlugin = { module = "com.github.arsmotorin.ofrat:ofrat-plugin", version.ref = "ofrat" }
-utils = { module = "me.inotsleep:utils", version.ref = "utils" }
 kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 commonsCompress = { module = "org.apache.commons:commons-compress", version.ref = "commonsCompress" }
 tomlj = { module = "org.tomlj:tomlj", version.ref = "tomlj" }
