@@ -31,7 +31,7 @@ import org.bukkit.event.entity.EntityExplodeEvent
      */
     @EventHandler fun onBlockBreak(event: BlockBreakEvent) {
         val loc = event.block.location
-        if (DisplayManager.isContains(loc) != null && PlayerManager.getVersion(event.player) == null) {
+        if (DisplayManager.isContains(loc) != null && PlayerManager.getVersion(event.player.uniqueId) == null) {
             MessageUtil.sendMessage(event.player, "displayBlockBreak")
         }
         cancelIfProtected(loc, event)
@@ -91,7 +91,7 @@ import org.bukkit.event.entity.EntityExplodeEvent
 
             if (isProtected) {
                 if (player is ServerPlayer) {
-                    if (PlayerManager.getVersion(player) == null) {
+                    if (PlayerManager.getVersion(player.uuid) == null) {
                         MessageUtil.sendMessage(player, "displayBlockBreak")
                     }
                 }

@@ -6,6 +6,7 @@ import com.dreamdisplays.server.datatypes.FabricSelectionData
 import com.dreamdisplays.server.datatypes.PaperSelectionData
 import com.dreamdisplays.server.managers.DisplayManager
 import com.dreamdisplays.server.managers.SelectionManager
+import com.dreamdisplays.server.platform.platformUuid
 import com.dreamdisplays.server.utils.MessageUtil
 import com.dreamdisplays.server.utils.RegionUtil
 import com.dreamdisplays.server.utils.net.FabricPacketUtil
@@ -38,7 +39,8 @@ import kotlin.math.abs
     override fun execute(sender: CommandSender, args: Array<String?>) {
         val player = (sender as? Player) ?: return
 
-        val sel = SelectionManager.selectionPoints[player.uniqueId] as? PaperSelectionData
+        val playerId = player.platformUuid
+        val sel = SelectionManager.selectionPoints[playerId] as? PaperSelectionData
             ?: return MessageUtil.sendMessageWithMaterials(
                 player, "noDisplayTerritories",
                 Main.config.settings.selectionMaterial, Main.config.settings.baseMaterial
@@ -60,7 +62,7 @@ import kotlin.math.abs
         }
 
         val displayData = sel.generateDisplayData()
-        SelectionManager.selectionPoints.remove(player.uniqueId)
+        SelectionManager.selectionPoints.remove(playerId)
 
         DisplayManager.register(displayData)
         MessageUtil.sendMessage(player, "successfulCreation")
@@ -139,7 +141,8 @@ import kotlin.math.abs
         val player = ctx.source.entity as? ServerPlayer
             ?: return ctx.source.sendFailure(Component.literal("This command can only be used by a player.")).let { 0 }
 
-        val sel = SelectionManager.selectionPoints[player.uuid] as? FabricSelectionData
+        val playerId = player.platformUuid
+        val sel = SelectionManager.selectionPoints[playerId] as? FabricSelectionData
             ?: return MessageUtil.sendMessageWithMaterials(
                 player, "noDisplayTerritories",
                 Server.config.settings.selectionMaterial, Server.config.settings.baseMaterial
@@ -160,8 +163,8 @@ import kotlin.math.abs
             return 0
         }
 
-        val displayData = sel.generateDisplayData(player.uuid)
-        SelectionManager.selectionPoints.remove(player.uuid)
+        val displayData = sel.generateDisplayData(playerId)
+        SelectionManager.selectionPoints.remove(playerId)
 
         DisplayManager.register(displayData)
         Server.storage?.saveDisplay(displayData)

@@ -9,6 +9,7 @@ import com.dreamdisplays.server.managers.DisplayManager
 import com.dreamdisplays.server.managers.StateManager
 import com.dreamdisplays.server.managers.PlayerManager
 import com.dreamdisplays.server.meta.Scheduler
+import com.dreamdisplays.server.platform.platformUuid
 import com.dreamdisplays.server.utils.MessageUtil
 import com.dreamdisplays.server.utils.YouTubeUtil
 import io.github.arsmotorin.ofrat.*
@@ -81,7 +82,7 @@ import java.util.*
             val displayData = DisplayManager.getDisplayData(displayId)
                 ?: return@let MessageUtil.sendMessage(player, "noDisplay")
 
-            if (displayData.ownerId != player.uniqueId &&
+            if (displayData.ownerId != player.platformUuid &&
                 !player.hasPermission(Main.config.permissions.delete)
             ) {
                 MessageUtil.sendMessage(player, "displayCommandMissingPermission")
@@ -118,7 +119,7 @@ import java.util.*
         runCatching {
             DataInputStream(ByteArrayInputStream(message)).use { input ->
                 val enabled = input.readBoolean()
-                PlayerManager.setDisplaysEnabled(player, enabled)
+                PlayerManager.setDisplaysEnabled(player.uniqueId, enabled)
             }
         }.onFailure { error ->
             warn("[PacketReceiver] Failed to decode display enabled packet", error)
@@ -150,7 +151,7 @@ import java.util.*
 
         // Store version
         val version = parseVersionOrNull(versionString)
-        PlayerManager.setVersion(player, version)
+        PlayerManager.setVersion(player.uniqueId, version)
     }
 
     /** Compares [player]'s reported version against the cached mod / plugin versions and notifies once. */
@@ -172,9 +173,9 @@ import java.util.*
     private fun checkModUpdate(player: Player, userVersion: Semver) {
         val latestVersion = Main.modVersion ?: return
 
-        if (userVersion < latestVersion && !PlayerManager.hasBeenNotifiedAboutModUpdate(player)) {
+        if (userVersion < latestVersion && !PlayerManager.hasBeenNotifiedAboutModUpdate(player.uniqueId)) {
             sendModUpdateMessage(player, latestVersion)
-            PlayerManager.setModUpdateNotified(player, true)
+            PlayerManager.setModUpdateNotified(player.uniqueId, true)
         }
     }
 
@@ -183,7 +184,7 @@ import java.util.*
     private fun checkPluginUpdate(player: Player) {
         val latestPluginVersion = Main.pluginLatestVersion ?: return
 
-        if (PlayerManager.hasBeenNotifiedAboutPluginUpdate(player)) return
+        if (PlayerManager.hasBeenNotifiedAboutPluginUpdate(player.uniqueId)) return
 
         val currentVersionString = plugin.description.version
         if (currentVersionString.contains("-SNAPSHOT", ignoreCase = true) ||
@@ -196,7 +197,7 @@ import java.util.*
 
         if (currentVersion < latestVersion) {
             sendPluginUpdateMessage(player, latestPluginVersion)
-            PlayerManager.setPluginUpdateNotified(player, true)
+            PlayerManager.setPluginUpdateNotified(player.uniqueId, true)
         }
     }
 
@@ -278,7 +279,7 @@ import java.util.*
                     ?: return@runCatching
 
                 if (displayData.isLocked &&
-                    displayData.ownerId != player.uniqueId &&
+                    displayData.ownerId != player.platformUuid &&
                     !player.hasPermission(Main.config.permissions.delete)
                 ) return@runCatching
 
@@ -305,7 +306,7 @@ import java.util.*
                 val displayData = DisplayManager.getDisplayData(displayId) as? com.dreamdisplays.server.datatypes.PaperDisplayData
                     ?: return@runCatching
 
-                if (displayData.ownerId != player.uniqueId &&
+                if (displayData.ownerId != player.platformUuid &&
                     !player.hasPermission(Main.config.permissions.delete)
                 ) return@runCatching
 
@@ -383,7 +384,7 @@ import java.util.*
 
             runCatching {
                 val version = parseVersionOrNull(versionString)
-                PlayerManager.setVersion(player, version)
+                PlayerManager.setVersion(player.uuid, version)
 
                 val config = Server.config
                 FabricPacketUtil.sendPremium(player, isOpLevel2(player))
@@ -411,15 +412,15 @@ import java.util.*
 
                 val modLatest = Server.modLatestVersion
                 if (modLatest != null && version != null && version < modLatest &&
-                    !PlayerManager.hasBeenNotifiedAboutModUpdate(player)
+                    !PlayerManager.hasBeenNotifiedAboutModUpdate(player.uuid)
                 ) {
                     val msg = config.getMessageForPlayer(player, "newVersion")
                     MessageUtil.sendColoredMessage(player, msg?.let { String.format(it.toString(), modLatest.toString()) })
-                    PlayerManager.setModUpdateNotified(player, true)
+                    PlayerManager.setModUpdateNotified(player.uuid, true)
                 }
 
                 if (config.settings.updatesEnabled &&
-                    !PlayerManager.hasBeenNotifiedAboutPluginUpdate(player)
+                    !PlayerManager.hasBeenNotifiedAboutPluginUpdate(player.uuid)
                 ) {
                     val latestPlugin = Server.pluginLatestVersion
                     val currentVersion = Server.serverVersion
@@ -432,7 +433,7 @@ import java.util.*
                             val msg = config.getMessageForPlayer(player, "newPluginVersion") as? String
                             if (msg != null) {
                                 MessageUtil.sendColoredMessage(player, String.format(msg, latestPlugin))
-                                PlayerManager.setPluginUpdateNotified(player, true)
+                                PlayerManager.setPluginUpdateNotified(player.uuid, true)
                             }
                         }
                     }
@@ -475,7 +476,7 @@ import java.util.*
                     ?: return@registerGlobalReceiver MessageUtil.sendMessage(player, "noDisplay")
 
                 val config = Server.config
-                if (displayData.ownerId != player.uuid && !isOpLevel2(player)) {
+                if (displayData.ownerId != player.platformUuid && !isOpLevel2(player)) {
                     MessageUtil.sendMessage(player, "displayCommandMissingPermission")
                     return@registerGlobalReceiver
                 }
@@ -499,7 +500,7 @@ import java.util.*
 
         ServerPlayNetworking.registerGlobalReceiver(Packets.DisplayEnabled.PACKET_ID) { payload, context ->
             runCatching {
-                PlayerManager.setDisplaysEnabled(context.player(), payload.enabled)
+                PlayerManager.setDisplaysEnabled(context.player().uuid, payload.enabled)
             }.onFailure { e ->
                 logger.warn("[PacketReceiver] Failed to handle display_enabled packet", e)
             }
@@ -512,7 +513,7 @@ import java.util.*
                 val displayData = DisplayManager.getDisplayData(displayId) as? FabricDisplayData
                     ?: return@registerGlobalReceiver
 
-                if (displayData.isLocked && displayData.ownerId != player.uuid && !isOpLevel2(player)) return@registerGlobalReceiver
+                if (displayData.isLocked && displayData.ownerId != player.platformUuid && !isOpLevel2(player)) return@registerGlobalReceiver
 
                 val wasSync = displayData.isSync
                 displayData.url = payload.url
@@ -532,7 +533,7 @@ import java.util.*
                 val displayData = DisplayManager.getDisplayData(payload.uuid) as? com.dreamdisplays.server.datatypes.FabricDisplayData
                     ?: return@registerGlobalReceiver MessageUtil.sendMessage(player, "noDisplay")
 
-                if (displayData.ownerId != player.uuid && !isOpLevel2(player)) {
+                if (displayData.ownerId != player.platformUuid && !isOpLevel2(player)) {
                     MessageUtil.sendMessage(player, "displayCommandMissingPermission")
                     return@registerGlobalReceiver
                 }

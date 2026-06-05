@@ -4,6 +4,7 @@ import com.dreamdisplays.server.Main
 import com.dreamdisplays.server.Server
 import com.dreamdisplays.server.managers.SelectionManager
 import com.dreamdisplays.server.managers.SelectionVisualizer
+import com.dreamdisplays.server.platform.platformUuid
 import com.dreamdisplays.server.utils.MessageUtil
 import com.dreamdisplays.server.utils.RegionUtil
 import io.github.arsmotorin.ofrat.FabricOnly
@@ -43,7 +44,7 @@ import org.bukkit.inventory.EquipmentSlot
         val heldItem = player.inventory.itemInMainHand.type
 
         if (player.isSneaking && event.action.isRightClick) {
-            if (SelectionManager.selectionPoints.containsKey(player.uniqueId)) {
+            if (SelectionManager.selectionPoints.containsKey(player.platformUuid)) {
                 SelectionManager.resetSelection(player)
                 MessageUtil.sendMessage(player, "selectionClear")
             }
@@ -107,7 +108,7 @@ import org.bukkit.inventory.EquipmentSlot
             val worldKey = RegionUtil.getLevelKey(world)
 
             if (player.isShiftKeyDown) {
-                if (SelectionManager.selectionPoints.containsKey(player.uuid)) {
+                if (SelectionManager.selectionPoints.containsKey(player.platformUuid)) {
                     SelectionManager.resetSelection(player)
                     MessageUtil.sendMessage(player, "selectionClear")
                 }

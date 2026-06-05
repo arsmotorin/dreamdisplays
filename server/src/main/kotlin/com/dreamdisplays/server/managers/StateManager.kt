@@ -10,6 +10,7 @@ import com.dreamdisplays.server.datatypes.StateData
 import com.dreamdisplays.server.datatypes.SyncData
 import com.dreamdisplays.server.managers.DisplayManager.getDisplayData
 import com.dreamdisplays.server.managers.DisplayManager.getReceivers
+import com.dreamdisplays.server.platform.platformUuid
 import com.dreamdisplays.server.utils.net.FabricPacketUtil
 import com.dreamdisplays.server.utils.net.PacketUtil
 import net.minecraft.server.MinecraftServer
@@ -73,11 +74,11 @@ import java.util.concurrent.ConcurrentHashMap
      * and rebroadcasts to other receivers (rate-limited to avoid packet floods).
      */
     @PaperOnly @JvmStatic fun processSyncPacket(packet: SyncData, player: Player) {
-        if (!applySyncPacket(packet, player.uniqueId)) return
+        if (!applySyncPacket(packet, player.platformUuid)) return
         val data = getDisplayData(packet.id) ?: return
         val receivers = getReceivers(data as PaperDisplayData)
         PacketUtil.sendSync(
-            receivers.filter { it.uniqueId != player.uniqueId }.toMutableList(),
+            receivers.filter { it.platformUuid != player.platformUuid }.toMutableList(),
             packet.copy(id = packet.id)
         )
     }
@@ -87,10 +88,10 @@ import java.util.concurrent.ConcurrentHashMap
      * and rebroadcasts to other receivers (rate-limited to avoid packet floods).
      */
     @FabricOnly fun processSyncPacket(packet: SyncData, player: ServerPlayer, server: MinecraftServer) {
-        if (!applySyncPacket(packet, player.uuid)) return
+        if (!applySyncPacket(packet, player.platformUuid)) return
         val data = getDisplayData(packet.id) ?: return
         val receivers = getReceivers(data as FabricDisplayData, server)
-            .filter { it.uuid != player.uuid }
+            .filter { it.platformUuid != player.platformUuid }
         FabricPacketUtil.sendSync(receivers, packet.copy(id = packet.id))
     }
 

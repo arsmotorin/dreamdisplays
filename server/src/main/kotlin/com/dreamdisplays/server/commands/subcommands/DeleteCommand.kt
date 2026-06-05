@@ -2,6 +2,7 @@ package com.dreamdisplays.server.commands.subcommands
 
 import com.dreamdisplays.server.Main
 import com.dreamdisplays.server.managers.DisplayManager
+import com.dreamdisplays.server.platform.platformUuid
 import com.dreamdisplays.server.utils.MessageUtil
 import com.dreamdisplays.server.utils.RegionUtil
 import com.dreamdisplays.server.utils.net.FabricPacketUtil
@@ -66,7 +67,7 @@ import org.bukkit.entity.Player
         val data = DisplayManager.isContains(worldKey, targetPos)
             ?: return MessageUtil.sendMessage(player, "noDisplay").let { 0 }
 
-        if (data.ownerId != player.uuid && !ServerPacketHandler.isOpLevel2(player)) {
+        if (data.ownerId != player.platformUuid && !ServerPacketHandler.isOpLevel2(player)) {
             MessageUtil.sendMessage(player, "displayCommandMissingPermission")
             return 0
         }

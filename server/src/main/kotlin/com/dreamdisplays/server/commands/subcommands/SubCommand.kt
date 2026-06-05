@@ -1,6 +1,5 @@
 package com.dreamdisplays.server.commands.subcommands
 
-import io.github.arsmotorin.ofrat.PaperOnly
 import org.bukkit.command.CommandSender
 
 /**
@@ -16,7 +15,7 @@ import org.bukkit.command.CommandSender
  * @param args the arguments passed to the sub-command.
  * @see CommandSender
  */
-@PaperOnly interface SubCommand {
+interface SubCommand {
     /** The name of the sub-command. */
     val name: String
 

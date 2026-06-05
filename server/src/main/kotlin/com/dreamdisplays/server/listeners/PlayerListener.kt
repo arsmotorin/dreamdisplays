@@ -53,16 +53,16 @@ import org.jspecify.annotations.NullMarked
         if (PlatformUtil.isFolia) return
 
         Scheduler.runLater(600L) {
-            if (PlayerManager.getVersion(player) == null && !PlayerManager.hasBeenNotifiedAboutModRequired(player)) {
+            if (PlayerManager.getVersion(player.uniqueId) == null && !PlayerManager.hasBeenNotifiedAboutModRequired(player.uniqueId)) {
                 MessageUtil.sendMessage(player, "modRequired")
-                PlayerManager.setModRequiredNotified(player, true)
+                PlayerManager.setModRequiredNotified(player.uniqueId, true)
             }
         }
     }
 
     /** Drops cached per-player state when a player disconnects. */
     @EventHandler fun onPlayerLeave(event: PlayerQuitEvent) {
-        PlayerManager.removeVersion(event.player)
+        PlayerManager.removePlayer(event.player.uniqueId)
     }
 }
 
@@ -96,17 +96,17 @@ import org.jspecify.annotations.NullMarked
 
             ServerScheduler.runLater(server, 600L) {
                 if (player.isAlive &&
-                    PlayerManager.getVersion(player) == null &&
-                    !PlayerManager.hasBeenNotifiedAboutModRequired(player)
+                    PlayerManager.getVersion(player.uuid) == null &&
+                    !PlayerManager.hasBeenNotifiedAboutModRequired(player.uuid)
                 ) {
                     MessageUtil.sendMessage(player, "modRequired")
-                    PlayerManager.setModRequiredNotified(player, true)
+                    PlayerManager.setModRequiredNotified(player.uuid, true)
                 }
             }
         }
 
         ServerPlayConnectionEvents.DISCONNECT.register { handler, _ ->
-            PlayerManager.removeVersion(handler.player)
+            PlayerManager.removePlayer(handler.player.uuid)
         }
     }
 }

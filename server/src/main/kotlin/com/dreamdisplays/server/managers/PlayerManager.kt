@@ -1,11 +1,10 @@
 package com.dreamdisplays.server.managers
 
-import org.semver4j.Semver
-import io.github.arsmotorin.ofrat.*
-import net.minecraft.server.level.ServerPlayer
-import org.bukkit.entity.Player
+import com.dreamdisplays.server.platform.PlatformPlayer
+import com.dreamdisplays.server.platform.platformUuid
 import org.jspecify.annotations.NullMarked
-import java.util.*
+import org.semver4j.Semver
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -25,10 +24,7 @@ import java.util.concurrent.ConcurrentHashMap
     }
 
     /** Records the mod [version] reported by [player] for compatibility checks. */
-    @PaperOnly @JvmStatic fun setVersion(player: Player, version: Semver?) = setVersion(player.uniqueId, version)
-
-    /** Records the mod [version] reported by [player] for compatibility checks. */
-    @FabricOnly fun setVersion(player: ServerPlayer, version: Semver?) = setVersion(player.uuid, version)
+    @JvmStatic fun setVersion(player: PlatformPlayer, version: Semver?) = setVersion(player.platformUuid, version)
 
     /** Drops all cached per-player state on disconnect. */
     fun removePlayer(uuid: UUID) {
@@ -40,10 +36,7 @@ import java.util.concurrent.ConcurrentHashMap
     }
 
     /** Drops all cached per-player state on disconnect. */
-    @PaperOnly fun removeVersion(player: Player) = removePlayer(player.uniqueId)
-
-    /** Drops all cached per-player state on disconnect. */
-    @FabricOnly fun removeVersion(player: ServerPlayer) = removePlayer(player.uuid)
+    fun removeVersion(player: PlatformPlayer) = removePlayer(player.platformUuid)
 
     /** Returns a defensive copy of the per-player version map. */
     @JvmStatic fun getVersions(): Map<UUID, Semver?> = HashMap(versions)
@@ -52,21 +45,14 @@ import java.util.concurrent.ConcurrentHashMap
     fun getVersion(uuid: UUID): Semver? = versions[uuid]
 
     /** Returns the mod version reported by [player], or null if none was reported. */
-    @PaperOnly @JvmStatic fun getVersion(player: Player): Semver? = getVersion(player.uniqueId)
-
-    /** Returns the mod version reported by [player], or null if none was reported. */
-    @FabricOnly fun getVersion(player: ServerPlayer): Semver? = getVersion(player.uuid)
+    @JvmStatic fun getVersion(player: PlatformPlayer): Semver? = getVersion(player.platformUuid)
 
     /** Returns true if [uuid] has already been informed about a mod update. */
     fun hasBeenNotifiedAboutModUpdate(uuid: UUID): Boolean = uuid in modUpdateNotified
 
     /** Returns true if [player] has already been informed about a mod update. */
-    @PaperOnly @JvmStatic fun hasBeenNotifiedAboutModUpdate(player: Player): Boolean =
-        hasBeenNotifiedAboutModUpdate(player.uniqueId)
-
-    /** Returns true if [player] has already been informed about a mod update. */
-    @FabricOnly fun hasBeenNotifiedAboutModUpdate(player: ServerPlayer): Boolean =
-        hasBeenNotifiedAboutModUpdate(player.uuid)
+    @JvmStatic fun hasBeenNotifiedAboutModUpdate(player: PlatformPlayer): Boolean =
+        hasBeenNotifiedAboutModUpdate(player.platformUuid)
 
     /** Marks whether [uuid] has been notified about a mod update. */
     fun setModUpdateNotified(uuid: UUID, notified: Boolean) {
@@ -74,23 +60,15 @@ import java.util.concurrent.ConcurrentHashMap
     }
 
     /** Marks whether [player] has been notified about a mod update. */
-    @PaperOnly @JvmStatic fun setModUpdateNotified(player: Player, notified: Boolean) =
-        setModUpdateNotified(player.uniqueId, notified)
-
-    /** Marks whether [player] has been notified about a mod update. */
-    @FabricOnly fun setModUpdateNotified(player: ServerPlayer, notified: Boolean) =
-        setModUpdateNotified(player.uuid, notified)
+    @JvmStatic fun setModUpdateNotified(player: PlatformPlayer, notified: Boolean) =
+        setModUpdateNotified(player.platformUuid, notified)
 
     /** Returns true if [uuid] has already been informed about a plugin update. */
     fun hasBeenNotifiedAboutPluginUpdate(uuid: UUID): Boolean = uuid in pluginUpdateNotified
 
     /** Returns true if [player] has already been informed about a plugin update. */
-    @PaperOnly @JvmStatic fun hasBeenNotifiedAboutPluginUpdate(player: Player): Boolean =
-        hasBeenNotifiedAboutPluginUpdate(player.uniqueId)
-
-    /** Returns true if [player] has already been informed about a plugin update. */
-    @FabricOnly fun hasBeenNotifiedAboutPluginUpdate(player: ServerPlayer): Boolean =
-        hasBeenNotifiedAboutPluginUpdate(player.uuid)
+    @JvmStatic fun hasBeenNotifiedAboutPluginUpdate(player: PlatformPlayer): Boolean =
+        hasBeenNotifiedAboutPluginUpdate(player.platformUuid)
 
     /** Marks whether [uuid] has been notified about a plugin update. */
     fun setPluginUpdateNotified(uuid: UUID, notified: Boolean) {
@@ -98,23 +76,15 @@ import java.util.concurrent.ConcurrentHashMap
     }
 
     /** Marks whether [player] has been notified about a plugin update. */
-    @PaperOnly @JvmStatic fun setPluginUpdateNotified(player: Player, notified: Boolean) =
-        setPluginUpdateNotified(player.uniqueId, notified)
-
-    /** Marks whether [player] has been notified about a plugin update. */
-    @FabricOnly fun setPluginUpdateNotified(player: ServerPlayer, notified: Boolean) =
-        setPluginUpdateNotified(player.uuid, notified)
+    @JvmStatic fun setPluginUpdateNotified(player: PlatformPlayer, notified: Boolean) =
+        setPluginUpdateNotified(player.platformUuid, notified)
 
     /** Returns true if [uuid] has already been informed that the mod is required. */
     fun hasBeenNotifiedAboutModRequired(uuid: UUID): Boolean = uuid in modRequiredNotified
 
     /** Returns true if [player] has already been informed that the mod is required. */
-    @PaperOnly @JvmStatic fun hasBeenNotifiedAboutModRequired(player: Player): Boolean =
-        hasBeenNotifiedAboutModRequired(player.uniqueId)
-
-    /** Returns true if [player] has already been informed that the mod is required. */
-    @FabricOnly fun hasBeenNotifiedAboutModRequired(player: ServerPlayer): Boolean =
-        hasBeenNotifiedAboutModRequired(player.uuid)
+    @JvmStatic fun hasBeenNotifiedAboutModRequired(player: PlatformPlayer): Boolean =
+        hasBeenNotifiedAboutModRequired(player.platformUuid)
 
     /** Marks whether [uuid] has been notified that the mod is required. */
     fun setModRequiredNotified(uuid: UUID, notified: Boolean) {
@@ -122,12 +92,8 @@ import java.util.concurrent.ConcurrentHashMap
     }
 
     /** Marks whether [player] has been notified that the mod is required. */
-    @PaperOnly @JvmStatic fun setModRequiredNotified(player: Player, notified: Boolean) =
-        setModRequiredNotified(player.uniqueId, notified)
-
-    /** Marks whether [player] has been notified that the mod is required. */
-    @FabricOnly fun setModRequiredNotified(player: ServerPlayer, notified: Boolean) =
-        setModRequiredNotified(player.uuid, notified)
+    @JvmStatic fun setModRequiredNotified(player: PlatformPlayer, notified: Boolean) =
+        setModRequiredNotified(player.platformUuid, notified)
 
     /** Sets whether displays should be rendered for [uuid]. */
     fun setDisplaysEnabled(uuid: UUID, enabled: Boolean) {
@@ -135,21 +101,13 @@ import java.util.concurrent.ConcurrentHashMap
     }
 
     /** Sets whether displays should be rendered for [player]. */
-    @PaperOnly @JvmStatic fun setDisplaysEnabled(player: Player, enabled: Boolean) =
-        setDisplaysEnabled(player.uniqueId, enabled)
-
-    /** Sets whether displays should be rendered for [player]. */
-    @FabricOnly fun setDisplaysEnabled(player: ServerPlayer, enabled: Boolean) =
-        setDisplaysEnabled(player.uuid, enabled)
+    @JvmStatic fun setDisplaysEnabled(player: PlatformPlayer, enabled: Boolean) =
+        setDisplaysEnabled(player.platformUuid, enabled)
 
     /** Returns whether displays are enabled for [uuid] (defaults to true). */
     fun isDisplaysEnabled(uuid: UUID): Boolean = uuid !in displaysDisabled
 
     /** Returns whether displays are enabled for [player] (defaults to true). */
-    @PaperOnly @JvmStatic fun isDisplaysEnabled(player: Player): Boolean =
-        isDisplaysEnabled(player.uniqueId)
-
-    /** Returns whether displays are enabled for [player] (defaults to true). */
-    @FabricOnly fun isDisplaysEnabled(player: ServerPlayer): Boolean =
-        isDisplaysEnabled(player.uuid)
+    @JvmStatic fun isDisplaysEnabled(player: PlatformPlayer): Boolean =
+        isDisplaysEnabled(player.platformUuid)
 }

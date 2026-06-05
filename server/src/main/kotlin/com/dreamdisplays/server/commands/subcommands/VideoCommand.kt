@@ -3,6 +3,7 @@ package com.dreamdisplays.server.commands.subcommands
 import com.dreamdisplays.server.Main
 import com.dreamdisplays.server.managers.DisplayManager
 import com.dreamdisplays.server.managers.StateManager
+import com.dreamdisplays.server.platform.platformUuid
 import com.dreamdisplays.server.utils.MessageUtil
 import com.dreamdisplays.server.utils.RegionUtil
 import com.dreamdisplays.server.utils.YouTubeUtil
@@ -58,7 +59,7 @@ import java.util.*
             return
         }
 
-        if (data.ownerId != player.uniqueId) {
+        if (data.ownerId != player.platformUuid) {
             MessageUtil.sendMessage(player, "displayVideoNotOwner")
             return
         }
@@ -149,7 +150,7 @@ import java.util.*
         val data = DisplayManager.isContains(worldKey, targetPos)
             ?: return MessageUtil.sendMessage(player, "noDisplay").let { 0 }
 
-        if (data.ownerId != player.uuid && !ServerPacketHandler.isOpLevel2(player)) {
+        if (data.ownerId != player.platformUuid && !ServerPacketHandler.isOpLevel2(player)) {
             MessageUtil.sendMessage(player, "displayVideoNotOwner")
             return 0
         }

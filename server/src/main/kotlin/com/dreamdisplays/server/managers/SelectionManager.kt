@@ -5,6 +5,7 @@ import com.dreamdisplays.server.Server
 import com.dreamdisplays.server.datatypes.FabricSelectionData
 import com.dreamdisplays.server.datatypes.PaperSelectionData
 import com.dreamdisplays.server.datatypes.SelectionData
+import com.dreamdisplays.server.platform.platformUuid
 import com.dreamdisplays.server.utils.MessageUtil
 import com.dreamdisplays.server.utils.RegionUtil
 import io.github.arsmotorin.ofrat.*
@@ -26,8 +27,9 @@ object SelectionManager {
 
     /** Records the first selection corner for [player] and resets stale state if the world changed. */
     @PaperOnly fun setFirstPoint(player: Player, loc: Location, face: Any) {
-        val sel = (selectionPoints[player.uniqueId] as? PaperSelectionData)
-            ?: PaperSelectionData(player).also { selectionPoints[player.uniqueId] = it }
+        val playerId = player.platformUuid
+        val sel = (selectionPoints[playerId] as? PaperSelectionData)
+            ?: PaperSelectionData(player).also { selectionPoints[playerId] = it }
         if (sel.pos1?.world != loc.world || sel.pos2?.world != loc.world) sel.reset()
         sel.pos1 = loc.clone()
         sel.setFace(face as BlockFace)
@@ -37,8 +39,9 @@ object SelectionManager {
 
     /** Records the first selection corner for [player] and resets stale state if the world changed. */
     @FabricOnly fun setFirstPoint(player: ServerPlayer, pos: BlockPos, worldKey: String, face: Direction) {
-        val sel = (selectionPoints[player.uuid] as? FabricSelectionData)
-            ?: FabricSelectionData().also { selectionPoints[player.uuid] = it }
+        val playerId = player.platformUuid
+        val sel = (selectionPoints[playerId] as? FabricSelectionData)
+            ?: FabricSelectionData().also { selectionPoints[playerId] = it }
         if (sel.worldKey != worldKey) sel.reset()
         sel.pos1 = pos
         sel.worldKey = worldKey
@@ -49,7 +52,7 @@ object SelectionManager {
 
     /** Records the second selection corner, validating the worlds match the first point. */
     @PaperOnly fun setSecondPoint(player: Player, loc: Location) {
-        val sel = selectionPoints[player.uniqueId] as? PaperSelectionData ?: return
+        val sel = selectionPoints[player.platformUuid] as? PaperSelectionData ?: return
         if (sel.pos1 == null || sel.pos1?.world != loc.world) {
             sel.reset()
             MessageUtil.sendMessageWithMaterials(
@@ -65,7 +68,7 @@ object SelectionManager {
 
     /** Records the second selection corner, validating the worlds match the first point. */
     @FabricOnly fun setSecondPoint(player: ServerPlayer, pos: BlockPos, worldKey: String) {
-        val sel = selectionPoints[player.uuid] as? FabricSelectionData ?: return
+        val sel = selectionPoints[player.platformUuid] as? FabricSelectionData ?: return
         if (sel.pos1 == null || sel.worldKey != worldKey) {
             sel.reset()
             MessageUtil.sendMessageWithMaterials(
@@ -93,10 +96,10 @@ object SelectionManager {
     fun resetSelection(uuid: UUID) = selectionPoints.remove(uuid)?.reset()
 
     /** Clears [player]'s current selection. */
-    @PaperOnly fun resetSelection(player: Player) = resetSelection(player.uniqueId)
+    @PaperOnly fun resetSelection(player: Player) = resetSelection(player.platformUuid)
 
     /** Clears [player]'s current selection. */
-    @FabricOnly fun resetSelection(player: ServerPlayer) = resetSelection(player.uuid)
+    @FabricOnly fun resetSelection(player: ServerPlayer) = resetSelection(player.platformUuid)
 
     /** Returns true if [loc] is inside the bounding box defined by this selection. */
     @PaperOnly private fun PaperSelectionData.contains(loc: Location): Boolean {
