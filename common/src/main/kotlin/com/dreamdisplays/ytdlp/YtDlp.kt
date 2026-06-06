@@ -603,8 +603,11 @@ object YtDlp {
 
             val mime = (if (hasVideo) "video/" else "audio/") + (ext ?: "webm")
 
+            val width = optInt(f, "width")
+            val height = optInt(f, "height")
+
             val resolution: String? = if (hasVideo) {
-                val h = optInt(f)
+                val h = height
                 if (h != null && h > 0) "${h}p"
                 else extractResolution(optString(f, "resolution"), optString(f, "format_note"), optString(f, "format"))
             } else null
@@ -617,6 +620,7 @@ object YtDlp {
             result.add(
                 YtStream(
                     url, mime, container, protocol, resolution,
+                    width, height,
                     language, formatNote, vcodec, acodec, fps, tbr,
                     hasVideo, hasAudio, live, seekable, durationNanos
                 )
@@ -676,11 +680,11 @@ object YtDlp {
         }
     }
 
-    /** Reads the `height` field from [obj] as an int, returning null if absent or not parseable. */
-    private fun optInt(obj: JsonObject): Int? {
-        if (!obj.has("height") || obj.get("height").isJsonNull) return null
+    /** Reads an int field from [obj], returning null if absent or not parseable. */
+    private fun optInt(obj: JsonObject, key: String): Int? {
+        if (!obj.has(key) || obj.get(key).isJsonNull) return null
         return try {
-            obj.get("height").asInt
+            obj.get(key).asInt
         } catch (_: Exception) {
             null
         }

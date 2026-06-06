@@ -52,6 +52,7 @@ class DisplayScreen(
     var renderType: RenderType? = null
     var textureWidth: Int = 0
     var textureHeight: Int = 0
+    @Volatile var videoContentAspect: Double = 0.0
 
     var volume: Float = savedSettings.volume
         set(value) {

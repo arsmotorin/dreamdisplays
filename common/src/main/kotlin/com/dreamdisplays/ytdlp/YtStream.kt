@@ -10,6 +10,8 @@ class YtStream(
     val container: String?,
     val protocol: String?,
     val resolution: String?,
+    val width: Int?,
+    val height: Int?,
     val audioTrackId: String?,
     val audioTrackName: String?,
     private val vcodec: String?,

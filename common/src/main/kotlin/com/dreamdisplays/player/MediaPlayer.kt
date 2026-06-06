@@ -249,6 +249,7 @@ class MediaPlayer(
             durationHintNanos = prepared.durationNanos
             streams = prepared.streamSet
             lastQuality = MediaStreamSelector.parseQuality(prepared.streamSet.currentVideo)
+            displayScreen.videoContentAspect = prepared.streamSet.currentVideo.contentAspect()
             retryPolicy.reset()
 
             if (DEBUG) {
@@ -411,7 +412,14 @@ class MediaPlayer(
         val newSs = ss.copy(currentVideo = best, currentAudio = chosenAudio)
         streams = newSs
         lastQuality = MediaStreamSelector.parseQuality(best)
+        displayScreen.videoContentAspect = best.contentAspect()
         if (sessionManager.isPlaying) startStreams(newSs, pos) else clock.seekOffsetNanos = pos
+    }
+
+    private fun com.dreamdisplays.ytdlp.YtStream.contentAspect(): Double {
+        val w = width ?: return 0.0
+        val h = height ?: return 0.0
+        return if (w > 0 && h > 0) w / h.toDouble() else 0.0
     }
 
     /**
