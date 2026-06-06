@@ -52,10 +52,30 @@ sourceSets.main {
     kotlin.srcDir(project(":server").file("src/main/kotlin"))
 }
 
+// The shared access widener (classtweaker) is authored with the `official` namespace, which is
+// correct for the deobfuscated 26.x targets that use plain fabric-loom. The legacy obfuscated
+// 1.21.11 target uses fabric-loom-remap, which requires the `named` namespace instead. Materialize a
+// build-dir copy with the header rewritten to the namespace the active target needs, then point both
+// Loom and processResources at that copy so compile-time remapping and the runtime-bundled widener
+// agree. Loom reads this file during project configuration (Minecraft setup), so it must exist
+// eagerly rather than via a task action.
+val sourceClassTweaker = project(":common").file("src/main/resources/dreamdisplays.classtweaker")
+val classTweakerNamespace = if (isLegacyObfuscated) "named" else "official"
+val generatedClassTweaker = layout.buildDirectory.file("generated/classtweaker/dreamdisplays.classtweaker").get().asFile
+run {
+    val rewritten = sourceClassTweaker.readText().lineSequence().joinToString("\n") { line ->
+        if (line.startsWith("classTweaker v1 ")) "classTweaker v1 $classTweakerNamespace" else line
+    }
+    if (!generatedClassTweaker.exists() || generatedClassTweaker.readText() != rewritten) {
+        generatedClassTweaker.parentFile.mkdirs()
+        generatedClassTweaker.writeText(rewritten)
+    }
+}
+
 // Use the extension type directly (not the generated `loom { }` accessor) because the loom plugin
 // is applied imperatively above, so the type-safe accessor may not be generated.
 val loomExt = the<net.fabricmc.loom.api.LoomGradleExtensionAPI>()
-loomExt.accessWidenerPath.set(project(":common").file("src/main/resources/dreamdisplays.classtweaker"))
+loomExt.accessWidenerPath.set(generatedClassTweaker)
 
 dependencies {
     compileOnly(libs.ofratAnnotations)
@@ -95,7 +115,7 @@ dependencies {
 }
 
 tasks.processResources {
-    from(project(":common").file("src/main/resources/dreamdisplays.classtweaker"))
+    from(generatedClassTweaker)
     val projectVersion = project.version.toString()
     val fabricMcVer = scVersion("fabric.minecraft.dependency")
     inputs.property("version", projectVersion)
