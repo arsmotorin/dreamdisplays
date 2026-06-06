@@ -57,6 +57,7 @@ dependencies {
     shadow(libs.sqliteJdbc)
     shadow(libs.exposedCore)
     shadow(libs.exposedJdbc)
+    shadow(libs.exposedMigrationJdbc)
     shadow(libs.hikari)
 }
 
@@ -109,6 +110,9 @@ tasks.shadowJar {
         include(dependency("org.jetbrains.exposed:exposed-jdbc"))
         include(dependency("org.jetbrains.exposed:exposed-migration-core"))
         include(dependency("org.jetbrains.exposed:exposed-migration-jdbc"))
+        include(dependency("org.jetbrains.kotlinx:kotlinx-coroutines-core"))
+        include(dependency("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm"))
+        include(dependency("org.jetbrains.kotlinx:kotlinx-datetime-jvm"))
         include(dependency("com.zaxxer:HikariCP"))
     }
     val prefix = "com.dreamdisplays.libs"
@@ -116,6 +120,7 @@ tasks.shadowJar {
         "org.apache.commons.compress",
         "org.tukaani.xz",
         "kotlin",
+        "kotlinx",
         "org.jetbrains.annotations",
         "org.intellij.lang.annotations",
         "org.tomlj",
