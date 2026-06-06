@@ -4,7 +4,7 @@ import com.dreamdisplays.player.MediaPlayer
 import com.dreamdisplays.player.util.MediaUtil
 import com.dreamdisplays.player.util.daemon
 import com.dreamdisplays.render.AsyncTextureUploader
-import com.mojang.blaze3d.opengl.GlTexture
+import com.dreamdisplays.render.TextureUploadUtil
 import com.mojang.blaze3d.textures.GpuTexture
 import net.minecraft.client.Minecraft
 import org.slf4j.LoggerFactory
@@ -53,6 +53,7 @@ internal class VideoFramePipe(private val debugLabel: String) {
     private val frameAvailable = AtomicBoolean(false)
 
     private var uploader: AsyncTextureUploader? = null
+    private var rgbaUploadBuffer: ByteBuffer? = null
 
     private var uploadTotalNs = 0L
     private var uploadCount = 0
@@ -82,10 +83,15 @@ internal class VideoFramePipe(private val debugLabel: String) {
         if (Minecraft.getInstance().window.isMinimized) return
         buf.rewind()
         val start = System.nanoTime()
-        if (!texture.isClosed && texture is GlTexture) {
-            val textureUploader = uploader ?: AsyncTextureUploader(stateCache = true).also { uploader = it }
-            textureUploader.upload(texture.glId(), buf, texture.getWidth(0), texture.getHeight(0))
-        }
+        TextureUploadUtil.uploadRgb(
+            texture = texture,
+            src = buf,
+            w = texture.getWidth(0),
+            h = texture.getHeight(0),
+            glUploader = { uploader ?: AsyncTextureUploader(stateCache = true).also { uploader = it } },
+            rgbaScratch = rgbaUploadBuffer,
+            setRgbaScratch = { rgbaUploadBuffer = it },
+        )
         if (MediaPlayer.DEBUG) {
             uploadTotalNs += System.nanoTime() - start
             MediaPlayer.framesToGpu.incrementAndGet()
@@ -110,6 +116,7 @@ internal class VideoFramePipe(private val debugLabel: String) {
     fun cleanup() {
         uploader?.cleanup()
         uploader = null
+        rgbaUploadBuffer = null
     }
 
     /**
@@ -144,9 +151,9 @@ internal class VideoFramePipe(private val debugLabel: String) {
         terminated: AtomicBoolean, getAudioClock: () -> Long, onFirstFrame: () -> Unit, getBrightness: () -> Double,
         onEos: (stderr: String, normalEos: Boolean) -> Unit,
     ) {
-        val frameSize = w * h * 3
-        val bufA = ByteBuffer.allocateDirect(frameSize).order(ByteOrder.nativeOrder())
-        val bufB = ByteBuffer.allocateDirect(frameSize).order(ByteOrder.nativeOrder())
+        var frameSize = w * h * 3
+        var bufA = ByteBuffer.allocateDirect(frameSize).order(ByteOrder.nativeOrder())
+        var bufB = ByteBuffer.allocateDirect(frameSize).order(ByteOrder.nativeOrder())
         var spare: ByteBuffer = bufA
 
         var firstFrame = false
@@ -182,8 +189,18 @@ internal class VideoFramePipe(private val debugLabel: String) {
                         if (pw <= 0 || ph <= 0 || skip <= 0 || !skipBytes(input, skip)) { normalEos = true; break }
                         continue
                     }
+                    val requiredFrameSize = w * h * 3
+                    if (frameSize != requiredFrameSize || bufA.capacity() < requiredFrameSize || bufB.capacity() < requiredFrameSize) {
+                        frameSize = requiredFrameSize
+                        bufA = ByteBuffer.allocateDirect(frameSize).order(ByteOrder.nativeOrder())
+                        bufB = ByteBuffer.allocateDirect(frameSize).order(ByteOrder.nativeOrder())
+                        spare = bufA
+                        readyBufferRef.set(null)
+                        frameAvailable.set(false)
+                    }
+
                     spare.clear()
-                    if (!readFully(input, spare, rowBuf, w * h * 3)) { normalEos = true; break }
+                    if (!readFully(input, spare, rowBuf, requiredFrameSize)) { normalEos = true; break }
                     spare.flip()
 
                     lastFrameReceivedNanos.set(System.nanoTime())
@@ -292,9 +309,17 @@ internal class VideoFramePipe(private val debugLabel: String) {
 
     /** Reads exactly [size] bytes from [input] into [dst] using [tmp] as a scratch buffer. Returns false on premature EOF. */
     private fun readFully(input: InputStream, dst: ByteBuffer, tmp: ByteArray, size: Int): Boolean {
+        if (dst.remaining() < size) {
+            logger.warn("$debugLabel Frame buffer is too small: remaining=${dst.remaining()} required=$size.")
+            return false
+        }
         var remaining = size
         while (remaining > 0) {
-            val want = minOf(tmp.size, remaining)
+            val want = minOf(tmp.size, remaining, dst.remaining())
+            if (want <= 0) {
+                logger.warn("$debugLabel Frame buffer overflow guard hit: remaining=$remaining capacity=${dst.capacity()} limit=${dst.limit()}.")
+                return false
+            }
             val n = input.read(tmp, 0, want)
             if (n < 0) return false
             dst.put(tmp, 0, n)

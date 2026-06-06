@@ -3,7 +3,7 @@ package com.dreamdisplays.client.ui
 import com.dreamdisplays.Initializer
 import com.dreamdisplays.display.DisplayScreen
 import com.dreamdisplays.render.AsyncTextureUploader
-import com.mojang.blaze3d.opengl.GlTexture
+import com.dreamdisplays.render.TextureUploadUtil
 import com.mojang.blaze3d.platform.NativeImage
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
@@ -76,12 +76,14 @@ class PipOverlay(
     @Volatile var frameW = 0
     @Volatile var frameH = 0
     @Volatile private var frameVersion = 0L
+    @Volatile private var frameContentRect = ContentRect(0, 0, 0, 0)
     private var uploadedVersion = 0L
 
     private var dynamicTexture: DynamicTexture? = null
     private var textureId: Identifier? = null
     private var texW = 0; private var texH = 0
     private var uploader: AsyncTextureUploader? = null
+    private var rgbaUploadBuffer: ByteBuffer? = null
 
     var anchor: PipAnchor = PipAnchor.fromCorner(initialCorner)
     private var sizeFraction: Float = 0.25f
@@ -137,6 +139,7 @@ class PipOverlay(
 
         val prev = frontBuf
         frontBuf = back
+        frameContentRect = detectContentRect(back, w, h)
         backBuf = if (prev.capacity() >= size) prev else ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
         frameW = w; frameH = h
         frameVersion++
@@ -163,11 +166,15 @@ class PipOverlay(
             dynamicTexture = tex; texW = fw; texH = fh
         }
 
-        val gpuTex = tex.getTexture()
-        if (!gpuTex.isClosed && gpuTex is GlTexture) {
-            val textureUploader = uploader ?: AsyncTextureUploader(stateCache = true).also { uploader = it }
-            textureUploader.upload(gpuTex.glId(), buf, fw, fh)
-        }
+        TextureUploadUtil.uploadRgb(
+            texture = tex.getTexture(),
+            src = buf,
+            w = fw,
+            h = fh,
+            glUploader = { uploader ?: AsyncTextureUploader(stateCache = true).also { uploader = it } },
+            rgbaScratch = rgbaUploadBuffer,
+            setRgbaScratch = { rgbaUploadBuffer = it },
+        )
         uploadedVersion = v
     }
 
@@ -193,8 +200,13 @@ class PipOverlay(
         val sw = mc.window.guiScaledWidth
         val sh = mc.window.guiScaledHeight
         val fw = texW; val fh = texH
+        val detectedContent = frameContentRect
+        val content = detectedContent
+            .takeIf { it.w > 0 && it.h > 0 && it.w <= fw && it.h <= fh }
+            ?: contentRect(fw, fh, displayScreen.videoContentAspect)
+        val contentAspect = if (content.w > 0 && content.h > 0) content.w / content.h.toDouble() else 16.0 / 9.0
         val pipW = (sw * sizeFraction).toInt().coerceAtLeast(80)
-        val pipH = if (fw > 0) (pipW.toLong() * fh / fw).toInt().coerceAtLeast(45) else pipW * 9 / 16
+        val pipH = (pipW / contentAspect).toInt().coerceAtLeast(45)
 
         if (!posInitialized) {
             val (ax, ay) = anchor.position(sw, sh, pipW, pipH, MARGIN)
@@ -234,9 +246,22 @@ class PipOverlay(
         matrices.scale(scale, scale)
         matrices.translate(-pipW / 2f, -pipH / 2f)
 
-        // Letterbox + video
-        g.fill(0, 0, pipW, pipH, blendColor(PANEL_BG_OPAQUE, alpha))
-        g.blit(RenderPipelines.GUI_TEXTURED, id, 0, 0, 0f, 0f, pipW, pipH, fw, fh, fw, fh, blendColor(0xFFFFFFFF.toInt(), alpha))
+        // Video content only. The main display texture is padded to fit the in-world display.
+        g.blit(
+            RenderPipelines.GUI_TEXTURED,
+            id,
+            0,
+            0,
+            content.x.toFloat(),
+            content.y.toFloat(),
+            pipW,
+            pipH,
+            content.w,
+            content.h,
+            fw,
+            fh,
+            blendColor(0xFFFFFFFF.toInt(), alpha),
+        )
 
         // Border
         val active = hovering || dragging || resizing
@@ -334,6 +359,75 @@ class PipOverlay(
         return best
     }
 
+    private fun contentRect(frameW: Int, frameH: Int, contentAspect: Double): ContentRect {
+        if (frameW <= 0 || frameH <= 0) return ContentRect(0, 0, frameW, frameH)
+        if (contentAspect <= 0.0 || !contentAspect.isFinite()) return ContentRect(0, 0, frameW, frameH)
+
+        val frameAspect = frameW / frameH.toDouble()
+        return if (contentAspect > frameAspect) {
+            val contentH = (frameW / contentAspect).toInt().coerceIn(1, frameH)
+            ContentRect(0, (frameH - contentH) / 2, frameW, contentH)
+        } else {
+            val contentW = (frameH * contentAspect).toInt().coerceIn(1, frameW)
+            ContentRect((frameW - contentW) / 2, 0, contentW, frameH)
+        }
+    }
+
+    private fun detectContentRect(buf: ByteBuffer, w: Int, h: Int): ContentRect {
+        if (w <= 0 || h <= 0 || buf.limit() < w * h * 3) return ContentRect(0, 0, w, h)
+
+        var top = 0
+        while (top < h && isBlackRow(buf, w, top)) top++
+
+        var bottom = h - 1
+        while (bottom >= top && isBlackRow(buf, w, bottom)) bottom--
+
+        var left = 0
+        while (left < w && isBlackColumn(buf, w, h, left, top, bottom)) left++
+
+        var right = w - 1
+        while (right >= left && isBlackColumn(buf, w, h, right, top, bottom)) right--
+
+        if (right <= left || bottom <= top) return ContentRect(0, 0, w, h)
+        return ContentRect(left, top, right - left + 1, bottom - top + 1)
+    }
+
+    private fun isBlackRow(buf: ByteBuffer, w: Int, y: Int): Boolean {
+        var dark = 0
+        var samples = 0
+        val step = (w / EDGE_SCAN_SAMPLES).coerceAtLeast(1)
+        var x = 0
+        while (x < w) {
+            if (isBlackPixel(buf, w, x, y)) dark++
+            samples++
+            x += step
+        }
+        return samples > 0 && dark >= samples * EDGE_BLACK_RATIO_NUM / EDGE_BLACK_RATIO_DEN
+    }
+
+    private fun isBlackColumn(buf: ByteBuffer, w: Int, h: Int, x: Int, top: Int, bottom: Int): Boolean {
+        val start = top.coerceIn(0, h - 1)
+        val end = bottom.coerceIn(start, h - 1)
+        var dark = 0
+        var samples = 0
+        val step = ((end - start + 1) / EDGE_SCAN_SAMPLES).coerceAtLeast(1)
+        var y = start
+        while (y <= end) {
+            if (isBlackPixel(buf, w, x, y)) dark++
+            samples++
+            y += step
+        }
+        return samples > 0 && dark >= samples * EDGE_BLACK_RATIO_NUM / EDGE_BLACK_RATIO_DEN
+    }
+
+    private fun isBlackPixel(buf: ByteBuffer, w: Int, x: Int, y: Int): Boolean {
+        val i = (y * w + x) * 3
+        val r = buf.get(i).toInt() and 0xFF
+        val g = buf.get(i + 1).toInt() and 0xFF
+        val b = buf.get(i + 2).toInt() and 0xFF
+        return r <= EDGE_BLACK_THRESHOLD && g <= EDGE_BLACK_THRESHOLD && b <= EDGE_BLACK_THRESHOLD
+    }
+
     /** Returns the (x, y) top-left position of the resize handle in PiP-local coords. */
     private fun handlePixelPos(pipW: Int, pipH: Int): Pair<Int, Int> {
         val (sx, sy) = anchor.centerFacingCorner()
@@ -390,6 +484,7 @@ class PipOverlay(
     fun cleanup(mc: Minecraft) {
         try { uploader?.cleanup() } catch (_: Exception) {}
         uploader = null
+        rgbaUploadBuffer = null
         val id = textureId ?: return
         textureId = null
         try { mc.textureManager.release(id) } catch (_: Exception) {}
@@ -406,6 +501,10 @@ class PipOverlay(
         private const val RESIZE_SZ = 14
         private const val RESIZE_INSET = 6
         private const val SNAP_LERP_SPEED = 8f
+        private const val EDGE_SCAN_SAMPLES = 64
+        private const val EDGE_BLACK_THRESHOLD = 12
+        private const val EDGE_BLACK_RATIO_NUM = 15
+        private const val EDGE_BLACK_RATIO_DEN = 16
 
         private const val PANEL_BG_OPAQUE = 0xFF0A0A0A.toInt()
         private const val PANEL_BORDER = 0xFF606060.toInt()
@@ -423,4 +522,6 @@ class PipOverlay(
             return (a shl 24) or (color and 0x00FFFFFF)
         }
     }
+
+    private data class ContentRect(val x: Int, val y: Int, val w: Int, val h: Int)
 }
