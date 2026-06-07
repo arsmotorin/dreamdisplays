@@ -158,10 +158,10 @@ class DisplayScreen(
         textureHeight = qualityInt
 
         popoutWindow?.let { win ->
-            if (win.isOpen) newPlayer.setPopoutSink { buf, fw, fh -> win.updateFrame(buf, fw, fh) }
+            if (win.isOpen) newPlayer.setPopoutSink { buf, fw, fh -> win.updateFrame(buf, fw, fh, videoContentAspect) }
         }
         pipOverlay?.let { overlay ->
-            newPlayer.setPopoutSink { buf, fw, fh -> overlay.updateFrame(buf, fw, fh) }
+            newPlayer.setPopoutSink { buf, fw, fh -> overlay.updateFrame(buf, fw, fh, videoContentAspect) }
         }
 
         waitForMFInit(generation) {
@@ -329,7 +329,7 @@ class DisplayScreen(
             val newWin = win ?: VideoPopoutWindow {
                 mediaPlayer?.setPopoutSink(null)
             }.also { popoutWindow = it }
-            mp.setPopoutSink { buf, fw, fh -> newWin.updateFrame(buf, fw, fh) }
+            mp.setPopoutSink { buf, fw, fh -> newWin.updateFrame(buf, fw, fh, videoContentAspect) }
             newWin.open(w, h)
         } catch (e: Exception) {
             logger.warn("Could not open window: ${e.message}.")
@@ -345,7 +345,7 @@ class DisplayScreen(
         val overlay = PipOverlay(this, corner)
         if (PipOverlayManager.add(overlay)) {
             pipOverlay = overlay
-            mp.setPopoutSink { buf, fw, fh -> overlay.updateFrame(buf, fw, fh) }
+            mp.setPopoutSink { buf, fw, fh -> overlay.updateFrame(buf, fw, fh, videoContentAspect) }
         } else {
             logger.warn("No PiP corners available (max 4).")
         }
