@@ -38,6 +38,8 @@
 
 ### Features
 
+- Support 26.2-pre4 `Fabric` servers
+- Implement 1.21.11 support for `Fabric` servers
 - Back Java 21 support (if you're running on 1.21.11, you can still use Java 21 with this version instead of being forced to update to Java 25, as it was in previous versions)
 
 ### Improvements
