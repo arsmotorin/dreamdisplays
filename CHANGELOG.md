@@ -5,11 +5,11 @@
 ### Features
 
 - Support 26.2-pre4 version
-- Back 1.21.11 version support ([#91](https://github.com/arsmotorin/dreamdisplays/pull/91))
-- Support `Vulcan` for display rendering
-- Use `LoggerFactory` for logging
-- Use default config implementation instead of `AbstractConfig`
+- Back 1.21.11 support ([#91](https://github.com/arsmotorin/dreamdisplays/pull/91))
 - Use `Stonecutter` for the multiversion system
+- Support `Vulcan` for display rendering (`OpenGL` still supported)
+- Use default config implementation instead of `AbstractConfig`
+- Use `LoggerFactory` for logging
 - A bit fresher mod icon
 
 ### Improvements
@@ -34,6 +34,10 @@
 
 ## Server
 
+### Features
+
+- Back Java 21 support (if you're running on 1.21.11, you can still use Java 21 with this version instead of being forced to update to Java 25, as it was in previous versions)
+
 ### Improvements
 
 - Remove the useless report button in single-player
@@ -43,6 +47,7 @@
 ### Fixes
 
 - `MariaDB` compatibility issue ([#88](https://github.com/arsmotorin/dreamdisplays/pull/88))
+- Allow sending display enabled packets to clients
 
 # Version 1.7.1
 
