@@ -304,7 +304,7 @@ jobs:
           name: '[Paper] Dream Displays ${{ needs.metadata.outputs.version }}'
           version: paper-${{ needs.metadata.outputs.version }}
           version-type: ${{ needs.metadata.outputs.is_snapshot == 'true' && 'alpha' || 'release' }}
-          files: build/libs/dreamdisplays-paper-${{ matrix.mc }}-${{ needs.metadata.outputs.version }}.jar
+          files: build/libs/dreamdisplays-paper-${{ needs.metadata.outputs.version }}.jar
           changelog-file: changelog.md
           modrinth-id: dreamdisplays
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
@@ -313,6 +313,7 @@ jobs:
             paper
             purpur
           game-versions: ${{ steps.versions.outputs.paper_versions }}
+          game-version-filter: none
 
       - name: Publish Fabric to Modrinth
         uses: Kir-Antipov/mc-publish@v3.3
@@ -328,6 +329,7 @@ jobs:
             fabric
             quilt
           game-versions: ${{ steps.versions.outputs.mc_versions }}
+          game-version-filter: none
           dependencies: |
             fabric-api(required){modrinth:P7dR8mSH}
 
@@ -361,6 +363,7 @@ jobs:
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           loaders: neoforge
           game-versions: ${{ steps.versions.outputs.mc_versions }}
+          game-version-filter: none
 
       - name: Publish NeoForge to CurseForge
         if: steps.versions.outputs.curseforge_publishable == 'true'
