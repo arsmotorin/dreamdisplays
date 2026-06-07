@@ -173,7 +173,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
-    name: Publish ${{ matrix.mc }}
+    name: Publish to Modrinth and CurseForge
     runs-on: ubuntu-latest
     needs:
       - metadata
