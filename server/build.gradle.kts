@@ -63,7 +63,7 @@ dependencies {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-    options.release.set(providers.gradleProperty("java.version").get().toInt())
+    options.release.set(scVersion("java.version").toInt())
 }
 
 tasks.processResources {

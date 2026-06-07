@@ -1,4 +1,5 @@
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -7,7 +8,13 @@ plugins {
     id("org.jetbrains.kotlin.jvm")
 }
 
-private val javaVersion = providers.gradleProperty("java.version").get().toInt()
+private val activeVersion = rootProject.file("versions/active.txt").readText().trim()
+private val versionProps = Properties().apply {
+    rootProject.file("versions/$activeVersion/gradle.properties").inputStream().use { load(it) }
+}
+private fun scVersion(name: String): String = versionProps.getProperty(name)
+    ?: error("Missing Stonecutter version property '$name' for $activeVersion.")
+private val javaVersion = scVersion("java.version").toInt()
 
 java {
     toolchain { languageVersion.set(JavaLanguageVersion.of(javaVersion)) }
@@ -19,6 +26,11 @@ extensions.configure<KotlinJvmProjectExtension> {
 
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = Charsets.UTF_8.name()
+    options.release.set(javaVersion)
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    compilerOptions.jvmTarget.set(JvmTarget.fromTarget(javaVersion.toString()))
 }
 
 tasks.withType<Jar>().configureEach {
@@ -31,12 +43,7 @@ tasks.withType<Jar>().configureEach {
 // version into a generated source directory that the Kotlin source set compiles instead of the
 // checked-in source. For 26.x the source is already valid, so the transform is a verbatim copy.
 run {
-    val activeVersion = rootProject.file("versions/active.txt").readText().trim()
-    val versionProps = Properties().apply {
-        rootProject.file("versions/$activeVersion/gradle.properties").inputStream().use { load(it) }
-    }
-    val minecraftVersion = versionProps.getProperty("minecraft.version")
-        ?: error("Missing 'minecraft.version' for $activeVersion")
+    val minecraftVersion = scVersion("minecraft.version")
     val legacy = minecraftVersion.startsWith("1.")
 
     val sourceDir = layout.projectDirectory.dir("src/main/kotlin").asFile
