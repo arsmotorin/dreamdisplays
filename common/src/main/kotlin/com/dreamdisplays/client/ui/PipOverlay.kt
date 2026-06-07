@@ -76,7 +76,7 @@ class PipOverlay(
     @Volatile var frameW = 0
     @Volatile var frameH = 0
     @Volatile private var frameVersion = 0L
-    @Volatile private var frameContentRect = ContentRect(0, 0, 0, 0)
+    @Volatile private var contentAspect = 0.0
     private var uploadedVersion = 0L
 
     private var dynamicTexture: DynamicTexture? = null
@@ -121,7 +121,7 @@ class PipOverlay(
     val isFinished: Boolean get() = closing && animProgress < 0.01f
     val isDragging: Boolean get() = dragging
 
-    fun updateFrame(buf: ByteBuffer, w: Int, h: Int) {
+    fun updateFrame(buf: ByteBuffer, w: Int, h: Int, aspect: Double) {
         val size = w * h * 3
         if (size <= 0 || buf.remaining() < size) return
         var back = backBuf
@@ -139,8 +139,8 @@ class PipOverlay(
 
         val prev = frontBuf
         frontBuf = back
-        frameContentRect = detectContentRect(back, w, h)
         backBuf = if (prev.capacity() >= size) prev else ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+        contentAspect = aspect
         frameW = w; frameH = h
         frameVersion++
     }
@@ -200,10 +200,7 @@ class PipOverlay(
         val sw = mc.window.guiScaledWidth
         val sh = mc.window.guiScaledHeight
         val fw = texW; val fh = texH
-        val detectedContent = frameContentRect
-        val content = detectedContent
-            .takeIf { it.w > 0 && it.h > 0 && it.w <= fw && it.h <= fh }
-            ?: contentRect(fw, fh, displayScreen.videoContentAspect)
+        val content = contentRect(fw, fh, contentAspect)
         val contentAspect = if (content.w > 0 && content.h > 0) content.w / content.h.toDouble() else 16.0 / 9.0
         val pipW = (sw * sizeFraction).toInt().coerceAtLeast(80)
         val pipH = (pipW / contentAspect).toInt().coerceAtLeast(45)
@@ -373,61 +370,6 @@ class PipOverlay(
         }
     }
 
-    private fun detectContentRect(buf: ByteBuffer, w: Int, h: Int): ContentRect {
-        if (w <= 0 || h <= 0 || buf.limit() < w * h * 3) return ContentRect(0, 0, w, h)
-
-        var top = 0
-        while (top < h && isBlackRow(buf, w, top)) top++
-
-        var bottom = h - 1
-        while (bottom >= top && isBlackRow(buf, w, bottom)) bottom--
-
-        var left = 0
-        while (left < w && isBlackColumn(buf, w, h, left, top, bottom)) left++
-
-        var right = w - 1
-        while (right >= left && isBlackColumn(buf, w, h, right, top, bottom)) right--
-
-        if (right <= left || bottom <= top) return ContentRect(0, 0, w, h)
-        return ContentRect(left, top, right - left + 1, bottom - top + 1)
-    }
-
-    private fun isBlackRow(buf: ByteBuffer, w: Int, y: Int): Boolean {
-        var dark = 0
-        var samples = 0
-        val step = (w / EDGE_SCAN_SAMPLES).coerceAtLeast(1)
-        var x = 0
-        while (x < w) {
-            if (isBlackPixel(buf, w, x, y)) dark++
-            samples++
-            x += step
-        }
-        return samples > 0 && dark >= samples * EDGE_BLACK_RATIO_NUM / EDGE_BLACK_RATIO_DEN
-    }
-
-    private fun isBlackColumn(buf: ByteBuffer, w: Int, h: Int, x: Int, top: Int, bottom: Int): Boolean {
-        val start = top.coerceIn(0, h - 1)
-        val end = bottom.coerceIn(start, h - 1)
-        var dark = 0
-        var samples = 0
-        val step = ((end - start + 1) / EDGE_SCAN_SAMPLES).coerceAtLeast(1)
-        var y = start
-        while (y <= end) {
-            if (isBlackPixel(buf, w, x, y)) dark++
-            samples++
-            y += step
-        }
-        return samples > 0 && dark >= samples * EDGE_BLACK_RATIO_NUM / EDGE_BLACK_RATIO_DEN
-    }
-
-    private fun isBlackPixel(buf: ByteBuffer, w: Int, x: Int, y: Int): Boolean {
-        val i = (y * w + x) * 3
-        val r = buf.get(i).toInt() and 0xFF
-        val g = buf.get(i + 1).toInt() and 0xFF
-        val b = buf.get(i + 2).toInt() and 0xFF
-        return r <= EDGE_BLACK_THRESHOLD && g <= EDGE_BLACK_THRESHOLD && b <= EDGE_BLACK_THRESHOLD
-    }
-
     /** Returns the (x, y) top-left position of the resize handle in PiP-local coords. */
     private fun handlePixelPos(pipW: Int, pipH: Int): Pair<Int, Int> {
         val (sx, sy) = anchor.centerFacingCorner()
@@ -501,10 +443,6 @@ class PipOverlay(
         private const val RESIZE_SZ = 14
         private const val RESIZE_INSET = 6
         private const val SNAP_LERP_SPEED = 8f
-        private const val EDGE_SCAN_SAMPLES = 64
-        private const val EDGE_BLACK_THRESHOLD = 12
-        private const val EDGE_BLACK_RATIO_NUM = 15
-        private const val EDGE_BLACK_RATIO_DEN = 16
 
         private const val PANEL_BG_OPAQUE = 0xFF0A0A0A.toInt()
         private const val PANEL_BORDER = 0xFF606060.toInt()

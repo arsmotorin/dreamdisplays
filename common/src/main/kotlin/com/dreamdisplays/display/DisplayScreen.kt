@@ -57,7 +57,7 @@ class DisplayScreen(
     var volume: Float = savedSettings.volume
         set(value) {
             field = value
-            setVideoVolume(value)
+            applyEffectiveVolume()
             DisplaySettings.updateSettings(uuid, value, quality, brightness, muted, paused)
         }
     var brightness: Float = savedSettings.brightness
@@ -74,6 +74,7 @@ class DisplayScreen(
         }
     private var videoStarted: Boolean = false
     private var paused: Boolean = savedSettings.paused
+    private var focusMuted: Boolean = false
     var renderDistance: Int = 64
     var savedTimeNanos: Long = 0
     @Volatile private var serverSyncReceivedAt: Long = 0L
@@ -157,10 +158,10 @@ class DisplayScreen(
         textureHeight = qualityInt
 
         popoutWindow?.let { win ->
-            if (win.isOpen) newPlayer.setPopoutSink { buf, fw, fh -> win.updateFrame(buf, fw, fh) }
+            if (win.isOpen) newPlayer.setPopoutSink { buf, fw, fh -> win.updateFrame(buf, fw, fh, videoContentAspect) }
         }
         pipOverlay?.let { overlay ->
-            newPlayer.setPopoutSink { buf, fw, fh -> overlay.updateFrame(buf, fw, fh) }
+            newPlayer.setPopoutSink { buf, fw, fh -> overlay.updateFrame(buf, fw, fh, videoContentAspect) }
         }
 
         waitForMFInit(generation) {
@@ -303,6 +304,14 @@ class DisplayScreen(
         mediaPlayer?.setVolume(volume)
     }
 
+    /**
+     * Applies the effective volume to the media player, which is 0 if either [muted] or [focusMuted] is true,
+     * otherwise the user's set [volume].
+     */
+    private fun applyEffectiveVolume() {
+        setVideoVolume(if (muted || focusMuted) 0f else volume)
+    }
+
     /** Opens or focuses the `GLFW` window mode. Closes PiP if active. */
     fun activateWindowMode() {
         if (!VideoPopoutWindow.isAvailable) return
@@ -320,7 +329,7 @@ class DisplayScreen(
             val newWin = win ?: VideoPopoutWindow {
                 mediaPlayer?.setPopoutSink(null)
             }.also { popoutWindow = it }
-            mp.setPopoutSink { buf, fw, fh -> newWin.updateFrame(buf, fw, fh) }
+            mp.setPopoutSink { buf, fw, fh -> newWin.updateFrame(buf, fw, fh, videoContentAspect) }
             newWin.open(w, h)
         } catch (e: Exception) {
             logger.warn("Could not open window: ${e.message}.")
@@ -336,7 +345,7 @@ class DisplayScreen(
         val overlay = PipOverlay(this, corner)
         if (PipOverlayManager.add(overlay)) {
             pipOverlay = overlay
-            mp.setPopoutSink { buf, fw, fh -> overlay.updateFrame(buf, fw, fh) }
+            mp.setPopoutSink { buf, fw, fh -> overlay.updateFrame(buf, fw, fh, videoContentAspect) }
         } else {
             logger.warn("No PiP corners available (max 4).")
         }
@@ -354,7 +363,7 @@ class DisplayScreen(
     fun startVideo() {
         val mp = mediaPlayer ?: return
         videoStarted = true
-        setVideoVolume(if (muted) 0f else volume)
+        applyEffectiveVolume()
         mp.setBrightness(brightness)
         if (paused) mp.pause() else {
             mp.play()
@@ -455,10 +464,16 @@ class DisplayScreen(
     fun mute(status: Boolean) {
         if (muted == status) return
         muted = status
-        setVideoVolume(if (!status) volume else 0f)
+        applyEffectiveVolume()
         DisplaySettings.updateSettings(uuid, volume, quality, brightness, muted, paused)
     }
 
+    /** Applies temporary focus mute without changing the user's persisted mute setting. */
+    fun setFocusMuted(status: Boolean) {
+        if (focusMuted == status) return
+        focusMuted = status
+        applyEffectiveVolume()
+    }
 
     /** Allocates (or reallocates) the [DynamicTexture] and [RenderType] for the current quality setting. */
     fun createTexture() {

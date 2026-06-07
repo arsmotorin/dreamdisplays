@@ -18,10 +18,13 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.rendertype.RenderType
 import net.minecraft.resources.Identifier
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
+import org.slf4j.LoggerFactory
 import java.lang.reflect.Proxy
 
 @Suppress("UNUSED")
 class Client : ClientModInitializer, Mod {
+    private var customGeometryUnavailable = false
+
     override fun onInitializeClient() {
         Initializer.onModInit(this)
 
@@ -99,13 +102,19 @@ class Client : ClientModInitializer, Mod {
             context.javaClass.getMethod("submitNodeCollector").invoke(context)
         }.getOrNull()
 
-        if (submitNodeCollector == null) {
+        if (submitNodeCollector == null || customGeometryUnavailable) {
             ScreenRenderer.render(context.poseStack(), camera)
             return
         }
 
-        ScreenRenderer.render(context.poseStack(), camera) { type, appendVertices ->
-            submitCustomGeometry(context.poseStack(), submitNodeCollector, type, appendVertices)
+        runCatching {
+            ScreenRenderer.render(context.poseStack(), camera) { type, appendVertices ->
+                submitCustomGeometry(context.poseStack(), submitNodeCollector, type, appendVertices)
+            }
+        }.onFailure { e ->
+            customGeometryUnavailable = true
+            logger.warn("Fabric custom geometry submission unavailable, falling back to immediate rendering: ${e.message}.")
+            ScreenRenderer.render(context.poseStack(), camera)
         }
     }
 
@@ -132,5 +141,9 @@ class Client : ClientModInitializer, Mod {
         submitNodeCollector.javaClass
             .getMethod("submitCustomGeometry", PoseStack::class.java, RenderType::class.java, rendererClass)
             .invoke(submitNodeCollector, stack, type, renderer)
+    }
+
+    private companion object {
+        private val logger = LoggerFactory.getLogger("DreamDisplays/FabricClient")
     }
 }

@@ -31,6 +31,7 @@ class VideoPopoutWindow(private val onClose: () -> Unit) {
     private var backBuf: ByteBuffer = EMPTY_DIRECT
     @Volatile private var frameW = 0
     @Volatile private var frameH = 0
+    @Volatile private var contentAspect = 0.0
     private val frameVersion = AtomicLong(0)
     private var uploadedVersion = 0L
 
@@ -50,7 +51,7 @@ class VideoPopoutWindow(private val onClose: () -> Unit) {
     val isOpen: Boolean get() = windowHandle != 0L
 
     /** Direct -> direct memcpy frame updater. Called on the video reader thread. */
-    fun updateFrame(buf: ByteBuffer, w: Int, h: Int) {
+    fun updateFrame(buf: ByteBuffer, w: Int, h: Int, aspect: Double) {
         if (windowHandle == 0L) return
         val size = w * h * 3
         if (size <= 0 || buf.remaining() < size) return
@@ -68,6 +69,7 @@ class VideoPopoutWindow(private val onClose: () -> Unit) {
         val prev = frontBuf
         frontBuf = back
         backBuf = if (prev.capacity() >= size) prev else ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+        contentAspect = aspect
         frameW = w; frameH = h
         frameVersion.incrementAndGet()
     }
@@ -106,7 +108,7 @@ class VideoPopoutWindow(private val onClose: () -> Unit) {
             r.upload(buf, fw, fh)
             uploadedVersion = version
         }
-        r.draw(vw, vh, fw, fh)
+        r.draw(vw, vh, contentRect(fw, fh, contentAspect), fw, fh)
         GLFW.glfwSwapBuffers(handle)
 
         GLFW.glfwMakeContextCurrent(previousContext)
@@ -214,8 +216,25 @@ class VideoPopoutWindow(private val onClose: () -> Unit) {
         private val logger = LoggerFactory.getLogger("DreamDisplays/VideoPopout")
         const val isAvailable: Boolean = true
         private val EMPTY_DIRECT: ByteBuffer = ByteBuffer.allocateDirect(0).order(ByteOrder.nativeOrder())
+
+        private fun contentRect(frameW: Int, frameH: Int, contentAspect: Double): ContentRect {
+            if (frameW <= 0 || frameH <= 0) return ContentRect(0, 0, frameW, frameH)
+            if (contentAspect <= 0.0 || !contentAspect.isFinite()) return ContentRect(0, 0, frameW, frameH)
+
+            val frameAspect = frameW / frameH.toDouble()
+            return if (contentAspect > frameAspect) {
+                val contentH = (frameW / contentAspect).toInt().coerceIn(1, frameH)
+                ContentRect(0, (frameH - contentH) / 2, frameW, contentH)
+            } else {
+                val contentW = (frameH * contentAspect).toInt().coerceIn(1, frameW)
+                ContentRect((frameW - contentW) / 2, 0, contentW, frameH)
+            }
+        }
     }
+
 }
+
+private data class ContentRect(val x: Int, val y: Int, val w: Int, val h: Int)
 
 /** Minimal `OpenGL` 3.2 renderer. */
 private class QuadRenderer {
@@ -274,9 +293,9 @@ private class QuadRenderer {
     }
 
     /** Draws the quad. Must be called from the render thread. */
-    fun draw(vw: Int, vh: Int, fw: Int, fh: Int) {
-        val scale = minOf(vw.toFloat() / fw, vh.toFloat() / fh)
-        val dw = (fw * scale).toInt(); val dh = (fh * scale).toInt()
+    fun draw(vw: Int, vh: Int, content: ContentRect, fw: Int, fh: Int) {
+        val scale = minOf(vw.toFloat() / content.w, vh.toFloat() / content.h)
+        val dw = (content.w * scale).toInt(); val dh = (content.h * scale).toInt()
         val ox = (vw - dw) / 2; val oy = (vh - dh) / 2
 
         GL11.glClearColor(0f, 0f, 0f, 1f)
@@ -286,11 +305,24 @@ private class QuadRenderer {
 
         GL20.glUseProgram(program)
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId)
+        setCropUniform(content, fw, fh)
         GL30.glBindVertexArray(vao)
         GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 6)
         GL30.glBindVertexArray(0)
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
         GL20.glUseProgram(0)
+    }
+
+    private fun setCropUniform(content: ContentRect, fw: Int, fh: Int) {
+        val loc = GL20.glGetUniformLocation(program, "crop")
+        if (loc < 0) return
+        GL20.glUniform4f(
+            loc,
+            content.x / fw.toFloat(),
+            content.y / fh.toFloat(),
+            content.w / fw.toFloat(),
+            content.h / fh.toFloat(),
+        )
     }
 
     /** Cleans up GL resources. Must be called from the render thread. */
@@ -319,9 +351,10 @@ private class QuadRenderer {
             GL20.glShaderSource(fs, """
                 #version 150
                 uniform sampler2D tex;
+                uniform vec4 crop;
                 in vec2 vUv;
                 out vec4 fragColor;
-                void main() { fragColor = texture(tex, vUv); }
+                void main() { fragColor = texture(tex, crop.xy + vUv * crop.zw); }
             """.trimIndent())
             GL20.glCompileShader(fs)
 
