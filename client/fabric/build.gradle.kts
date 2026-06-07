@@ -75,6 +75,12 @@ run {
 val loomExt = the<net.fabricmc.loom.api.LoomGradleExtensionAPI>()
 loomExt.accessWidenerPath.set(generatedClassTweaker)
 
+configurations.register("mappedFabricApiElements") {
+    isCanBeConsumed = true
+    isCanBeResolved = false
+    extendsFrom(configurations.getByName("modCompileClasspathMapped"))
+}
+
 dependencies {
     compileOnly(libs.ofratAnnotations)
     "kotlinCompilerPluginClasspath"(libs.ofratPlugin)
