@@ -49,7 +49,16 @@ fun scVersion(name: String): String = stonecutterVersions.getProperty(name)
 val isLegacyObfuscated = scVersion("minecraft.version").startsWith("1.")
 
 sourceSets.main {
-    kotlin.srcDir(project(":server").file("src/main/kotlin"))
+    // Consume :server's chiseled output (version directives already resolved) rather than its raw
+    // source, so the active Minecraft version's branch is compiled here too.
+    kotlin.srcDir(project(":server").layout.buildDirectory.dir("generated/chisel/main/kotlin"))
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    dependsOn(":server:chiselSource")
+}
+tasks.matching { it.name == "sourcesJar" }.configureEach {
+    dependsOn(":server:chiselSource")
 }
 
 // The shared access widener (classtweaker) is authored with the `official` namespace, which is
