@@ -122,13 +122,18 @@ tasks.processResources {
     from(generatedClassTweaker)
     val projectVersion = project.version.toString()
     val fabricMcVer = scVersion("fabric.minecraft.dependency")
+    val javaVersion = scVersion("java.version")
     inputs.property("version", projectVersion)
     inputs.property("minecraftVersion", fabricMcVer)
+    inputs.property("javaVersion", javaVersion)
     filesMatching("fabric.mod.json") {
-        expand(mapOf("version" to projectVersion, "minecraftVersion" to fabricMcVer))
+        expand(mapOf("version" to projectVersion, "minecraftVersion" to fabricMcVer, "javaVersion" to javaVersion))
     }
     filesMatching("quilt.mod.json") {
-        expand(mapOf("version" to projectVersion, "minecraftVersion" to fabricMcVer))
+        expand(mapOf("version" to projectVersion, "minecraftVersion" to fabricMcVer, "javaVersion" to javaVersion))
+    }
+    filesMatching("dreamdisplays.mixins.json") {
+        expand(mapOf("javaVersion" to javaVersion))
     }
     filesMatching("assets/dreamdisplays/version.txt") {
         expand(mapOf("version" to projectVersion))
