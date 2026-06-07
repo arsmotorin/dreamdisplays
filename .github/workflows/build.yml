@@ -21,6 +21,7 @@ jobs:
       is_dev: ${{ steps.get_version.outputs.is_dev }}
       is_snapshot: ${{ steps.get_version.outputs.is_snapshot }}
       is_release: ${{ steps.get_version.outputs.is_release }}
+      is_marketplace_publishable: ${{ steps.get_version.outputs.is_marketplace_publishable }}
       stonecutter_versions: ${{ steps.stonecutter_versions.outputs.versions_json }}
       primary_stonecutter_version: ${{ steps.stonecutter_versions.outputs.primary_version }}
 
@@ -55,18 +56,26 @@ jobs:
           VERSION=$(grep '^version' gradle.properties | cut -d'=' -f2 | tr -d ' ')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-          if [[ "$VERSION" == *"-DEV"* ]]; then
+          if [[ "$VERSION" == *"-DEV" ]]; then
             echo "is_dev=true" >> $GITHUB_OUTPUT
             echo "is_snapshot=false" >> $GITHUB_OUTPUT
             echo "is_release=false" >> $GITHUB_OUTPUT
-          elif [[ "$VERSION" == *"-SNAPSHOT."* ]]; then
+            echo "is_marketplace_publishable=false" >> $GITHUB_OUTPUT
+          elif [[ "$VERSION" =~ ^[0-9]+(\.[0-9]+)*-SNAPSHOT\.[0-9]+$ ]]; then
             echo "is_dev=false" >> $GITHUB_OUTPUT
             echo "is_snapshot=true" >> $GITHUB_OUTPUT
             echo "is_release=false" >> $GITHUB_OUTPUT
-          else
+            echo "is_marketplace_publishable=true" >> $GITHUB_OUTPUT
+          elif [[ "$VERSION" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
             echo "is_dev=false" >> $GITHUB_OUTPUT
             echo "is_snapshot=false" >> $GITHUB_OUTPUT
             echo "is_release=true" >> $GITHUB_OUTPUT
+            echo "is_marketplace_publishable=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_dev=false" >> $GITHUB_OUTPUT
+            echo "is_snapshot=false" >> $GITHUB_OUTPUT
+            echo "is_release=false" >> $GITHUB_OUTPUT
+            echo "is_marketplace_publishable=false" >> $GITHUB_OUTPUT
           fi
 
   build:
@@ -178,7 +187,7 @@ jobs:
     needs:
       - metadata
       - build
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && needs.metadata.outputs.is_marketplace_publishable == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -203,6 +212,7 @@ jobs:
         run: |
           python3 - <<'EOF'
           import os
+          import re
 
           mc = "${{ matrix.mc }}"
           props = {}
@@ -216,7 +226,12 @@ jobs:
                   key, value = line.split("=", 1)
                   props[key.strip()] = value.strip()
 
-          publish_mc = "26.2" if mc.startswith("26.2") else props.get("fabric.minecraft.dependency", mc)
+          minecraft_version = props.get("minecraft.version", mc)
+          publish_mc = minecraft_version.split("-", 1)[0]
+          curseforge_publishable = (
+              re.fullmatch(r"\d+(?:\.\d+)*", minecraft_version) is not None
+              and minecraft_version != "1.21.11"
+          )
 
           paper_1_21 = ["1.21"] + [f"1.21.{p}" for p in range(1, 12)]
           paper_26_1 = ["26.1", "26.1.1", "26.1.2"]
@@ -225,6 +240,7 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write(f"mc={mc}\n")
               f.write(f"publish_mc={publish_mc}\n")
+              f.write(f"curseforge_publishable={str(curseforge_publishable).lower()}\n")
               f.write("mc_versions<<VERSIONS_EOF\n")
               f.write(publish_mc + "\n")
               f.write("VERSIONS_EOF\n")
@@ -280,17 +296,32 @@ jobs:
               f.write("\n".join(lines).strip() + "\n")
           EOF
 
-      - name: Publish Fabric
-        if: needs.metadata.outputs.is_release == 'true' || needs.metadata.outputs.is_snapshot == 'true'
+      - name: Publish Fabric to Modrinth
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           name: '[Fabric ${{ steps.versions.outputs.publish_mc }}] Dream Displays ${{ needs.metadata.outputs.version }}'
-          version: fabric-${{ matrix.mc }}-${{ needs.metadata.outputs.version }}
+          version: fabric-${{ steps.versions.outputs.publish_mc }}-${{ needs.metadata.outputs.version }}
           version-type: ${{ needs.metadata.outputs.is_snapshot == 'true' && 'alpha' || 'release' }}
           files: build/libs/dreamdisplays-fabric-${{ matrix.mc }}-${{ needs.metadata.outputs.version }}.jar
           changelog-file: changelog.md
           modrinth-id: dreamdisplays
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          loaders: |
+            fabric
+            quilt
+          game-versions: ${{ steps.versions.outputs.mc_versions }}
+          dependencies: |
+            fabric-api(required){modrinth:P7dR8mSH}
+
+      - name: Publish Fabric to CurseForge
+        if: steps.versions.outputs.curseforge_publishable == 'true'
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          name: '[Fabric ${{ steps.versions.outputs.publish_mc }}] Dream Displays ${{ needs.metadata.outputs.version }}'
+          version: fabric-${{ steps.versions.outputs.publish_mc }}-${{ needs.metadata.outputs.version }}
+          version-type: ${{ needs.metadata.outputs.is_snapshot == 'true' && 'alpha' || 'release' }}
+          files: build/libs/dreamdisplays-fabric-${{ matrix.mc }}-${{ needs.metadata.outputs.version }}.jar
+          changelog-file: changelog.md
           curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
           loaders: |
@@ -298,19 +329,30 @@ jobs:
             quilt
           game-versions: ${{ steps.versions.outputs.mc_versions }}
           dependencies: |
-            fabric-api(required){modrinth:P7dR8mSH}{curseforge:306612}
+            fabric-api(required){curseforge:306612}
 
-      - name: Publish NeoForge
-        if: needs.metadata.outputs.is_release == 'true' || needs.metadata.outputs.is_snapshot == 'true'
+      - name: Publish NeoForge to Modrinth
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           name: '[NeoForge ${{ steps.versions.outputs.publish_mc }}] Dream Displays ${{ needs.metadata.outputs.version }}'
-          version: neoforge-${{ matrix.mc }}-${{ needs.metadata.outputs.version }}
+          version: neoforge-${{ steps.versions.outputs.publish_mc }}-${{ needs.metadata.outputs.version }}
           version-type: ${{ needs.metadata.outputs.is_snapshot == 'true' && 'alpha' || 'release' }}
           files: build/libs/dreamdisplays-neoforge-${{ matrix.mc }}-${{ needs.metadata.outputs.version }}.jar
           changelog-file: changelog.md
           modrinth-id: dreamdisplays
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          loaders: neoforge
+          game-versions: ${{ steps.versions.outputs.mc_versions }}
+
+      - name: Publish NeoForge to CurseForge
+        if: steps.versions.outputs.curseforge_publishable == 'true'
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          name: '[NeoForge ${{ steps.versions.outputs.publish_mc }}] Dream Displays ${{ needs.metadata.outputs.version }}'
+          version: neoforge-${{ steps.versions.outputs.publish_mc }}-${{ needs.metadata.outputs.version }}
+          version-type: ${{ needs.metadata.outputs.is_snapshot == 'true' && 'alpha' || 'release' }}
+          files: build/libs/dreamdisplays-neoforge-${{ matrix.mc }}-${{ needs.metadata.outputs.version }}.jar
+          changelog-file: changelog.md
           curseforge-id: ${{ secrets.CURSEFORGE_PROJECT_ID }}
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
           loaders: neoforge
