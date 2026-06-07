@@ -64,6 +64,8 @@ object Initializer {
     private var hoveredDisplayScreen: DisplayScreen? = null
     private lateinit var mod: Mod
 
+    private const val MAX_DISPLAY_BLOCKS = 256
+
     /** Called once during mod startup; initializes config, `yt-dlp`, `FFmpeg`, disk cache, and the focuser thread. */
     fun onModInit(dreamDisplaysMod: Mod) {
         mod = dreamDisplaysMod
@@ -83,6 +85,10 @@ object Initializer {
     /** Handles an incoming [Packets.Info] packet: updates an existing screen or creates a new one if within render distance. */
     fun onDisplayInfoPacket(packet: Packets.Info) {
         if (!displaysEnabled) return
+        if (!isValidDisplaySize(packet.width, packet.height)) {
+            logger.warn("Ignoring display ${packet.uuid}: invalid size ${packet.width}x${packet.height}.")
+            return
+        }
 
         DisplayManager.screens[packet.uuid]?.let {
             it.updateData(packet)
@@ -140,6 +146,12 @@ object Initializer {
 
     /** Re-creates a display screen from previously saved [data] (used when the player re-enters render distance). */
     private fun restoreScreen(data: DisplaySettings.FullDisplayData) {
+        if (!isValidDisplaySize(data.width, data.height)) {
+            logger.warn("Skipping cached display ${data.uuid}: invalid size ${data.width}x${data.height}.")
+            DisplaySettings.removeDisplay(data.uuid)
+            return
+        }
+
         val displayScreen = DisplayScreen(
             data.uuid, data.ownerUuid, data.x, data.y, data.z, data.facing,
             data.width, data.height, data.isSync
@@ -180,6 +192,10 @@ object Initializer {
     /** Convenience wrapper over [distanceToScreen] that takes a [DisplaySettings.FullDisplayData] instead. */
     private fun distanceToData(data: DisplaySettings.FullDisplayData, playerPos: BlockPos) =
         distanceToScreen(data.x, data.y, data.z, data.width, data.height, data.facing, playerPos)
+
+    /** Checks if display dimensions are within adequate bounds to prevent rendering or resource issues. */
+    private fun isValidDisplaySize(width: Int, height: Int): Boolean =
+        width in 1..MAX_DISPLAY_BLOCKS && height in 1..MAX_DISPLAY_BLOCKS
 
     /** Reads the mod version from resources and sends it to the server via [Packets.Version]. */
     private fun checkVersionAndSendPacket() {
