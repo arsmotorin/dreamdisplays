@@ -25,6 +25,12 @@ object Initializer {
 
     /** Called once during mod startup; initializes config, `yt-dlp`, `FFmpeg`, disk cache, and the focuser thread. */
     fun onModInit(dreamDisplaysMod: Mod) {
+        // On macOS, VideoPopoutWindow uses GLFW (not AWT), so no AWT setup is needed.
+        // On Windows / Linux, AWT is used: override java.awt.headless so a JFrame can open.
+        // Must run before any AWT class initialises the Toolkit.
+        if (!System.getProperty("os.name", "").lowercase().startsWith("mac")) {
+            System.setProperty("java.awt.headless", "false")
+        }
         ClientPacketManager.bind(dreamDisplaysMod)
 
         logger.info("Starting Dream Displays...")

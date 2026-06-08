@@ -159,10 +159,15 @@ tasks.shadowJar {
     configurations = listOf(project.configurations.getByName("shadow"))
     archiveBaseName.set("dreamdisplays-fabric")
     archiveVersion.set("$activeStonecutterVersion-${rootProject.version}")
+    if (isLegacyObfuscated) {
+        archiveClassifier.set("dev-shadow")
+        destinationDirectory.set(layout.buildDirectory.dir("devlibs"))
+    }
     dependencies {
         include(project(":common"))
         include(dependency("org.xerial:sqlite-jdbc"))
         include(dependency("org.apache.commons:commons-compress"))
+        include(dependency("org.tukaani:xz"))
         include(dependency("org.jetbrains.kotlin:kotlin-stdlib"))
         include(dependency("org.jetbrains:annotations"))
         include(dependency("org.tomlj:tomlj"))
@@ -204,6 +209,24 @@ tasks.shadowJar {
     exclude("org/sqlite/native/Linux/x86/**")
     exclude("org/sqlite/native/Windows/x86/**")
     exclude("org/sqlite/native/Windows/armv7/**")
+}
+
+// If it's a legacy version (like 1.21.11 where the shadow jar is obfuscated), we need to remap the shadow jar with
+// loom's remapJar task to get proper mappings in the final artifact.
+if (isLegacyObfuscated) {
+    tasks.named<net.fabricmc.loom.task.RemapJarTask>("remapJar") {
+        dependsOn(tasks.shadowJar)
+        inputFile.set(tasks.shadowJar.flatMap { it.archiveFile })
+        addNestedDependencies.set(false)
+        archiveBaseName.set("dreamdisplays-fabric")
+        archiveVersion.set("$activeStonecutterVersion-${rootProject.version}")
+        archiveClassifier.set("")
+        destinationDirectory.set(rootProject.layout.buildDirectory.dir("libs"))
+    }
+}
+
+tasks.register("publishJar") {
+    dependsOn(if (isLegacyObfuscated) "remapJar" else "shadowJar")
 }
 
 tasks.withType<AbstractArchiveTask>().configureEach {

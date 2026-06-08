@@ -8,6 +8,7 @@ plugins {
 dependencies {
     api(libs.jspecify)
     api(libs.commonsCompress)
+    api(libs.tukaaniXz)
     api(libs.semver4j)
     compileOnly(libs.kotlinStdlib)
 }

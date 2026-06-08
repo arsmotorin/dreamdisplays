@@ -69,6 +69,7 @@ tasks.shadowJar {
     dependencies {
         include(project(":common"))
         include(dependency("org.apache.commons:commons-compress"))
+        include(dependency("org.tukaani:xz"))
         include(dependency("org.semver4j:semver4j"))
         include(dependency("org.jetbrains.kotlin:kotlin-stdlib"))
         include(dependency("org.jetbrains:annotations"))

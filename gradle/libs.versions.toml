@@ -2,6 +2,7 @@
 jspecify = "1.0.0"
 ofrat = "1.0.0"
 commonsCompress = "1.28.0"
+tukaaniXz = "1.12"
 tomlj = "1.1.1"
 semver4j = "6.0.0"
 sqliteJdbc = "3.53.1.0"
@@ -18,6 +19,7 @@ ofratAnnotations = { module = "com.github.arsmotorin.ofrat:ofrat-annotations", v
 ofratPlugin = { module = "com.github.arsmotorin.ofrat:ofrat-plugin", version.ref = "ofrat" }
 kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 commonsCompress = { module = "org.apache.commons:commons-compress", version.ref = "commonsCompress" }
+tukaaniXz = { module = "org.tukaani:xz", version.ref = "tukaaniXz" }
 tomlj = { module = "org.tomlj:tomlj", version.ref = "tomlj" }
 semver4j = { module = "org.semver4j:semver4j", version.ref = "semver4j" }
 sqliteJdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqliteJdbc" }
