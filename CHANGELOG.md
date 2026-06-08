@@ -1,3 +1,16 @@
+# Version 1.8.0-SNAPSHOT.2
+
+## Client
+
+### Fixes
+
+- Fix critical crash on the `Fabric` 1.21.11 version
+- Fix incompatibility between the popout window and `Vivecraft` mod
+
+## Server
+
+- No changes
+
 # Version 1.8.0-SNAPSHOT.1
 
 ## Client
@@ -18,8 +31,9 @@
 - Video frame pipeline stability and brightness handling
 - Enhance cookie handling and process management
 - Improve `Gradle` configuration
-- Remove INotSleep's utils
+- Workflow improvements
 - Improve the publishing system
+- Remove INotSleep's utils
 - Update dependencies
 
 ### Fixes
@@ -27,6 +41,7 @@
 - Critical `Quilt` entry point crash
 - Ancient bug between `NeoForge` and IntelliJ IDEA
 - `NeoForge` client shutdown on normal server disconnect
+- `FFmpeg` extraction on Linux ([#93](https://github.com/arsmotorin/dreamdisplays/issues/93))
 - Picture-in-Picture mode displays size calculation
 - Temporary focus mute no longer overwrites the user's mute setting
 - Unsafe server display cache filenames on some systems
@@ -36,6 +51,8 @@
 
 ### Features
 
+- Support 26.2-pre4 `Fabric` servers
+- Implement 1.21.11 support for `Fabric` servers
 - Back Java 21 support (if you're running on 1.21.11, you can still use Java 21 with this version instead of being forced to update to Java 25, as it was in previous versions)
 
 ### Improvements
