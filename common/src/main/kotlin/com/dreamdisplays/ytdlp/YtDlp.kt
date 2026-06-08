@@ -382,6 +382,9 @@ object YtDlp {
                 return fetchUncachedOnce(videoUrl, attempt)
             } catch (e: IOException) {
                 if (e.message?.contains("timed out") == true) throw e
+                // DRM-protected videos use encrypted streams that no player_client can extract,
+                // so retrying with a different client set is futile. Fail fast.
+                if (e.message?.contains("DRM protected", ignoreCase = true) == true) throw e
                 lastError = e
             }
         }
@@ -389,8 +392,11 @@ object YtDlp {
     }
 
     /**
-     * Single `yt-dlp` invocation for [videoUrl]. On [attempt] 0 uses web / ios / mweb clients;
-     * on [attempt] 1 falls back to android / tv_embedded / mweb for better bot resistance.
+     * Single `yt-dlp` invocation for [videoUrl]. The player-client set is chosen per [attempt]: the
+     * first try trusts `yt-dlp`'s defaults when account cookies are present, otherwise it uses
+     * web / ios / mweb. Any retry forces the `tv` / `android` / `ios` clients, even with cookies
+     * attached: `tv` resists YouTube's "Sign in to confirm you're not a bot" check, while
+     * `android` / `ios` are served non-DRM streams (so DRM-only `tv`/`web` formats don't block playback).
      */
     @Throws(IOException::class)
     private fun fetchUncachedOnce(videoUrl: String, attempt: Int = 0): List<YtStream> {
@@ -400,8 +406,12 @@ object YtDlp {
         val tempCookies = addCookieArgs(cmd)
 
         val hasCookieArg = cmd.any { it == "--cookies" || it == "--cookies-from-browser" }
-        if (!hasCookieArg) {
-            val clients = if (attempt == 0) "web,ios,mweb" else "android,tv_embedded,mweb"
+        val clients = when {
+            attempt > 0 -> "tv,android,ios"
+            !hasCookieArg -> "web,ios,mweb"
+            else -> null
+        }
+        if (clients != null) {
             cmd.addAll(listOf("--extractor-args", "youtube:player_client=$clients"))
         }
 
