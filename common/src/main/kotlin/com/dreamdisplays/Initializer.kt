@@ -1,6 +1,9 @@
 package com.dreamdisplays
 
-import com.dreamdisplays.client.ui.PipOverlayManager
+import com.dreamdisplays.client.core.DreamServices
+import com.dreamdisplays.client.core.getOrNull
+import com.dreamdisplays.client.overlay.OverlayManager
+import com.dreamdisplays.client.ui.MinecraftOverlayRenderContext
 import com.dreamdisplays.managers.ClientPacketManager
 import com.dreamdisplays.managers.ClientShutdownManager
 import com.dreamdisplays.managers.ClientStartupManager
@@ -67,7 +70,8 @@ object Initializer {
     /*fun onRenderHud(mc: Minecraft, graphics: GuiGraphics, partialTick: Float) {*/
         if (mc.level == null || mc.player == null) return
         if (MinecraftScreenUtil.currentScreen(mc) != null) return
-        PipOverlayManager.renderAll(mc, graphics, -1, -1, false, partialTick)
+        DreamServices.registry.getOrNull<OverlayManager>()
+            ?.renderAll(MinecraftOverlayRenderContext(mc, graphics, -1, -1, false, partialTick))
     }
 
     /** Delegates packet sending to the platform-specific [Mod] implementation. */

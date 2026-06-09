@@ -69,7 +69,7 @@ object PipOverlayManager : OverlayManager {
         overlays.clear()
     }
 
-    val isEmpty: Boolean get() = overlays.isEmpty()
+    override val isEmpty: Boolean get() = overlays.isEmpty()
 
     /**
      * Opens (or returns the already-open) PiP overlay for [displayId]. Returns null if no display

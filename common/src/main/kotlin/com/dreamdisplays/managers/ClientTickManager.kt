@@ -2,7 +2,10 @@ package com.dreamdisplays.managers
 
 import com.dreamdisplays.Initializer
 import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.client.core.DreamServices
+import com.dreamdisplays.client.core.getOrNull
 import com.dreamdisplays.client.input.DisplayInteraction
+import com.dreamdisplays.client.input.DisplayInteractionService
 import com.dreamdisplays.client.input.MinecraftDisplayInteractionService
 import com.dreamdisplays.client.ui.DisplayMenu
 import com.dreamdisplays.client.ui.PipOverlayManager
@@ -10,7 +13,6 @@ import com.dreamdisplays.display.DisplayManager
 import com.dreamdisplays.display.DisplayScreen
 import com.dreamdisplays.net.Packets
 import com.dreamdisplays.utils.GeneralUtil
-import com.dreamdisplays.utils.RayCastingUtil
 import net.minecraft.client.Minecraft
 import net.minecraft.client.multiplayer.ClientLevel
 import net.minecraft.world.effect.MobEffectInstance
@@ -57,8 +59,10 @@ object ClientTickManager {
             }
         }
 
-        // TODO: modify raycasting in future
-        val result = RayCastingUtil.rCBlock(64.0)
+        // Display under the crosshair, resolved through the DisplayInteractionService contract
+        // (replaces the inline RayCastingUtil + isInScreen mapping this manager used to duplicate).
+        val hoveredId = DreamServices.registry.getOrNull<DisplayInteractionService>()
+            ?.getCurrentTarget()?.displayId?.uuid
         hoveredDisplayScreen = null
         ClientStateManager.isOnScreen = false
         val player = minecraft.player ?: return
@@ -80,7 +84,7 @@ object ClientTickManager {
                     ClientStateManager.isOnScreen = false
                 }
             } else {
-                if (result != null && displayScreen.isInScreen(result.blockPos)) {
+                if (displayScreen.uuid == hoveredId) {
                     hoveredDisplayScreen = displayScreen
                     ClientStateManager.isOnScreen = true
                 }
