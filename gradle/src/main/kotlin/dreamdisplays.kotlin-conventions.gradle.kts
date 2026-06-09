@@ -68,11 +68,14 @@ run {
         }
     }
 
-    extensions.configure<KotlinJvmProjectExtension> {
-        sourceSets.named("main") {
-            kotlin.setSrcDirs(listOf(chiselDir))
+    // Only redirect the compiled source set to the generated copy for legacy (1.x) targets
+    if (legacy) {
+        extensions.configure<KotlinJvmProjectExtension> {
+            sourceSets.named("main") {
+                kotlin.setSrcDirs(listOf(chiselDir))
+            }
         }
+        tasks.withType<KotlinCompile>().configureEach { dependsOn(chiselSource) }
+        tasks.matching { it.name == "sourcesJar" }.configureEach { dependsOn(chiselSource) }
     }
-    tasks.withType<KotlinCompile>().configureEach { dependsOn(chiselSource) }
-    tasks.matching { it.name == "sourcesJar" }.configureEach { dependsOn(chiselSource) }
 }
