@@ -1,9 +1,13 @@
 package com.dreamdisplays.managers
 
 import com.dreamdisplays.Mod
+import com.dreamdisplays.client.capabilities.CapabilityNegotiationService
+import com.dreamdisplays.client.core.DreamServices
+import com.dreamdisplays.client.core.getOrNull
 import com.dreamdisplays.display.DisplayManager
 import com.dreamdisplays.display.DisplaySettings
 import com.dreamdisplays.net.Packets
+import com.dreamdisplays.protocol.ServerCapabilities
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import org.slf4j.LoggerFactory
 
@@ -42,6 +46,7 @@ object ClientPacketManager {
 
     fun handlePremium(packet: Packets.Premium) {
         ClientStateManager.isPremium = packet.premium
+        mergeServerCapabilities { it.copy(isPremium = packet.premium) }
     }
 
     fun handleIsAdmin(packet: Packets.IsAdmin) {
@@ -50,6 +55,13 @@ object ClientPacketManager {
 
     fun handleReportEnabled(packet: Packets.ReportEnabled) {
         ClientStateManager.isReportingEnabled = packet.enabled
+        mergeServerCapabilities { it.copy(isReportingEnabled = packet.enabled) }
+    }
+
+    /** Folds a legacy handshake flag into the [CapabilityNegotiationService] server snapshot. */
+    private fun mergeServerCapabilities(transform: (ServerCapabilities) -> ServerCapabilities) {
+        val service = DreamServices.registry.getOrNull<CapabilityNegotiationService>() ?: return
+        service.onServerCapabilities(transform(service.serverCapabilities ?: ServerCapabilities()))
     }
 
     fun handleClearCache(packet: Packets.ClearCache) {

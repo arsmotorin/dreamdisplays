@@ -1,7 +1,7 @@
 package com.dreamdisplays.managers
 
-import com.dreamdisplays.Initializer
 import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.client.capabilities.CapabilityNegotiationService
 import com.dreamdisplays.client.core.DreamServices
 import com.dreamdisplays.client.core.getOrNull
 import com.dreamdisplays.client.input.DisplayInteraction
@@ -10,21 +10,16 @@ import com.dreamdisplays.client.overlay.OverlayManager
 import com.dreamdisplays.client.ui.DisplayMenu
 import com.dreamdisplays.display.DisplayManager
 import com.dreamdisplays.display.DisplayScreen
-import com.dreamdisplays.net.Packets
-import com.dreamdisplays.utils.GeneralUtil
 import net.minecraft.client.Minecraft
 import net.minecraft.client.multiplayer.ClientLevel
 import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.effect.MobEffects
 import org.lwjgl.glfw.GLFW
-import org.slf4j.LoggerFactory
 
 /**
  * Handles per-tick client display state: level changes, hover, unloading, shortcuts, and focus mode.
  */
 object ClientTickManager {
-    private val logger = LoggerFactory.getLogger("DreamDisplays/ClientTickManager")
-
     private var wasPressed = false
     private var wasInMultiplayer = false
     @Volatile private var lastLevel: ClientLevel? = null
@@ -112,11 +107,8 @@ object ClientTickManager {
         }
     }
 
+    /** Kicks off the capability handshake (legacy Version packet) for the just-joined server. */
     private fun checkVersionAndSendPacket() {
-        try {
-            Initializer.sendPacket(Packets.Version(GeneralUtil.getModVersion()))
-        } catch (e: Exception) {
-            logger.error("Unable to get version", e)
-        }
+        DreamServices.registry.getOrNull<CapabilityNegotiationService>()?.advertise()
     }
 }

@@ -4,6 +4,10 @@ import com.dreamdisplays.api.DefaultDisplayService
 import com.dreamdisplays.api.DefaultPlaybackService
 import com.dreamdisplays.api.DisplayService
 import com.dreamdisplays.api.PlaybackService
+import com.dreamdisplays.client.capabilities.CapabilityNegotiationService
+import com.dreamdisplays.client.capabilities.ClientCapabilityDetector
+import com.dreamdisplays.client.capabilities.DefaultCapabilityNegotiationService
+import com.dreamdisplays.client.capabilities.MinecraftClientCapabilityDetector
 import com.dreamdisplays.client.input.DisplayInteractionService
 import com.dreamdisplays.client.input.MinecraftDisplayInteractionService
 import com.dreamdisplays.client.overlay.OverlayManager
@@ -12,10 +16,12 @@ import com.dreamdisplays.client.popout.PopoutManager
 import com.dreamdisplays.client.render.ClientRenderService
 import com.dreamdisplays.client.ui.PipOverlayManager
 import com.dreamdisplays.media.DefaultMediaResolverChain
+import com.dreamdisplays.media.DefaultMediaSessionManager
 import com.dreamdisplays.media.DefaultStreamSelector
 import com.dreamdisplays.media.YtDlpSearchService
 import com.dreamdisplays.media.api.MediaResolverChain
 import com.dreamdisplays.media.api.MediaSearchService
+import com.dreamdisplays.media.api.MediaSessionManager
 import com.dreamdisplays.media.api.StreamSelector
 import com.dreamdisplays.render.ScreenRenderer
 import com.dreamdisplays.ytdlp.NewPipeResolver
@@ -38,12 +44,17 @@ object DreamServices {
     private var bootstrapped = false
 
     /**
-     * Registers the default service graph exactly once:
-     *  - a [MediaResolverChain] containing the in-process [NewPipeResolver] (fast path, priority 10)
-     *    and the [YtDlpResolver] subprocess fallback (priority 0);
-     *  - the [OverlayManager] backed by [PipOverlayManager];
-     *  - the [DisplayInteractionService] backed by [MinecraftDisplayInteractionService];
-     *  - the [ClientRenderService] backed by [ScreenRenderer].
+     * Registers the default service graph exactly once.
+     *
+     * Media pipeline: [MediaResolverChain] ([NewPipeResolver] fast path at priority 10,
+     * [YtDlpResolver] subprocess fallback at 0), [MediaSearchService], [MediaSessionManager],
+     * and [StreamSelector].
+     *
+     * Displays and playback: [DisplayService], [PlaybackService], [OverlayManager],
+     * [PopoutManager], and [DisplayInteractionService].
+     *
+     * Client integration: [ClientRenderService] ([ScreenRenderer]), [ClientCapabilityDetector],
+     * and [CapabilityNegotiationService].
      */
     @Synchronized
     fun bootstrap() {
@@ -56,6 +67,7 @@ object DreamServices {
         }
         registry.register<MediaResolverChain>(resolverChain)
         registry.register<MediaSearchService>(YtDlpSearchService())
+        registry.register<MediaSessionManager>(DefaultMediaSessionManager())
         registry.register<StreamSelector>(DefaultStreamSelector())
         registry.register<OverlayManager>(PipOverlayManager)
         registry.register<DisplayInteractionService>(MinecraftDisplayInteractionService)
@@ -63,5 +75,9 @@ object DreamServices {
         registry.register<PopoutManager>(DefaultPopoutManager())
         registry.register<DisplayService>(DefaultDisplayService())
         registry.register<PlaybackService>(DefaultPlaybackService())
+        registry.register<ClientCapabilityDetector>(MinecraftClientCapabilityDetector)
+        registry.register<CapabilityNegotiationService>(
+            DefaultCapabilityNegotiationService(MinecraftClientCapabilityDetector)
+        )
     }
 }

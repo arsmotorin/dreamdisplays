@@ -56,7 +56,7 @@ class DefaultPopoutManager : PopoutManager {
     override fun isPipOpen(displayId: DisplayId): Boolean =
         DreamServices.registry.getOrNull<OverlayManager>()?.getOverlay(displayId) != null
 
-    /** Not surfaced — the frame sink lives inside the per-screen player pipeline. Always returns null. */
+    /** Not surfaced. The frame sink lives inside the per-screen player pipeline. Always returns null. */
     override fun getPopoutSink(displayId: DisplayId): VideoFrameSink? = null
 
     /** Subscribes [listener] to [PopoutEvent]s; close the returned handle to unsubscribe. */
