@@ -2,6 +2,7 @@ package com.dreamdisplays.ytdlp
 
 import com.dreamdisplays.Initializer
 import com.dreamdisplays.managers.ClientStateManager
+import com.dreamdisplays.media.api.MediaSearchResult
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -64,8 +65,8 @@ object YtDlp {
     private val IN_FLIGHT_FETCHES: ConcurrentMap<String, CompletableFuture<List<YtStream>>> = ConcurrentHashMap()
     private val SEARCH_CACHE: MutableMap<String, InfoCacheEntry> = lruCache(100)
     private val RELATED_CACHE: MutableMap<String, InfoCacheEntry> = lruCache(200)
-    private val IN_FLIGHT_SEARCHES: ConcurrentMap<String, CompletableFuture<List<YtVideoInfo>>> = ConcurrentHashMap()
-    private val IN_FLIGHT_RELATED: ConcurrentMap<String, CompletableFuture<List<YtVideoInfo>>> = ConcurrentHashMap()
+    private val IN_FLIGHT_SEARCHES: ConcurrentMap<String, CompletableFuture<List<MediaSearchResult>>> = ConcurrentHashMap()
+    private val IN_FLIGHT_RELATED: ConcurrentMap<String, CompletableFuture<List<MediaSearchResult>>> = ConcurrentHashMap()
 
     private fun <K, V> lruCache(maxSize: Int): MutableMap<K, V> =
         Collections.synchronizedMap(object : LinkedHashMap<K, V>(maxSize + 1, 0.75f, true) {
@@ -154,7 +155,7 @@ object YtDlp {
 
     /** Searches YouTube for [query] via InnerTube, returning up to [limit] results; uses a 30-minute in-memory cache. */
     @Throws(IOException::class)
-    fun search(query: String, limit: Int): List<YtVideoInfo> {
+    fun search(query: String, limit: Int): List<MediaSearchResult> {
         if (query.isBlank()) return ArrayList()
         val n = limit.coerceIn(1, 25)
         val key = query.trim().lowercase(Locale.ENGLISH) + "|" + n
@@ -181,7 +182,7 @@ object YtDlp {
 
     /** Fetches up to [limit] related videos for [videoId] via InnerTube; falls back to title search if none found. */
     @Throws(IOException::class)
-    fun related(videoId: String, limit: Int): List<YtVideoInfo> {
+    fun related(videoId: String, limit: Int): List<MediaSearchResult> {
         if (videoId.isBlank()) return ArrayList()
         val n = limit.coerceIn(1, 25)
         val key = "$videoId|$n"
@@ -358,10 +359,10 @@ object YtDlp {
     /** Waits up to 30 seconds for [future] to complete, unwraps the exception if it fails, and calls [cleanup] in both cases. */
     @Throws(IOException::class)
     private fun waitForInfoFuture(
-        future: CompletableFuture<List<YtVideoInfo>>,
+        future: CompletableFuture<List<MediaSearchResult>>,
         tag: String,
         cleanup: () -> Unit,
-    ): List<YtVideoInfo> {
+    ): List<MediaSearchResult> {
         try {
             return future.get(30, TimeUnit.SECONDS)
         } catch (e: CompletionException) {
@@ -992,6 +993,6 @@ object YtDlp {
         }
     }
 
-    private data class InfoCacheEntry(val results: List<YtVideoInfo>, val createdAtMs: Long)
+    private data class InfoCacheEntry(val results: List<MediaSearchResult>, val createdAtMs: Long)
     private data class CacheEntry(val streams: List<YtStream>, val createdAtMs: Long)
 }

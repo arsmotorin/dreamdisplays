@@ -1,6 +1,7 @@
 package com.dreamdisplays.ytdlp
 
 import com.dreamdisplays.managers.ClientStateManager
+import com.dreamdisplays.media.api.MediaSearchResult
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -32,7 +33,7 @@ object YouTubeInnerTube {
 
     /** Searches YouTube for [query] and returns up to [limit] video results via the InnerTube search endpoint. */
     @Throws(IOException::class)
-    fun search(query: String, limit: Int): List<YtVideoInfo> {
+    fun search(query: String, limit: Int): List<MediaSearchResult> {
         val body = baseContext().apply {
             addProperty("query", query)
         }
@@ -54,7 +55,7 @@ object YouTubeInnerTube {
 
     /** Returns up to [limit] related videos for [videoId], excluding the video itself. */
     @Throws(IOException::class)
-    fun related(videoId: String, limit: Int): List<YtVideoInfo> {
+    fun related(videoId: String, limit: Int): List<MediaSearchResult> {
         val result = next(videoId)
         val list = result.related.toMutableList()
         list.removeAll { it.id == videoId }
@@ -63,13 +64,13 @@ object YouTubeInnerTube {
 
     /** Fetches title, uploader, and view / like counts for a single [videoId]; returns null if the video is unavailable. */
     @Throws(IOException::class)
-    fun metadata(videoId: String): YtVideoInfo? {
+    fun metadata(videoId: String): MediaSearchResult? {
         val body = baseContext().apply {
             addProperty("videoId", videoId)
         }
         val root = post("next", body)
         val meta = extractWatchMetadata(root, videoId) ?: return null
-        return YtVideoInfo(
+        return MediaSearchResult(
             videoId, meta.title ?: return null, meta.uploader, null,
             meta.viewCountRaw, meta.likeCountRaw, meta.publishedText, meta.daysAgo
         )
@@ -80,7 +81,7 @@ object YouTubeInnerTube {
         val uploader: String?,
         val views: Long?,
         val likes: Long?,
-        val related: List<YtVideoInfo>,
+        val related: List<MediaSearchResult>,
     )
 
     private data class MetaHolder(
@@ -176,8 +177,8 @@ object YouTubeInnerTube {
     }
 
     /** Walks the InnerTube search response JSON and collects up to [limit] parsed video entries. */
-    private fun extractSearchVideos(root: JsonObject, limit: Int): List<YtVideoInfo> {
-        val out = ArrayList<YtVideoInfo>()
+    private fun extractSearchVideos(root: JsonObject, limit: Int): List<MediaSearchResult> {
+        val out = ArrayList<MediaSearchResult>()
         try {
             val sections = path(
                 root, "contents", "twoColumnSearchResultsRenderer", "primaryContents",
@@ -206,7 +207,7 @@ object YouTubeInnerTube {
     }
 
     /** Parses a single `videoRenderer` JSON object from search results; returns null for Shorts or missing IDs. */
-    private fun parseVideoRenderer(vr: JsonObject): YtVideoInfo? {
+    private fun parseVideoRenderer(vr: JsonObject): MediaSearchResult? {
         val id = optString(vr, "videoId") ?: return null
         if (looksLikeShorts(vr)) return null
         val title = runsText(vr.getAsJsonObject("title"))
@@ -218,7 +219,7 @@ object YouTubeInnerTube {
             ?: parseViews(simpleText(vr.getAsJsonObject("shortViewCountText")))
         val publishedText = simpleText(vr.getAsJsonObject("publishedTimeText"))
         val daysAgo = parseDaysAgo(publishedText)
-        return YtVideoInfo(id, title, uploader, duration, views, null, publishedText, daysAgo)
+        return MediaSearchResult(id, title, uploader, duration, views, null, publishedText, daysAgo)
     }
 
     /** Extracts title, channel, view count, and like count from a `next` endpoint response for [videoId]. */
@@ -271,8 +272,8 @@ object YouTubeInnerTube {
     }
 
     /** Parses up to [limit] related videos from a `next` response, skipping the video with id [selfId]. */
-    private fun extractRelatedVideos(root: JsonObject, selfId: String, limit: Int): List<YtVideoInfo> {
-        val out = ArrayList<YtVideoInfo>()
+    private fun extractRelatedVideos(root: JsonObject, selfId: String, limit: Int): List<MediaSearchResult> {
+        val out = ArrayList<MediaSearchResult>()
         try {
             val results = path(
                 root, "contents", "twoColumnWatchNextResults", "secondaryResults",
@@ -296,7 +297,7 @@ object YouTubeInnerTube {
     }
 
     /** Parses a `compactVideoRenderer` JSON object from the related-video sidebar; returns null for Shorts or missing IDs. */
-    private fun parseCompactVideoRenderer(cvr: JsonObject): YtVideoInfo? {
+    private fun parseCompactVideoRenderer(cvr: JsonObject): MediaSearchResult? {
         val id = optString(cvr, "videoId") ?: return null
         if (looksLikeShorts(cvr)) return null
         val title = simpleText(cvr.getAsJsonObject("title")) ?: id
@@ -307,7 +308,7 @@ object YouTubeInnerTube {
             ?: parseViews(simpleText(cvr.getAsJsonObject("shortViewCountText")))
         val publishedText = simpleText(cvr.getAsJsonObject("publishedTimeText"))
         val daysAgo = parseDaysAgo(publishedText)
-        return YtVideoInfo(id, title, uploader, duration, views, null, publishedText, daysAgo)
+        return MediaSearchResult(id, title, uploader, duration, views, null, publishedText, daysAgo)
     }
 
     /** Navigates the nested `viewCount.videoViewCountRenderer.viewCount` path in [vp]; returns null if absent. */
