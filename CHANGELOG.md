@@ -2,10 +2,20 @@
 
 ## Client
 
+### Features
+
+- 10–12× faster video loading thanks to the `NewPipeExtractor`
+
+### Improvements
+
+- Disable Gradle configuration cache
+
 ### Fixes
 
 - Fix critical crash on the `Fabric` 1.21.11 version
 - Fix incompatibility between the popout window and `Vivecraft` mod
+- Fix DRM waiting issue
+- Less log spam
 
 ## Server
 
