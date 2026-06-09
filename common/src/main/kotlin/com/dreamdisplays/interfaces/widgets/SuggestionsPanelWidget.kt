@@ -1,6 +1,8 @@
 package com.dreamdisplays.client.ui.widgets
 
 import com.dreamdisplays.Initializer
+import com.dreamdisplays.client.ui.GuiGraphicsCompat
+import com.dreamdisplays.client.ui.drawText
 import com.dreamdisplays.ytdlp.Thumbnails
 import com.dreamdisplays.ytdlp.YouTubeInnerTube
 import com.dreamdisplays.ytdlp.YtDlp
@@ -462,9 +464,8 @@ class SuggestionsPanelWidget(
         return max(80, (th * CARD_W / THUMB_H.toDouble()).toInt())
     }
 
-    //? if >=26 {
     private fun renderCardSized(
-        g: GuiGraphicsExtractor, f: Font, info: YtVideoInfo, x: Int, y: Int,
+        g: GuiGraphicsCompat, f: Font, info: YtVideoInfo, x: Int, y: Int,
         w: Int, thumbH: Int, cardH: Int, hover: Boolean
     ) {
         val bg = if (hover) {
@@ -492,7 +493,7 @@ class SuggestionsPanelWidget(
             val tw = f.width(tag) + 4
             val th = f.lineHeight + 2
             g.fill(thumbX + 2, thumbY + 2, thumbX + 2 + tw, thumbY + 2 + th, 0xFFE53935.toInt())
-            g.text(f, tag, thumbX + 4, thumbY + 3, 0xFFFFFFFF.toInt(), false)
+            g.drawText(f, tag, thumbX + 4, thumbY + 3, 0xFFFFFFFF.toInt(), false)
         }
 
         val dur = info.formatDuration()
@@ -502,7 +503,7 @@ class SuggestionsPanelWidget(
             val dx = thumbX + thumbW - dw - 2
             val dy = thumbY + thumbH - dh - 2
             g.fill(dx, dy, dx + dw, dy + dh, 0xC0000000.toInt())
-            g.text(f, dur, dx + 2, dy + 2, 0xFFFFFFFF.toInt(), false)
+            g.drawText(f, dur, dx + 2, dy + 2, 0xFFFFFFFF.toInt(), false)
         }
 
         if (compactCards) return
@@ -512,7 +513,7 @@ class SuggestionsPanelWidget(
         var textY = thumbY + thumbH + 3
         val titleLines = wrap(f, info.title, textW, 2)
         for (line in titleLines) {
-            g.text(f, line, textX, textY, 0xFFFFFFFF.toInt(), false)
+            g.drawText(f, line, textX, textY, 0xFFFFFFFF.toInt(), false)
             textY += f.lineHeight + 1
         }
 
@@ -523,73 +524,9 @@ class SuggestionsPanelWidget(
             else trim(f, meta, max(20, textW - f.width(" • $views"))) + " • " + views
         }
         if (meta.isNotEmpty()) {
-            g.text(f, trim(f, meta, textW), textX, textY, 0xFFB8B8B8.toInt(), false)
+            g.drawText(f, trim(f, meta, textW), textX, textY, 0xFFB8B8B8.toInt(), false)
         }
     }
-    //?} else
-    /*private fun renderCardSized(
-        g: GuiGraphics, f: Font, info: YtVideoInfo, x: Int, y: Int,
-        w: Int, thumbH: Int, cardH: Int, hover: Boolean
-    ) {
-        val bg = if (hover) {
-            val pulse = (sin(System.currentTimeMillis() / 400.0 * Math.PI) * 0.5 + 0.5).toFloat()
-            val alpha = (0x60 + pulse * 0x30).toInt()
-            (alpha shl 24) or 0x707070
-        } else CARD_BG
-        g.fill(x, y, x + w, y + cardH, bg)
-
-        val thumbX = x + 2
-        val thumbY = y + 2
-        val thumbW = w - 4
-        val thumb = Thumbnails.get(info.id)
-        if (thumb != null) {
-            g.blit(
-                RenderPipelines.GUI_TEXTURED, thumb,
-                thumbX, thumbY, 0f, 0f, thumbW, thumbH, thumbW, thumbH
-            )
-        } else {
-            g.fill(thumbX, thumbY, thumbX + thumbW, thumbY + thumbH, 0xFF000000.toInt())
-        }
-
-        if (info.isRecent(7)) {
-            val tag = Component.translatable("dreamdisplays.ui.new").string
-            val tw = f.width(tag) + 4
-            val th = f.lineHeight + 2
-            g.fill(thumbX + 2, thumbY + 2, thumbX + 2 + tw, thumbY + 2 + th, 0xFFE53935.toInt())
-            g.drawString(f, tag, thumbX + 4, thumbY + 3, 0xFFFFFFFF.toInt(), false)
-        }
-
-        val dur = info.formatDuration()
-        if (dur.isNotEmpty()) {
-            val dw = f.width(dur) + 4
-            val dh = f.lineHeight + 2
-            val dx = thumbX + thumbW - dw - 2
-            val dy = thumbY + thumbH - dh - 2
-            g.fill(dx, dy, dx + dw, dy + dh, 0xC0000000.toInt())
-            g.drawString(f, dur, dx + 2, dy + 2, 0xFFFFFFFF.toInt(), false)
-        }
-
-        if (compactCards) return
-
-        val textX = x + 4
-        val textW = w - 8
-        var textY = thumbY + thumbH + 3
-        val titleLines = wrap(f, info.title, textW, 2)
-        for (line in titleLines) {
-            g.drawString(f, line, textX, textY, 0xFFFFFFFF.toInt(), false)
-            textY += f.lineHeight + 1
-        }
-
-        var meta = info.uploader ?: ""
-        val views = info.formatViews()
-        if (views.isNotEmpty()) {
-            meta = if (meta.isEmpty()) views
-            else trim(f, meta, max(20, textW - f.width(" • $views"))) + " • " + views
-        }
-        if (meta.isNotEmpty()) {
-            g.drawString(f, trim(f, meta, textW), textX, textY, 0xFFB8B8B8.toInt(), false)
-        }
-    }*/
 
     override fun mouseScrolled(mouseX: Double, mouseY: Double, dx: Double, dy: Double): Boolean {
         if (!isMouseOver(mouseX, mouseY)) return false

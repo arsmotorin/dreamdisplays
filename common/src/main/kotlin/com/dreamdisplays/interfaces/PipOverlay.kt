@@ -432,10 +432,7 @@ class PipOverlay(
         return x to y
     }
 
-    //? if >=26 {
-    private fun renderResizeHandle(g: GuiGraphicsExtractor, hx: Int, hy: Int, alpha: Float) {
-    //?} else
-    /*private fun renderResizeHandle(g: GuiGraphics, hx: Int, hy: Int, alpha: Float) {*/
+    private fun renderResizeHandle(g: GuiGraphicsCompat, hx: Int, hy: Int, alpha: Float) {
         val (sx, sy) = anchor.centerFacingCorner()
         val color = blendColor(if (hoveringResize) ACCENT else 0xFFFFFFFF.toInt(), alpha)
         drawCornerBracket(g, hx, hy, sx, sy, 8, 0, color)
@@ -500,10 +497,7 @@ class PipOverlay(
         private const val PANEL_BORDER = 0xFF606060.toInt()
         private const val ACCENT = 0xFF4A90E2.toInt()
 
-        //? if >=26 {
-        private fun outline(g: GuiGraphicsExtractor, x1: Int, y1: Int, x2: Int, y2: Int, color: Int) {
-        //?} else
-        /*private fun outline(g: GuiGraphics, x1: Int, y1: Int, x2: Int, y2: Int, color: Int) {*/
+        private fun outline(g: GuiGraphicsCompat, x1: Int, y1: Int, x2: Int, y2: Int, color: Int) {
             g.fill(x1, y1, x2, y1 + 1, color)
             g.fill(x1, y2 - 1, x2, y2, color)
             g.fill(x1, y1, x1 + 1, y2, color)
