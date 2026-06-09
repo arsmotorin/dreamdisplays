@@ -1,6 +1,7 @@
 package com.dreamdisplays.display
 
 import com.dreamdisplays.api.DisplayFacing
+import com.dreamdisplays.media.api.VideoQuality
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import org.slf4j.LoggerFactory
@@ -107,14 +108,14 @@ object DisplaySettings {
     fun updateSettings(
         displayUuid: UUID,
         volume: Float,
-        quality: String,
+        quality: VideoQuality,
         brightness: Float,
         muted: Boolean,
         paused: Boolean,
     ) {
         val settings = getSettings(displayUuid)
         settings.volume = volume
-        settings.quality = quality
+        settings.quality = quality.serialize()
         settings.brightness = brightness
         settings.muted = muted
         settings.paused = paused

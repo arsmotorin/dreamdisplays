@@ -16,6 +16,7 @@ import com.dreamdisplays.client.core.getOrNull
 import com.dreamdisplays.media.api.DreamMediaException
 import com.dreamdisplays.media.api.MediaResolverChain
 import com.dreamdisplays.media.api.MediaSource
+import com.dreamdisplays.media.api.VideoQuality
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.client.renderer.rendertype.RenderSetup
@@ -73,7 +74,7 @@ class DisplayScreen(
             mediaPlayer?.setBrightness(field)
             DisplaySettings.updateSettings(uuid, volume, quality, field, muted, paused)
         }
-    var quality: String = savedSettings.quality
+    var quality: VideoQuality = VideoQuality.parse(savedSettings.quality)
         set(value) {
             field = value
             mediaPlayer?.setQuality(value)
@@ -503,14 +504,8 @@ class DisplayScreen(
         }
     }
 
-    /** Parses the quality string (e.g. "720p") to an integer; falls back to [DEFAULT_QUALITY] if unparseable. */
-    private fun parseQualityOrDefault(): Int = try {
-        val parsed = quality.replace("p", "").toInt()
-        if (parsed > 0) parsed else DEFAULT_QUALITY
-    } catch (_: NumberFormatException) {
-        logger.warn("Invalid quality value '$quality' for display $uuid, using ${DEFAULT_QUALITY}p.")
-        DEFAULT_QUALITY
-    }
+    /** Resolves the current quality to a target pixel height; [VideoQuality.Auto] falls back to [DEFAULT_QUALITY]. */
+    private fun parseQualityOrDefault(): Int = quality.targetHeight ?: DEFAULT_QUALITY
 
     /** Called every game tick to update distance-based volume attenuation from [pos]. */
     fun tick(pos: BlockPos) {

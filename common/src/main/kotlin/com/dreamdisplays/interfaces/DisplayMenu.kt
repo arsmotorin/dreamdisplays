@@ -14,6 +14,7 @@ import com.dreamdisplays.client.core.DreamServices
 import com.dreamdisplays.client.core.getOrNull
 import com.dreamdisplays.media.api.MediaSearchResult
 import com.dreamdisplays.media.api.MediaSearchService
+import com.dreamdisplays.media.api.VideoQuality
 import com.dreamdisplays.ytdlp.Thumbnails
 import com.dreamdisplays.ytdlp.VideoMetadataCache
 import com.dreamdisplays.ytdlp.VideoTitleCache
@@ -173,18 +174,18 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
 
         quality = object : SliderWidget(
             0, 0, 0, 0,
-            Component.literal("${ds.quality}p"),
-            qualityFraction(ds.quality)
+            Component.literal("${ds.quality.serialize()}p"),
+            qualityFraction(ds.quality.serialize())
         ) {
             override fun updateMessage() {
                 message = Component.literal(
                     if (ds.qualityList.isNotEmpty()) "${qualityFromFraction(value)}p"
-                    else "${ds.quality}p"
+                    else "${ds.quality.serialize()}p"
                 )
             }
 
             override fun applyValue() {
-                if (ds.qualityList.isNotEmpty()) ds.quality = qualityFromFraction(value)
+                if (ds.qualityList.isNotEmpty()) ds.quality = VideoQuality.parse(qualityFromFraction(value))
             }
         }
 
@@ -211,10 +212,10 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
             DisplayManager.saveScreenData(ds)
         }
         qualityReset = resetButton {
-            ds.quality = "720"
+            ds.quality = VideoQuality.DEFAULT
             quality?.let {
-                it.value = qualityFraction("720")
-                it.message = Component.literal("720p")
+                it.value = qualityFraction(VideoQuality.DEFAULT.serialize())
+                it.message = Component.literal("${VideoQuality.DEFAULT.serialize()}p")
             }
         }
         brightnessReset = resetButton {
@@ -385,7 +386,7 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
         val popoutLocked = ds.isPopoutActive
         syncReset?.active = videoReady && ds.canEdit && ds.isSync
         renderDReset?.active = videoReady && !popoutLocked && ds.renderDistance != ClientStateManager.config.defaultDistance
-        qualityReset?.active = videoReady && ds.quality != "720"
+        qualityReset?.active = videoReady && ds.quality != VideoQuality.DEFAULT
         brightness?.let { brightnessReset?.active = videoReady && abs(it.value - 0.5) > 0.01 }
         volume?.let { volumeReset?.active = videoReady && abs(it.value - 0.5) > 0.01 }
 
@@ -393,7 +394,7 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
         if (qualityList.size != prevQualityListSize) {
             prevQualityListSize = qualityList.size
             if (qualityList.isNotEmpty()) {
-                quality?.value = qualityFraction(ds.quality)
+                quality?.value = qualityFraction(ds.quality.serialize())
                 quality?.updateMessage()
             }
         }
@@ -916,13 +917,10 @@ class DisplayMenu private constructor() : Screen(Component.translatable("dreamdi
                 Component.translatable("dreamdisplays.button.quality.tooltip.4", qualityFromFraction(quality!!.value))
                     .withStyle { it.withColor(ChatFormatting.GOLD) },
             )
-            try {
-                if (scr.quality.toInt() >= 1080) {
-                    tip.add(
-                        Component.translatable("dreamdisplays.button.quality.tooltip.5")
-                            .withStyle { it.withColor(ChatFormatting.YELLOW) })
-                }
-            } catch (_: NumberFormatException) {
+            if ((scr.quality.targetHeight ?: 0) >= 1080) {
+                tip.add(
+                    Component.translatable("dreamdisplays.button.quality.tooltip.5")
+                        .withStyle { it.withColor(ChatFormatting.YELLOW) })
             }
             g.setComponentTooltipForNextFrame(font, tip, mouseX, mouseY)
         }

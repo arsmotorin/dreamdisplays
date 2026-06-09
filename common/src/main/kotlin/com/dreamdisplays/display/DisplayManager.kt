@@ -7,6 +7,7 @@ import com.dreamdisplays.api.DisplayFacing
 import com.dreamdisplays.api.DisplayId
 import com.dreamdisplays.api.DisplayRuntimeState
 import com.dreamdisplays.api.DisplaySettings as ApiDisplaySettings
+import com.dreamdisplays.media.api.VideoQuality
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -46,7 +47,7 @@ internal fun DisplayScreen.toRuntimeState(): DisplayRuntimeState = when {
 
 private fun DisplayScreen.toFullDisplayData() = DisplaySettings.FullDisplayData(
     uuid, pos.x, pos.y, pos.z, facing, width, height,
-    videoUrl ?: "", lang ?: "", volume, quality, brightness,
+    videoUrl ?: "", lang ?: "", volume, quality.serialize(), brightness,
     muted, isSync, ownerUuid, renderDistance, currentTimeNanos,
 )
 
@@ -77,7 +78,7 @@ object DisplayManager {
 
         val clientSettings = DisplaySettings.getSettings(displayScreen.uuid)
         displayScreen.volume = clientSettings.volume
-        displayScreen.quality = clientSettings.quality
+        displayScreen.quality = VideoQuality.parse(clientSettings.quality)
         displayScreen.muted = clientSettings.muted
 
         DisplaySettings.getDisplayData(displayScreen.uuid)?.let { saved ->

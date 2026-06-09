@@ -18,6 +18,7 @@ import com.dreamdisplays.player.util.MediaUtil
 import com.dreamdisplays.player.util.daemon
 import com.dreamdisplays.media.api.DreamMediaException
 import com.dreamdisplays.media.api.MediaStream
+import com.dreamdisplays.media.api.VideoQuality
 import com.dreamdisplays.ytdlp.YtDlp
 import com.mojang.blaze3d.textures.GpuTexture
 import net.minecraft.core.BlockPos
@@ -216,8 +217,8 @@ class MediaPlayer(
             .distinct().sorted().toList()
     }
 
-    /** Switches to the closest available stream for [quality] (e.g. "720p"). */
-    fun setQuality(quality: String) = safeExecute { changeQuality(quality) }
+    /** Switches to the closest available stream for [quality]. */
+    fun setQuality(quality: VideoQuality) = safeExecute { changeQuality(quality) }
 
     /**
      * Updates distance-based volume attenuation. Call every tick from the game thread.
@@ -407,10 +408,10 @@ class MediaPlayer(
      * Picks the closest available stream to [desired] quality. Updates [streams] via copy
      * and restarts `FFmpeg` when playing, or repositions seek offset when paused.
      */
-    private fun changeQuality(desired: String) {
+    private fun changeQuality(desired: VideoQuality) {
         val ss = streams ?: return
-        val target = MediaStreamSelector.parseQualityValue(desired, -1)
-        if (target < 0 || target == lastQuality) return
+        val target = desired.targetHeight ?: return
+        if (target == lastQuality) return
         val best = MediaStreamSelector.pickVideo(ss.availableVideo, target)
             ?.takeIf { it.url != ss.currentVideo.url } ?: return
         val chosenAudio = MediaStreamSelector.pickAudio(ss.availableAudio, lang, best) ?: ss.currentAudio

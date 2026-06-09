@@ -1,5 +1,7 @@
 package com.dreamdisplays.api
 
+import com.dreamdisplays.media.api.VideoQuality
+
 /**
  * Represents the settings for a display.
  *
@@ -12,8 +14,8 @@ data class DisplaySettings(
     // TODO: separate sync volume as it was in old versions?
     // val syncVolume: Float = 0.5f,
 
-    /** The display's quality. If auto, the client will attempt to choose the best quality. */
-    val quality: String = "auto",
+    /** The display's quality. [VideoQuality.Auto] lets the client choose the best quality. */
+    val quality: VideoQuality = VideoQuality.Auto,
 
     /** The display's brightness. */
     val brightness: Float = 1.0f,

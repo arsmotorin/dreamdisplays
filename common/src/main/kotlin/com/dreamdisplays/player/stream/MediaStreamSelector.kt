@@ -10,18 +10,6 @@ object MediaStreamSelector {
     /** Returns the pixel height of [stream], or [Int.MAX_VALUE] if unknown. */
     fun parseQuality(stream: MediaStream): Int = stream.height ?: Int.MAX_VALUE
 
-    /** Extracts the leading integer from a resolution string like "720p" or "1080"; returns [fallback] if unparseable. */
-    fun parseQualityValue(raw: String?, fallback: Int): Int {
-        if (raw == null) return fallback
-        var i = 0
-        val n = raw.length
-        while (i < n && !raw[i].isDigit()) i++
-        val start = i
-        while (i < n && raw[i].isDigit()) i++
-        if (start == i) return fallback
-        return raw.substring(start, i).toIntOrNull() ?: fallback
-    }
-
     /**
      * Maps a quality value (e.g. 720) to a standard video dimension (e.g. 1280 x 720). Used to
      * pick the best matching stream when the quality label is missing or unparseable.

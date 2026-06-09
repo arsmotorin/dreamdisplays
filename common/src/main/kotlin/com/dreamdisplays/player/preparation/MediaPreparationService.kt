@@ -7,7 +7,7 @@ import com.dreamdisplays.media.api.MediaResolverChain
 import com.dreamdisplays.media.api.MediaSource
 import com.dreamdisplays.media.api.StreamPreferences
 import com.dreamdisplays.media.api.StreamSelector
-import com.dreamdisplays.player.stream.MediaStreamSelector
+import com.dreamdisplays.media.api.VideoQuality
 import com.dreamdisplays.player.stream.StreamSet
 
 /**
@@ -22,10 +22,10 @@ internal object MediaPreparationService {
      *
      * @param url raw media URL (YouTube, direct stream, etc.)
      * @param lang preferred audio language (empty = default)
-     * @param quality preferred video quality string, e.g. "720p"
+     * @param quality preferred video quality ([VideoQuality.Auto] caps at 720p as a sane default)
      * @throws DreamMediaException if no usable streams are found
      */
-    fun prepare(url: String, lang: String, quality: String): PreparedMedia {
+    fun prepare(url: String, lang: String, quality: VideoQuality): PreparedMedia {
         val registry = DreamServices.registry
         val chain = registry.get<MediaResolverChain>()
         val selector = registry.get<StreamSelector>()
@@ -35,7 +35,7 @@ internal object MediaPreparationService {
         if (resolved.streams.isEmpty()) throw DreamMediaException.NotFound("No streams available for $url.")
 
         val prefs = StreamPreferences(
-            maxHeight = MediaStreamSelector.parseQualityValue(quality, 720).takeIf { it > 0 },
+            maxHeight = (quality.targetHeight ?: 720).takeIf { it > 0 },
             preferFps60 = true,
             preferredAudioTrack = null,
             preferredAudioLanguage = lang.ifEmpty { null },

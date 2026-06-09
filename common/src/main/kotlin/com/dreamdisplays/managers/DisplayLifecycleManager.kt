@@ -4,6 +4,7 @@ import com.dreamdisplays.api.DisplayFacing
 import com.dreamdisplays.display.DisplayManager
 import com.dreamdisplays.display.DisplayScreen
 import com.dreamdisplays.display.DisplaySettings
+import com.dreamdisplays.media.api.VideoQuality
 import com.dreamdisplays.net.Packets
 import com.dreamdisplays.utils.FacingUtil
 import com.dreamdisplays.client.core.DreamServices
@@ -97,7 +98,7 @@ object DisplayLifecycleManager {
         displayScreen.renderDistance = data.renderDistance
         displayScreen.savedTimeNanos = data.currentTimeNanos
         displayScreen.volume = data.volume
-        displayScreen.quality = data.quality
+        displayScreen.quality = VideoQuality.parse(data.quality)
         displayScreen.brightness = data.brightness
         displayScreen.muted = data.muted
 
