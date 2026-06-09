@@ -1,6 +1,8 @@
 package com.dreamdisplays.display
 
 import com.dreamdisplays.Initializer
+import com.dreamdisplays.api.DisplayEvent
+import com.dreamdisplays.api.DisplayId
 import com.dreamdisplays.client.ui.DisplayMenu
 import com.dreamdisplays.client.ui.PipCorner
 import com.dreamdisplays.managers.DisplayPopoutManager
@@ -150,6 +152,7 @@ class DisplayScreen(
 
         this.videoUrl = videoUrl
         this.lang = lang
+        DisplayManager.emit(DisplayEvent.UrlChanged(DisplayId(uuid), videoUrl))
         val shouldBePaused = preservePausedState && paused
         val newPlayer = MediaPlayer(videoUrl, lang, this)
         mediaPlayer = newPlayer

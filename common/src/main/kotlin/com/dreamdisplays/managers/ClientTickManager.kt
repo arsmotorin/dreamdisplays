@@ -6,9 +6,8 @@ import com.dreamdisplays.client.core.DreamServices
 import com.dreamdisplays.client.core.getOrNull
 import com.dreamdisplays.client.input.DisplayInteraction
 import com.dreamdisplays.client.input.DisplayInteractionService
-import com.dreamdisplays.client.input.MinecraftDisplayInteractionService
+import com.dreamdisplays.client.overlay.OverlayManager
 import com.dreamdisplays.client.ui.DisplayMenu
-import com.dreamdisplays.client.ui.PipOverlayManager
 import com.dreamdisplays.display.DisplayManager
 import com.dreamdisplays.display.DisplayScreen
 import com.dreamdisplays.net.Packets
@@ -43,7 +42,7 @@ object ClientTickManager {
             if (level !== lastLevel) {
                 lastLevel = level
                 DisplayManager.unloadAll()
-                PipOverlayManager.clear()
+                DreamServices.registry.getOrNull<OverlayManager>()?.closeAll()
                 hoveredDisplayScreen = null
                 checkVersionAndSendPacket()
             }
@@ -52,7 +51,7 @@ object ClientTickManager {
             if (wasInMultiplayer) {
                 wasInMultiplayer = false
                 DisplayManager.unloadAll()
-                PipOverlayManager.clear()
+                DreamServices.registry.getOrNull<OverlayManager>()?.closeAll()
                 hoveredDisplayScreen = null
                 lastLevel = null
                 return
@@ -96,7 +95,8 @@ object ClientTickManager {
         val pressed = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_RIGHT) == GLFW.GLFW_PRESS
         if (pressed && !wasPressed && player.isShiftKeyDown) {
             hoveredDisplayScreen?.let {
-                MinecraftDisplayInteractionService.emit(DisplayInteraction.RightClicked(DisplayId(it.uuid)))
+                DreamServices.registry.getOrNull<DisplayInteractionService>()
+                    ?.emit(DisplayInteraction.RightClicked(DisplayId(it.uuid)))
                 DisplayMenu.open(it)
             }
         }

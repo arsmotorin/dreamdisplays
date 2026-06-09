@@ -57,7 +57,7 @@ object MinecraftDisplayInteractionService : DisplayInteractionService {
      * Publishes [interaction] to all subscribers. Call sites (e.g. the tick / input handlers) emit
      * here once they detect a right-click, hotbar scroll, focus toggle, popout request, etc.
      */
-    fun emit(interaction: DisplayInteraction) {
+    override fun emit(interaction: DisplayInteraction) {
         listeners.forEach { it(interaction) }
     }
 }
