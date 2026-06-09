@@ -2,7 +2,10 @@ package com.dreamdisplays.client.ui
 
 import com.dreamdisplays.Initializer
 import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.client.overlay.Overlay
 import com.dreamdisplays.client.overlay.OverlayBounds
+import com.dreamdisplays.client.overlay.OverlayEvent
+import com.dreamdisplays.client.overlay.OverlayRenderContext
 import com.dreamdisplays.display.DisplayScreen
 import com.dreamdisplays.render.AsyncTextureUploader
 import com.dreamdisplays.render.TextureUploadUtil
@@ -75,7 +78,7 @@ enum class PipAnchor {
 class PipOverlay(
     val displayScreen: DisplayScreen,
     initialCorner: PipCorner = PipCorner.BOTTOM_RIGHT,
-) {
+) : Overlay {
     @Volatile private var frontBuf: ByteBuffer = EMPTY_DIRECT
     private var backBuf: ByteBuffer = EMPTY_DIRECT
     @Volatile var frameW = 0
@@ -126,17 +129,40 @@ class PipOverlay(
     val isFinished: Boolean get() = closing && animProgress < 0.01f
     val isDragging: Boolean get() = dragging
 
-    /** Stable identity usable with [OverlayManager] and [DisplayService] contracts. */
-    val displayId: DisplayId get() = DisplayId(displayScreen.uuid)
+    /** Stable identity usable with [Overlay] / [com.dreamdisplays.client.overlay.OverlayManager] contracts. */
+    override val displayId: DisplayId get() = DisplayId(displayScreen.uuid)
+
+    /** Visible until the close animation has fully played out. */
+    override val isVisible: Boolean get() = !isFinished
 
     /** Current screen-space bounds, valid only after the first [render] call. */
-    val overlayBounds: OverlayBounds
+    override val bounds: OverlayBounds
         get() = OverlayBounds(
             x = lastPipX.toFloat(),
             y = lastPipY.toFloat(),
             width = lastPipW.toFloat(),
             height = lastPipH.toFloat(),
         )
+
+    /**
+     * [Overlay] contract entry point. Bridges the platform-agnostic call into the existing
+     * Minecraft render path by unwrapping a [MinecraftOverlayRenderContext]; a context of any other
+     * type is ignored (this overlay can only draw through Minecraft's HUD).
+     */
+    override fun render(context: OverlayRenderContext) {
+        val mc = context as? MinecraftOverlayRenderContext ?: return
+        render(mc.mc, mc.graphics, mc.mouseX, mc.mouseY, mc.leftPressed, context.partialTick)
+    }
+
+    /**
+     * [Overlay] contract input hook. PiP input is otherwise polled from the render context
+     * (see [handleMouseInput]); this only handles the explicit close request.
+     * @return true if the event was consumed.
+     */
+    override fun onEvent(event: OverlayEvent): Boolean = when (event) {
+        is OverlayEvent.CloseRequested -> { startClose(); true }
+        else -> false
+    }
 
     fun updateFrame(buf: ByteBuffer, w: Int, h: Int, aspect: Double) {
         val size = w * h * 3
