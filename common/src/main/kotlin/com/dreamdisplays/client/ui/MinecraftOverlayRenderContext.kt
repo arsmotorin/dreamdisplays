@@ -16,6 +16,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
  *
  * Screen dimensions and scale are read live from the game window so the values are always current
  * for the frame being rendered.
+ *
+ * @since 1.8.0
  */
 class MinecraftOverlayRenderContext(
     val mc: Minecraft,

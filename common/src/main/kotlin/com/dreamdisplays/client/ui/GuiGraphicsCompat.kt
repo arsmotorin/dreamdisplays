@@ -28,6 +28,8 @@ typealias GuiGraphicsCompat = GuiGraphicsExtractor
  * Draws a single line of [text] with [font] at ([x], [y]) in ARGB [color], optionally with a drop
  * [shadow]. Maps to `text()` on 26+ and `drawString()` on pre-26. The one call that was responsible
  * for the bulk of the duplicated render code.
+ *
+ * @since 1.8.0
  */
 //? if >=26 {
 fun GuiGraphicsCompat.drawText(font: Font, text: String, x: Int, y: Int, color: Int, shadow: Boolean) {
