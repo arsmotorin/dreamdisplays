@@ -10,8 +10,6 @@ import org.lwjgl.glfw.GLFW
 /**
  * Opens the display menu on sneak + menu-key click while the crosshair targets a display.
  * Consumes the click and emits [DisplayInteraction.RightClicked] for other subscribers.
- *
- * @since 1.0.0
  */
 class DisplayMenuInputHandler : InputHandler {
     /** Consumes a [InputAction.MouseClicked] matching the menu binding when sneaking at a display. */

@@ -15,8 +15,6 @@ import kotlin.math.min
  * Async state machine behind the suggestions panel: runs searches and related-video lookups on a
  * background executor, publishes results back on the client thread, and drops stale responses via a
  * request sequence number. Holds no rendering state, so the panel widget stays a pure view.
- *
- * @since 1.6.0
  */
 class SuggestionsController {
     /** Current result cards, mutated only on the client thread. */

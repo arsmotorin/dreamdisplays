@@ -2,8 +2,6 @@ package com.dreamdisplays.client.input
 
 /**
  * Registry for key bindings.
- *
- * @since 1.0.0
  */
 interface KeyBindingRegistry {
     /** Registers a key binding. The returned instance may be the same as the input or a different one, depending on the implementation. */

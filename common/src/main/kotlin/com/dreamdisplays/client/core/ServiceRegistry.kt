@@ -1,4 +1,8 @@
+@file:DreamDisplaysUnstableApi
+
 package com.dreamdisplays.client.core
+
+import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
 /**
  * Registry for services available to the client. Modules can use this to provide and consume services, allowing for

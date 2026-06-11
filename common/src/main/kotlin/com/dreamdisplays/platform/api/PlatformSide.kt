@@ -1,4 +1,8 @@
+@file:DreamDisplaysUnstableApi
+
 package com.dreamdisplays.platform.api
+
+import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
 /**
  * Which logical side of the game a [Platform] runs on. Drives side-aware guards so common code can

@@ -16,8 +16,6 @@ import kotlin.math.min
  * brightness, sync), each with its control widget and reset button, plus the owner action buttons
  * (lock/delete/report) anchored to the panel's bottom-right corner. Tooltips are declared per row
  * and rendered after the widgets so they overlay everything.
- *
- * @since 1.0.0
  */
 class SettingsSection(
     private val rows: List<Row>,

@@ -15,8 +15,6 @@ import kotlin.math.sin
 /**
  * The "Dream Displays x.y.z" label in the screen corner. Shows a bouncing update arrow when a newer
  * version exists and opens the Modrinth page when clicked in that state.
- *
- * @since 1.0.0
  */
 class ModTitleLabel {
     private val openedAtMs: Long = System.currentTimeMillis()

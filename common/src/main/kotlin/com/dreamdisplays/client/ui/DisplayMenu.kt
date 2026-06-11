@@ -43,8 +43,6 @@ import kotlin.math.roundToInt
 /**
  * The display configuration screen: video preview with playback controls, the settings rows, and
  * the suggestions panel.
- *
- * @since 1.0.0
  */
 class DisplayMenu private constructor(
     val displayScreen: DisplayScreen,

@@ -14,8 +14,6 @@ import net.minecraft.network.chat.Component
  *
  * State is declarative: [enabledWhen] / [visibleWhen] are re-evaluated once per frame by the owning
  * [UiScreenBase] (via [syncState]) instead of call sites imperatively flipping `active` / `visible` flags.
- *
- * @since 1.0.0
  */
 abstract class UiWidget(message: Component) : AbstractWidget(0, 0, 0, 0, message) {
     /** Re-evaluated each frame to drive [active]; widgets reject input while disabled. */

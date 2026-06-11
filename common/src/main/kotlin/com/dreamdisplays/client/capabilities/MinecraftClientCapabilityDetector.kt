@@ -8,8 +8,6 @@ import com.dreamdisplays.protocol.ClientHello
  * Probes the running client for [ClientHello] capabilities. Popout support comes from the `GLFW`
  * shared-context check in [VideoPopoutWindow], hardware decode from the per-OS
  * [HwAccelBackend] default, and codec support from what the FFmpeg pipeline decodes.
- *
- * @since 1.8.0
  */
 object MinecraftClientCapabilityDetector : ClientCapabilityDetector {
 

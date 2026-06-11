@@ -2,8 +2,6 @@ package com.dreamdisplays.player
 
 /**
  * Playback state of a [MediaPlayer] instance.
- *
- * @since 1.6.0
  */
 enum class PlaybackState {
     /** Created but no media loaded yet. */

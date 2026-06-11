@@ -2,8 +2,6 @@ package com.dreamdisplays.client.overlay
 
 /**
  * Represents the bounds of an overlay on the display.
- *
- * @since 1.7.0
  */
 data class OverlayBounds(
     /** The [x]-coordinate of the top-left corner of the overlay, in pixels. */

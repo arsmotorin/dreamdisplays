@@ -1,4 +1,8 @@
+@file:DreamDisplaysUnstableApi
+
 package com.dreamdisplays.media.api
+
+import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
 import java.net.URI
 import java.util.Locale

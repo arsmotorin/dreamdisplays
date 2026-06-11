@@ -6,8 +6,6 @@ import com.dreamdisplays.api.DisplayFacing
  * Facing directions for block placement and interaction. The ordinal doubles as the wire byte (see
  * [toPacket] / [fromPacket]), so the declaration order N/E/S/W is part of the protocol. Don't
  * reorder.
- *
- * @since 1.0.0
  */
 enum class FacingUtil {
     /** Facing north (−Z). Wire byte 0. */

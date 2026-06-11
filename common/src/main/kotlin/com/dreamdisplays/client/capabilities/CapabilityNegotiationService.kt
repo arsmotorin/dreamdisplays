@@ -6,8 +6,6 @@ import com.dreamdisplays.protocol.ServerHello
 /**
  * Service responsible for negotiating capabilities between the client and server. Detects the client's abilities,
  * probes the server for capabilities, and negotiates the capabilities to use.
- *
- * @since 1.8.0
  */
 interface CapabilityNegotiationService {
     /** The client's capabilities as detected by the service. */

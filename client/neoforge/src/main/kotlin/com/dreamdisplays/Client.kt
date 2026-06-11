@@ -26,7 +26,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent
 @Mod(value = Initializer.MOD_ID, dist = [Dist.CLIENT])
 class Client(modEventBus: IEventBus) : com.dreamdisplays.Mod {
     init {
-        // The Platform must be in the registry before onModInit so ClientStartupManager
+        // The Platform must be in the registry before onModInit, so ClientStartupManager
         // can host the ClientApplication on top of it during bootstrap.
         DreamServices.registry.register<Platform>(NeoForgePlatform)
         Initializer.onModInit(this)
@@ -96,7 +96,7 @@ class Client(modEventBus: IEventBus) : com.dreamdisplays.Mod {
     @SubscribeEvent fun onRenderAfterLevel(event: RenderLevelStageEvent.AfterTranslucentParticles) {
         val mc = Minecraft.getInstance()
         if (mc.level == null || mc.player == null) return
-        ScreenRenderer.render(event.getPoseStack(), mc.gameRenderer.mainCamera)
+        ScreenRenderer.render(event.poseStack, mc.gameRenderer.mainCamera)
     }
     //?} else
     /*@SubscribeEvent fun onRenderAfterLevel(event: RenderLevelStageEvent.AfterParticles) {

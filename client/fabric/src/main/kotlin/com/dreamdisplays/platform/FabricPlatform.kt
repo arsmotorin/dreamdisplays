@@ -16,12 +16,14 @@ object FabricPlatform : Platform {
     override val id: String = "fabric"
     override val side: PlatformSide = PlatformSide.CLIENT
 
+    @Suppress("TYPE_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
     override val minecraftVersion: String by lazy {
         FabricLoader.getInstance().getModContainer("minecraft")
             .map { it.metadata.version.friendlyString }
             .orElse("unknown")
     }
 
+    @Suppress("TYPE_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
     override val modVersion: String by lazy {
         FabricLoader.getInstance().getModContainer(Initializer.MOD_ID)
             .map { it.metadata.version.friendlyString }

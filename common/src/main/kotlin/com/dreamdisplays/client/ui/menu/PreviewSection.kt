@@ -25,8 +25,6 @@ import kotlin.math.max
  * The preview panel of the display menu: live video (or thumbnail while loading), the title/metadata
  * overlay strip, and the playback controls row (seek buttons, mute, popout + its dropdown, progress
  * bar, pause). Owns only drawing and per-frame placement; the widgets themselves live on the screen.
- *
- * @since 1.0.0
  */
 class PreviewSection(
     private val ds: DisplayScreen,

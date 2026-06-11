@@ -1,4 +1,8 @@
+@file:DreamDisplaysUnstableApi
+
 package com.dreamdisplays.client.core
+
+import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
 /**
  * Client module: a self-contained unit of functionality, which can be installed into the client context.

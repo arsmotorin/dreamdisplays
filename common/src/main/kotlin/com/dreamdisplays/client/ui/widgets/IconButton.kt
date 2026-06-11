@@ -20,8 +20,6 @@ import kotlin.math.max
  * @param sprites button background sprites; defaults to the vanilla grey button set.
  * @param margin inner padding between the button edge and the icon.
  * @param onPress click action.
- *
- * @since 1.0.0
  */
 class IconButton(
     private val icon: () -> Identifier,

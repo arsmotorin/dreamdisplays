@@ -12,8 +12,6 @@ import net.minecraft.network.chat.Component
 /**
  * Base class for Dream Displays screens. It handles the per-frame state sync, operates in virtual
  * coordinates, and handles scaling to fit the real window.
- *
- * @since 1.0.0
  */
 abstract class UiScreenBase(title: Component) : Screen(title) {
     private val uiWidgets = ArrayList<UiWidget>()

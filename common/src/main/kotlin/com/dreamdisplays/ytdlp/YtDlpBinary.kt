@@ -19,8 +19,6 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Provisioning of the `yt-dlp` executable: locating a system install, falling back to the bundled
  * copy, downloading from GitHub as a last resort, and weekly background self-updates of the bundled
  * binary. Extracted from the YtDlp god-object so the orchestrator only deals in stream fetching.
- *
- * @since 1.6.0
  */
 object YtDlpBinary {
     private val logger = LoggerFactory.getLogger("DreamDisplays/yt-dlp")

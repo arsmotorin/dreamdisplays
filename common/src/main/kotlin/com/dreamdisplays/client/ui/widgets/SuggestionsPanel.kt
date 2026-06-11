@@ -31,8 +31,6 @@ import kotlin.math.sin
  * loading lives in [SuggestionsController]; this widget is the view.
  *
  * @param onPick invoked when the user clicks a result card.
- *
- * @since 1.8.0
  */
 class SuggestionsPanel(
     private val onPick: (MediaSearchResult) -> Unit,

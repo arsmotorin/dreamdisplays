@@ -3,8 +3,6 @@ package com.dreamdisplays.client.ui.kit
 /**
  * Immutable integer rectangle used for screen layout: panels and widgets are positioned by slicing
  * and insetting rects instead of repeating raw coordinate arithmetic at every call site.
- *
- * @since 1.8.0
  */
 data class UiRect(val x: Int, val y: Int, val w: Int, val h: Int) {
     val right: Int get() = x + w

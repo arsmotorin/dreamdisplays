@@ -11,8 +11,6 @@ import org.slf4j.LoggerFactory
  * [ClientCapabilityDetector]; server capabilities arrive either as a single v2
  * [ServerHello] or merged incrementally from the legacy per-flag handshake packets
  * (via [com.dreamdisplays.managers.ClientPacketManager]).
- *
- * @since 1.8.0
  */
 class DefaultCapabilityNegotiationService(
     private val detector: ClientCapabilityDetector,

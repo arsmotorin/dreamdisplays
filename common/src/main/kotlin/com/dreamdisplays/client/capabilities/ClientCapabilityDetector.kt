@@ -5,8 +5,6 @@ import com.dreamdisplays.protocol.ClientHello
 /**
  * Detects the capabilities of the client device, such as supported codecs, maximum texture size, and whether popout
  * windows are supported.
- *
- * @since 1.8.0
  */
 interface ClientCapabilityDetector {
     /** Returns the detected capabilities as a [ClientHello] (without the mod version filled in). */

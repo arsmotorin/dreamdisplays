@@ -2,8 +2,6 @@ package com.dreamdisplays.client.ui.kit
 
 /**
  * Shared visual constants for the Dream Displays UI. Colors, paddings, and control sizes.
- *
- * @since 1.6.0
  */
 object UiTheme {
     // Screen-level spacing

@@ -4,8 +4,6 @@ import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Thread-safe [ServiceRegistry] backed by a [ConcurrentHashMap] keyed on the contract [Class].
- *
- * @since 1.8.0
  */
 class DefaultServiceRegistry : ServiceRegistry {
     /** Map of contract types to service instances. */

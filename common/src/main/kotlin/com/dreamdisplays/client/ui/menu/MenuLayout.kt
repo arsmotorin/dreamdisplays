@@ -12,8 +12,6 @@ import kotlin.math.min
  * - Wide (>=900x480): preview + settings stacked left, suggestions as a right sidebar (vertical cards).
  * - Normal: preview and settings side by side on top, suggestions strip below.
  * - Compact (<600 wide): preview above settings, suggestions strip below.
- *
- * @since 1.8.0
  */
 class MenuLayout private constructor(
     val preview: UiRect,
