@@ -2,6 +2,16 @@
 
 ## Client
 
+### Features
+
+- 10-12× faster video downloading
+
+### Improvements
+
+- Enhance the client codebase with managers
+- Faster DRM-protected videos handling
+- Remove Gradle cache configuration
+
 ### Fixes
 
 - Fix critical crash on the `Fabric` 1.21.11 version
