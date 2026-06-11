@@ -44,8 +44,5 @@ object NeoForgePlatform : Platform {
     }
 
     override val isDevEnvironment: Boolean
-        //? if >=26 {
         get() = !FMLEnvironment.isProduction()
-        //?} else
-        /*get() = !FMLEnvironment.production*/
 }
