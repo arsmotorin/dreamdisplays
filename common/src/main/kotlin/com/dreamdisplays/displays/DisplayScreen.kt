@@ -1,9 +1,7 @@
 package com.dreamdisplays.displays
 
 import com.dreamdisplays.Initializer
-import com.dreamdisplays.api.DisplayEvent
 import com.dreamdisplays.api.DisplayFacing
-import com.dreamdisplays.api.DisplayId
 import com.dreamdisplays.displays.store.ClientSettingsStore
 import com.dreamdisplays.client.ui.DisplayMenu
 import com.dreamdisplays.client.ui.PipCorner
@@ -14,11 +12,7 @@ import com.dreamdisplays.render.DisplayGeometry
 import com.dreamdisplays.render.DisplayTextureResource
 import com.dreamdisplays.net.Packets
 import com.dreamdisplays.utils.MinecraftScreenUtil
-import com.dreamdisplays.client.core.DreamServices
-import com.dreamdisplays.client.core.getOrNull
 import com.dreamdisplays.media.api.DreamMediaException
-import com.dreamdisplays.media.api.MediaResolverChain
-import com.dreamdisplays.media.api.MediaSource
 import com.dreamdisplays.media.api.VideoQuality
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.rendertype.RenderType
@@ -27,7 +21,6 @@ import net.minecraft.core.BlockPos
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
 import java.util.*
-import java.util.concurrent.atomic.AtomicLong
 
 /** Represents a video display screen in the game world. */
 class DisplayScreen(
@@ -41,7 +34,6 @@ class DisplayScreen(
     var height: Int,
     var isSync: Boolean,
 ) {
-    private val mediaPlayerGeneration = AtomicLong()
     private val savedSettings = ClientSettingsStore.getSettings(uuid)
 
     var owner: Boolean = Minecraft.getInstance().player?.gameProfile?.id?.toString() == ownerUuid.toString()
@@ -78,14 +70,14 @@ class DisplayScreen(
             mediaPlayer?.setQuality(value)
             ClientSettingsStore.updateSettings(uuid, volume, value, brightness, muted, paused)
         }
-    internal var videoStarted: Boolean = false
-        private set
-    private var paused: Boolean = savedSettings.paused
+    internal val videoStarted: Boolean get() = media.videoStarted
+    internal var paused: Boolean = savedSettings.paused
     private var focusMuted: Boolean = false
     var renderDistance: Int = 64
     var savedTimeNanos: Long = 0
-    private val syncController = DisplaySyncController(this)
-    private var mediaPlayer: MediaPlayer? = null
+    internal val syncController = DisplaySyncController(this)
+    private val media = DisplayMediaController(this)
+    private val mediaPlayer: MediaPlayer? get() = media.player
     private val popoutManager = DisplayPopoutManager(this) {
         mediaPlayer?.setPopoutSink(null)
     }
@@ -139,39 +131,25 @@ class DisplayScreen(
         playVideoNow(videoUrl, lang)
     }
 
-    /** Internal loader: stops any current player, creates a fresh [MediaPlayer], and wires up texture and popout sinks. */
+    /** Internal loader: delegates the player swap to the [media] controller. */
     private fun loadVideoInternal(videoUrl: String, lang: String, preservePausedState: Boolean) {
-        if (videoUrl == "") return
+        media.load(videoUrl, lang, preservePausedState)
+    }
 
-        DreamServices.registry.getOrNull<MediaResolverChain>()?.prefetch(MediaSource.from(videoUrl))
-
-        val generation = mediaPlayerGeneration.incrementAndGet()
-        val oldPlayer = mediaPlayer
-        mediaPlayer = null
-        videoStarted = false
-        mediaError = null
-        syncController.reset()
-        oldPlayer?.stop()
-
+    /** Records the new [videoUrl] and [lang] when the media controller swaps players. */
+    internal fun onVideoSwapped(videoUrl: String, lang: String) {
         this.videoUrl = videoUrl
         this.lang = lang
-        DisplayRegistry.emit(DisplayEvent.UrlChanged(DisplayId(uuid), videoUrl))
-        val shouldBePaused = preservePausedState && paused
-        val newPlayer = MediaPlayer(videoUrl, lang, this)
-        mediaPlayer = newPlayer
+    }
+
+    /** Sizes the GPU texture buffers for the current dimensions and quality before the first frame. */
+    internal fun prepareTextureDimensions() {
         textureResource.prepareDimensions(width, height, parseQualityOrDefault())
+    }
 
-        popoutManager.attachTo(newPlayer) { videoContentAspect }
-
-        waitForMFInit(generation) {
-            startVideo()
-            if (shouldBePaused) {
-                paused = true
-                mediaPlayer?.pause()
-            }
-        }
-
-        Minecraft.getInstance().execute { reloadTexture() }
+    /** Re-attaches the popout sink chain to a freshly created [player]. */
+    internal fun attachPopout(player: MediaPlayer) {
+        popoutManager.attachTo(player) { videoContentAspect }
     }
 
     /** Updates position, dimensions, and video URL from an incoming [Packets.Info] packet. */
@@ -228,7 +206,7 @@ class DisplayScreen(
     internal fun isClockRunning(): Boolean = mediaPlayer?.isClockRunning() == true
 
     /** The current media-player generation, used by the sync controller to detect stale video swaps. */
-    internal val mediaGeneration: Long get() = mediaPlayerGeneration.get()
+    internal val mediaGeneration: Long get() = media.generationNow
 
     /** Recreates the GPU texture (e.g. after a resolution change). */
     fun reloadTexture() = createTexture()
@@ -275,7 +253,7 @@ class DisplayScreen(
      * Applies the effective volume to the media player, which is 0 if either [muted] or [focusMuted] is true,
      * otherwise the user's set [volume].
      */
-    private fun applyEffectiveVolume() {
+    internal fun applyEffectiveVolume() {
         setVideoVolume(if (muted || focusMuted) 0f else volume)
     }
 
@@ -297,18 +275,7 @@ class DisplayScreen(
     }
 
     /** Applies volume, brightness, and paused state to the media player, then seeks to the saved position. */
-    fun startVideo() {
-        val mp = mediaPlayer ?: return
-        videoStarted = true
-        applyEffectiveVolume()
-        mp.setBrightness(brightness)
-        if (paused) mp.pause() else {
-            mp.play()
-            paused = false
-        }
-        restoreSavedTime()
-        syncController.bootstrapIfNeeded()
-    }
+    fun startVideo() = media.start()
 
     val isPaused: Boolean get() = paused
 
@@ -354,10 +321,7 @@ class DisplayScreen(
 
     /** Stops the media player, releases GPU texture, closes any popout, and closes the display menu if open. */
     fun unregister() {
-        mediaPlayerGeneration.incrementAndGet()
-        videoStarted = false
-        val currentPlayer = mediaPlayer
-        mediaPlayer = null
+        val currentPlayer = media.shutdown()
         popoutManager.unregister(currentPlayer)
         currentPlayer?.stop()
 
@@ -405,18 +369,7 @@ class DisplayScreen(
     fun canSeek(): Boolean = mediaPlayer?.canSeek() == true
 
     /** Runs [action] once the current media player is initialized; guards against stale generations. */
-    fun waitForMFInit(action: () -> Unit) = waitForMFInit(mediaPlayerGeneration.get(), action)
-
-    /** Runs [action] when the player is initialized, only if [expectedGeneration] still matches (i.e. video hasn't changed). */
-    private fun waitForMFInit(expectedGeneration: Long, action: () -> Unit) {
-        val mp = mediaPlayer ?: return
-        mp.whenInitialized {
-            if (expectedGeneration != mediaPlayerGeneration.get()) return@whenInitialized
-            if (mp !== mediaPlayer) return@whenInitialized
-            if (errored) return@whenInitialized
-            action()
-        }
-    }
+    fun waitForMFInit(action: () -> Unit) = media.whenInitialized(action)
 
     /** Resolves the current quality to a target pixel height; [VideoQuality.Auto] falls back to [DEFAULT_QUALITY]. */
     private fun parseQualityOrDefault(): Int = quality.targetHeight ?: DEFAULT_QUALITY
