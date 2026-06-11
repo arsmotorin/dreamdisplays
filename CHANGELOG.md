@@ -4,11 +4,13 @@
 
 ### Features
 
-- 10–12× faster video loading thanks to the `NewPipeExtractor`
+- 10-12× faster video downloading
 
 ### Improvements
 
-- Disable Gradle configuration cache
+- Enhance the client codebase with managers
+- Faster DRM-protected videos handling
+- Remove Gradle cache configuration
 
 ### Fixes
 
