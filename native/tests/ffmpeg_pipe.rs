@@ -59,10 +59,72 @@ fn run_pipe(pix: PixFmt, vf: &str, frames: u32) {
         match sessions.read_frame(handle, &mut dst, 1000) {
             READ_OK => got += 1,
             READ_EOF => break,
-            rc => panic!("read_frame failed: {rc}, stderr: {}", stderr_of(&sessions, handle)),
+            rc => panic!(
+                "read_frame failed: {rc}, stderr: {}",
+                stderr_of(&sessions, handle)
+            ),
         }
     }
-    assert_eq!(got, frames, "frame count mismatch; stderr: {}", stderr_of(&sessions, handle));
+    assert_eq!(
+        got,
+        frames,
+        "frame count mismatch; stderr: {}",
+        stderr_of(&sessions, handle)
+    );
+    assert_eq!(sessions.exit_code(handle, 2000), 0);
+    sessions.close(handle);
+}
+
+fn run_pipe_rgba(pix: PixFmt, vf: &str, frames: u32) {
+    let Some(ffmpeg) = find_ffmpeg() else {
+        eprintln!("Skipping: no FFmpeg binary found.");
+        return;
+    };
+    let (w, h) = (64u32, 48u32);
+    let args: Vec<String> = [
+        &ffmpeg,
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        &format!("testsrc=duration=1:size={w}x{h}:rate={frames}"),
+        "-vf",
+        vf,
+        "-f",
+        "rawvideo",
+        "-",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect();
+
+    let sessions = Sessions::new();
+    let handle = sessions.open(&args, w, h, pix);
+    assert_ne!(handle, 0, "Ffmpeg failed to spawn.");
+
+    let mut dst = vec![0u8; (w * h * 4) as usize];
+    let mut got = 0u32;
+    loop {
+        match sessions.read_frame_rgba(handle, &mut dst, 1000) {
+            READ_OK => {
+                got += 1;
+                assert!(dst.chunks_exact(4).all(|px| px[3] == 0xff));
+            }
+            READ_EOF => break,
+            rc => panic!(
+                "read_frame_rgba failed: {rc}, stderr: {}",
+                stderr_of(&sessions, handle)
+            ),
+        }
+    }
+    assert_eq!(
+        got,
+        frames,
+        "frame count mismatch; stderr: {}",
+        stderr_of(&sessions, handle)
+    );
     assert_eq!(sessions.exit_code(handle, 2000), 0);
     sessions.close(handle);
 }
@@ -73,23 +135,28 @@ fn stderr_of(sessions: &Sessions, handle: i64) -> String {
     String::from_utf8_lossy(&buf[..n]).into_owned()
 }
 
-#[test]
-fn nv12_pipe_end_to_end() {
+#[test] fn nv12_pipe_end_to_end() {
     run_pipe(PixFmt::Nv12, "format=nv12", 10);
 }
 
-#[test]
-fn rgb24_pipe_end_to_end() {
+#[test] fn rgb24_pipe_end_to_end() {
     run_pipe(PixFmt::Rgb24, "format=rgb24", 10);
 }
 
-#[test]
-fn kill_unblocks_reader() {
+#[test] fn nv12_pipe_rgba_end_to_end() {
+    run_pipe_rgba(PixFmt::Nv12, "format=nv12", 10);
+}
+
+#[test] fn rgb24_pipe_rgba_end_to_end() {
+    run_pipe_rgba(PixFmt::Rgb24, "format=rgb24", 10);
+}
+
+#[test] fn kill_unblocks_reader() {
     let Some(ffmpeg) = find_ffmpeg() else {
         eprintln!("Skipping: no FFmpeg binary found.");
         return;
     };
-    // Infinite source: the reader would block forever unless kill() unblocks it.
+    // Infinite source: the reader would block forever unless kill() unblocks it
     let (w, h) = (64u32, 48u32);
     let args: Vec<String> = [
         &ffmpeg,
@@ -126,6 +193,8 @@ fn kill_unblocks_reader() {
 
     std::thread::sleep(std::time::Duration::from_millis(300));
     sessions.kill(handle);
-    reader.join().expect("Reader thread must terminate after kill().");
+    reader
+        .join()
+        .expect("Reader thread must terminate after kill().");
     sessions.close(handle);
 }

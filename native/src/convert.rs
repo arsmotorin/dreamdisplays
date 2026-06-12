@@ -1,8 +1,15 @@
 //! Pixel conversion kernels: brightness LUT and NV12 -> RGB24 (BT.709 limited range).
 //!
-//! All loops are written branch-free over contiguous slices so that rustc/LLVM can
-//! auto-vectorize them. Throughput on a single core comfortably exceeds what a
-//! 1080p60 stream needs, so no explicit SIMD intrinsics are used (yet).
+//! The NV12 hot path walks 2x2 luma blocks because each UV pair is shared by four
+//! pixels. That keeps chroma loads, index math, and bounds checks out of the per-pixel
+//! path as much as possible while preserving exact BT.709 limited-range output.
+
+use rayon::prelude::*;
+use rayon::{ThreadPool, ThreadPoolBuilder};
+use std::sync::OnceLock;
+
+const PARALLEL_PIXEL_THRESHOLD: usize = 1280 * 720;
+const MAX_CONVERT_THREADS: usize = 4;
 
 /// Builds a 256-entry brightness lookup table for `factor = milli / 1000`.
 /// `milli` is clamped to `[0, 2000]` (matching the Kotlin-side brightness range 0.0..2.0).
@@ -28,6 +35,13 @@ pub fn rgb24_with_lut(src: &[u8], dst: &mut [u8], lut: &[u8; 256]) {
     }
 }
 
+/// Applies the brightness LUT to an RGB24 buffer in place.
+pub fn rgb24_apply_lut_in_place(buf: &mut [u8], lut: &[u8; 256]) {
+    for b in buf {
+        *b = lut[*b as usize];
+    }
+}
+
 /// Number of bytes in one NV12 frame of `w` x `h` (chroma plane rounds odd dimensions up).
 pub fn nv12_frame_size(w: usize, h: usize) -> usize {
     let cw = w.div_ceil(2);
@@ -43,32 +57,525 @@ pub fn nv12_frame_size(w: usize, h: usize) -> usize {
 ///
 /// `raw.len()` must be >= [`nv12_frame_size`], `dst.len()` must be >= `w * h * 3`.
 pub fn nv12_to_rgb24(raw: &[u8], w: usize, h: usize, dst: &mut [u8], lut: &[u8; 256]) {
+    if should_parallel(w, h) {
+        if let Some(pool) = convert_pool() {
+            pool.install(|| nv12_to_rgb24_lut_parallel(raw, w, h, dst, lut));
+            return;
+        }
+    }
+    nv12_to_rgb24_lut_sequential(raw, w, h, dst, lut)
+}
+
+/// Converts NV12 to RGB24 without brightness adjustment.
+pub fn nv12_to_rgb24_identity(raw: &[u8], w: usize, h: usize, dst: &mut [u8]) {
+    if should_parallel(w, h) {
+        if let Some(pool) = convert_pool() {
+            pool.install(|| nv12_to_rgb24_identity_parallel(raw, w, h, dst));
+            return;
+        }
+    }
+    nv12_to_rgb24_identity_sequential(raw, w, h, dst)
+}
+
+/// Converts one NV12 frame into tightly packed RGBA32 with alpha fixed at 255.
+pub fn nv12_to_rgba32(raw: &[u8], w: usize, h: usize, dst: &mut [u8], lut: &[u8; 256]) {
+    if should_parallel(w, h) {
+        if let Some(pool) = convert_pool() {
+            pool.install(|| nv12_to_rgba32_lut_parallel(raw, w, h, dst, lut));
+            return;
+        }
+    }
+    nv12_to_rgba32_lut_sequential(raw, w, h, dst, lut)
+}
+
+/// Converts NV12 to RGBA32 without brightness adjustment.
+pub fn nv12_to_rgba32_identity(raw: &[u8], w: usize, h: usize, dst: &mut [u8]) {
+    if should_parallel(w, h) {
+        if let Some(pool) = convert_pool() {
+            pool.install(|| nv12_to_rgba32_identity_parallel(raw, w, h, dst));
+            return;
+        }
+    }
+    nv12_to_rgba32_identity_sequential(raw, w, h, dst)
+}
+
+/// Expands RGB24 into RGBA32 with brightness applied and alpha fixed at 255.
+pub fn rgb24_to_rgba32(src: &[u8], dst: &mut [u8], lut: &[u8; 256]) {
+    for (rgb, rgba) in src.chunks_exact(3).zip(dst.chunks_exact_mut(4)) {
+        rgba[0] = lut[rgb[0] as usize];
+        rgba[1] = lut[rgb[1] as usize];
+        rgba[2] = lut[rgb[2] as usize];
+        rgba[3] = 0xff;
+    }
+}
+
+/// Expands RGB24 into RGBA32 without brightness adjustment.
+pub fn rgb24_to_rgba32_identity(src: &[u8], dst: &mut [u8]) {
+    for (rgb, rgba) in src.chunks_exact(3).zip(dst.chunks_exact_mut(4)) {
+        rgba[0] = rgb[0];
+        rgba[1] = rgb[1];
+        rgba[2] = rgb[2];
+        rgba[3] = 0xff;
+    }
+}
+
+fn nv12_to_rgb24_identity_sequential(raw: &[u8], w: usize, h: usize, dst: &mut [u8]) {
     let cw = w.div_ceil(2);
     let y_plane = &raw[..w * h];
     let uv_plane = &raw[w * h..];
     let uv_stride = 2 * cw;
+    let row_stride = w * 3;
+    let even_h = h & !1;
 
-    for row in 0..h {
-        let y_row = &y_plane[row * w..row * w + w];
-        let uv_row = &uv_plane[(row / 2) * uv_stride..(row / 2) * uv_stride + uv_stride];
-        let dst_row = &mut dst[row * w * 3..(row + 1) * w * 3];
+    for row in (0..even_h).step_by(2) {
+        let y0 = &y_plane[row * w..row * w + w];
+        let y1 = &y_plane[(row + 1) * w..(row + 1) * w + w];
+        let uv = &uv_plane[(row / 2) * uv_stride..(row / 2) * uv_stride + uv_stride];
+        let rows = &mut dst[row * row_stride..(row + 2) * row_stride];
+        let (dst0, dst1) = rows.split_at_mut(row_stride);
+        convert_two_rows_identity(y0, y1, uv, dst0, dst1, w);
+    }
 
-        for x in 0..w {
-            // BT.709 limited range, fixed point with 8 fractional bits:
-            // R = 1.1644*C + 1.7927*E; G = 1.1644*C - 0.2132*D - 0.5329*E; B = 1.1644*C + 2.1124*D
-            let c = 298 * (y_row[x] as i32 - 16);
-            let d = uv_row[2 * (x / 2)] as i32 - 128;
-            let e = uv_row[2 * (x / 2) + 1] as i32 - 128;
+    if even_h != h {
+        let y = &y_plane[even_h * w..even_h * w + w];
+        let uv = &uv_plane[(even_h / 2) * uv_stride..(even_h / 2) * uv_stride + uv_stride];
+        let dst_row = &mut dst[even_h * row_stride..(even_h + 1) * row_stride];
+        convert_one_row_identity(y, uv, dst_row, w);
+    }
+}
 
-            // RGB range is [0, 255], so we need to round to [0, 254] and clamp.
-            let r = (c + 459 * e + 128) >> 8;
-            let g = (c - 55 * d - 136 * e + 128) >> 8;
-            let b = (c + 541 * d + 128) >> 8;
+fn nv12_to_rgb24_lut_sequential(raw: &[u8], w: usize, h: usize, dst: &mut [u8], lut: &[u8; 256]) {
+    let cw = w.div_ceil(2);
+    let y_plane = &raw[..w * h];
+    let uv_plane = &raw[w * h..];
+    let uv_stride = 2 * cw;
+    let row_stride = w * 3;
+    let even_h = h & !1;
 
-            dst_row[3 * x] = lut[r.clamp(0, 255) as usize];
-            dst_row[3 * x + 1] = lut[g.clamp(0, 255) as usize];
-            dst_row[3 * x + 2] = lut[b.clamp(0, 255) as usize];
-        }
+    for row in (0..even_h).step_by(2) {
+        let y0 = &y_plane[row * w..row * w + w];
+        let y1 = &y_plane[(row + 1) * w..(row + 1) * w + w];
+        let uv = &uv_plane[(row / 2) * uv_stride..(row / 2) * uv_stride + uv_stride];
+        let rows = &mut dst[row * row_stride..(row + 2) * row_stride];
+        let (dst0, dst1) = rows.split_at_mut(row_stride);
+        convert_two_rows_lut(y0, y1, uv, dst0, dst1, w, lut);
+    }
+
+    if even_h != h {
+        let y = &y_plane[even_h * w..even_h * w + w];
+        let uv = &uv_plane[(even_h / 2) * uv_stride..(even_h / 2) * uv_stride + uv_stride];
+        let dst_row = &mut dst[even_h * row_stride..(even_h + 1) * row_stride];
+        convert_one_row_lut(y, uv, dst_row, w, lut);
+    }
+}
+
+fn nv12_to_rgba32_identity_sequential(raw: &[u8], w: usize, h: usize, dst: &mut [u8]) {
+    let cw = w.div_ceil(2);
+    let y_plane = &raw[..w * h];
+    let uv_plane = &raw[w * h..];
+    let uv_stride = 2 * cw;
+    let row_stride = w * 4;
+    let even_h = h & !1;
+
+    for row in (0..even_h).step_by(2) {
+        let y0 = &y_plane[row * w..row * w + w];
+        let y1 = &y_plane[(row + 1) * w..(row + 1) * w + w];
+        let uv = &uv_plane[(row / 2) * uv_stride..(row / 2) * uv_stride + uv_stride];
+        let rows = &mut dst[row * row_stride..(row + 2) * row_stride];
+        let (dst0, dst1) = rows.split_at_mut(row_stride);
+        convert_two_rows_rgba_identity(y0, y1, uv, dst0, dst1, w);
+    }
+
+    if even_h != h {
+        let y = &y_plane[even_h * w..even_h * w + w];
+        let uv = &uv_plane[(even_h / 2) * uv_stride..(even_h / 2) * uv_stride + uv_stride];
+        let dst_row = &mut dst[even_h * row_stride..(even_h + 1) * row_stride];
+        convert_one_row_rgba_identity(y, uv, dst_row, w);
+    }
+}
+
+fn nv12_to_rgba32_lut_sequential(raw: &[u8], w: usize, h: usize, dst: &mut [u8], lut: &[u8; 256]) {
+    let cw = w.div_ceil(2);
+    let y_plane = &raw[..w * h];
+    let uv_plane = &raw[w * h..];
+    let uv_stride = 2 * cw;
+    let row_stride = w * 4;
+    let even_h = h & !1;
+
+    for row in (0..even_h).step_by(2) {
+        let y0 = &y_plane[row * w..row * w + w];
+        let y1 = &y_plane[(row + 1) * w..(row + 1) * w + w];
+        let uv = &uv_plane[(row / 2) * uv_stride..(row / 2) * uv_stride + uv_stride];
+        let rows = &mut dst[row * row_stride..(row + 2) * row_stride];
+        let (dst0, dst1) = rows.split_at_mut(row_stride);
+        convert_two_rows_rgba_lut(y0, y1, uv, dst0, dst1, w, lut);
+    }
+
+    if even_h != h {
+        let y = &y_plane[even_h * w..even_h * w + w];
+        let uv = &uv_plane[(even_h / 2) * uv_stride..(even_h / 2) * uv_stride + uv_stride];
+        let dst_row = &mut dst[even_h * row_stride..(even_h + 1) * row_stride];
+        convert_one_row_rgba_lut(y, uv, dst_row, w, lut);
+    }
+}
+
+fn nv12_to_rgb24_identity_parallel(raw: &[u8], w: usize, h: usize, dst: &mut [u8]) {
+    let cw = w.div_ceil(2);
+    let y_plane = &raw[..w * h];
+    let uv_plane = &raw[w * h..];
+    let uv_stride = 2 * cw;
+    let row_stride = w * 3;
+    let even_h = h & !1;
+    let even_dst_len = even_h * row_stride;
+
+    dst[..even_dst_len]
+        .par_chunks_mut(row_stride * 2)
+        .enumerate()
+        .for_each(|(pair, rows)| {
+            let row = pair * 2;
+            let y0 = &y_plane[row * w..row * w + w];
+            let y1 = &y_plane[(row + 1) * w..(row + 1) * w + w];
+            let uv = &uv_plane[pair * uv_stride..pair * uv_stride + uv_stride];
+            let (dst0, dst1) = rows.split_at_mut(row_stride);
+            convert_two_rows_identity(y0, y1, uv, dst0, dst1, w);
+        });
+
+    if even_h != h {
+        let y = &y_plane[even_h * w..even_h * w + w];
+        let uv = &uv_plane[(even_h / 2) * uv_stride..(even_h / 2) * uv_stride + uv_stride];
+        let dst_row = &mut dst[even_h * row_stride..(even_h + 1) * row_stride];
+        convert_one_row_identity(y, uv, dst_row, w);
+    }
+}
+
+fn nv12_to_rgb24_lut_parallel(raw: &[u8], w: usize, h: usize, dst: &mut [u8], lut: &[u8; 256]) {
+    let cw = w.div_ceil(2);
+    let y_plane = &raw[..w * h];
+    let uv_plane = &raw[w * h..];
+    let uv_stride = 2 * cw;
+    let row_stride = w * 3;
+    let even_h = h & !1;
+    let even_dst_len = even_h * row_stride;
+
+    dst[..even_dst_len]
+        .par_chunks_mut(row_stride * 2)
+        .enumerate()
+        .for_each(|(pair, rows)| {
+            let row = pair * 2;
+            let y0 = &y_plane[row * w..row * w + w];
+            let y1 = &y_plane[(row + 1) * w..(row + 1) * w + w];
+            let uv = &uv_plane[pair * uv_stride..pair * uv_stride + uv_stride];
+            let (dst0, dst1) = rows.split_at_mut(row_stride);
+            convert_two_rows_lut(y0, y1, uv, dst0, dst1, w, lut);
+        });
+
+    if even_h != h {
+        let y = &y_plane[even_h * w..even_h * w + w];
+        let uv = &uv_plane[(even_h / 2) * uv_stride..(even_h / 2) * uv_stride + uv_stride];
+        let dst_row = &mut dst[even_h * row_stride..(even_h + 1) * row_stride];
+        convert_one_row_lut(y, uv, dst_row, w, lut);
+    }
+}
+
+fn nv12_to_rgba32_identity_parallel(raw: &[u8], w: usize, h: usize, dst: &mut [u8]) {
+    let cw = w.div_ceil(2);
+    let y_plane = &raw[..w * h];
+    let uv_plane = &raw[w * h..];
+    let uv_stride = 2 * cw;
+    let row_stride = w * 4;
+    let even_h = h & !1;
+    let even_dst_len = even_h * row_stride;
+
+    dst[..even_dst_len]
+        .par_chunks_mut(row_stride * 2)
+        .enumerate()
+        .for_each(|(pair, rows)| {
+            let row = pair * 2;
+            let y0 = &y_plane[row * w..row * w + w];
+            let y1 = &y_plane[(row + 1) * w..(row + 1) * w + w];
+            let uv = &uv_plane[pair * uv_stride..pair * uv_stride + uv_stride];
+            let (dst0, dst1) = rows.split_at_mut(row_stride);
+            convert_two_rows_rgba_identity(y0, y1, uv, dst0, dst1, w);
+        });
+
+    if even_h != h {
+        let y = &y_plane[even_h * w..even_h * w + w];
+        let uv = &uv_plane[(even_h / 2) * uv_stride..(even_h / 2) * uv_stride + uv_stride];
+        let dst_row = &mut dst[even_h * row_stride..(even_h + 1) * row_stride];
+        convert_one_row_rgba_identity(y, uv, dst_row, w);
+    }
+}
+
+fn nv12_to_rgba32_lut_parallel(raw: &[u8], w: usize, h: usize, dst: &mut [u8], lut: &[u8; 256]) {
+    let cw = w.div_ceil(2);
+    let y_plane = &raw[..w * h];
+    let uv_plane = &raw[w * h..];
+    let uv_stride = 2 * cw;
+    let row_stride = w * 4;
+    let even_h = h & !1;
+    let even_dst_len = even_h * row_stride;
+
+    dst[..even_dst_len]
+        .par_chunks_mut(row_stride * 2)
+        .enumerate()
+        .for_each(|(pair, rows)| {
+            let row = pair * 2;
+            let y0 = &y_plane[row * w..row * w + w];
+            let y1 = &y_plane[(row + 1) * w..(row + 1) * w + w];
+            let uv = &uv_plane[pair * uv_stride..pair * uv_stride + uv_stride];
+            let (dst0, dst1) = rows.split_at_mut(row_stride);
+            convert_two_rows_rgba_lut(y0, y1, uv, dst0, dst1, w, lut);
+        });
+
+    if even_h != h {
+        let y = &y_plane[even_h * w..even_h * w + w];
+        let uv = &uv_plane[(even_h / 2) * uv_stride..(even_h / 2) * uv_stride + uv_stride];
+        let dst_row = &mut dst[even_h * row_stride..(even_h + 1) * row_stride];
+        convert_one_row_rgba_lut(y, uv, dst_row, w, lut);
+    }
+}
+
+fn should_parallel(w: usize, h: usize) -> bool {
+    w.saturating_mul(h) >= PARALLEL_PIXEL_THRESHOLD
+}
+
+fn convert_pool() -> Option<&'static ThreadPool> {
+    static POOL: OnceLock<Option<ThreadPool>> = OnceLock::new();
+    POOL.get_or_init(|| {
+        let cores = std::thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(1);
+        let threads = match cores {
+            0..=2 => return None,
+            3..=5 => 2,
+            _ => MAX_CONVERT_THREADS,
+        };
+        ThreadPoolBuilder::new()
+            .num_threads(threads)
+            .thread_name(|i| format!("dd-convert-{i}"))
+            .build()
+            .ok()
+    })
+    .as_ref()
+}
+
+#[inline(always)] fn convert_two_rows_identity(
+    y0: &[u8],
+    y1: &[u8],
+    uv: &[u8],
+    dst0: &mut [u8],
+    dst1: &mut [u8],
+    w: usize,
+) {
+    let mut x = 0usize;
+    while x + 1 < w {
+        let d = uv[x] as i32 - 128;
+        let e = uv[x + 1] as i32 - 128;
+        write_rgb_identity(y0[x], d, e, dst0, 3 * x);
+        write_rgb_identity(y0[x + 1], d, e, dst0, 3 * (x + 1));
+        write_rgb_identity(y1[x], d, e, dst1, 3 * x);
+        write_rgb_identity(y1[x + 1], d, e, dst1, 3 * (x + 1));
+        x += 2;
+    }
+    if x < w {
+        let d = uv[x] as i32 - 128;
+        let e = uv[x + 1] as i32 - 128;
+        write_rgb_identity(y0[x], d, e, dst0, 3 * x);
+        write_rgb_identity(y1[x], d, e, dst1, 3 * x);
+    }
+}
+
+#[inline(always)] fn convert_two_rows_lut(
+    y0: &[u8],
+    y1: &[u8],
+    uv: &[u8],
+    dst0: &mut [u8],
+    dst1: &mut [u8],
+    w: usize,
+    lut: &[u8; 256],
+) {
+    let mut x = 0usize;
+    while x + 1 < w {
+        let d = uv[x] as i32 - 128;
+        let e = uv[x + 1] as i32 - 128;
+        write_rgb_lut(y0[x], d, e, dst0, 3 * x, lut);
+        write_rgb_lut(y0[x + 1], d, e, dst0, 3 * (x + 1), lut);
+        write_rgb_lut(y1[x], d, e, dst1, 3 * x, lut);
+        write_rgb_lut(y1[x + 1], d, e, dst1, 3 * (x + 1), lut);
+        x += 2;
+    }
+    if x < w {
+        let d = uv[x] as i32 - 128;
+        let e = uv[x + 1] as i32 - 128;
+        write_rgb_lut(y0[x], d, e, dst0, 3 * x, lut);
+        write_rgb_lut(y1[x], d, e, dst1, 3 * x, lut);
+    }
+}
+
+#[inline(always)] fn convert_one_row_identity(y: &[u8], uv: &[u8], dst: &mut [u8], w: usize) {
+    let mut x = 0usize;
+    while x + 1 < w {
+        let d = uv[x] as i32 - 128;
+        let e = uv[x + 1] as i32 - 128;
+        write_rgb_identity(y[x], d, e, dst, 3 * x);
+        write_rgb_identity(y[x + 1], d, e, dst, 3 * (x + 1));
+        x += 2;
+    }
+    if x < w {
+        let d = uv[x] as i32 - 128;
+        let e = uv[x + 1] as i32 - 128;
+        write_rgb_identity(y[x], d, e, dst, 3 * x);
+    }
+}
+
+#[inline(always)] fn convert_one_row_lut(y: &[u8], uv: &[u8], dst: &mut [u8], w: usize, lut: &[u8; 256]) {
+    let mut x = 0usize;
+    while x + 1 < w {
+        let d = uv[x] as i32 - 128;
+        let e = uv[x + 1] as i32 - 128;
+        write_rgb_lut(y[x], d, e, dst, 3 * x, lut);
+        write_rgb_lut(y[x + 1], d, e, dst, 3 * (x + 1), lut);
+        x += 2;
+    }
+    if x < w {
+        let d = uv[x] as i32 - 128;
+        let e = uv[x + 1] as i32 - 128;
+        write_rgb_lut(y[x], d, e, dst, 3 * x, lut);
+    }
+}
+
+#[inline(always)] fn convert_two_rows_rgba_identity(
+    y0: &[u8],
+    y1: &[u8],
+    uv: &[u8],
+    dst0: &mut [u8],
+    dst1: &mut [u8],
+    w: usize,
+) {
+    let mut x = 0usize;
+    while x + 1 < w {
+        let d = uv[x] as i32 - 128;
+        let e = uv[x + 1] as i32 - 128;
+        write_rgba_identity(y0[x], d, e, dst0, 4 * x);
+        write_rgba_identity(y0[x + 1], d, e, dst0, 4 * (x + 1));
+        write_rgba_identity(y1[x], d, e, dst1, 4 * x);
+        write_rgba_identity(y1[x + 1], d, e, dst1, 4 * (x + 1));
+        x += 2;
+    }
+    if x < w {
+        let d = uv[x] as i32 - 128;
+        let e = uv[x + 1] as i32 - 128;
+        write_rgba_identity(y0[x], d, e, dst0, 4 * x);
+        write_rgba_identity(y1[x], d, e, dst1, 4 * x);
+    }
+}
+
+#[inline(always)] fn convert_two_rows_rgba_lut(
+    y0: &[u8],
+    y1: &[u8],
+    uv: &[u8],
+    dst0: &mut [u8],
+    dst1: &mut [u8],
+    w: usize,
+    lut: &[u8; 256],
+) {
+    let mut x = 0usize;
+    while x + 1 < w {
+        let d = uv[x] as i32 - 128;
+        let e = uv[x + 1] as i32 - 128;
+        write_rgba_lut(y0[x], d, e, dst0, 4 * x, lut);
+        write_rgba_lut(y0[x + 1], d, e, dst0, 4 * (x + 1), lut);
+        write_rgba_lut(y1[x], d, e, dst1, 4 * x, lut);
+        write_rgba_lut(y1[x + 1], d, e, dst1, 4 * (x + 1), lut);
+        x += 2;
+    }
+    if x < w {
+        let d = uv[x] as i32 - 128;
+        let e = uv[x + 1] as i32 - 128;
+        write_rgba_lut(y0[x], d, e, dst0, 4 * x, lut);
+        write_rgba_lut(y1[x], d, e, dst1, 4 * x, lut);
+    }
+}
+
+#[inline(always)] fn convert_one_row_rgba_identity(y: &[u8], uv: &[u8], dst: &mut [u8], w: usize) {
+    let mut x = 0usize;
+    while x + 1 < w {
+        let d = uv[x] as i32 - 128;
+        let e = uv[x + 1] as i32 - 128;
+        write_rgba_identity(y[x], d, e, dst, 4 * x);
+        write_rgba_identity(y[x + 1], d, e, dst, 4 * (x + 1));
+        x += 2;
+    }
+    if x < w {
+        let d = uv[x] as i32 - 128;
+        let e = uv[x + 1] as i32 - 128;
+        write_rgba_identity(y[x], d, e, dst, 4 * x);
+    }
+}
+
+#[inline(always)] fn convert_one_row_rgba_lut(y: &[u8], uv: &[u8], dst: &mut [u8], w: usize, lut: &[u8; 256]) {
+    let mut x = 0usize;
+    while x + 1 < w {
+        let d = uv[x] as i32 - 128;
+        let e = uv[x + 1] as i32 - 128;
+        write_rgba_lut(y[x], d, e, dst, 4 * x, lut);
+        write_rgba_lut(y[x + 1], d, e, dst, 4 * (x + 1), lut);
+        x += 2;
+    }
+    if x < w {
+        let d = uv[x] as i32 - 128;
+        let e = uv[x + 1] as i32 - 128;
+        write_rgba_lut(y[x], d, e, dst, 4 * x, lut);
+    }
+}
+
+#[inline(always)] fn write_rgb_identity(y: u8, d: i32, e: i32, dst: &mut [u8], i: usize) {
+    let (r, g, b) = yuv_to_rgb(y, d, e);
+    dst[i] = r;
+    dst[i + 1] = g;
+    dst[i + 2] = b;
+}
+
+#[inline(always)] fn write_rgb_lut(y: u8, d: i32, e: i32, dst: &mut [u8], i: usize, lut: &[u8; 256]) {
+    let (r, g, b) = yuv_to_rgb(y, d, e);
+    dst[i] = lut[r as usize];
+    dst[i + 1] = lut[g as usize];
+    dst[i + 2] = lut[b as usize];
+}
+
+#[inline(always)] fn write_rgba_identity(y: u8, d: i32, e: i32, dst: &mut [u8], i: usize) {
+    let (r, g, b) = yuv_to_rgb(y, d, e);
+    dst[i] = r;
+    dst[i + 1] = g;
+    dst[i + 2] = b;
+    dst[i + 3] = 0xff;
+}
+
+#[inline(always)] fn write_rgba_lut(y: u8, d: i32, e: i32, dst: &mut [u8], i: usize, lut: &[u8; 256]) {
+    let (r, g, b) = yuv_to_rgb(y, d, e);
+    dst[i] = lut[r as usize];
+    dst[i + 1] = lut[g as usize];
+    dst[i + 2] = lut[b as usize];
+    dst[i + 3] = 0xff;
+}
+
+#[inline(always)] fn yuv_to_rgb(y: u8, d: i32, e: i32) -> (u8, u8, u8) {
+    // BT.709 limited range, fixed point with 8 fractional bits:
+    // R = 1.1644*C + 1.7927*E; G = 1.1644*C - 0.2132*D - 0.5329*E; B = 1.1644*C + 2.1124*D
+    let c = 298 * (y as i32 - 16);
+    let r = (c + 459 * e + 128) >> 8;
+    let g = (c - 55 * d - 136 * e + 128) >> 8;
+    let b = (c + 541 * d + 128) >> 8;
+    (clamp_u8(r), clamp_u8(g), clamp_u8(b))
+}
+
+#[inline(always)] fn clamp_u8(v: i32) -> u8 {
+    if v < 0 {
+        0
+    } else if v > 255 {
+        255
+    } else {
+        v as u8
     }
 }
 
@@ -147,11 +654,49 @@ pub fn nv12_to_rgb24(raw: &[u8], w: usize, h: usize, dst: &mut [u8], lut: &[u8; 
         assert!(dst.iter().all(|&b| b == 128), "{dst:?}");
     }
 
+    #[test] fn nv12_parallel_matches_sequential() {
+        let (w, h) = (1280usize, 720usize);
+        let mut raw = vec![0u8; nv12_frame_size(w, h)];
+        for (i, b) in raw.iter_mut().enumerate() {
+            *b = ((i * 37 + i / 17) & 0xff) as u8;
+        }
+
+        let lut = build_lut(900);
+        let mut sequential = vec![0u8; w * h * 3];
+        let mut parallel = vec![0u8; w * h * 3];
+        nv12_to_rgb24_lut_sequential(&raw, w, h, &mut sequential, &lut);
+        nv12_to_rgb24(&raw, w, h, &mut parallel, &lut);
+        assert_eq!(parallel, sequential);
+
+        nv12_to_rgb24_identity_sequential(&raw, w, h, &mut sequential);
+        nv12_to_rgb24_identity(&raw, w, h, &mut parallel);
+        assert_eq!(parallel, sequential);
+
+        let mut sequential_rgba = vec![0u8; w * h * 4];
+        let mut parallel_rgba = vec![0u8; w * h * 4];
+        nv12_to_rgba32_lut_sequential(&raw, w, h, &mut sequential_rgba, &lut);
+        nv12_to_rgba32(&raw, w, h, &mut parallel_rgba, &lut);
+        assert_eq!(parallel_rgba, sequential_rgba);
+        assert!(parallel_rgba.chunks_exact(4).all(|px| px[3] == 0xff));
+
+        nv12_to_rgba32_identity_sequential(&raw, w, h, &mut sequential_rgba);
+        nv12_to_rgba32_identity(&raw, w, h, &mut parallel_rgba);
+        assert_eq!(parallel_rgba, sequential_rgba);
+    }
+
     #[test] fn rgb24_lut_applies() {
         let lut = build_lut(500);
         let src = [10u8, 100, 200, 255];
         let mut dst = [0u8; 4];
         rgb24_with_lut(&src, &mut dst, &lut);
         assert_eq!(dst, [5, 50, 100, 128]);
+
+        let mut inplace = src;
+        rgb24_apply_lut_in_place(&mut inplace, &lut);
+        assert_eq!(inplace, dst);
+
+        let mut rgba = [0u8; 8];
+        rgb24_to_rgba32(&[10u8, 100, 200, 255, 20, 40], &mut rgba, &lut);
+        assert_eq!(rgba, [5, 50, 100, 255, 128, 10, 20, 255]);
     }
 }

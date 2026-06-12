@@ -3,6 +3,7 @@ package com.dreamdisplays.player.pipeline
 import com.dreamdisplays.player.MediaPlayer
 import com.dreamdisplays.render.AsyncTextureUploader
 import com.dreamdisplays.render.TextureUploadUtil
+import com.dreamdisplays.render.UploadPixelFormat
 import com.mojang.blaze3d.textures.GpuTexture
 import net.minecraft.client.Minecraft
 import org.slf4j.LoggerFactory
@@ -19,7 +20,10 @@ import java.util.concurrent.atomic.AtomicReference
  * The reader thread fills a "spare" buffer and [publish]es it; the render thread consumes it
  * via [updateFrame] without ever blocking the reader.
  */
-internal class FrameSurface(private val debugLabel: String) {
+internal class FrameSurface(
+    private val debugLabel: String,
+    private val pixelFormat: UploadPixelFormat = UploadPixelFormat.RGB24,
+) {
     private val logger = LoggerFactory.getLogger("DreamDisplays/FrameSurface")
 
     companion object {
@@ -56,11 +60,12 @@ internal class FrameSurface(private val debugLabel: String) {
         buf.rewind()
         val start = System.nanoTime()
         try {
-            TextureUploadUtil.uploadRgb(
+            TextureUploadUtil.upload(
                 texture = texture,
                 src = buf,
                 w = texture.getWidth(0),
                 h = texture.getHeight(0),
+                format = pixelFormat,
                 glUploader = { uploader ?: AsyncTextureUploader(stateCache = true).also { uploader = it } },
                 rgbaScratch = rgbaUploadBuffer,
                 setRgbaScratch = { rgbaUploadBuffer = it },

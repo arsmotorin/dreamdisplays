@@ -73,7 +73,8 @@ pub unsafe extern "C" fn dd_video_open(
 ///
 /// Safety: `dst` must point to `dst_len` writable bytes and remain valid for the duration of
 /// the call. Only one thread may read a given handle at a time.
-#[no_mangle] pub unsafe extern "C" fn dd_video_read_frame(
+#[no_mangle]
+pub unsafe extern "C" fn dd_video_read_frame(
     handle: i64,
     dst: *mut u8,
     dst_len: u64,
@@ -89,11 +90,36 @@ pub unsafe extern "C" fn dd_video_open(
     .unwrap_or(ERR_IO)
 }
 
+/// Blocking read of the next frame into `dst` as RGBA32 with brightness applied
+/// (`brightness_milli` = brightness * 1000, 1000 = unchanged). Alpha is always 255.
+///
+/// Returns 0 on success, 1 on EOF, negative on error (see `session.rs` codes).
+///
+/// Safety: `dst` must point to `dst_len` writable bytes and remain valid for the duration of
+/// the call. Only one thread may read a given handle at a time.
+#[no_mangle]
+pub unsafe extern "C" fn dd_video_read_frame_rgba(
+    handle: i64,
+    dst: *mut u8,
+    dst_len: u64,
+    brightness_milli: u32,
+) -> i32 {
+    if dst.is_null() {
+        return ERR_BAD_ARGS;
+    }
+    let dst = std::slice::from_raw_parts_mut(dst, dst_len as usize);
+    catch_unwind(AssertUnwindSafe(|| {
+        sessions().read_frame_rgba(handle, dst, brightness_milli)
+    }))
+    .unwrap_or(ERR_IO)
+}
+
 /// Copies the captured FFmpeg stderr (UTF-8, capped) into `dst`; returns bytes written
 /// or a negative error code.
 ///
 /// Safety: `dst` must point to `dst_len` writable bytes.
-#[no_mangle] pub unsafe extern "C" fn dd_video_stderr(handle: i64, dst: *mut u8, dst_len: u64) -> i32 {
+#[no_mangle]
+pub unsafe extern "C" fn dd_video_stderr(handle: i64, dst: *mut u8, dst_len: u64) -> i32 {
     if dst.is_null() {
         return ERR_BAD_ARGS;
     }
@@ -103,19 +129,24 @@ pub unsafe extern "C" fn dd_video_open(
 
 /// Waits up to `wait_millis` for the `FFmpeg` process to exit; returns its exit code or -1
 /// (killing it if it is still running after the timeout).
-#[no_mangle] pub extern "C" fn dd_video_exit_code(handle: i64, wait_millis: u32) -> i32 {
-    catch_unwind(AssertUnwindSafe(|| sessions().exit_code(handle, wait_millis)))
-        .unwrap_or(ERR_BAD_HANDLE)
+#[no_mangle]
+pub extern "C" fn dd_video_exit_code(handle: i64, wait_millis: u32) -> i32 {
+    catch_unwind(AssertUnwindSafe(|| {
+        sessions().exit_code(handle, wait_millis)
+    }))
+    .unwrap_or(ERR_BAD_HANDLE)
 }
 
 /// Kills the `FFmpeg` process, unblocking any reader stuck in [`dd_video_read_frame`].
 /// The handle stays valid (for stderr / exit-code queries) until [`dd_video_close`].
-#[no_mangle] pub extern "C" fn dd_video_kill(handle: i64) {
+#[no_mangle]
+pub extern "C" fn dd_video_kill(handle: i64) {
     let _ = catch_unwind(AssertUnwindSafe(|| sessions().kill(handle)));
 }
 
 /// Frees the session. Must not be called while another thread is inside
 /// [`dd_video_read_frame`] for the same handle (join the reader thread first).
-#[no_mangle] pub extern "C" fn dd_video_close(handle: i64) {
+#[no_mangle]
+pub extern "C" fn dd_video_close(handle: i64) {
     let _ = catch_unwind(AssertUnwindSafe(|| sessions().close(handle)));
 }

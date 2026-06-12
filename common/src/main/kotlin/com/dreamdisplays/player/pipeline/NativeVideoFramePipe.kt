@@ -3,16 +3,18 @@ package com.dreamdisplays.player.pipeline
 import com.dreamdisplays.player.MediaPlayer
 import com.dreamdisplays.player.nativebridge.NativeMedia
 import com.dreamdisplays.player.util.daemon
+import com.dreamdisplays.render.UploadPixelFormat
 import com.mojang.blaze3d.textures.GpuTexture
 import org.slf4j.LoggerFactory
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Native (Rust) variant of [VideoFramePipe]: the FFmpeg process and its pipe live inside
  * `dreamdisplays_native`, which reads NV12/RGB24 frames in large blocks and writes
- * brightness-adjusted RGB24 directly into the spare direct buffer in one fused pass.
+ * brightness-adjusted RGB24 or RGBA32 directly into the spare direct buffer in one fused pass.
  *
  * The JVM side keeps only what it is good at: A/V pacing against the audio clock,
  * the ready-buffer swap, and the GPU upload — all shared with the JVM pipe via [FrameSurface].
@@ -39,7 +41,10 @@ internal class NativeVideoFramePipe(private val debugLabel: String) : FramePipe 
     @Volatile var expectedH = 0
         private set
 
-    private val surface = FrameSurface(debugLabel)
+    private val outputFormat: UploadPixelFormat =
+        if (NativeMedia.rgbaFramesEnabled) UploadPixelFormat.RGBA32 else UploadPixelFormat.RGB24
+    private val surface = FrameSurface(debugLabel, outputFormat)
+    private var popoutRgbScratch: ByteBuffer? = null
 
     @Volatile private var handle = 0L
 
@@ -50,7 +55,10 @@ internal class NativeVideoFramePipe(private val debugLabel: String) : FramePipe 
 
     override fun clear() = surface.clear()
 
-    override fun cleanup() = surface.cleanup()
+    override fun cleanup() {
+        surface.cleanup()
+        popoutRgbScratch = null
+    }
 
     /**
      * Opens a native FFmpeg session for [args] and starts the reader thread.
@@ -90,14 +98,14 @@ internal class NativeVideoFramePipe(private val debugLabel: String) : FramePipe 
     }
 
     /**
-     * Main loop of the reader thread: blocks in the native library until a converted RGB24
-     * frame lands in the spare buffer, then paces and publishes it exactly like the JVM pipe.
+     * Main loop of the reader thread: blocks in the native library until a converted frame lands
+     * in the spare buffer, then paces and publishes it exactly like the JVM pipe.
      */
     private fun read(handle: Long, w: Int, h: Int, frameNs: Long, seekOffsetNanos: Long, stopFlag: AtomicBoolean,
         terminated: AtomicBoolean, getAudioClock: () -> Long, onFirstFrame: () -> Unit, getBrightness: () -> Double,
         onEos: (stderr: String, normalEos: Boolean) -> Unit,
     ) {
-        val frameSize = w * h * 3
+        val frameSize = w * h * outputFormat.bytesPerPixel
         var spare = surface.takeOrAllocate(frameSize)
         surface.recycleFrameBuffer(surface.allocateFrameBuffer(frameSize))
 
@@ -108,7 +116,11 @@ internal class NativeVideoFramePipe(private val debugLabel: String) : FramePipe 
         while (!terminated.get() && !stopFlag.get()) {
             spare.clear()
             val brightnessMilli = (getBrightness().coerceIn(0.0, 2.0) * 1000).toInt()
-            rc = NativeMedia.videoReadFrame(handle, spare, frameSize, brightnessMilli)
+            rc = if (outputFormat == UploadPixelFormat.RGBA32) {
+                NativeMedia.videoReadFrameRgba(handle, spare, frameSize, brightnessMilli)
+            } else {
+                NativeMedia.videoReadFrame(handle, spare, frameSize, brightnessMilli)
+            }
             if (rc != NativeMedia.READ_OK) break
             spare.limit(frameSize).position(0)
 
@@ -125,7 +137,7 @@ internal class NativeVideoFramePipe(private val debugLabel: String) : FramePipe 
                 continue
             }
 
-            popoutFrameSink?.let { sink -> sink(spare, w, h); spare.rewind() }
+            sendPopoutFrame(spare, w, h)
 
             if (!MediaPlayer.captureSamples) { videoPts += frameNs; continue }
 
@@ -160,5 +172,33 @@ internal class NativeVideoFramePipe(private val debugLabel: String) : FramePipe 
         val h = handle
         handle = 0L
         if (h != 0L) NativeMedia.videoClose(h)
+    }
+
+    private fun sendPopoutFrame(frame: ByteBuffer, w: Int, h: Int) {
+        val sink = popoutFrameSink ?: return
+        if (outputFormat == UploadPixelFormat.RGB24) {
+            sink(frame, w, h)
+            frame.rewind()
+            return
+        }
+
+        val rgbSize = w * h * UploadPixelFormat.RGB24.bytesPerPixel
+        val scratch = popoutRgbScratch?.takeIf { it.capacity() >= rgbSize }
+            ?: ByteBuffer.allocateDirect(rgbSize).order(ByteOrder.nativeOrder()).also { popoutRgbScratch = it }
+        rgbaToRgb(frame, scratch, w * h)
+        sink(scratch, w, h)
+        frame.rewind()
+    }
+
+    private fun rgbaToRgb(src: ByteBuffer, dst: ByteBuffer, pixels: Int) {
+        dst.clear()
+        val savedPos = src.position()
+        for (i in 0 until pixels) {
+            val p = savedPos + i * UploadPixelFormat.RGBA32.bytesPerPixel
+            dst.put(src.get(p))
+            dst.put(src.get(p + 1))
+            dst.put(src.get(p + 2))
+        }
+        dst.flip()
     }
 }

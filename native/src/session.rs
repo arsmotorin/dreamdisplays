@@ -81,7 +81,10 @@ pub struct Sessions {
 
 impl Sessions {
     pub fn new() -> Sessions {
-        Sessions { map: Mutex::new(HashMap::new()), next: AtomicI64::new(1) }
+        Sessions {
+            map: Mutex::new(HashMap::new()),
+            next: AtomicI64::new(1),
+        }
     }
 
     fn get(&self, handle: i64) -> Option<Arc<Session>> {
@@ -148,7 +151,11 @@ impl Sessions {
             pix,
             read: Mutex::new(ReadState {
                 stdout,
-                raw: vec![0u8; pix.frame_size(w, h)],
+                raw: if pix == PixFmt::Nv12 {
+                    vec![0u8; pix.frame_size(w, h)]
+                } else {
+                    Vec::new()
+                },
                 lut: convert::build_lut(1000),
                 lut_milli: 1000,
             }),
@@ -181,11 +188,56 @@ impl Sessions {
         };
         let state = &mut *guard;
 
-        match read_exact_eof(&mut state.stdout, &mut state.raw) {
-            ReadOutcome::Frame => {}
-            ReadOutcome::Eof => return READ_EOF,
-            ReadOutcome::Error => return ERR_IO,
+        if state.lut_milli != brightness_milli {
+            state.lut = convert::build_lut(brightness_milli);
+            state.lut_milli = brightness_milli;
         }
+
+        match session.pix {
+            PixFmt::Nv12 => {
+                match read_exact_eof(&mut state.stdout, &mut state.raw) {
+                    ReadOutcome::Frame => {}
+                    ReadOutcome::Eof => return READ_EOF,
+                    ReadOutcome::Error => return ERR_IO,
+                }
+                if convert::lut_is_identity(brightness_milli) {
+                    convert::nv12_to_rgb24_identity(&state.raw, session.w, session.h, dst);
+                } else {
+                    convert::nv12_to_rgb24(&state.raw, session.w, session.h, dst, &state.lut);
+                }
+            }
+            PixFmt::Rgb24 => {
+                let n = session.w * session.h * 3;
+                match read_exact_eof(&mut state.stdout, &mut dst[..n]) {
+                    ReadOutcome::Frame => {}
+                    ReadOutcome::Eof => return READ_EOF,
+                    ReadOutcome::Error => return ERR_IO,
+                }
+                if !convert::lut_is_identity(brightness_milli) {
+                    convert::rgb24_apply_lut_in_place(&mut dst[..n], &state.lut);
+                }
+            }
+        }
+        READ_OK
+    }
+
+    /// Blocking read of the next frame, converted to RGBA32 with brightness applied.
+    /// `dst` must hold at least `w * h * 4` bytes.
+    pub fn read_frame_rgba(&self, handle: i64, dst: &mut [u8], brightness_milli: u32) -> i32 {
+        let session = match self.get(handle) {
+            Some(s) => s,
+            None => return ERR_BAD_HANDLE,
+        };
+        let rgb_len = session.w * session.h * 3;
+        let rgba_len = session.w * session.h * 4;
+        if dst.len() < rgba_len {
+            return ERR_BAD_ARGS;
+        }
+        let mut guard = match session.read.lock() {
+            Ok(s) => s,
+            Err(_) => return ERR_IO,
+        };
+        let state = &mut *guard;
 
         if state.lut_milli != brightness_milli {
             state.lut = convert::build_lut(brightness_milli);
@@ -194,14 +246,34 @@ impl Sessions {
 
         match session.pix {
             PixFmt::Nv12 => {
-                convert::nv12_to_rgb24(&state.raw, session.w, session.h, dst, &state.lut)
+                match read_exact_eof(&mut state.stdout, &mut state.raw) {
+                    ReadOutcome::Frame => {}
+                    ReadOutcome::Eof => return READ_EOF,
+                    ReadOutcome::Error => return ERR_IO,
+                }
+                if convert::lut_is_identity(brightness_milli) {
+                    convert::nv12_to_rgba32_identity(&state.raw, session.w, session.h, dst);
+                } else {
+                    convert::nv12_to_rgba32(&state.raw, session.w, session.h, dst, &state.lut);
+                }
             }
             PixFmt::Rgb24 => {
-                let n = session.w * session.h * 3;
+                if state.raw.len() < rgb_len {
+                    state.raw.resize(rgb_len, 0);
+                }
+                match read_exact_eof(&mut state.stdout, &mut state.raw[..rgb_len]) {
+                    ReadOutcome::Frame => {}
+                    ReadOutcome::Eof => return READ_EOF,
+                    ReadOutcome::Error => return ERR_IO,
+                }
                 if convert::lut_is_identity(brightness_milli) {
-                    dst[..n].copy_from_slice(&state.raw[..n]);
+                    convert::rgb24_to_rgba32_identity(&state.raw[..rgb_len], &mut dst[..rgba_len]);
                 } else {
-                    convert::rgb24_with_lut(&state.raw[..n], dst, &state.lut);
+                    convert::rgb24_to_rgba32(
+                        &state.raw[..rgb_len],
+                        &mut dst[..rgba_len],
+                        &state.lut,
+                    );
                 }
             }
         }

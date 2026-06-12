@@ -43,6 +43,7 @@ internal object NativeMedia {
     private var abiVersion: MethodHandle? = null
     private var videoOpen: MethodHandle? = null
     private var videoReadFrame: MethodHandle? = null
+    private var videoReadFrameRgbaHandle: MethodHandle? = null
     private var videoStderr: MethodHandle? = null
     private var videoExitCode: MethodHandle? = null
     private var videoKill: MethodHandle? = null
@@ -50,6 +51,12 @@ internal object NativeMedia {
 
     /** True once the library has been located, loaded, bound, and ABI-checked. */
     val isAvailable: Boolean by lazy { runCatching { init() }.getOrDefault(false) }
+
+    /** Uses native RGBA output so the render thread can upload directly into RGBA8 textures. */
+    val rgbaFramesEnabled: Boolean
+        get() = isAvailable
+                && System.getProperty("dreamdisplays.native.rgba", "true").toBoolean()
+                && videoReadFrameRgbaHandle != null
 
     /** Touches [isAvailable] on a background thread to keep first playback latency low. */
     fun prewarmAsync() {
@@ -75,6 +82,13 @@ internal object NativeMedia {
      */
     fun videoReadFrame(handle: Long, dst: ByteBuffer, frameBytes: Int, brightnessMilli: Int): Int =
         videoReadFrame!!.invoke(handle, MemorySegment.ofBuffer(dst), frameBytes.toLong(), brightnessMilli) as Int
+
+    /**
+     * Blocking read of the next frame into [dst] as RGBA32 with brightness pre-applied.
+     * Available only when [rgbaFramesEnabled] is true.
+     */
+    fun videoReadFrameRgba(handle: Long, dst: ByteBuffer, frameBytes: Int, brightnessMilli: Int): Int =
+        videoReadFrameRgbaHandle!!.invoke(handle, MemorySegment.ofBuffer(dst), frameBytes.toLong(), brightnessMilli) as Int
 
     /** Returns the FFmpeg stderr captured so far for [handle] (capped at 128 KiB). */
     fun videoStderr(handle: Long): String {
@@ -130,6 +144,9 @@ internal object NativeMedia {
                     desc,
                 )
 
+            fun bindOptional(name: String, desc: FunctionDescriptor): MethodHandle? =
+                lookup.find(name).map { linker.downcallHandle(it, desc) }.orElse(null)
+
             val long = ValueLayout.JAVA_LONG
             val int = ValueLayout.JAVA_INT
             val addr = ValueLayout.ADDRESS
@@ -137,6 +154,7 @@ internal object NativeMedia {
             abiVersion = bind("dd_abi_version", FunctionDescriptor.of(int))
             videoOpen = bind("dd_video_open", FunctionDescriptor.of(long, addr, long, int, int, int))
             videoReadFrame = bind("dd_video_read_frame", FunctionDescriptor.of(int, long, addr, long, int))
+            videoReadFrameRgbaHandle = bindOptional("dd_video_read_frame_rgba", FunctionDescriptor.of(int, long, addr, long, int))
             videoStderr = bind("dd_video_stderr", FunctionDescriptor.of(int, long, addr, long))
             videoExitCode = bind("dd_video_exit_code", FunctionDescriptor.of(int, long, int))
             videoKill = bind("dd_video_kill", FunctionDescriptor.ofVoid(long))
@@ -147,7 +165,9 @@ internal object NativeMedia {
                 logger.warn("Native library ABI mismatch: found $abi, expected $ABI_VERSION; using JVM pipeline.")
                 return false
             }
-            logger.info("Native media pipeline active: $lib (nv12=$nv12Enabled).")
+            val rgba = System.getProperty("dreamdisplays.native.rgba", "true").toBoolean()
+                    && videoReadFrameRgbaHandle != null
+            logger.info("Native media pipeline active: $lib (nv12=$nv12Enabled, rgba=$rgba).")
             true
         } catch (t: Throwable) {
             // UnsupportedOperationException on Java 21 preview gates, UnsatisfiedLinkError, etc.
@@ -169,20 +189,26 @@ internal object NativeMedia {
 
         val libName = System.mapLibraryName(LIB_BASE_NAME)
         val cached = File("$CACHE_ROOT/${platformKey()}/$libName")
-        if (cached.isFile && cached.length() > 0) return cached
 
         val resource = "/dreamdisplays-natives/${platformKey()}/$libName"
         javaClass.getResourceAsStream(resource)?.use { input ->
+            val bytes = input.readBytes()
+            if (cached.isFile && cached.length() == bytes.size.toLong()
+                && runCatching { cached.readBytes().contentEquals(bytes) }.getOrDefault(false)
+            ) {
+                return cached
+            }
             val parent = cached.parentFile
             if (parent != null && !parent.exists() && !parent.mkdirs()) return null
             val tmp = File(parent, "$libName.tmp")
-            tmp.outputStream().use { out -> input.transferTo(out) }
+            tmp.writeBytes(bytes)
             if (!tmp.renameTo(cached)) {
                 tmp.delete()
                 return null
             }
             return cached
         }
+        if (cached.isFile && cached.length() > 0) return cached
         return null
     }
 
