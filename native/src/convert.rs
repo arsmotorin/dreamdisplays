@@ -99,6 +99,50 @@ pub fn nv12_to_rgba32_identity(raw: &[u8], w: usize, h: usize, dst: &mut [u8]) {
     nv12_to_rgba32_identity_sequential(raw, w, h, dst)
 }
 
+/// Deinterleaves one NV12 frame into tightly packed I420 planes (Y, then U, then V) so
+/// each plane can be uploaded to its own single-channel GPU texture. No color conversion
+/// or brightness is applied; both happen in the fragment shader on the GPU path.
+///
+/// `raw.len()` and `dst.len()` must both be >= [`nv12_frame_size`].
+pub fn nv12_to_i420(raw: &[u8], w: usize, h: usize, dst: &mut [u8]) {
+    let cw = w.div_ceil(2);
+    let ch = h.div_ceil(2);
+    let y_size = w * h;
+    let c_size = cw * ch;
+
+    dst[..y_size].copy_from_slice(&raw[..y_size]);
+    let uv = &raw[y_size..y_size + 2 * c_size];
+    let (u_plane, rest) = dst[y_size..y_size + 2 * c_size].split_at_mut(c_size);
+    let v_plane = rest;
+    for (i, pair) in uv.chunks_exact(2).enumerate() {
+        u_plane[i] = pair[0];
+        v_plane[i] = pair[1];
+    }
+}
+
+/// Converts one I420 frame (Y, U, V planes as produced by [`nv12_to_i420`]) into RGBA32
+/// with alpha fixed at 255 and no brightness adjustment. Used to feed the popout window
+/// when the main path keeps frames planar for the GPU.
+///
+/// `raw.len()` must be >= [`nv12_frame_size`], `dst.len()` must be >= `w * h * 4`.
+pub fn i420_to_rgba32_identity(raw: &[u8], w: usize, h: usize, dst: &mut [u8]) {
+    let cw = w.div_ceil(2);
+    let ch = h.div_ceil(2);
+    let y_plane = &raw[..w * h];
+    let u_plane = &raw[w * h..w * h + cw * ch];
+    let v_plane = &raw[w * h + cw * ch..w * h + 2 * cw * ch];
+
+    for row in 0..h {
+        let crow = row / 2;
+        for col in 0..w {
+            let ccol = col / 2;
+            let d = u_plane[crow * cw + ccol] as i32 - 128;
+            let e = v_plane[crow * cw + ccol] as i32 - 128;
+            write_rgba_identity(y_plane[row * w + col], d, e, dst, 4 * (row * w + col));
+        }
+    }
+}
+
 /// Expands RGB24 into RGBA32 with brightness applied and alpha fixed at 255.
 pub fn rgb24_to_rgba32(src: &[u8], dst: &mut [u8], lut: &[u8; 256]) {
     let pixels = src.len().min(dst.len() / 4 * 3) / 3;
@@ -385,7 +429,8 @@ fn convert_pool() -> Option<&'static ThreadPool> {
     .as_ref()
 }
 
-#[inline(always)] fn convert_two_rows_identity(
+#[inline(always)]
+fn convert_two_rows_identity(
     y0: &[u8],
     y1: &[u8],
     uv: &[u8],
@@ -411,7 +456,8 @@ fn convert_pool() -> Option<&'static ThreadPool> {
     }
 }
 
-#[inline(always)] fn convert_two_rows_lut(
+#[inline(always)]
+fn convert_two_rows_lut(
     y0: &[u8],
     y1: &[u8],
     uv: &[u8],
@@ -438,7 +484,8 @@ fn convert_pool() -> Option<&'static ThreadPool> {
     }
 }
 
-#[inline(always)] fn convert_one_row_identity(y: &[u8], uv: &[u8], dst: &mut [u8], w: usize) {
+#[inline(always)]
+fn convert_one_row_identity(y: &[u8], uv: &[u8], dst: &mut [u8], w: usize) {
     let mut x = 0usize;
     while x + 1 < w {
         let d = uv[x] as i32 - 128;
@@ -454,7 +501,8 @@ fn convert_pool() -> Option<&'static ThreadPool> {
     }
 }
 
-#[inline(always)] fn convert_one_row_lut(y: &[u8], uv: &[u8], dst: &mut [u8], w: usize, lut: &[u8; 256]) {
+#[inline(always)]
+fn convert_one_row_lut(y: &[u8], uv: &[u8], dst: &mut [u8], w: usize, lut: &[u8; 256]) {
     let mut x = 0usize;
     while x + 1 < w {
         let d = uv[x] as i32 - 128;
@@ -470,7 +518,8 @@ fn convert_pool() -> Option<&'static ThreadPool> {
     }
 }
 
-#[inline(always)] fn convert_two_rows_rgba_identity(
+#[inline(always)]
+fn convert_two_rows_rgba_identity(
     y0: &[u8],
     y1: &[u8],
     uv: &[u8],
@@ -496,7 +545,8 @@ fn convert_pool() -> Option<&'static ThreadPool> {
     }
 }
 
-#[inline(always)] fn convert_two_rows_rgba_lut(
+#[inline(always)]
+fn convert_two_rows_rgba_lut(
     y0: &[u8],
     y1: &[u8],
     uv: &[u8],
@@ -523,7 +573,8 @@ fn convert_pool() -> Option<&'static ThreadPool> {
     }
 }
 
-#[inline(always)] fn convert_one_row_rgba_identity(y: &[u8], uv: &[u8], dst: &mut [u8], w: usize) {
+#[inline(always)]
+fn convert_one_row_rgba_identity(y: &[u8], uv: &[u8], dst: &mut [u8], w: usize) {
     let mut x = 0usize;
     while x + 1 < w {
         let d = uv[x] as i32 - 128;
@@ -539,7 +590,8 @@ fn convert_pool() -> Option<&'static ThreadPool> {
     }
 }
 
-#[inline(always)] fn convert_one_row_rgba_lut(y: &[u8], uv: &[u8], dst: &mut [u8], w: usize, lut: &[u8; 256]) {
+#[inline(always)]
+fn convert_one_row_rgba_lut(y: &[u8], uv: &[u8], dst: &mut [u8], w: usize, lut: &[u8; 256]) {
     let mut x = 0usize;
     while x + 1 < w {
         let d = uv[x] as i32 - 128;
@@ -555,21 +607,24 @@ fn convert_pool() -> Option<&'static ThreadPool> {
     }
 }
 
-#[inline(always)] fn write_rgb_identity(y: u8, d: i32, e: i32, dst: &mut [u8], i: usize) {
+#[inline(always)]
+fn write_rgb_identity(y: u8, d: i32, e: i32, dst: &mut [u8], i: usize) {
     let (r, g, b) = yuv_to_rgb(y, d, e);
     dst[i] = r;
     dst[i + 1] = g;
     dst[i + 2] = b;
 }
 
-#[inline(always)] fn write_rgb_lut(y: u8, d: i32, e: i32, dst: &mut [u8], i: usize, lut: &[u8; 256]) {
+#[inline(always)]
+fn write_rgb_lut(y: u8, d: i32, e: i32, dst: &mut [u8], i: usize, lut: &[u8; 256]) {
     let (r, g, b) = yuv_to_rgb(y, d, e);
     dst[i] = lut[r as usize];
     dst[i + 1] = lut[g as usize];
     dst[i + 2] = lut[b as usize];
 }
 
-#[inline(always)] fn write_rgba_identity(y: u8, d: i32, e: i32, dst: &mut [u8], i: usize) {
+#[inline(always)]
+fn write_rgba_identity(y: u8, d: i32, e: i32, dst: &mut [u8], i: usize) {
     let (r, g, b) = yuv_to_rgb(y, d, e);
     dst[i] = r;
     dst[i + 1] = g;
@@ -577,7 +632,8 @@ fn convert_pool() -> Option<&'static ThreadPool> {
     dst[i + 3] = 0xff;
 }
 
-#[inline(always)] fn write_rgba_lut(y: u8, d: i32, e: i32, dst: &mut [u8], i: usize, lut: &[u8; 256]) {
+#[inline(always)]
+fn write_rgba_lut(y: u8, d: i32, e: i32, dst: &mut [u8], i: usize, lut: &[u8; 256]) {
     let (r, g, b) = yuv_to_rgb(y, d, e);
     dst[i] = lut[r as usize];
     dst[i + 1] = lut[g as usize];
@@ -585,7 +641,8 @@ fn convert_pool() -> Option<&'static ThreadPool> {
     dst[i + 3] = 0xff;
 }
 
-#[inline(always)] fn yuv_to_rgb(y: u8, d: i32, e: i32) -> (u8, u8, u8) {
+#[inline(always)]
+fn yuv_to_rgb(y: u8, d: i32, e: i32) -> (u8, u8, u8) {
     // BT.709 limited range, fixed point with 8 fractional bits:
     // R = 1.1644*C + 1.7927*E; G = 1.1644*C - 0.2132*D - 0.5329*E; B = 1.1644*C + 2.1124*D
     let c = 298 * (y as i32 - 16);
@@ -595,7 +652,8 @@ fn convert_pool() -> Option<&'static ThreadPool> {
     (clamp_u8(r), clamp_u8(g), clamp_u8(b))
 }
 
-#[inline(always)] fn clamp_u8(v: i32) -> u8 {
+#[inline(always)]
+fn clamp_u8(v: i32) -> u8 {
     if v < 0 {
         0
     } else if v > 255 {
@@ -605,7 +663,8 @@ fn convert_pool() -> Option<&'static ThreadPool> {
     }
 }
 
-#[cfg(test)] mod tests {
+#[cfg(test)]
+mod tests {
     use super::*;
 
     const IDENTITY_MILLI: u32 = 1000;
@@ -621,7 +680,8 @@ fn convert_pool() -> Option<&'static ThreadPool> {
         raw
     }
 
-    #[test] fn lut_identity_is_passthrough() {
+    #[test]
+    fn lut_identity_is_passthrough() {
         let lut = build_lut(IDENTITY_MILLI);
         for i in 0..=255usize {
             assert_eq!(lut[i], i as u8);
@@ -629,19 +689,22 @@ fn convert_pool() -> Option<&'static ThreadPool> {
         assert!(lut_is_identity(IDENTITY_MILLI));
     }
 
-    #[test] fn lut_half_brightness_scales_down() {
+    #[test]
+    fn lut_half_brightness_scales_down() {
         let lut = build_lut(500);
         assert_eq!(lut[0], 0);
         assert_eq!(lut[200], 100);
         assert_eq!(lut[255], 128);
     }
 
-    #[test] fn lut_overbright_clamps() {
+    #[test]
+    fn lut_overbright_clamps() {
         let lut = build_lut(2000);
         assert_eq!(lut[200], 255);
     }
 
-    #[test] fn nv12_black_white_gray() {
+    #[test]
+    fn nv12_black_white_gray() {
         let lut = build_lut(IDENTITY_MILLI);
         let mut dst = vec![0u8; 2 * 2 * 3];
 
@@ -658,7 +721,8 @@ fn convert_pool() -> Option<&'static ThreadPool> {
         assert!(dst.iter().all(|&b| b == 128), "gray: {dst:?}");
     }
 
-    #[test] fn nv12_bt709_red() {
+    #[test]
+    fn nv12_bt709_red() {
         // Pure red RGB(255,0,0) in BT.709 limited range is approx Y=63, U=102, V=240.
         let lut = build_lut(IDENTITY_MILLI);
         let mut dst = vec![0u8; 2 * 2 * 3];
@@ -669,7 +733,8 @@ fn convert_pool() -> Option<&'static ThreadPool> {
         assert!(b.abs() <= 3, "b={b}");
     }
 
-    #[test] fn nv12_odd_dimensions() {
+    #[test]
+    fn nv12_odd_dimensions() {
         // 3x3: chroma plane is 2x2 blocks of UV pairs (stride 4). Must not panic and
         // must produce a fully written 3*3*3 output.
         let lut = build_lut(IDENTITY_MILLI);
@@ -680,7 +745,8 @@ fn convert_pool() -> Option<&'static ThreadPool> {
         assert!(dst.iter().all(|&b| b == 128), "{dst:?}");
     }
 
-    #[test] fn nv12_parallel_matches_sequential() {
+    #[test]
+    fn nv12_parallel_matches_sequential() {
         let (w, h) = (1280usize, 720usize);
         let mut raw = vec![0u8; nv12_frame_size(w, h)];
         for (i, b) in raw.iter_mut().enumerate() {
@@ -710,7 +776,37 @@ fn convert_pool() -> Option<&'static ThreadPool> {
         assert_eq!(parallel_rgba, sequential_rgba);
     }
 
-    #[test] fn rgb24_lut_applies() {
+    #[test]
+    fn nv12_to_i420_deinterleaves() {
+        // 4x2: Y plane 8 bytes, then 2 UV pairs
+        let mut raw = vec![1u8, 2, 3, 4, 5, 6, 7, 8];
+        raw.extend_from_slice(&[10, 20, 11, 21]); // U0 V0 U1 V1
+        let mut dst = vec![0u8; nv12_frame_size(4, 2)];
+        nv12_to_i420(&raw, 4, 2, &mut dst);
+        assert_eq!(&dst[..8], &[1, 2, 3, 4, 5, 6, 7, 8]);
+        assert_eq!(&dst[8..10], &[10, 11], "U plane");
+        assert_eq!(&dst[10..12], &[20, 21], "V plane");
+    }
+
+    #[test]
+    fn i420_rgba_matches_nv12_rgba() {
+        let (w, h) = (6usize, 4usize);
+        let mut raw = vec![0u8; nv12_frame_size(w, h)];
+        for (i, b) in raw.iter_mut().enumerate() {
+            *b = ((i * 53 + 7) & 0xff) as u8;
+        }
+        let mut expected = vec![0u8; w * h * 4];
+        nv12_to_rgba32_identity(&raw, w, h, &mut expected);
+
+        let mut i420 = vec![0u8; nv12_frame_size(w, h)];
+        nv12_to_i420(&raw, w, h, &mut i420);
+        let mut actual = vec![0u8; w * h * 4];
+        i420_to_rgba32_identity(&i420, w, h, &mut actual);
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn rgb24_lut_applies() {
         let lut = build_lut(500);
         let src = [10u8, 100, 200, 255];
         let mut dst = [0u8; 4];

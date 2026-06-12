@@ -300,6 +300,47 @@ impl Sessions {
         READ_OK
     }
 
+    /// Blocking read of the next frame as raw I420 planes (Y, then U, then V), with no
+    /// color conversion or brightness applied — both happen in the fragment shader.
+    /// Only valid for NV12 sessions. `dst` must hold at least [`convert::nv12_frame_size`] bytes.
+    pub fn read_frame_i420(&self, handle: i64, dst: &mut [u8]) -> i32 {
+        let session = match self.get(handle) {
+            Some(s) => s,
+            None => return ERR_BAD_HANDLE,
+        };
+        if session.pix != PixFmt::Nv12 || dst.len() < convert::nv12_frame_size(session.w, session.h)
+        {
+            return ERR_BAD_ARGS;
+        }
+        let mut guard = match session.read.lock() {
+            Ok(s) => s,
+            Err(_) => return ERR_IO,
+        };
+        let state = &mut *guard;
+
+        if let Some(prefetch) = &state.prefetch {
+            let raw = match prefetch.ready.recv() {
+                Ok(PrefetchedFrame::Frame(raw)) => raw,
+                Ok(PrefetchedFrame::Eof) => return READ_EOF,
+                Ok(PrefetchedFrame::Error) | Err(_) => return ERR_IO,
+            };
+            convert::nv12_to_i420(&raw, session.w, session.h, dst);
+            let _ = prefetch.recycle.send(raw);
+        } else {
+            let stdout = match state.stdout.as_mut() {
+                Some(stdout) => stdout,
+                None => return ERR_IO,
+            };
+            match read_exact_eof(stdout, &mut state.raw) {
+                ReadOutcome::Frame => {}
+                ReadOutcome::Eof => return READ_EOF,
+                ReadOutcome::Error => return ERR_IO,
+            }
+            convert::nv12_to_i420(&state.raw, session.w, session.h, dst);
+        }
+        READ_OK
+    }
+
     /// Blocking read of the next frame, converted to RGBA32 with brightness applied.
     /// `dst` must hold at least `w * h * 4` bytes.
     pub fn read_frame_rgba(&self, handle: i64, dst: &mut [u8], brightness_milli: u32) -> i32 {

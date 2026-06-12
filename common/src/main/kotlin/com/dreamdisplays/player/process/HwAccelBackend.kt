@@ -6,21 +6,21 @@ package com.dreamdisplays.player.process
  * The intent is to offload H.264 / HEVC / VP9 / AV1 decoding from the CPU to the GPU's dedicated
  * video decode block (`NVDEC` on NVIDIA, `VCE` on AMD, `QuickSync` on Intel, the Apple VT block on macOS).
  */
-enum class HwAccelBackend(val ffmpegName: String?, val hwOutputFormat: String?) {
+enum class HwAccelBackend(val ffmpegName: String?, val hwOutputFormat: String?, val lavCode: Int) {
     /** Apple platforms. Handles h264, hevc, vp9, prores. */
-    VIDEOTOOLBOX("videotoolbox", "videotoolbox_vld"),
+    VIDEOTOOLBOX("videotoolbox", "videotoolbox_vld", 2),
 
     /** Windows `Direct3D 11` Video Acceleration. */
-    D3D11VA("d3d11va", "d3d11"),
+    D3D11VA("d3d11va", "d3d11", 3),
 
     /** Linux `Video Acceleration API` works on AMD / Intel; NVIDIA needs the nouveau or proprietary `VAAPI` bridge. */
-    VAAPI("vaapi", "vaapi"),
+    VAAPI("vaapi", "vaapi", 4),
 
     /** NVIDIA CUDA / NVDEC are fastest on NVIDIA, but limited to NVIDIA cards. */
-    CUDA("cuda", "cuda"),
+    CUDA("cuda", "cuda", 5),
 
     /** Software decoding only. */
-    NONE(null, null);
+    NONE(null, null, 0);
 
     companion object {
         /**

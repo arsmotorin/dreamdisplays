@@ -114,6 +114,54 @@ pub unsafe extern "C" fn dd_video_read_frame_rgba(
     .unwrap_or(ERR_IO)
 }
 
+/// Blocking read of the next frame as raw I420 planes (Y, then U, then V) with no color
+/// conversion or brightness applied; both happen in the fragment shader on the GPU path.
+/// Only valid for sessions opened with `pix_fmt = nv12`.
+///
+/// Returns 0 on success, 1 on EOF, negative on error (see `session.rs` codes).
+///
+/// Safety: `dst` must point to `dst_len` writable bytes and remain valid for the duration of
+/// the call. Only one thread may read a given handle at a time.
+#[no_mangle]
+pub unsafe extern "C" fn dd_video_read_frame_i420(handle: i64, dst: *mut u8, dst_len: u64) -> i32 {
+    if dst.is_null() {
+        return ERR_BAD_ARGS;
+    }
+    let dst = std::slice::from_raw_parts_mut(dst, dst_len as usize);
+    catch_unwind(AssertUnwindSafe(|| sessions().read_frame_i420(handle, dst))).unwrap_or(ERR_IO)
+}
+
+/// Converts one I420 frame (as produced by [`dd_video_read_frame_i420`]) into RGBA32 with
+/// alpha 255 and no brightness. Used to feed the popout window in GPU-YUV mode.
+///
+/// Returns 0 on success, negative on error.
+///
+/// Safety: `src` must point to `src_len` readable bytes, `dst` to `dst_len` writable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn dd_i420_to_rgba(
+    src: *const u8,
+    src_len: u64,
+    dst: *mut u8,
+    dst_len: u64,
+    w: u32,
+    h: u32,
+) -> i32 {
+    if src.is_null() || dst.is_null() {
+        return ERR_BAD_ARGS;
+    }
+    let (w, h) = (w as usize, h as usize);
+    if (src_len as usize) < convert::nv12_frame_size(w, h) || (dst_len as usize) < w * h * 4 {
+        return ERR_BAD_ARGS;
+    }
+    let src = std::slice::from_raw_parts(src, src_len as usize);
+    let dst = std::slice::from_raw_parts_mut(dst, dst_len as usize);
+    catch_unwind(AssertUnwindSafe(|| {
+        convert::i420_to_rgba32_identity(src, w, h, dst);
+        0
+    }))
+    .unwrap_or(ERR_IO)
+}
+
 /// Copies the captured FFmpeg stderr (UTF-8, capped) into `dst`; returns bytes written
 /// or a negative error code.
 ///

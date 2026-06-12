@@ -52,6 +52,15 @@ class DisplayScreen(
     val texture: DynamicTexture? get() = textureResource.texture
     val textureId: Identifier? get() = textureResource.textureId
     val renderType: RenderType? get() = textureResource.renderType
+
+    /** True once either texture flavor (RGBA or YUV planes) is allocated and the screen can be drawn. */
+    val hasTexture: Boolean get() = textureResource.hasTexture
+
+    /** True when the GPU-side YUV path backs this display (brightness is applied in the shader). */
+    val isYuvTexture: Boolean get() = textureResource.isYuv
+
+    /** [RenderType] for the loading / error color quads (differs from [renderType] in YUV mode). */
+    val fallbackRenderType: RenderType? get() = textureResource.fallbackRenderType
     val textureWidth: Int get() = textureResource.width
     val textureHeight: Int get() = textureResource.height
     @Volatile var videoContentAspect: Double = 0.0
@@ -228,12 +237,19 @@ class DisplayScreen(
     fun getDistanceToScreen(pos: BlockPos): Double =
         DisplayGeometry.distanceTo(pos, x, y, z, width, height, facing)
 
-    /** Uploads the latest decoded frame to the GPU texture. Called on the render thread once per frame. */
+    /** Uploads the latest decoded frame to the GPU texture(s). Called on the render thread once per frame. */
     fun fitTexture() {
         val mp = mediaPlayer ?: return
-        val tex = textureResource.texture ?: return
         try {
-            mp.updateFrame(tex.getTexture())
+            if (textureResource.isYuv) {
+                val y = textureResource.yPlane ?: return
+                val u = textureResource.uPlane ?: return
+                val v = textureResource.vPlane ?: return
+                mp.updateFramePlanar(y.getTexture(), u.getTexture(), v.getTexture())
+            } else {
+                val tex = textureResource.texture ?: return
+                mp.updateFrame(tex.getTexture())
+            }
         } catch (e: Exception) {
             logger.warn("$uuid fitTexture failed: ${e.message ?: e::class.java.name}")
         }

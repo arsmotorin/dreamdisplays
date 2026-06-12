@@ -32,10 +32,23 @@ internal object NativeMedia {
     /** Result codes of [videoReadFrame]; mirror `native/src/session.rs`. */
     const val READ_OK = 0
     const val READ_EOF = 1
+    const val READ_UNSUPPORTED = -4
+    const val LAV_NO_PTS_NANOS = Long.MIN_VALUE
 
     private const val LIB_BASE_NAME = "dreamdisplays_native"
+    private const val LAV_BASE_NAME = "dreamdisplays_lav"
+
+    /** Must match `LAV_ABI_VERSION` in `native/lav/src/lib.rs`. */
+    private const val LAV_ABI_VERSION = 2
+    private const val LAV_SURFACE_ABI_VERSION = 1
+    private const val LAV_SURFACE_DESC_BYTES = 80L
     private const val CACHE_ROOT = "./dreamdisplays/native"
     private const val STDERR_CAP = 128L * 1024L
+
+    const val LAV_SURFACE_PLATFORM_MACOS_IOSURFACE = 1
+    const val LAV_SURFACE_FORMAT_NV12_8 = 1
+    const val LAV_SURFACE_FORMAT_P010_10 = 2
+    const val GL_TEXTURE_RECTANGLE = 0x84F5
 
     /** When true (default) the native pipe carries NV12 instead of RGB24, halving pipe traffic. */
     val nv12Enabled: Boolean = System.getProperty("dreamdisplays.native.nv12", "true").toBoolean()
@@ -44,6 +57,18 @@ internal object NativeMedia {
     private var videoOpen: MethodHandle? = null
     private var videoReadFrame: MethodHandle? = null
     private var videoReadFrameRgbaHandle: MethodHandle? = null
+    private var videoReadFrameI420Handle: MethodHandle? = null
+    private var i420ToRgbaHandle: MethodHandle? = null
+
+    private var lavOpenHandle: MethodHandle? = null
+    private var lavReadFrameHandle: MethodHandle? = null
+    private var lavReadFramePtsHandle: MethodHandle? = null
+    private var lavErrorHandle: MethodHandle? = null
+    private var lavKillHandle: MethodHandle? = null
+    private var lavCloseHandle: MethodHandle? = null
+    private var lavReadSurfaceHandle: MethodHandle? = null
+    private var lavBindSurfacePlaneGlHandle: MethodHandle? = null
+    private var lavReleaseSurfaceHandle: MethodHandle? = null
     private var videoStderr: MethodHandle? = null
     private var videoExitCode: MethodHandle? = null
     private var videoKill: MethodHandle? = null
@@ -57,6 +82,65 @@ internal object NativeMedia {
         get() = isAvailable
                 && System.getProperty("dreamdisplays.native.rgba", "true").toBoolean()
                 && videoReadFrameRgbaHandle != null
+
+    /**
+     * Keeps frames as raw I420 planes all the way to the GPU: the YUV -> RGB conversion and
+     * brightness both move into the fragment shader, removing the per-pixel CPU pass entirely.
+     * Requires the NV12 pipe and a native library exporting the I420 entry points.
+     */
+    val yuvGpuEnabled: Boolean
+        get() = isAvailable
+                && nv12Enabled
+                && System.getProperty("dreamdisplays.native.yuvgpu", "true").toBoolean()
+                && videoReadFrameI420Handle != null
+                && i420ToRgbaHandle != null
+
+    /**
+     * Experimental in-process decode: libavformat/libavcodec run inside `dreamdisplays_lav`
+     * instead of a separate FFmpeg process, removing the process spawn and the stdout pipe.
+     * Requires the separate lav library (which links the system FFmpeg shared libraries),
+     * the planar GPU path, and the opt-in `-Ddreamdisplays.native.libav=true`.
+     */
+    val lavInProcessEnabled: Boolean
+        get() = yuvGpuEnabled
+                && System.getProperty("dreamdisplays.native.libav", "false").toBoolean()
+                && lavAvailable
+
+    /**
+     * True when the optional LAV surface ABI is present and explicitly enabled. This is the
+     * zero-copy hardware-surface contract; it is gated separately because it needs a matching
+     * platform renderer (NV12/rectangle on macOS, WGL/EGL interop on other platforms).
+     */
+    val lavZeroCopyEnabled: Boolean
+        get() = lavInProcessEnabled
+                && lavSurfaceInteropAvailable
+                && System.getProperty("dreamdisplays.native.libav.zeroCopy", "false").toBoolean()
+
+    /** True once the optional `dreamdisplays_lav` library has been located, loaded, and bound. */
+    val lavAvailable: Boolean by lazy { isAvailable && runCatching { initLav() }.getOrDefault(false) }
+
+    /** True when `dreamdisplays_lav` exports the additive hardware-surface ABI. */
+    val lavSurfaceInteropAvailable: Boolean
+        get() = lavAvailable
+                && lavReadSurfaceHandle != null
+                && lavBindSurfacePlaneGlHandle != null
+                && lavReleaseSurfaceHandle != null
+
+    data class LavSurfaceDescriptor(
+        val handle: Long,
+        val platform: Int,
+        val format: Int,
+        val width: Int,
+        val height: Int,
+        val planeCount: Int,
+        val textureTarget: Int,
+        val planeWidth: IntArray,
+        val planeHeight: IntArray,
+    )
+
+    data class LavFrameReadResult(val code: Int, val ptsNanos: Long)
+
+    data class LavSurfaceReadResult(val code: Int, val descriptor: LavSurfaceDescriptor?)
 
     /** Touches [isAvailable] on a background thread to keep first playback latency low. */
     fun prewarmAsync() {
@@ -89,6 +173,106 @@ internal object NativeMedia {
      */
     fun videoReadFrameRgba(handle: Long, dst: ByteBuffer, frameBytes: Int, brightnessMilli: Int): Int =
         videoReadFrameRgbaHandle!!.invoke(handle, MemorySegment.ofBuffer(dst), frameBytes.toLong(), brightnessMilli) as Int
+
+    /**
+     * Blocking read of the next frame into [dst] as raw I420 planes (Y, then U, then V) with
+     * no conversion or brightness. Available only when [yuvGpuEnabled] is true.
+     */
+    fun videoReadFrameI420(handle: Long, dst: ByteBuffer, frameBytes: Int): Int =
+        videoReadFrameI420Handle!!.invoke(handle, MemorySegment.ofBuffer(dst), frameBytes.toLong()) as Int
+
+    /**
+     * Converts an I420 frame in [src] into RGBA32 in [dst] (alpha 255, no brightness).
+     * Both must be direct buffers. Used to feed the popout window in GPU-YUV mode.
+     */
+    fun i420ToRgba(src: ByteBuffer, srcBytes: Int, dst: ByteBuffer, w: Int, h: Int): Int =
+        i420ToRgbaHandle!!.invoke(
+            MemorySegment.ofBuffer(src), srcBytes.toLong(),
+            MemorySegment.ofBuffer(dst), dst.capacity().toLong(), w, h,
+        ) as Int
+
+    /**
+     * Opens an in-process decode session for [url] at the target [w] x [h], starting at
+     * [startMicros]. [hwAccelCode] is a stable [com.dreamdisplays.player.process.HwAccelBackend.lavCode].
+     * The native side validates that the decoder actually supports the requested hardware path
+     * and falls back to software when it cannot be opened.
+     * Returns an opaque handle, or 0 on failure.
+     */
+    fun lavOpen(url: String, w: Int, h: Int, startMicros: Long, hwAccelCode: Int): Long {
+        val bytes = url.toByteArray(Charsets.UTF_8)
+        Arena.ofConfined().use { arena ->
+            val seg = arena.allocate(bytes.size.toLong())
+            MemorySegment.copy(MemorySegment.ofArray(bytes), 0L, seg, 0L, bytes.size.toLong())
+            return lavOpenHandle!!.invoke(seg, bytes.size.toLong(), w, h, startMicros, hwAccelCode) as Long
+        }
+    }
+
+    /** Blocking in-process decode of the next frame into [dst] as raw I420 planes. */
+    fun lavReadFrameI420(handle: Long, dst: ByteBuffer, frameBytes: Int): Int =
+        lavReadFrameHandle!!.invoke(handle, MemorySegment.ofBuffer(dst), frameBytes.toLong()) as Int
+
+    /** Blocking in-process decode of the next I420 frame plus its normalized PTS, when exported. */
+    fun lavReadFrameI420WithPts(handle: Long, dst: ByteBuffer, frameBytes: Int): LavFrameReadResult {
+        val readWithPts = lavReadFramePtsHandle
+        if (readWithPts == null) {
+            return LavFrameReadResult(lavReadFrameI420(handle, dst, frameBytes), LAV_NO_PTS_NANOS)
+        }
+        Arena.ofConfined().use { arena ->
+            val pts = arena.allocate(ValueLayout.JAVA_LONG)
+            pts.set(ValueLayout.JAVA_LONG, 0L, LAV_NO_PTS_NANOS)
+            val rc = readWithPts.invoke(handle, MemorySegment.ofBuffer(dst), frameBytes.toLong(), pts) as Int
+            return LavFrameReadResult(rc, pts.get(ValueLayout.JAVA_LONG, 0L))
+        }
+    }
+
+    /**
+     * Blocking in-process decode of the next frame as a retained hardware surface.
+     *
+     * On success, the descriptor's [LavSurfaceDescriptor.handle] must be released via
+     * [lavReleaseSurface]. Plane import must run on the render thread with the GL context current.
+     */
+    fun lavReadSurface(handle: Long): LavSurfaceReadResult {
+        val readSurface = lavReadSurfaceHandle ?: return LavSurfaceReadResult(READ_UNSUPPORTED, null)
+        Arena.ofConfined().use { arena ->
+            val seg = arena.allocate(LAV_SURFACE_DESC_BYTES)
+            val rc = readSurface.invoke(handle, seg) as Int
+            return LavSurfaceReadResult(
+                rc,
+                if (rc == READ_OK) readLavSurfaceDescriptor(seg) else null,
+            )
+        }
+    }
+
+    /** Imports one retained surface plane into an existing OpenGL texture object. */
+    fun lavBindSurfacePlaneGl(surfaceHandle: Long, plane: Int, textureId: Int): Int =
+        lavBindSurfacePlaneGlHandle?.invoke(surfaceHandle, plane, textureId) as? Int ?: READ_UNSUPPORTED
+
+    /** Releases a retained hardware surface returned by [lavReadSurface]. */
+    fun lavReleaseSurface(surfaceHandle: Long) {
+        lavReleaseSurfaceHandle?.invoke(surfaceHandle)
+    }
+
+    /** Returns the in-process session's last error description, or an empty string. */
+    fun lavError(handle: Long): String {
+        Arena.ofConfined().use { arena ->
+            val seg = arena.allocate(STDERR_CAP)
+            val n = lavErrorHandle!!.invoke(handle, seg, STDERR_CAP) as Int
+            if (n <= 0) return ""
+            val bytes = ByteArray(n)
+            MemorySegment.copy(seg, 0L, MemorySegment.ofArray(bytes), 0L, n.toLong())
+            return String(bytes, Charsets.UTF_8)
+        }
+    }
+
+    /** Interrupts the in-process session, unblocking a reader stuck in [lavReadFrameI420]. */
+    fun lavKill(handle: Long) {
+        lavKillHandle!!.invoke(handle)
+    }
+
+    /** Frees the in-process session. Must not race a [lavReadFrameI420] on the same handle. */
+    fun lavClose(handle: Long) {
+        lavCloseHandle!!.invoke(handle)
+    }
 
     /** Returns the FFmpeg stderr captured so far for [handle] (capped at 128 KiB). */
     fun videoStderr(handle: Long): String {
@@ -155,6 +339,8 @@ internal object NativeMedia {
             videoOpen = bind("dd_video_open", FunctionDescriptor.of(long, addr, long, int, int, int))
             videoReadFrame = bind("dd_video_read_frame", FunctionDescriptor.of(int, long, addr, long, int))
             videoReadFrameRgbaHandle = bindOptional("dd_video_read_frame_rgba", FunctionDescriptor.of(int, long, addr, long, int))
+            videoReadFrameI420Handle = bindOptional("dd_video_read_frame_i420", FunctionDescriptor.of(int, long, addr, long))
+            i420ToRgbaHandle = bindOptional("dd_i420_to_rgba", FunctionDescriptor.of(int, addr, long, addr, long, int, int))
             videoStderr = bind("dd_video_stderr", FunctionDescriptor.of(int, long, addr, long))
             videoExitCode = bind("dd_video_exit_code", FunctionDescriptor.of(int, long, int))
             videoKill = bind("dd_video_kill", FunctionDescriptor.ofVoid(long))
@@ -167,7 +353,10 @@ internal object NativeMedia {
             }
             val rgba = System.getProperty("dreamdisplays.native.rgba", "true").toBoolean()
                     && videoReadFrameRgbaHandle != null
-            logger.info("Native media pipeline active: $lib (nv12=$nv12Enabled, rgba=$rgba).")
+            val yuvGpu = nv12Enabled
+                    && System.getProperty("dreamdisplays.native.yuvgpu", "true").toBoolean()
+                    && videoReadFrameI420Handle != null && i420ToRgbaHandle != null
+            logger.info("Native media pipeline active: $lib (nv12=$nv12Enabled, rgba=$rgba, yuvGpu=$yuvGpu).")
             true
         } catch (t: Throwable) {
             // UnsupportedOperationException on Java 21 preview gates, UnsatisfiedLinkError, etc.
@@ -177,17 +366,128 @@ internal object NativeMedia {
     }
 
     /**
+     * Binds the optional in-process libav library (`dreamdisplays_lav`). It links FFmpeg
+     * shared libraries, so loading can legitimately fail when they are neither bundled beside
+     * the cdylib nor installed system-wide; any failure just leaves the in-process path unavailable.
+     */
+    private fun initLav(): Boolean {
+        val lib = locateLibrary(LAV_BASE_NAME) ?: run {
+            logger.info("In-process libav library not found; in-process decode unavailable.")
+            return false
+        }
+        return try {
+            val linker = Linker.nativeLinker()
+            preloadLavDependencies(lib.parentFile)
+            val lookup = SymbolLookup.libraryLookup(lib.toPath(), Arena.global())
+
+            fun bind(name: String, desc: FunctionDescriptor): MethodHandle =
+                linker.downcallHandle(
+                    lookup.find(name).orElseThrow { IllegalStateException("Symbol $name missing") },
+                    desc,
+                )
+
+            fun bindOptional(name: String, desc: FunctionDescriptor): MethodHandle? =
+                lookup.find(name).map { linker.downcallHandle(it, desc) }.orElse(null)
+
+            val long = ValueLayout.JAVA_LONG
+            val int = ValueLayout.JAVA_INT
+            val addr = ValueLayout.ADDRESS
+
+            val abi = bind("dd_lav_abi_version", FunctionDescriptor.of(int)).invoke() as Int
+            if (abi != LAV_ABI_VERSION) {
+                logger.warn("In-process libav library ABI mismatch: found $abi, expected $LAV_ABI_VERSION.")
+                return false
+            }
+            lavOpenHandle = bind("dd_lav_open", FunctionDescriptor.of(long, addr, long, int, int, long, int))
+            lavReadFrameHandle = bind("dd_lav_read_frame_i420", FunctionDescriptor.of(int, long, addr, long))
+            lavReadFramePtsHandle = bindOptional("dd_lav_read_frame_i420_pts", FunctionDescriptor.of(int, long, addr, long, addr))
+            lavErrorHandle = bind("dd_lav_error", FunctionDescriptor.of(int, long, addr, long))
+            lavKillHandle = bind("dd_lav_kill", FunctionDescriptor.ofVoid(long))
+            lavCloseHandle = bind("dd_lav_close", FunctionDescriptor.ofVoid(long))
+            val surfaceAbi = bindOptional("dd_lav_surface_abi_version", FunctionDescriptor.of(int))
+            if (surfaceAbi != null && surfaceAbi.invoke() as Int == LAV_SURFACE_ABI_VERSION) {
+                lavReadSurfaceHandle = bindOptional("dd_lav_read_surface", FunctionDescriptor.of(int, long, addr))
+                lavBindSurfacePlaneGlHandle = bindOptional("dd_lav_bind_surface_plane_gl", FunctionDescriptor.of(int, long, int, int))
+                lavReleaseSurfaceHandle = bindOptional("dd_lav_release_surface", FunctionDescriptor.ofVoid(long))
+            }
+            val surfaceInterop = lavReadSurfaceHandle != null
+                    && lavBindSurfacePlaneGlHandle != null
+                    && lavReleaseSurfaceHandle != null
+            logger.info("In-process libav backend available: $lib (surfaceInterop=$surfaceInterop).")
+            true
+        } catch (t: Throwable) {
+            // Typically UnsatisfiedLinkError when the system FFmpeg dylibs are missing.
+            logger.info("In-process libav backend unavailable (${t.javaClass.simpleName}: ${t.message}).")
+            false
+        }
+    }
+
+    /**
+     * Portable LAV bundles may place FFmpeg shared libraries next to `dreamdisplays_lav`.
+     * Loading them first lets Linux resolve SONAMEs from the extracted cache and helps Windows
+     * layouts where DLL search does not include the extracted directory early enough.
+     */
+    private fun preloadLavDependencies(dir: File?) {
+        if (dir == null || !dir.isDirectory) return
+        val libraries = dir.listFiles()?.filter { it.isFile && isFfmpegSharedLibrary(it.name) } ?: return
+        if (libraries.isEmpty()) return
+        libraries.sortedWith(compareBy<File> { ffmpegSharedLibraryOrder(it.name) }.thenBy { it.name }).forEach { lib ->
+            runCatching { SymbolLookup.libraryLookup(lib.toPath(), Arena.global()) }
+                .onFailure { logger.debug("Could not preload LAV dependency ${lib.name}: ${it.message}") }
+        }
+    }
+
+    private fun isFfmpegSharedLibrary(name: String): Boolean {
+        val lower = name.lowercase()
+        val component = FFMPEG_SHARED_LIBRARY_ORDER.keys.any { lower.contains(it) }
+        if (!component) return false
+        return lower.endsWith(".dll") || lower.endsWith(".dylib") || lower.contains(".so")
+    }
+
+    private fun ffmpegSharedLibraryOrder(name: String): Int {
+        val lower = name.lowercase()
+        return FFMPEG_SHARED_LIBRARY_ORDER.entries.firstOrNull { lower.contains(it.key) }?.value ?: Int.MAX_VALUE
+    }
+
+    private fun readLavSurfaceDescriptor(seg: MemorySegment): LavSurfaceDescriptor {
+        val planeWidth = IntArray(4)
+        val planeHeight = IntArray(4)
+        for (i in 0 until 4) {
+            planeWidth[i] = seg.get(ValueLayout.JAVA_INT, 32L + i * 4L)
+            planeHeight[i] = seg.get(ValueLayout.JAVA_INT, 48L + i * 4L)
+        }
+        return LavSurfaceDescriptor(
+            handle = seg.get(ValueLayout.JAVA_LONG, 0L),
+            platform = seg.get(ValueLayout.JAVA_INT, 8L),
+            format = seg.get(ValueLayout.JAVA_INT, 12L),
+            width = seg.get(ValueLayout.JAVA_INT, 16L),
+            height = seg.get(ValueLayout.JAVA_INT, 20L),
+            planeCount = seg.get(ValueLayout.JAVA_INT, 24L),
+            textureTarget = seg.get(ValueLayout.JAVA_INT, 28L),
+            planeWidth = planeWidth,
+            planeHeight = planeHeight,
+        )
+    }
+
+    /**
      * Locates the platform library: explicit `-Ddreamdisplays.native.path`, then the
      * game-dir cache, then a bundled jar resource extracted into that cache.
      */
-    private fun locateLibrary(): File? {
-        System.getProperty("dreamdisplays.native.path")?.let { p ->
-            val f = File(p)
-            if (f.isFile) return f
-            logger.warn("dreamdisplays.native.path=$p does not exist.")
+    private fun locateLibrary(baseName: String = LIB_BASE_NAME): File? {
+        val explicitPathProperty = when (baseName) {
+            LIB_BASE_NAME -> "dreamdisplays.native.path"
+            LAV_BASE_NAME -> "dreamdisplays.native.lav.path"
+            else -> null
+        }
+        explicitPathProperty?.let { property ->
+            System.getProperty(property)?.let { p ->
+                val f = File(p)
+                if (f.isFile) return f
+                logger.warn("$property=$p does not exist.")
+            }
         }
 
-        val libName = System.mapLibraryName(LIB_BASE_NAME)
+        val libName = System.mapLibraryName(baseName)
         val cached = File("$CACHE_ROOT/${platformKey()}/$libName")
 
         val resource = "/dreamdisplays-natives/${platformKey()}/$libName"
@@ -218,4 +518,14 @@ internal object NativeMedia {
         OsInfo.isMac -> if (OsInfo.isArm) "macos-aarch64" else "macos-x64"
         else -> if (OsInfo.isArm) "linux-aarch64" else "linux-x64"
     }
+
+    private val FFMPEG_SHARED_LIBRARY_ORDER = linkedMapOf(
+        "avutil" to 0,
+        "swresample" to 1,
+        "swscale" to 2,
+        "avcodec" to 3,
+        "avformat" to 4,
+        "avfilter" to 5,
+        "avdevice" to 6,
+    )
 }

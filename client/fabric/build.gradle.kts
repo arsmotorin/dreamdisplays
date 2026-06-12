@@ -150,9 +150,11 @@ tasks.processResources {
         os.contains("mac") -> if (arch.contains("aarch64") || arch.contains("arm")) "macos-aarch64" else "macos-x64"
         else -> if (arch.contains("aarch64") || arch.contains("arm")) "linux-aarch64" else "linux-x64"
     }
-    val nativeLib = rootProject.file("native/target/release/" + System.mapLibraryName("dreamdisplays_native"))
-    if (nativeLib.isFile) {
-        from(nativeLib) { into("dreamdisplays-natives/$nativeKey") }
+    listOf("dreamdisplays_native", "dreamdisplays_lav").forEach { libBaseName ->
+        val nativeLib = rootProject.file("native/target/release/" + System.mapLibraryName(libBaseName))
+        if (nativeLib.isFile) {
+            from(nativeLib) { into("dreamdisplays-natives/$nativeKey") }
+        }
     }
 }
 

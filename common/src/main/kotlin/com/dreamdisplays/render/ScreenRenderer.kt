@@ -54,13 +54,13 @@ object ScreenRenderer : ClientRenderService {
 
     /** Number of live screens with an uploaded texture. Those this renderer will actually draw. */
     override val registeredCount: Int
-        get() = DisplayRegistry.getScreens().count { it.texture != null }
+        get() = DisplayRegistry.getScreens().count { it.hasTexture }
 
     /** Iterates all registered screens and lets the caller submit quads through the active renderer. */
     fun render(stack: PoseStack, camera: Camera, drawQuad: QuadRenderer) {
         val cameraPos = camera.position()
         for (displayScreen in DisplayRegistry.getScreens()) {
-            if (displayScreen.texture == null) continue
+            if (!displayScreen.hasTexture) continue
 
             stack.pushPose()
 
@@ -90,30 +90,35 @@ object ScreenRenderer : ClientRenderService {
         stack.pushPose()
         DisplayGeometry.applyScreenTransform(stack, displayScreen.facing, displayScreen.width, displayScreen.height)
 
-        if (displayScreen.isVideoStarted && displayScreen.texture != null && displayScreen.renderType != null) {
-            renderGpuTexture(drawQuad, displayScreen.renderType!!)
-        } else if (displayScreen.renderType != null) {
+        if (displayScreen.isVideoStarted && displayScreen.hasTexture && displayScreen.renderType != null) {
+            renderGpuTexture(drawQuad, displayScreen)
+        } else if (displayScreen.fallbackRenderType != null) {
             if (displayScreen.errored) {
-                renderColor(drawQuad, displayScreen.renderType!!, 35, 5, 5)
+                renderColor(drawQuad, displayScreen.fallbackRenderType!!, 35, 5, 5)
             } else {
                 val pulse = abs(sin(System.nanoTime() / 1_500_000_000.0 * Math.PI)).toFloat()
                 val v = (10 + pulse * 20).toInt()
-                renderColor(drawQuad, displayScreen.renderType!!, v, v, v)
+                renderColor(drawQuad, displayScreen.fallbackRenderType!!, v, v, v)
             }
         }
         stack.popPose()
     }
 
     /** Draws a unit quad using the screen's GPU texture. */
-    private fun renderGpuTexture(drawQuad: QuadRenderer, type: RenderType) {
-        drawQuad(type) { pose, builder ->
-            builder.addVertex(pose, 0f, 0f, 0f).setColor(255, 255, 255, 255).setUv(0f, 1f).setLight(0xF000F0)
+    private fun renderGpuTexture(drawQuad: QuadRenderer, displayScreen: DisplayScreen) {
+        val c = if (displayScreen.isYuvTexture) {
+            (displayScreen.brightness.coerceIn(0f, 2f) * 127.5f).toInt().coerceIn(0, 255)
+        } else {
+            255
+        }
+        drawQuad(displayScreen.renderType!!) { pose, builder ->
+            builder.addVertex(pose, 0f, 0f, 0f).setColor(c, c, c, 255).setUv(0f, 1f).setLight(0xF000F0)
                 .setNormal(0f, 0f, 1f)
-            builder.addVertex(pose, 1f, 0f, 0f).setColor(255, 255, 255, 255).setUv(1f, 1f).setLight(0xF000F0)
+            builder.addVertex(pose, 1f, 0f, 0f).setColor(c, c, c, 255).setUv(1f, 1f).setLight(0xF000F0)
                 .setNormal(0f, 0f, 1f)
-            builder.addVertex(pose, 1f, 1f, 0f).setColor(255, 255, 255, 255).setUv(1f, 0f).setLight(0xF000F0)
+            builder.addVertex(pose, 1f, 1f, 0f).setColor(c, c, c, 255).setUv(1f, 0f).setLight(0xF000F0)
                 .setNormal(0f, 0f, 1f)
-            builder.addVertex(pose, 0f, 1f, 0f).setColor(255, 255, 255, 255).setUv(0f, 0f).setLight(0xF000F0)
+            builder.addVertex(pose, 0f, 1f, 0f).setColor(c, c, c, 255).setUv(0f, 0f).setLight(0xF000F0)
                 .setNormal(0f, 0f, 1f)
         }
     }

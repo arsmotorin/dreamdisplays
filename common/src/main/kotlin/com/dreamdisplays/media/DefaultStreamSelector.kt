@@ -6,12 +6,17 @@ import com.dreamdisplays.media.api.StreamPreferences
 import com.dreamdisplays.media.api.StreamSelector
 import com.dreamdisplays.media.api.StreamSet
 import com.dreamdisplays.player.stream.MediaStreamSelector
+import org.slf4j.LoggerFactory
 
 /**
  * Default [StreamSelector] backed by [MediaStreamSelector]. Picks the closest video stream to
  * [StreamPreferences.maxHeight] and the best-matching audio track for [StreamPreferences.preferredAudioLanguage].
  */
 class DefaultStreamSelector : StreamSelector {
+    private val logger = LoggerFactory.getLogger("DreamDisplays/DefaultStreamSelector")
+    private val debug: Boolean
+        get() = System.getProperty("dreamdisplays.debug")?.toBoolean() == true
+                || System.getenv("DREAMDISPLAYS_DEBUG").let { it == "1" || it.equals("true", ignoreCase = true) }
 
     override fun select(streams: List<MediaStream>, preferences: StreamPreferences): StreamSet {
         val videoStreams = streams.filter { it.type.hasVideo }
@@ -20,10 +25,17 @@ class DefaultStreamSelector : StreamSelector {
         val targetHeight = preferences.maxHeight ?: 720
         val lang = preferences.preferredAudioLanguage ?: ""
 
-        val video = MediaStreamSelector.pickVideo(videoStreams, targetHeight)
+        val video = MediaStreamSelector.pickVideo(videoStreams, targetHeight, preferences.preferFps60)
             ?: videoStreams.firstOrNull()
         val audio = MediaStreamSelector.pickAudio(audioStreams, lang, video)
             ?: audioStreams.firstOrNull()
+
+        if (debug) {
+            logger.info(
+                "Video stream ${MediaStreamSelector.describeVideoChoice(video, targetHeight, preferences.preferFps60)} " +
+                        "candidates=${videoStreams.size} preferFps60=${preferences.preferFps60}",
+            )
+        }
 
         return StreamSet(videoStream = video, audioStream = audio, allStreams = streams)
     }
