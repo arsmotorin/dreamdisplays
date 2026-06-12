@@ -48,14 +48,28 @@ private fun hostNativeKey(): String {
 
 private fun String.toStrictBoolean(): Boolean = equals("true", ignoreCase = true)
 
+private fun String.toPlatformList(): List<String> =
+    split(',', ' ', '\n', '\t')
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+
 tasks.withType<ProcessResources>().configureEach {
     val nativeBundleDir = rootProject.file("native/build/ci-bundle/dreamdisplays-natives")
     val requireNatives = providers.gradleProperty("dreamdisplays.requireNatives")
         .orElse(providers.environmentVariable("DREAMDISPLAYS_REQUIRE_NATIVES"))
         .map { it.toStrictBoolean() }
         .getOrElse(false)
+    val requiredNativePlatforms = providers.gradleProperty("dreamdisplays.requiredNativePlatforms")
+        .orElse(providers.environmentVariable("DREAMDISPLAYS_REQUIRED_NATIVE_PLATFORMS"))
+        .map { it.toPlatformList() }
+        .getOrElse(nativePlatformKeys)
+    val unknownNativePlatforms = requiredNativePlatforms.filterNot { it in nativePlatformKeys }
+    if (unknownNativePlatforms.isNotEmpty()) {
+        throw GradleException("Unknown required native platforms: ${unknownNativePlatforms.joinToString()}.")
+    }
 
     inputs.property("dreamdisplaysRequireNatives", requireNatives)
+    inputs.property("dreamdisplaysRequiredNativePlatforms", requiredNativePlatforms.joinToString(","))
     inputs.files(rootProject.fileTree(nativeBundleDir)).optional()
 
     if (nativeBundleDir.isDirectory) {
@@ -83,21 +97,24 @@ tasks.withType<ProcessResources>().configureEach {
             )
         }
 
-        val missingNativeLibraries = nativePlatformKeys.flatMap { platformKey ->
+        val missingNativeLibraries = requiredNativePlatforms.flatMap { platformKey ->
             nativeLibraryBaseNames.map { libBaseName ->
                 File(nativeBundleDir, "$platformKey/${nativeLibraryName(platformKey, libBaseName)}")
             }
         }.filterNot { it.isFile }
 
-        val missingFfmpegComponents = nativePlatformKeys.flatMap { platformKey ->
+        val missingFfmpegComponents = requiredNativePlatforms.flatMap { platformKey ->
             val platformDir = File(nativeBundleDir, platformKey)
             val bundledLibraries = platformDir.listFiles()?.filter { it.isFile && isSharedLibraryName(it.name) }.orEmpty()
             ffmpegSharedLibraryComponents
                 .filter { component -> bundledLibraries.none { it.name.lowercase().contains(component) } }
                 .map { component -> "$platformKey/$component" }
         }
+        val missingLicenseFiles = requiredNativePlatforms
+            .map { platformKey -> File(nativeBundleDir, "$platformKey/licenses/ffmpeg-license.txt") }
+            .filterNot { it.isFile && it.length() > 0L }
 
-        if (missingNativeLibraries.isNotEmpty() || missingFfmpegComponents.isNotEmpty()) {
+        if (missingNativeLibraries.isNotEmpty() || missingFfmpegComponents.isNotEmpty() || missingLicenseFiles.isNotEmpty()) {
             throw GradleException(
                 buildString {
                     appendLine("Native bundle is incomplete.")
@@ -108,6 +125,10 @@ tasks.withType<ProcessResources>().configureEach {
                     if (missingFfmpegComponents.isNotEmpty()) {
                         appendLine("Missing required FFmpeg shared library components:")
                         missingFfmpegComponents.forEach { appendLine(" - $it") }
+                    }
+                    if (missingLicenseFiles.isNotEmpty()) {
+                        appendLine("Missing required FFmpeg license metadata:")
+                        missingLicenseFiles.forEach { appendLine(" - ${it.relativeTo(rootProject.projectDir)}") }
                     }
                 }
             )

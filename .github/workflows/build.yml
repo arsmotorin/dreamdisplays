@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   metadata:
@@ -23,14 +23,17 @@ jobs:
       is_release: ${{ steps.get_version.outputs.is_release }}
       is_marketplace_publishable: ${{ steps.get_version.outputs.is_marketplace_publishable }}
       stonecutter_versions: ${{ steps.stonecutter_versions.outputs.versions_json }}
+      build_stonecutter_versions: ${{ steps.stonecutter_versions.outputs.build_versions_json }}
       primary_stonecutter_version: ${{ steps.stonecutter_versions.outputs.primary_version }}
       marketplace_publish_tasks: ${{ steps.stonecutter_versions.outputs.marketplace_tasks_json }}
+      native_matrix: ${{ steps.stonecutter_versions.outputs.native_matrix_json }}
+      required_native_platforms: ${{ steps.stonecutter_versions.outputs.required_native_platforms }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Detect Stonecutter versions
         id: stonecutter_versions
@@ -38,25 +41,83 @@ jobs:
           python3 - <<'EOF'
           import json, os
 
-          versions = sorted(
-              p for p in os.listdir("versions")
-              if os.path.isfile(os.path.join("versions", p, "gradle.properties"))
-          )
+	          versions = sorted(
+	              p for p in os.listdir("versions")
+	              if os.path.isfile(os.path.join("versions", p, "gradle.properties"))
+	          )
 
           if not versions:
               raise SystemExit("No Stonecutter versions found")
 
-          tasks = (
-              [{"kind": "fabric", "mc": version} for version in versions] +
-              [{"kind": "neoforge", "mc": version} for version in versions] +
-              [{"kind": "paper", "mc": versions[0]}]
-          )
+	          tasks = (
+	              [{"kind": "fabric", "mc": version} for version in versions] +
+	              [{"kind": "neoforge", "mc": version} for version in versions] +
+	              [{"kind": "paper", "mc": versions[0]}]
+	          )
 
-          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-              f.write(f"versions_json={json.dumps(versions)}\n")
-              f.write(f"primary_version={versions[0]}\n")
-              f.write(f"marketplace_tasks_json={json.dumps(tasks)}\n")
-          EOF
+	          native_matrix = [
+	              {
+	                  "platform": "linux-x64",
+	                  "runner": "ubuntu-latest",
+	                  "target": "x86_64-unknown-linux-gnu",
+	                  "native_library": "libdreamdisplays_native.so",
+	                  "lav_library": "libdreamdisplays_lav.so",
+	                  "vcpkg_triplet": "",
+	              },
+	              {
+	                  "platform": "linux-aarch64",
+	                  "runner": "ubuntu-24.04-arm",
+	                  "target": "aarch64-unknown-linux-gnu",
+	                  "native_library": "libdreamdisplays_native.so",
+	                  "lav_library": "libdreamdisplays_lav.so",
+	                  "vcpkg_triplet": "",
+	              },
+	              {
+	                  "platform": "macos-x64",
+	                  "runner": "macos-15-intel",
+	                  "target": "x86_64-apple-darwin",
+	                  "native_library": "libdreamdisplays_native.dylib",
+	                  "lav_library": "libdreamdisplays_lav.dylib",
+	                  "vcpkg_triplet": "",
+	              },
+	              {
+	                  "platform": "macos-aarch64",
+	                  "runner": "macos-14",
+	                  "target": "aarch64-apple-darwin",
+	                  "native_library": "libdreamdisplays_native.dylib",
+	                  "lav_library": "libdreamdisplays_lav.dylib",
+	                  "vcpkg_triplet": "",
+	              },
+	              {
+	                  "platform": "windows-x64",
+	                  "runner": "windows-latest",
+	                  "target": "x86_64-pc-windows-msvc",
+	                  "native_library": "dreamdisplays_native.dll",
+	                  "lav_library": "dreamdisplays_lav.dll",
+	                  "vcpkg_triplet": "x64-windows",
+	              },
+	              {
+	                  "platform": "windows-aarch64",
+	                  "runner": "windows-11-arm",
+	                  "target": "aarch64-pc-windows-msvc",
+	                  "native_library": "dreamdisplays_native.dll",
+	                  "lav_library": "dreamdisplays_lav.dll",
+	                  "vcpkg_triplet": "arm64-windows",
+	              },
+	          ]
+	          is_pull_request = os.environ.get("GITHUB_EVENT_NAME") == "pull_request"
+	          build_versions = [versions[0]] if is_pull_request else versions
+	          required_native_platforms = ["linux-x64"] if is_pull_request else [item["platform"] for item in native_matrix]
+	          selected_native_matrix = [native_matrix[0]] if is_pull_request else native_matrix
+
+	          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+	              f.write(f"versions_json={json.dumps(versions)}\n")
+	              f.write(f"build_versions_json={json.dumps(build_versions)}\n")
+	              f.write(f"primary_version={versions[0]}\n")
+	              f.write(f"marketplace_tasks_json={json.dumps(tasks)}\n")
+	              f.write(f"native_matrix_json={json.dumps(selected_native_matrix)}\n")
+	              f.write(f"required_native_platforms={' '.join(required_native_platforms)}\n")
+	          EOF
 
       - name: Get version
         id: get_version
@@ -97,49 +158,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        native:
-          - platform: linux-x64
-            runner: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            native_library: libdreamdisplays_native.so
-            lav_library: libdreamdisplays_lav.so
-            vcpkg_triplet: ""
-          - platform: linux-aarch64
-            runner: ubuntu-24.04-arm
-            target: aarch64-unknown-linux-gnu
-            native_library: libdreamdisplays_native.so
-            lav_library: libdreamdisplays_lav.so
-            vcpkg_triplet: ""
-          - platform: macos-x64
-            runner: macos-15-intel
-            target: x86_64-apple-darwin
-            native_library: libdreamdisplays_native.dylib
-            lav_library: libdreamdisplays_lav.dylib
-            vcpkg_triplet: ""
-          - platform: macos-aarch64
-            runner: macos-14
-            target: aarch64-apple-darwin
-            native_library: libdreamdisplays_native.dylib
-            lav_library: libdreamdisplays_lav.dylib
-            vcpkg_triplet: ""
-          - platform: windows-x64
-            runner: windows-latest
-            target: x86_64-pc-windows-msvc
-            native_library: dreamdisplays_native.dll
-            lav_library: dreamdisplays_lav.dll
-            vcpkg_triplet: x64-windows
-          - platform: windows-aarch64
-            runner: windows-11-arm
-            target: aarch64-pc-windows-msvc
-            native_library: dreamdisplays_native.dll
-            lav_library: dreamdisplays_lav.dll
-            vcpkg_triplet: arm64-windows
+        native: ${{ fromJSON(needs.metadata.outputs.native_matrix) }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Setup Rust
         shell: bash
@@ -149,6 +174,17 @@ jobs:
           rustup target add "${{ matrix.native.target }}"
           rustc --version
           cargo --version
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/target
+          key: cargo-${{ runner.os }}-${{ matrix.native.target }}-${{ hashFiles('native/Cargo.lock', 'native/Cargo.toml', 'native/lav/Cargo.toml') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-${{ matrix.native.target }}-
 
       - name: Install FFmpeg dependencies on Linux
         if: runner.os == 'Linux'
@@ -188,11 +224,8 @@ jobs:
             --manifest-path native/Cargo.toml \
             --release \
             --package dreamdisplays-native \
-            --target "${{ matrix.native.target }}"
-          cargo build \
-            --manifest-path native/Cargo.toml \
-            --release \
             --package dreamdisplays-lav \
+            --locked \
             --target "${{ matrix.native.target }}"
         env:
           VCPKG_ROOT: ${{ runner.os == 'Windows' && 'C:/vcpkg' || '' }}
@@ -206,11 +239,8 @@ jobs:
             --manifest-path native/Cargo.toml \
             --release \
             --package dreamdisplays-native \
-            --target "${{ matrix.native.target }}"
-          cargo test \
-            --manifest-path native/Cargo.toml \
-            --release \
             --package dreamdisplays-lav \
+            --locked \
             --target "${{ matrix.native.target }}"
         env:
           VCPKG_ROOT: ${{ runner.os == 'Windows' && 'C:/vcpkg' || '' }}
@@ -262,7 +292,7 @@ jobs:
           }
 
           collect_linux_dependencies() {
-            local queue=("$out/$lav_library")
+            local queue=("$out/$native_library" "$out/$lav_library")
             local seen=()
 
             while ((${#queue[@]})); do
@@ -324,7 +354,7 @@ jobs:
           }
 
           collect_macos_dependencies() {
-            local queue=("$out/$lav_library")
+            local queue=("$out/$native_library" "$out/$lav_library")
             local seen=()
 
             while ((${#queue[@]})); do
@@ -365,7 +395,78 @@ jobs:
               echo "Missing vcpkg bin directory: $bin" >&2
               exit 1
             fi
-            cp "$bin"/*.dll "$out/"
+
+            local dumpbin=""
+            if command -v dumpbin.exe >/dev/null 2>&1; then
+              dumpbin="$(command -v dumpbin.exe)"
+            else
+              dumpbin="$(find "/c/Program Files/Microsoft Visual Studio" "/c/Program Files (x86)/Microsoft Visual Studio" \
+                -path '*/VC/Tools/MSVC/*/bin/Host*/x64/dumpbin.exe' -o \
+                -path '*/VC/Tools/MSVC/*/bin/Host*/arm64/dumpbin.exe' 2>/dev/null | head -n 1 || true)"
+            fi
+
+            if [[ -n "$dumpbin" && -f "$dumpbin" ]]; then
+              local queue=("$out/$native_library" "$out/$lav_library")
+              local seen=()
+
+              while ((${#queue[@]})); do
+                local item="${queue[0]}"
+                queue=("${queue[@]:1}")
+                [[ " ${seen[*]} " == *" $item "* ]] && continue
+                seen+=("$item")
+
+                while IFS= read -r dep; do
+                  [[ -n "$dep" ]] || continue
+                  local src="$bin/$dep"
+                  [[ -f "$src" ]] || continue
+                  copy_once "$src"
+                  queue+=("$out/$dep")
+                done < <(
+                  "$dumpbin" //DEPENDENTS "$item" 2>/dev/null |
+                    tr -d '\r' |
+                    awk '/^[[:space:]]*[A-Za-z0-9_.-]+\.dll$/ { print $1 }'
+                )
+              done
+              return
+            fi
+
+            local allowlist='(avutil|swresample|swscale|avcodec|avformat|avfilter|avdevice|x264|x265|vpx|dav1d|opus|mp3lame|ssl|crypto|zlib|bz2|lzma|brotli|iconv|zstd|xml2|ass|freetype|fribidi|harfbuzz|vorbis|ogg|theora|webp|svtav1|aom|soxr|speex|openjp2|srt|ssh)'
+            while IFS= read -r dll; do
+              name="$(basename "$dll" | tr '[:upper:]' '[:lower:]')"
+              if [[ "$name" =~ $allowlist ]]; then
+                copy_once "$dll"
+              fi
+            done < <(find "$bin" -maxdepth 1 -type f -name '*.dll' -print)
+          }
+
+          collect_license_metadata() {
+            local license_dir="$out/licenses"
+            mkdir -p "$license_dir"
+
+            if command -v ffmpeg >/dev/null 2>&1; then
+              ffmpeg -hide_banner -version > "$license_dir/ffmpeg-version.txt" 2>&1 || true
+              ffmpeg -hide_banner -L > "$license_dir/ffmpeg-license.txt" 2>&1 || true
+            fi
+
+            case "${RUNNER_OS:-}" in
+              Linux)
+                cp /usr/share/doc/ffmpeg/copyright "$license_dir/ffmpeg-debian-copyright.txt" 2>/dev/null || true
+                ;;
+              macOS)
+                if command -v brew >/dev/null 2>&1; then
+                  brew info --json=v2 ffmpeg > "$license_dir/ffmpeg-homebrew.json" 2>/dev/null || true
+                fi
+                ;;
+              Windows)
+                local root="${VCPKG_ROOT:-C:/vcpkg}"
+                cp "$root/installed/$vcpkg_triplet/share/ffmpeg/copyright" "$license_dir/ffmpeg-vcpkg-copyright.txt" 2>/dev/null || true
+                ;;
+            esac
+
+            if [[ ! -s "$license_dir/ffmpeg-license.txt" ]]; then
+              echo "Missing FFmpeg license metadata for $platform" >&2
+              exit 1
+            fi
           }
 
           case "${RUNNER_OS:-}" in
@@ -383,6 +484,7 @@ jobs:
               exit 1
               ;;
           esac
+          collect_license_metadata
 
           required_components=(avutil swresample swscale avcodec avformat avfilter avdevice)
           for required in "$native_library" "$lav_library"; do
@@ -407,6 +509,7 @@ jobs:
           done
 
           find "$out" -maxdepth 1 -type f -print | sort
+          tar -cf "native-artifact/native-$platform.tar" -C "$out/.." "$platform"
         env:
           VCPKG_ROOT: ${{ runner.os == 'Windows' && 'C:/vcpkg' || '' }}
 
@@ -414,8 +517,10 @@ jobs:
         uses: actions/upload-artifact@v7.0.1
         with:
           name: native-${{ matrix.native.platform }}
-          path: native-artifact/dreamdisplays-natives/${{ matrix.native.platform }}/*
+          path: native-artifact/native-${{ matrix.native.platform }}.tar
           if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
 
   build:
     name: Build ${{ matrix.mc }}
@@ -430,13 +535,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mc: ${{ fromJSON(needs.metadata.outputs.stonecutter_versions) }}
+        mc: ${{ fromJSON(needs.metadata.outputs.build_stonecutter_versions) }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v6.1.0
@@ -458,68 +563,49 @@ jobs:
       - name: Select Stonecutter version
         run: echo "${{ matrix.mc }}" > versions/active.txt
 
-      - name: Download linux-x64 native
+      - name: Download native archives
         uses: actions/download-artifact@v8.0.1
         with:
-          name: native-linux-x64
-          path: native/build/ci-bundle/dreamdisplays-natives/linux-x64
+          pattern: native-*
+          path: native/build/native-archives
+          merge-multiple: true
 
-      - name: Download linux-aarch64 native
-        uses: actions/download-artifact@v8.0.1
-        with:
-          name: native-linux-aarch64
-          path: native/build/ci-bundle/dreamdisplays-natives/linux-aarch64
-
-      - name: Download macos-x64 native
-        uses: actions/download-artifact@v8.0.1
-        with:
-          name: native-macos-x64
-          path: native/build/ci-bundle/dreamdisplays-natives/macos-x64
-
-      - name: Download macos-aarch64 native
-        uses: actions/download-artifact@v8.0.1
-        with:
-          name: native-macos-aarch64
-          path: native/build/ci-bundle/dreamdisplays-natives/macos-aarch64
-
-      - name: Download windows-x64 native
-        uses: actions/download-artifact@v8.0.1
-        with:
-          name: native-windows-x64
-          path: native/build/ci-bundle/dreamdisplays-natives/windows-x64
-
-      - name: Download windows-aarch64 native
-        uses: actions/download-artifact@v8.0.1
-        with:
-          name: native-windows-aarch64
-          path: native/build/ci-bundle/dreamdisplays-natives/windows-aarch64
+      - name: Extract native bundle
+        run: |
+          mkdir -p native/build/ci-bundle/dreamdisplays-natives
+          for archive in native/build/native-archives/native-*.tar; do
+            test -f "$archive"
+            tar -xf "$archive" -C native/build/ci-bundle/dreamdisplays-natives
+          done
 
       - name: Validate native bundle
         run: |
-          expected=(
-            linux-x64/libdreamdisplays_native.so
-            linux-x64/libdreamdisplays_lav.so
-            linux-aarch64/libdreamdisplays_native.so
-            linux-aarch64/libdreamdisplays_lav.so
-            macos-x64/libdreamdisplays_native.dylib
-            macos-x64/libdreamdisplays_lav.dylib
-            macos-aarch64/libdreamdisplays_native.dylib
-            macos-aarch64/libdreamdisplays_lav.dylib
-            windows-x64/dreamdisplays_native.dll
-            windows-x64/dreamdisplays_lav.dll
-            windows-aarch64/dreamdisplays_native.dll
-            windows-aarch64/dreamdisplays_lav.dll
-          )
-          for file in "${expected[@]}"; do
-            test -f "native/build/ci-bundle/dreamdisplays-natives/$file"
-          done
-          for platform in linux-x64 linux-aarch64 macos-x64 macos-aarch64 windows-x64 windows-aarch64; do
+          native_name() {
+            case "$1" in
+              windows-*) printf '%s\n' dreamdisplays_native.dll ;;
+              macos-*) printf '%s\n' libdreamdisplays_native.dylib ;;
+              *) printf '%s\n' libdreamdisplays_native.so ;;
+            esac
+          }
+          lav_name() {
+            case "$1" in
+              windows-*) printf '%s\n' dreamdisplays_lav.dll ;;
+              macos-*) printf '%s\n' libdreamdisplays_lav.dylib ;;
+              *) printf '%s\n' libdreamdisplays_lav.so ;;
+            esac
+          }
+          for platform in $REQUIRED_NATIVE_PLATFORMS; do
+            test -f "native/build/ci-bundle/dreamdisplays-natives/$platform/$(native_name "$platform")"
+            test -f "native/build/ci-bundle/dreamdisplays-natives/$platform/$(lav_name "$platform")"
+            test -s "native/build/ci-bundle/dreamdisplays-natives/$platform/licenses/ffmpeg-license.txt"
             for component in avutil swresample swscale avcodec avformat avfilter avdevice; do
               find "native/build/ci-bundle/dreamdisplays-natives/$platform" -maxdepth 1 -type f \
                 | grep -E "(${component}).*(\\.dll|\\.dylib|\\.so)" >/dev/null
             done
           done
           find native/build/ci-bundle/dreamdisplays-natives -maxdepth 2 -type f -print | sort
+        env:
+          REQUIRED_NATIVE_PLATFORMS: ${{ needs.metadata.outputs.required_native_platforms }}
 
       - name: Build with Gradle
         run: |
@@ -531,32 +617,40 @@ jobs:
             --parallel
         env:
           DREAMDISPLAYS_REQUIRE_NATIVES: "true"
+          DREAMDISPLAYS_REQUIRED_NATIVE_PLATFORMS: ${{ needs.metadata.outputs.required_native_platforms }}
           GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Xmx4G
 
       - name: Verify jar native bundle
         run: |
           python3 - <<'EOF'
           from pathlib import Path
+          import os
           from zipfile import ZipFile
 
           mc = "${{ matrix.mc }}"
           version = "${{ needs.metadata.outputs.version }}"
-          expected = [
-              "linux-x64/libdreamdisplays_native.so",
-              "linux-x64/libdreamdisplays_lav.so",
-              "linux-aarch64/libdreamdisplays_native.so",
-              "linux-aarch64/libdreamdisplays_lav.so",
-              "macos-x64/libdreamdisplays_native.dylib",
-              "macos-x64/libdreamdisplays_lav.dylib",
-              "macos-aarch64/libdreamdisplays_native.dylib",
-              "macos-aarch64/libdreamdisplays_lav.dylib",
-              "windows-x64/dreamdisplays_native.dll",
-              "windows-x64/dreamdisplays_lav.dll",
-              "windows-aarch64/dreamdisplays_native.dll",
-              "windows-aarch64/dreamdisplays_lav.dll",
-          ]
           ffmpeg_components = ["avutil", "swresample", "swscale", "avcodec", "avformat", "avfilter", "avdevice"]
-          platforms = ["linux-x64", "linux-aarch64", "macos-x64", "macos-aarch64", "windows-x64", "windows-aarch64"]
+          platforms = os.environ["REQUIRED_NATIVE_PLATFORMS"].split()
+
+          def native_name(platform: str) -> str:
+              if platform.startswith("windows-"):
+                  return "dreamdisplays_native.dll"
+              if platform.startswith("macos-"):
+                  return "libdreamdisplays_native.dylib"
+              return "libdreamdisplays_native.so"
+
+          def lav_name(platform: str) -> str:
+              if platform.startswith("windows-"):
+                  return "dreamdisplays_lav.dll"
+              if platform.startswith("macos-"):
+                  return "libdreamdisplays_lav.dylib"
+              return "libdreamdisplays_lav.so"
+
+          expected = [
+              f"{platform}/{name}"
+              for platform in platforms
+              for name in (native_name(platform), lav_name(platform), "licenses/ffmpeg-license.txt")
+          ]
 
           for loader in ("fabric", "neoforge"):
               jar = Path(f"build/libs/dreamdisplays-{loader}-{mc}-{version}.jar")
@@ -588,6 +682,8 @@ jobs:
                   if missing_components:
                       raise SystemExit(f"{jar} is missing FFmpeg components for {platform}: {missing_components}.")
           EOF
+        env:
+          REQUIRED_NATIVE_PLATFORMS: ${{ needs.metadata.outputs.required_native_platforms }}
 
       - name: Collect artifacts
         run: |
@@ -600,6 +696,8 @@ jobs:
           name: build-jars-${{ matrix.mc }}
           path: artifacts/*.jar
           if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
 
   github-prerelease:
     name: Publish GitHub pre-release
