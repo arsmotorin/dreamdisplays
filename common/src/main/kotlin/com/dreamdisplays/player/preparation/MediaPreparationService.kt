@@ -36,7 +36,7 @@ internal object MediaPreparationService {
 
         val prefs = StreamPreferences(
             maxHeight = (quality.targetHeight ?: 720).takeIf { it > 0 },
-            preferFps60 = true,
+            preferFps60 = System.getProperty("dreamdisplays.stream.prefer60", "false").toBoolean(),
             preferredAudioTrack = null,
             preferredAudioLanguage = lang.ifEmpty { null },
             allowHdr = false,

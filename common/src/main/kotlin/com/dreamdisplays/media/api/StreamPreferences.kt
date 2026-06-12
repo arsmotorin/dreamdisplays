@@ -14,7 +14,7 @@ data class StreamPreferences(
     companion object {
         val DEFAULT = StreamPreferences(
             maxHeight = null,
-            preferFps60 = true,
+            preferFps60 = false,
             preferredAudioTrack = null,
             preferredAudioLanguage = null,
             allowHdr = false,
