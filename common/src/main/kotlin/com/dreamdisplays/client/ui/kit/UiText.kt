@@ -5,8 +5,6 @@ import net.minecraft.client.gui.Font
 /**
  * Font-aware text measurement helpers shared by the UI: ellipsis trimming and word wrapping.
  * Pulled out of the individual screens so the logic exists once.
- *
- * @since 1.6.0
  */
 object UiText {
     private const val ELLIPSIS = "..."

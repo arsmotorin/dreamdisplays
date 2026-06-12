@@ -16,8 +16,6 @@ import net.minecraft.resources.Identifier
  * @param initial starting state.
  * @param label formats the on-toggle text for a given state.
  * @param onApply invoked when the user (or [set]) changes the state.
- *
- * @since 1.0.0
  */
 class ToggleSwitch(
     initial: Boolean,

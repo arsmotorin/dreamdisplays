@@ -6,8 +6,6 @@ import com.dreamdisplays.render.api.TextureHandle
 
 /**
  * Service for rendering displays on the client.
- *
- * @since 1.0.0
  */
 interface ClientRenderService {
     /** Registers a render hook to be called during the rendering process. */

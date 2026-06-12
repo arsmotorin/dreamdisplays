@@ -20,8 +20,6 @@ import net.minecraft.util.Mth
  * @param initial starting fraction.
  * @param label formats the on-slider text for a given fraction.
  * @param onApply invoked when the user changes the value (after clamping).
- *
- * @since 1.0.0
  */
 class ValueSlider(
     initial: Double,

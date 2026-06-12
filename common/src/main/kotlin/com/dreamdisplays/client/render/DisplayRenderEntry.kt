@@ -7,8 +7,6 @@ import com.dreamdisplays.render.api.TextureHandle
 /**
  * Represents an entry for rendering a display. This data class encapsulates all the necessary information for rendering a
  * display, including its ID, bounds, texture handle, brightness, and visibility.
- *
- * @since 1.0.0
  */
 data class DisplayRenderEntry(
     /** The unique identifier for the display. */

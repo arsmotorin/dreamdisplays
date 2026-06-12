@@ -5,8 +5,6 @@ import com.dreamdisplays.media.api.VideoFrameSink
 /**
  * Represents an open popout window. Provides properties for the window's status and dimensions, as well as methods to
  * subscribe to events and close the window.
- *
- * @since 1.7.0
  */
 interface PopoutWindow : AutoCloseable {
     /** True if the window is currently open. */

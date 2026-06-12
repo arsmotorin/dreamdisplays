@@ -6,8 +6,6 @@ import java.util.concurrent.ConcurrentHashMap
  * Default [KeyBindingRegistry]: an id-keyed map of the mod's logical input bindings. Pollers
  * (e.g. the tick handler) look bindings up by id instead of hardcoding `GLFW` codes, so a binding
  * can be redefined in one place.
- *
- * @since 1.8.0
  */
 class DefaultKeyBindingRegistry : KeyBindingRegistry {
     /** Map of registered bindings by id. [ConcurrentHashMap] allows concurrent access and modification. */

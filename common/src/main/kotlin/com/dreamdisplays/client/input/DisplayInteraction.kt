@@ -5,8 +5,6 @@ import com.dreamdisplays.api.DisplayId
 /**
  * Represents an interaction with a display, such as right-clicking or looking at it. Used for input handling and
  * event dispatching.
- *
- * @since 1.0.0
  */
 sealed interface DisplayInteraction {
     /** Represents a right-click interaction with a display. */

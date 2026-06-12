@@ -1,4 +1,8 @@
+@file:DreamDisplaysUnstableApi
+
 package com.dreamdisplays.client.core
+
+import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
 /**
  * Represents the main application for the client.

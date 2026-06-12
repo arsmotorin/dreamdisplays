@@ -1,4 +1,8 @@
+@file:DreamDisplaysUnstableApi
+
 package com.dreamdisplays.render.api
+
+import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
 /**
  * Strategy for handling decoded frames that arrive faster than they can be uploaded, i.e. how a

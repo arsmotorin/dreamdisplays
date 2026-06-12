@@ -3,8 +3,6 @@ package com.dreamdisplays.client.core
 /**
  * Represents a lifecycle event in the client's lifecycle. These events are emitted by the client and can be
  * listened to by services and modules to perform actions at specific points in the client's lifecycle.
- *
- * @since 1.8.0
  */
 sealed interface ClientLifecycleEvent {
     /** Emitted when the client application is initializing. */

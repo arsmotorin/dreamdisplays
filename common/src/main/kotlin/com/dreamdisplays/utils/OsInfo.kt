@@ -4,8 +4,6 @@ import java.util.Locale
 
 /**
  * Single source of truth for OS / architecture detection.
- *
- * @since 1.0.0
  */
 object OsInfo {
     private val os: String = System.getProperty("os.name", "").lowercase(Locale.ENGLISH)

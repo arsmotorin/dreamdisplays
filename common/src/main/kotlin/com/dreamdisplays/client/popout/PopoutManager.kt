@@ -6,8 +6,6 @@ import com.dreamdisplays.media.api.VideoFrameSink
 /**
  * Manages popout windows and picture-in-picture (PiP) for displays. Allows opening and closing popout windows and PiP,
  * checking their status, and subscribing to events related to them.
- *
- * @since 1.7.0
  */
 interface PopoutManager {
     /** Opens a new popout window for the specified display. Returns the created sink, or null if a window for that display already exists. */

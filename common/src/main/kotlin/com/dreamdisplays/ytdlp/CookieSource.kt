@@ -7,8 +7,6 @@ import java.util.Locale
  * disabled state. [browserName] is the exact token `yt-dlp` expects; null for [NONE].
  *
  * @property browserName the `yt-dlp` browser token, or null when cookie export is disabled.
- *
- * @since 1.8.0
  */
 enum class CookieSource(val browserName: String?) {
     /** Cookie export disabled. */

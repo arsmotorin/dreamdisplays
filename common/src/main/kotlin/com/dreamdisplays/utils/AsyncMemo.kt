@@ -21,8 +21,6 @@ import java.util.concurrent.TimeUnit
  * @param ttlMs entry freshness window in milliseconds.
  * @param executor where loads run.
  * @param tag human-readable name used in error messages.
- *
- * @since 1.7.0
  */
 class AsyncMemo<K : Any, V : Any>(
     maxSize: Int,

@@ -2,8 +2,6 @@ package com.dreamdisplays.client.core
 
 /**
  * Mutable state of the client, which can be updated by modules and observed by other modules.
- *
- * @since 1.8.0
  */
 interface ClientMutableState : ClientState {
     /** Whether the client is currently on screen. This may be used to pause or reduce resource usage when the client is not visible. */

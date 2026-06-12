@@ -2,8 +2,6 @@ package com.dreamdisplays.client.popout
 
 /**
  * Configuration for a pop-out window.
- *
- * @since 1.7.0
  */
 data class WindowConfig(
     /** Initial width of the window in pixels. Default is 640. */

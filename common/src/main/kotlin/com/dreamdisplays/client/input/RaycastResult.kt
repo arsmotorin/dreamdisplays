@@ -4,8 +4,6 @@ import com.dreamdisplays.api.DisplayId
 
 /**
  * Represents the result of a raycast against the displays.
- *
- * @since 1.0.0
  */
 sealed interface RaycastResult {
     /** Represents a raycast that did not hit any display. */

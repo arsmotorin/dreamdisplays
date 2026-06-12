@@ -1,4 +1,8 @@
+@file:DreamDisplaysUnstableApi
+
 package com.dreamdisplays.media.api
+
+import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
 /**
  * Typed exception hierarchy for media failures. Every subclass carries a machine-readable

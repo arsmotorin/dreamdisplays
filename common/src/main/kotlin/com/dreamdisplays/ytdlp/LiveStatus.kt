@@ -5,8 +5,6 @@ package com.dreamdisplays.ytdlp
  * emits; [UNKNOWN] covers an absent or unrecognized value.
  *
  * @property wireValue the literal `live_status` string, or null for [UNKNOWN].
- *
- * @since 1.8.0
  */
 enum class LiveStatus(val wireValue: String?) {
     /** A regular video that is not and was never a live broadcast. */

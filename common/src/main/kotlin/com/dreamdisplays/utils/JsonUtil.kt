@@ -8,8 +8,6 @@ import com.google.gson.JsonObject
  * throwing when the field is absent, JSON-null, or of the wrong type.
  *
  * Replaces three private near-identical copies that lived in YtDlp, YouTubeInnerTube, and UpdateCheck.
- *
- * @since 1.0.0
  */
 
 /** Returns the string value of [key], or null if absent, JSON-null, or not a string. */

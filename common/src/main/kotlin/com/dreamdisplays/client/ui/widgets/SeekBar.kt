@@ -22,8 +22,6 @@ import net.minecraft.util.Mth
  * @param current supplies the current playback position in nanoseconds.
  * @param duration supplies the total duration in nanoseconds (`<= 0` while unknown).
  * @param onSeek invoked with the target position in nanoseconds when a drag is committed.
- *
- * @since 1.8.0
  */
 class SeekBar(
     private val current: () -> Long,

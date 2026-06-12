@@ -5,8 +5,6 @@ package com.dreamdisplays.client.input
  * methods for raycasting to determine which display is being interacted with, emitting interaction events, and
  * registering listeners for those events. It is used by input handlers to process user interactions with displays and
  * by modules to respond to those interactions.
- *
- * @since 1.8.0
  */
 interface DisplayInteractionService {
     /** Performs a raycast to determine which display is currently being looked at, if any. */

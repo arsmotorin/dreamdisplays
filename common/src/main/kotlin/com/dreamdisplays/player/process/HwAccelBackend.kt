@@ -5,8 +5,6 @@ package com.dreamdisplays.player.process
  *
  * The intent is to offload H.264 / HEVC / VP9 / AV1 decoding from the CPU to the GPU's dedicated
  * video decode block (`NVDEC` on NVIDIA, `VCE` on AMD, `QuickSync` on Intel, the Apple VT block on macOS).
- *
- * @since 1.7.0
  */
 enum class HwAccelBackend(val ffmpegName: String?, val hwOutputFormat: String?) {
     /** Apple platforms. Handles h264, hevc, vp9, prores. */

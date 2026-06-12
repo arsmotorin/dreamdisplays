@@ -5,8 +5,6 @@ package com.dreamdisplays.client.ui
  * A dragged overlay snaps to the nearest free anchor on release; [position] resolves an anchor to a
  * concrete pixel offset, and [centerFacingCorner] reports which corner of the PiP faces the screen
  * center (used to place the resize grip).
- *
- * @since 1.7.0
  */
 enum class PipAnchor {
     /** Top-left corner. */

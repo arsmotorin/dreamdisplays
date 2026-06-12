@@ -15,8 +15,6 @@ import java.util.concurrent.TimeUnit
  * Shared subprocess plumbing for the external binaries the mod drives (`yt-dlp`, `ffmpeg`, `xattr`):
  * draining output without deadlocking, killing whole process trees, and post-download fixups for
  * executables. Replaces private near-identical copies in YtDlp and FFmpegBinary.
- *
- * @since 1.0.0
  */
 object Processes {
     /**

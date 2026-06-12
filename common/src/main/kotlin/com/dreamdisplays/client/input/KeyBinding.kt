@@ -2,8 +2,6 @@ package com.dreamdisplays.client.input
 
 /**
  * Represents a key binding.
- *
- * @since 1.0.0
  */
 data class KeyBinding(
     /** The unique identifier for this key binding, used for registration and lookup. */

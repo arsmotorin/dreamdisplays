@@ -25,8 +25,6 @@ import java.util.concurrent.CopyOnWriteArrayList
  * subsystem inventing its own special snowflake startup hook.
  *
  * Put everything in one place and don't make garbage.
- *
- * @since 1.8.0
 */
 class DefaultClientApplication(override val context: ClientContext) : ClientApplication {
     private val modules = LinkedHashMap<String, ClientModule>()

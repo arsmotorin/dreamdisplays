@@ -11,8 +11,6 @@ import net.minecraft.client.Minecraft
  *
  * @param onWindow invoked when the user picks the GLFW window mode.
  * @param onPip invoked when the user picks the in-game PiP mode.
- *
- * @since 1.7.0
  */
 class PopoutDropdown(
     private val onWindow: () -> Unit,

@@ -2,8 +2,6 @@ package com.dreamdisplays.client.overlay
 
 /**
  * Context for rendering an overlay, providing information about the screen dimensions, scale factor, and partial tick time.
- *
- * @since 1.7.0
  */
 interface OverlayRenderContext {
     /** The width of the screen in pixels. */

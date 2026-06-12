@@ -6,8 +6,6 @@ package com.dreamdisplays.client.overlay
  *
  * @property snapX normalized horizontal anchor, 0..1, or -1 for [FREE].
  * @property snapY normalized vertical anchor, 0..1, or -1 for [FREE].
- *
- * @since 1.7.0
  */
 enum class OverlayAnchor(val snapX: Float, val snapY: Float) {
     /** Docked to the top-left corner. */

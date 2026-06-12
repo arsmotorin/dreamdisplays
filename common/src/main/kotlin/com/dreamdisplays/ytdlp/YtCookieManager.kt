@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicBoolean
  * instead of letting every fetch hang on a broken browser export.
  *
  * @param executor background executor for prewarm / refresh work.
- * @since 1.6.0
  */
 class YtCookieManager(private val executor: Executor) {
     private val logger = LoggerFactory.getLogger("DreamDisplays/yt-dlp")

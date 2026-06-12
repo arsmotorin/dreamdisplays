@@ -12,8 +12,11 @@ import java.util.*
 private typealias PacketBuf = RegistryFriendlyByteBuf
 
 /**
- * Packets used for communication between the client and the server.
+ * Frozen protocol v1 — the wire format of these payloads must never change. They exist only for
+ * compatibility with pre-v2 peers; new fields and packets go to the protocol-v2 envelope
+ * (see `:protocol` and [V2Payload]).
  */
+@Deprecated("Protocol v1; remove along with Packets when v1 client support is dropped.")
 object Packets {
     /** Creates a [CustomPacketPayload.Type] with the given [path]. */
     private fun <T : CustomPacketPayload> createType(path: String): CustomPacketPayload.Type<T> =

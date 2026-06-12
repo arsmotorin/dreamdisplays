@@ -16,8 +16,6 @@ import kotlin.math.round
 /**
  * Pure parsing of `yt-dlp -J` JSON output into [YtStream] descriptors: format filtering, live / seekable
  * detection, and resolution extraction.
- *
- * @since 1.0.0
  */
 internal object YtDlpOutputParser {
     /** Parses the JSON output of `yt-dlp -J` into a flat list of [YtStream] descriptors. */

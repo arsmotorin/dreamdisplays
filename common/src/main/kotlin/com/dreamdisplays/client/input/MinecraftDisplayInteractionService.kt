@@ -14,8 +14,6 @@ import java.util.concurrent.CopyOnWriteArrayList
  * [RayCastingUtil] stays deliberately display-agnostic (it only knows blocks); the mapping from a
  * block hit to a [DisplayId] lives here so the contract can be satisfied without leaking world
  * geometry into the input layer.
- *
- * @since 1.0.0
  */
 object MinecraftDisplayInteractionService : DisplayInteractionService {
     /** Max reach, in blocks, for the look raycast. Mirrors the value used by [com.dreamdisplays.managers.ClientTickManager]. */

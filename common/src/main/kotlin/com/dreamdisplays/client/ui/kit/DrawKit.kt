@@ -13,8 +13,6 @@ import net.minecraft.client.gui.components.AbstractWidget
  * Version-neutral drawing helpers built on [GuiGraphicsCompat]: bordered panels, 1px outlines, and
  * rendering vanilla child widgets from inside a composite widget. The per-version call names are
  * gated here once so screen and widget code stays branch-free.
- *
- * @since 1.8.0
  */
 
 /** Draws a 1px [color] outline just inside [r]. */

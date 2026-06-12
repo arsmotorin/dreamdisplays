@@ -14,8 +14,6 @@ import kotlin.math.min
 /**
  * The centered "video failed to load" panel shown instead of the normal menu content: error text
  * plus the delete and report buttons relocated into the panel's bottom edge.
- *
- * @since 1.0.0
  */
 class ErrorPanel(
     private val deleteButton: IconButton,

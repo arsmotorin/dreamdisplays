@@ -4,8 +4,6 @@ import com.dreamdisplays.api.DisplayId
 
 /**
  * Represents an overlay that can be rendered on top of a display.
- *
- * @since 1.7.0
  */
 interface Overlay {
     /** The ID of the display this overlay is associated with. */

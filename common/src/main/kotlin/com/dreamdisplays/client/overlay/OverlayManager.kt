@@ -5,8 +5,6 @@ import com.dreamdisplays.api.DisplayId
 /**
  * Manages overlays for displays. This is the main interface for interacting with overlays, allowing you to open, close,
  * and render them. Overlays are rendered on top of the displays.
- *
- * @since 1.7.0
  */
 interface OverlayManager {
     /**

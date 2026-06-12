@@ -1,3 +1,5 @@
+@file:DreamDisplaysUnstableApi
+
 package com.dreamdisplays.api
 
 import com.dreamdisplays.media.api.DreamMediaException

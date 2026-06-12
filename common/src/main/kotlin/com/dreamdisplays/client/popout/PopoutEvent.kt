@@ -4,8 +4,6 @@ package com.dreamdisplays.client.popout
  * Lifecycle events for popout surfaces (detached windows and PiP overlays). Emitted through
  * [PopoutManager.emit] and observed via [PopoutManager.on]; every event names the display it
  * belongs to so global subscribers can tell popouts apart.
- *
- * @since 1.7.0
  */
 sealed interface PopoutEvent {
     /** The display whose popout produced this event. */
