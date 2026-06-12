@@ -1,0 +1,14 @@
+[package]
+name = "dreamdisplays-lav"
+version = "1.0.0"
+edition = "2021"
+authors = ["arsmotorin"]
+description = "Optional in-process libav decode backend for Dream Displays."
+license = "LGPL-3.0"
+
+[lib]
+name = "dreamdisplays_lav"
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+ffmpeg-next = "8.1.0"
