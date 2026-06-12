@@ -12,6 +12,9 @@ object MediaProcess {
     private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
             "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
+    /** Kill switch for GPU-side scaling (`-Ddreamdisplays.hwscale=false` falls back to software scale). */
+    private val HW_SCALE_ENABLED = System.getProperty("dreamdisplays.hwscale", "true").toBoolean()
+
     /** Wire format the video `FFmpeg` process writes to its stdout pipe. */
     enum class VideoTransport {
         /** PPM frames (header + RGB24), parsed by the JVM [com.dreamdisplays.player.pipeline.VideoFramePipe]. */
@@ -48,11 +51,19 @@ object MediaProcess {
         ffmpeg: String, url: String, w: Int, h: Int, offsetNanos: Long, hwAccel: HwAccelBackend,
         transport: VideoTransport,
     ): List<String> {
-        val swPrefix = if (hwAccel.hwOutputFormat != null) "hwdownload,format=nv12," else ""
-        val scaleExtra = if (transport == VideoTransport.RAW_NV12) ":out_color_matrix=bt709" else ""
         val outFormat = if (transport == VideoTransport.RAW_NV12) "nv12" else "rgb24"
-        val vf = "${swPrefix}scale=w=$w:h=$h:force_original_aspect_ratio=decrease:flags=bilinear$scaleExtra," +
-            "pad=w=$w:h=$h:x=(ow-iw)/2:y=(oh-ih)/2:color=black,setsar=1,format=$outFormat"
+        val pad = "pad=w=$w:h=$h:x=(ow-iw)/2:y=(oh-ih)/2:color=black,setsar=1,format=$outFormat"
+        val vf = if (useHwScale(ffmpeg, hwAccel)) {
+            // Scale on the GPU's video block before hwdownload so the CPU never touches
+            // full-resolution frames.
+            val fit = "min($w/iw\\,$h/ih)"
+            val matrix = if (transport == VideoTransport.RAW_NV12) ":color_matrix=bt709" else ""
+            "scale_vt=w=trunc($fit*iw/2)*2:h=trunc($fit*ih/2)*2$matrix,hwdownload,format=nv12,$pad"
+        } else {
+            val swPrefix = if (hwAccel.hwOutputFormat != null) "hwdownload,format=nv12," else ""
+            val scaleExtra = if (transport == VideoTransport.RAW_NV12) ":out_color_matrix=bt709" else ""
+            "${swPrefix}scale=w=$w:h=$h:force_original_aspect_ratio=decrease:flags=bilinear$scaleExtra,$pad"
+        }
         return baseCommand(ffmpeg, url, offsetNanos, hwAccel).apply {
             addAll(listOf("-an", "-vf", vf))
             when (transport) {
@@ -61,6 +72,12 @@ object MediaProcess {
             }
         }
     }
+
+    /** True when the GPU-side scale chain should be used instead of software scaling. */
+    private fun useHwScale(ffmpeg: String, hwAccel: HwAccelBackend): Boolean =
+        HW_SCALE_ENABLED
+                && hwAccel == HwAccelBackend.VIDEOTOOLBOX
+                && FFmpegCapabilities.hasFilter(ffmpeg, "scale_vt")
 
     /**
      * Builds an `FFmpeg` process to read audio samples from [url] at the given [offsetNanos], resampled to [sampleRate] Hz.
