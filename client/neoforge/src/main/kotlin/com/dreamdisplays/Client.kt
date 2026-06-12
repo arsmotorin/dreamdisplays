@@ -55,6 +55,9 @@ class Client(modEventBus: IEventBus) : com.dreamdisplays.Mod {
         registrar.playToClient(Packets.Premium.PACKET_ID, Packets.Premium.PACKET_CODEC) { payload, _ ->
             Initializer.onLegacyPacket(payload)
         }
+        registrar.playToClient(Packets.IsAdmin.PACKET_ID, Packets.IsAdmin.PACKET_CODEC) { payload, _ ->
+            Initializer.onLegacyPacket(payload)
+        }
         registrar.playToClient(Packets.DisplayEnabled.PACKET_ID, Packets.DisplayEnabled.PACKET_CODEC) { payload, _ ->
             Initializer.onLegacyPacket(payload)
         }
