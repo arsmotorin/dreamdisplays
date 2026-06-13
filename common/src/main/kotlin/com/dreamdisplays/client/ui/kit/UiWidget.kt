@@ -40,8 +40,10 @@ abstract class UiWidget(message: Component) : AbstractWidget(0, 0, 0, 0, message
     protected abstract fun draw(g: GuiGraphicsCompat, mouseX: Int, mouseY: Int, partialTick: Float)
 
     //? if >=26 {
-    final override fun extractWidgetRenderState(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, partialTick: Float) =
+    final override fun extractWidgetRenderState(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, partialTick: Float) {
         draw(g, mouseX, mouseY, partialTick)
+        handleCursor(g)
+    }
 
     /** Draws [text] centered over the widget with vanilla scrolling-on-overflow behavior. */
     protected fun drawScrollingLabel(g: GuiGraphicsCompat, text: Component, padding: Int) =
