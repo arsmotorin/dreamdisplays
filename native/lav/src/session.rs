@@ -10,13 +10,14 @@ use std::collections::HashMap;
 use std::ffi::c_void;
 use std::ptr;
 use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Once};
 
 use ffmpeg::ffi;
 use ffmpeg::format::context::Input;
 use ffmpeg::format::Pixel;
 use ffmpeg::media::Type;
 use ffmpeg::software::scaling;
+use ffmpeg::util::log::Level;
 use ffmpeg::util::frame::video::Video as VideoFrame;
 use ffmpeg::{codec, Dictionary};
 use ffmpeg_next as ffmpeg;
@@ -37,6 +38,16 @@ const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 /// Limited-range black for the padding borders.
 const BLACK_Y: u8 = 16;
 const BLACK_C: u8 = 128;
+
+static FFMPEG_LOG_INIT: Once = Once::new();
+
+fn init_ffmpeg() -> Result<(), ffmpeg::Error> {
+    ffmpeg::init()?;
+    FFMPEG_LOG_INIT.call_once(|| {
+        ffmpeg::util::log::set_level(Level::Error);
+    });
+    Ok(())
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)] enum HwAccelRequest {
     None,
@@ -300,7 +311,7 @@ impl LavSession {
         start_micros: i64,
         hw_accel: u32,
     ) -> Result<LavSession, ffmpeg::Error> {
-        ffmpeg::init()?;
+        init_ffmpeg()?;
 
         let mut opts = Dictionary::new();
         opts.set("user_agent", USER_AGENT);
