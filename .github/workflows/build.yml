@@ -212,13 +212,14 @@ jobs:
             aarch64-*) ffmpeg_arch=winarm64 ;;
             *) echo "Unsupported Windows target: ${{ matrix.native.target }}" >&2; exit 1 ;;
           esac
-          build="ffmpeg-n8.0-latest-${ffmpeg_arch}-lgpl-shared"
+          build="ffmpeg-n8.1-latest-${ffmpeg_arch}-lgpl-shared-8.1"
           url="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/${build}.zip"
           dest="${RUNNER_TEMP}/ffmpeg"
 
           curl -fL --retry 3 --retry-all-errors -o "${RUNNER_TEMP}/ffmpeg.zip" "$url"
-          7z x -y "${RUNNER_TEMP}/ffmpeg.zip" -o"${RUNNER_TEMP}" >/dev/null
-          mv "${RUNNER_TEMP}/${build}" "$dest"
+          7z x -y "${RUNNER_TEMP}/ffmpeg.zip" -o"${RUNNER_TEMP}/ffmpeg-extract" >/dev/null
+          inner="$(find "${RUNNER_TEMP}/ffmpeg-extract" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+          mv "$inner" "$dest"
 
           # Export for the build/test/collect steps below.
           echo "FFMPEG_DIR=${dest}" >> "$GITHUB_ENV"
