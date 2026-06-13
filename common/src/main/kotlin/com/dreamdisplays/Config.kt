@@ -1,13 +1,14 @@
 package com.dreamdisplays
 
 import java.io.File
+import kotlin.math.roundToInt
 
 /** Client configuration loaded from and persisted to `config.yml`. */
 class Config(private val baseDir: File) {
     private val file = File(baseDir, "config.yml")
 
     var muteOnAltTab: Boolean = false
-    var defaultDistance: Int = 64
+    var defaultDistance: Int = 96
     var defaultDisplayVolume: Double = 0.5
     var displaysEnabled: Boolean = true
     var ytdlpCookiesFromBrowser: String = "none"
@@ -39,7 +40,8 @@ class Config(private val baseDir: File) {
             .toMap()
 
         muteOnAltTab = data["mute-on-alt-tab"]?.toBooleanStrictOrNull() ?: muteOnAltTab
-        defaultDistance = data["default-render-distance"]?.toIntOrNull() ?: defaultDistance
+        val rawDistance = data["default-render-distance"]?.toIntOrNull() ?: defaultDistance
+        defaultDistance = ((rawDistance / 16.0).roundToInt().coerceIn(2, 12)) * 16
         defaultDisplayVolume = data["default-default-display-volume"]?.toDoubleOrNull() ?: defaultDisplayVolume
         displaysEnabled = data["displays-enabled"]?.toBooleanStrictOrNull() ?: displaysEnabled
         ytdlpCookiesFromBrowser = data["ytdlp-cookies-from-browser"] ?: ytdlpCookiesFromBrowser

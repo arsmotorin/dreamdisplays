@@ -75,6 +75,14 @@ class DisplayMenu private constructor(
         val videoReady = { ds.isVideoStarted && !ds.errored }
         val notErrored = { !ds.errored }
 
+        // Migrate legacy block-based renderDistance to the nearest valid chunk multiple (2–12 chunks).
+        val migratedChunks = (ds.renderDistance / 16.0).roundToInt().coerceIn(MIN_CHUNKS, MAX_CHUNKS)
+        val migratedBlocks = migratedChunks * CHUNK_BLOCKS
+        if (ds.renderDistance != migratedBlocks) {
+            ds.renderDistance = migratedBlocks
+            DisplayRegistry.saveScreenData(ds)
+        }
+
         volume = addUi(ValueSlider(
             initial = ds.volume.toDouble(),
             label = { Component.literal("${floor(it * 200).toInt()}%") },
@@ -83,10 +91,10 @@ class DisplayMenu private constructor(
         volume.visibleWhen = notErrored
 
         renderD = addUi(ValueSlider(
-            initial = (ds.renderDistance - 24) / (128 - 24).toDouble(),
-            label = { Component.literal("${(it * (128 - 24)).toInt() + 24} blocks") },
+            initial = chunksToFraction(ds.renderDistance / CHUNK_BLOCKS),
+            label = { Component.translatable("dreamdisplays.button.render-distance.label", fractionToChunks(it)) },
         ) {
-            ds.renderDistance = (it * (128 - 24) + 24).toInt()
+            ds.renderDistance = fractionToChunks(it) * CHUNK_BLOCKS
             DisplayRegistry.saveScreenData(ds)
         })
         renderD.enabledWhen = { videoReady() && !ds.isPopoutActive }
@@ -131,12 +139,14 @@ class DisplayMenu private constructor(
         volumeReset.visibleWhen = notErrored
 
         val renderDReset = addUi(IconButton("refresh") {
-            ds.renderDistance = ClientStateManager.config.defaultDistance
-            renderD.value = (ClientStateManager.config.defaultDistance - 24) / (128 - 24).toDouble()
+            val defaultChunks = (ClientStateManager.config.defaultDistance / CHUNK_BLOCKS).coerceIn(MIN_CHUNKS, MAX_CHUNKS)
+            ds.renderDistance = defaultChunks * CHUNK_BLOCKS
+            renderD.value = chunksToFraction(defaultChunks)
             DisplayRegistry.saveScreenData(ds)
         })
         renderDReset.enabledWhen = {
-            videoReady() && !ds.isPopoutActive && ds.renderDistance != ClientStateManager.config.defaultDistance
+            val defaultBlocks = (ClientStateManager.config.defaultDistance / CHUNK_BLOCKS).coerceIn(MIN_CHUNKS, MAX_CHUNKS) * CHUNK_BLOCKS
+            videoReady() && !ds.isPopoutActive && ds.renderDistance != defaultBlocks
         }
         renderDReset.visibleWhen = notErrored
 
@@ -280,7 +290,7 @@ class DisplayMenu private constructor(
                     tooltipBody("dreamdisplays.button.render-distance.tooltip.2"),
                     tooltipBody("dreamdisplays.button.render-distance.tooltip.3"),
                     Component.literal(""),
-                    tooltipValue("dreamdisplays.button.render-distance.tooltip.8", (renderD.value * (128 - 24) + 24).toInt()),
+                    tooltipValue("dreamdisplays.button.render-distance.tooltip.8", fractionToChunks(renderD.value)),
                 )
             },
             SettingsSection.Row("dreamdisplays.button.quality", quality, qualityReset) {
@@ -452,6 +462,19 @@ class DisplayMenu private constructor(
         /** Minimum logical canvas the normal layout is comfortable in; smaller windows scale down. */
         private const val MIN_CONTENT_W = 640
         private const val MIN_CONTENT_H = 380
+
+        private const val CHUNK_BLOCKS = 16
+        private const val MIN_CHUNKS = 2
+        private const val MAX_CHUNKS = 12
+        private const val CHUNK_STEPS = MAX_CHUNKS - MIN_CHUNKS  // 10
+
+        /** Converts a chunk count (2–12) to a slider fraction (0.0–1.0). */
+        private fun chunksToFraction(chunks: Int): Double =
+            (chunks.coerceIn(MIN_CHUNKS, MAX_CHUNKS) - MIN_CHUNKS) / CHUNK_STEPS.toDouble()
+
+        /** Converts a slider fraction (0.0–1.0) to a snapped chunk count (2–12). */
+        private fun fractionToChunks(fraction: Double): Int =
+            (fraction * CHUNK_STEPS).roundToInt() + MIN_CHUNKS
 
         /** Opens the menu for [displayScreen]. */
         fun open(displayScreen: DisplayScreen) {

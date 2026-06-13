@@ -23,7 +23,7 @@ internal fun DisplayScreen.toDisplay(): Display = Display(
     ),
     settings = ApiDisplaySettings(
         volume = volume, quality = quality, brightness = brightness,
-        muted = muted, paused = isPaused, renderDistance = renderDistance,
+        muted = muted, paused = isPaused, renderDistance = renderDistance.coerceIn(32, 192),
         syncEnabled = isSync, urlOverride = null, audioTrackName = lang,
     ),
     url = videoUrl,

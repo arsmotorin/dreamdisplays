@@ -89,7 +89,7 @@ class DisplayScreen(
     internal val videoStarted: Boolean get() = media.videoStarted
     internal var paused: Boolean = savedSettings.paused
     private var focusMuted: Boolean = false
-    var renderDistance: Int = 64
+    var renderDistance: Int = 96
     var savedTimeNanos: Long = 0
     internal val syncController = DisplaySyncController(this)
     private val media = DisplayMediaController(this)

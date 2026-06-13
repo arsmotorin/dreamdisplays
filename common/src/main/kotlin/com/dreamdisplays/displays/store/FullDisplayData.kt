@@ -25,6 +25,6 @@ class FullDisplayData(
     var muted: Boolean,
     var isSync: Boolean,
     var ownerUuid: UUID,
-    var renderDistance: Int = 64,
+    var renderDistance: Int = 96,
     var currentTimeNanos: Long = 0,
 )
