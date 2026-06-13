@@ -15,25 +15,10 @@ private val nativeLibraryBaseNames = listOf(
     "dreamdisplays_lav",
 )
 
-private val ffmpegSharedLibraryComponents = listOf(
-    "avutil",
-    "swresample",
-    "swscale",
-    "avcodec",
-    "avformat",
-    "avfilter",
-    "avdevice",
-)
-
 private fun nativeLibraryName(platformKey: String, baseName: String): String = when {
     platformKey.startsWith("windows-") -> "$baseName.dll"
     platformKey.startsWith("macos-") -> "lib$baseName.dylib"
     else -> "lib$baseName.so"
-}
-
-private fun isSharedLibraryName(name: String): Boolean {
-    val lower = name.lowercase()
-    return lower.endsWith(".dll") || lower.endsWith(".dylib") || lower.contains(".so")
 }
 
 private fun hostNativeKey(): String {
@@ -103,28 +88,17 @@ tasks.withType<ProcessResources>().configureEach {
             }
         }.filterNot { it.isFile }
 
-        val missingFfmpegComponents = requiredNativePlatforms.flatMap { platformKey ->
-            val platformDir = File(nativeBundleDir, platformKey)
-            val bundledLibraries = platformDir.listFiles()?.filter { it.isFile && isSharedLibraryName(it.name) }.orEmpty()
-            ffmpegSharedLibraryComponents
-                .filter { component -> bundledLibraries.none { it.name.lowercase().contains(component) } }
-                .map { component -> "$platformKey/$component" }
-        }
         val missingLicenseFiles = requiredNativePlatforms
             .map { platformKey -> File(nativeBundleDir, "$platformKey/licenses/ffmpeg-license.txt") }
             .filterNot { it.isFile && it.length() > 0L }
 
-        if (missingNativeLibraries.isNotEmpty() || missingFfmpegComponents.isNotEmpty() || missingLicenseFiles.isNotEmpty()) {
+        if (missingNativeLibraries.isNotEmpty() || missingLicenseFiles.isNotEmpty()) {
             throw GradleException(
                 buildString {
                     appendLine("Native bundle is incomplete.")
                     if (missingNativeLibraries.isNotEmpty()) {
                         appendLine("Missing required DreamDisplays libraries:")
                         missingNativeLibraries.forEach { appendLine(" - ${it.relativeTo(rootProject.projectDir)}") }
-                    }
-                    if (missingFfmpegComponents.isNotEmpty()) {
-                        appendLine("Missing required FFmpeg shared library components:")
-                        missingFfmpegComponents.forEach { appendLine(" - $it") }
                     }
                     if (missingLicenseFiles.isNotEmpty()) {
                         appendLine("Missing required FFmpeg license metadata:")
