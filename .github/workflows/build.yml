@@ -106,7 +106,7 @@ jobs:
               },
           ]
           is_pull_request = os.environ.get("GITHUB_EVENT_NAME") == "pull_request"
-          build_versions = [versions[0]] if is_pull_request else versions
+          build_versions = versions
           required_native_platforms = ["linux-x64"] if is_pull_request else [item["platform"] for item in native_matrix]
           selected_native_matrix = [native_matrix[0]] if is_pull_request else native_matrix
 
@@ -176,15 +176,11 @@ jobs:
           cargo --version
 
       - name: Cache Cargo
-        uses: actions/cache@v5.0.5
+        uses: Swatinem/rust-cache@v2.9.1
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            native/target
-          key: cargo-${{ runner.os }}-${{ matrix.native.target }}-${{ hashFiles('native/Cargo.lock', 'native/Cargo.toml', 'native/lav/Cargo.toml') }}
-          restore-keys: |
-            cargo-${{ runner.os }}-${{ matrix.native.target }}-
+          workspaces: native -> target
+          key: ${{ matrix.native.target }}
+          cache-on-failure: true
 
       - name: Install FFmpeg dependencies on Linux
         if: runner.os == 'Linux'
@@ -630,7 +626,8 @@ jobs:
             :client:neoforge:shadowJar \
             :server:shadowJar \
             --no-daemon \
-            --parallel
+            --parallel \
+            --build-cache
         env:
           DREAMDISPLAYS_REQUIRE_NATIVES: "true"
           DREAMDISPLAYS_REQUIRED_NATIVE_PLATFORMS: ${{ needs.metadata.outputs.required_native_platforms }}
