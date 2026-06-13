@@ -213,6 +213,9 @@ jobs:
         shell: bash
         run: |
           VCPKG_ROOT="${VCPKG_ROOT:-C:/vcpkg}"
+          triplet_file="$VCPKG_ROOT/triplets/${{ matrix.native.vcpkg_triplet }}.cmake"
+          grep -q 'VCPKG_BUILD_TYPE release' "$triplet_file" || \
+            echo 'set(VCPKG_BUILD_TYPE release)' >> "$triplet_file"
           "$VCPKG_ROOT/vcpkg.exe" install "ffmpeg:${{ matrix.native.vcpkg_triplet }}"
           echo "$VCPKG_ROOT/installed/${{ matrix.native.vcpkg_triplet }}/bin" >> "$GITHUB_PATH"
           echo "$VCPKG_ROOT/installed/${{ matrix.native.vcpkg_triplet }}/tools/ffmpeg" >> "$GITHUB_PATH"
