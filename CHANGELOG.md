@@ -1,3 +1,136 @@
+# Version 1.8.0
+
+## Client
+
+### Features
+- Added support for Minecraft 26.2
+- Brought back Minecraft 1.21.11 support ([#91](https://github.com/arsmotorin/dreamdisplays/pull/91))
+- Added a new packet protocol v2
+- Added fallback support for protocol v1, but v1 is now deprecated and will be removed in the future
+- Introduced an unstable client-side API that will be scaled in the future
+- Switched the multiversion system to `Stonecutter`, so old versions will be supported too
+- Added stable `Vulkan` support for display rendering (`OpenGL` rendering is still supported)
+- Replaced the old synchronization mode with new playback modes (server 1.8.0+ required)
+- Added local, synced, broadcast playback modes (server 1.8.0+ required)
+- Support vertical displays (server 1.8.0+ required)
+- Added a native Rust media pipeline
+- Integrated `FFmpeg` into the native media pipeline
+- Added in-process LAV backend for video decoding
+- Added GPU YUV / NV12 rendering path
+- Added planar display textures for native video frames
+- Added dynamic frame format support for native video frames
+- Added improved cursor handling in the display menu
+- Increased the default render distance to 96 blocks
+- Switched display visibility logic from block-based checks to chunk-based checks
+- Increased the effective display rendering range from 2 chunks to 12 chunks
+- Reduced CPU usage by up to 50× on tested mid-range hardware scenarios (Java 25 required)
+- Reduced CPU usage by up to 70× on tested low-end hardware scenarios (Java 25 required)
+- Improved video stream resolving speed by up to 10–12× in supported cases
+- Added seamless and faster video quality changes
+- Improved shader compatibility
+- Added more anonymous telemetry data to improve development, compatibility, and stability
+- Added a fresher mod icon
+- Improved several menu icons
+
+### Improvements
+
+- Improved media player performance thanks to the native media pipeline
+- Improved video frame processing stability
+- Improved brightness handling in the video frame pipeline
+- Added a more efficient native video frame path
+- Reduced expensive CPU-side frame conversion work
+- Improved GPU upload behavior for video frames
+- Improved realtime-safe stream selection
+- 60 FPS stream selection is now opt-in
+- Improved `yt-dlp` quality fallback logic
+- Improved `yt-dlp` resolver failure handling
+- Improved video startup behavior when stream resolving fails
+- Improved detection of DRM-protected videos
+- DRM-protected videos now fail faster and more gracefully
+- Improved cookie handling
+- Improved process management for external media tools
+- Improved display rendering stability on larger displays
+- Improved display rendering stability at longer distances
+- Improved compatibility with shader mods
+- Improved compatibility with `VulkanMod`
+- Improved Picture-in-Picture display sizing logic
+- Improved display menu behavior on different GUI scales
+- Improved display menu icon behavior
+- Improved locked display handling
+- Improved temporary focus mute behavior
+- Improved unsafe filename handling for server display cache files
+- Improved client texture creation validation
+- Replaced the old `AbstractConfig` usage with the default config implementation
+- Replaced custom logging usage with LoggerFactory
+- Reorganized the project structure
+- Improved Gradle configuration
+- Improved workflows
+- Improved the publishing system
+- Removed old Gradle cache configuration
+- Removed INotSleep's utils
+- Simplified multiple internal code paths
+- Cleaned up old compatibility code
+- Updated dependencies
+- Added many small internal cleanups, simplifications, and stability improvements
+
+### Fixes
+
+- Fixed a critical crash on `Fabric` 1.21.11
+- Fixed a critical `Quilt` entry point crash
+- Fixed an ancient `NeoForge` and IntelliJ IDEA compatibility issue
+- Fixed `NeoForge` client shutdown on normal server disconnect
+- Fixed FFmpeg extraction on Linux ([#93](https://github.com/arsmotorin/dreamdisplays/issues/93))
+- Fixed incompatibility between the popout window and `Vivecraft`
+- Fixed GUI scale handling in the display menu
+- Fixed several shader compatibility issues
+- Fixed `VulkanMod` compatibility issues
+- Fixed strange red and green screen blinking while loading videos
+- Fixed quality fallback to 360p when `yt-dlp` fails
+- Fixed incorrect waiting behavior for DRM-protected videos
+- Fixed Picture-in-Picture mode display size calculation
+- Fixed render distance localization
+- Fixed locked display abuses
+- Fixed the false locked display icon in the display menu
+- Fixed temporary focus mute overwriting the user's mute setting
+- Fixed unsafe server display cache filenames breaking on some systems
+- Fixed invalid display sizes creating broken client textures
+- Fixed several display menu edge cases
+- Fixed several native frame pipeline edge cases
+- Fixed several video resolver edge cases
+- Fixed several display rendering edge cases
+- Fixed multiple small stability issues
+
+## Server
+
+### Features
+
+- Added support for Minecraft 26.2 `Fabric` servers
+- Implemented Minecraft 1.21.11 support for `Fabric` servers
+- Added support for the new playback modes
+- Added Java 21 support for Minecraft 1.21.11 servers
+- Added a new packet protocol v2
+- Added fallback support for protocol v1, but v1 is now deprecated and will be removed in the future
+- Added `dreamdisplays.local`, `dreamdisplays.synced`, `dreamdisplays.broadcast`, `dreamdisplays.lock`, `dreamdisplays.delete.others`, and `dreamdisplays.create.bypass` permissions
+- Added more anonymous telemetry data to improve development, compatibility, and stability
+
+### Improvements
+
+- Simplified server-side display storage updates
+- Removed the old display validator flow
+- Improved server-side handling of display-enabled state updates
+- Removed the useless report button in single-player
+- Improved Gradle configuration
+- Improved server module structure
+- Updated dependencies
+- Added multiple small server-side cleanups and simplifications
+
+### Fixes
+
+- Fixed `MariaDB` compatibility issue ([#88](https://github.com/arsmotorin/dreamdisplays/pull/88))
+- Fixed sending display enabled packets to clients
+- Fixed several `Fabric` server compatibility issues
+- Fixed several small server-side stability issues
+
 # Version 1.8.0-SNAPSHOT.2
 
 ## Client
