@@ -24,6 +24,10 @@ class RoundTripTest {
             maxTextureSize = 8192,
             supportedCodecs = listOf("h264", "vp9", "av1"),
             supportsAudio = false,
+            systemRamMb = 16 * 1024,
+            maxJvmMemoryMb = 4 * 1024,
+            dedicatedVramMb = 8 * 1024,
+            warmDisplayLimit = 8,
         )
     )
 
@@ -75,6 +79,21 @@ class RoundTripTest {
         roundTrip(SetDisplaysEnabled(enabled = false))
         roundTrip(ClearCache(listOf(id, owner)))
         roundTrip(ClearCache(emptyList()))
+    }
+
+    @Test fun playbackModePackets() {
+        roundTrip(PlaybackCommand(id, action = PlaybackAction.SEEK.wire, positionMs = 42_000))
+        roundTrip(SetMode(id, mode = PlaybackMode.SYNCED.wire))
+        roundTrip(WatchPartyStart(id, "https://youtu.be/abc", "en"))
+        roundTrip(WatchPartyControl(id, action = WatchPartyAction.BEGIN.wire))
+        roundTrip(
+            WatchPartyState(
+                id = id, sessionId = "s-1", state = WatchPartySessionState.COUNTDOWN.wire,
+                hostId = owner, hostName = "Steve", url = "https://youtu.be/abc", lang = "en",
+                readyCount = 3, nearbyCount = 5, countdownStartEpochMs = 1_700_000_003_000,
+                positionMs = 0, serverTimeMs = 1_700_000_000_000, durationMs = 600_000, paused = true,
+            )
+        )
     }
 
     @Test fun unknownTypeIdIsIgnored() {

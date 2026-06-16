@@ -40,6 +40,10 @@ import kotlinx.serialization.protobuf.ProtoType
     @ProtoNumber(18) val lavInProcessEnabled: Boolean = false,
     @ProtoNumber(19) val lavSurfaceInteropAvailable: Boolean = false,
     @ProtoNumber(20) val lavZeroCopyEnabled: Boolean = false,
+    @ProtoNumber(21) val systemRamMb: Int = 0,
+    @ProtoNumber(22) val maxJvmMemoryMb: Int = 0,
+    @ProtoNumber(23) val dedicatedVramMb: Int = 0,
+    @ProtoNumber(24) val warmDisplayLimit: Int = 0,
 ) : DreamPacket
 
 /**
