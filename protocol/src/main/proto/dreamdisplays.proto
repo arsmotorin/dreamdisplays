@@ -96,6 +96,10 @@ message DisplayInfo {
   optional string lang = 11;
   // WARNING: a default value decoded when value is missing
   optional bool isLocked = 12;
+  // WARNING: a default value decoded when value is missing
+  optional int32 mode = 13;
+  // WARNING: a default value decoded when value is missing
+  optional int32 qualityCap = 14;
 }
 
 // serial name 'com.dreamdisplays.protocol.DisplayDelete'
@@ -116,6 +120,12 @@ message DisplaySync {
   optional int64 currentTimeMs = 4;
   // WARNING: a default value decoded when value is missing
   optional int64 durationMs = 5;
+  // WARNING: a default value decoded when value is missing
+  optional int64 serverTimeMs = 6;
+  // WARNING: a default value decoded when value is missing
+  optional bool loop = 7;
+  // WARNING: a default value decoded when value is missing
+  optional int32 mode = 8;
 }
 
 // serial name 'com.dreamdisplays.protocol.RequestSync'

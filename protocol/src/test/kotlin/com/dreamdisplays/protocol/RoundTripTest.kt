@@ -48,6 +48,8 @@ class RoundTripTest {
             isSync = true,
             lang = "ru",
             isLocked = false,
+            mode = PlaybackMode.BROADCAST.wire,
+            qualityCap = 360,
         )
     )
 
@@ -60,6 +62,12 @@ class RoundTripTest {
     @Test fun remainingPackets() {
         roundTrip(DisplayDelete(id))
         roundTrip(DisplaySync(id, isSync = true, isPaused = true, currentTimeMs = -1, durationMs = Long.MAX_VALUE))
+        roundTrip(
+            DisplaySync(
+                id, isSync = true, isPaused = false, currentTimeMs = 12_345, durationMs = 600_000,
+                serverTimeMs = 1_700_000_000_000, loop = true, mode = PlaybackMode.BROADCAST.wire,
+            )
+        )
         roundTrip(RequestSync(id))
         roundTrip(SetVideo(id, "https://example.com/v.mp4", "en"))
         roundTrip(SetLocked(id, locked = false))
