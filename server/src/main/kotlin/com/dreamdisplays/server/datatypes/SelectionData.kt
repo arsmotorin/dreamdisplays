@@ -38,11 +38,19 @@ interface SelectionData {
     var pos2: Location? = null
     override var isReady: Boolean = false
     private var face: BlockFace? = null
+
+    /** Player's horizontal look cardinal at first-point time; orients floor/ceiling content. */
+    private var horizontal: BlockFace = BlockFace.NORTH
     private val playerId: UUID = player.uniqueId
 
     /** Sets the facing direction of the future display. */
     fun setFace(face: BlockFace) {
         this.face = face
+    }
+
+    /** Records the player's horizontal look cardinal, used to rotate floor/ceiling content. */
+    fun setHorizontal(face: BlockFace) {
+        this.horizontal = face
     }
 
     /** Returns the stored facing direction, or [NORTH] if none was set. */
@@ -70,7 +78,21 @@ interface SelectionData {
         val dPos1 = region.getMinLocation(p1.world)
         val dPos2 = region.getMaxLocation(p1.world)
 
-        return PaperDisplayData(randomUUID(), playerId, dPos1, dPos2, region.width, region.height, f)
+        val isVertical = f == BlockFace.UP || f == BlockFace.DOWN
+        val screenWidth = if (isVertical) region.deltaX else region.width
+        val screenHeight = if (isVertical) region.deltaZ else region.height
+        val rotation = if (isVertical) horizontalIndex(horizontal) else 0
+
+        return PaperDisplayData(randomUUID(), playerId, dPos1, dPos2, screenWidth, screenHeight, f, rotation)
+    }
+
+    /** Maps a horizontal cardinal to a 0-3 quarter-turn index for floor/ceiling content. */
+    private fun horizontalIndex(face: BlockFace): Int = when (face) {
+        BlockFace.NORTH -> 0
+        BlockFace.EAST -> 1
+        BlockFace.SOUTH -> 2
+        BlockFace.WEST -> 3
+        else -> 0
     }
 }
 
@@ -82,6 +104,9 @@ interface SelectionData {
     var pos2: BlockPos? = null
     var worldKey: String? = null
     var facing: Direction = Direction.NORTH
+
+    /** Player's horizontal look cardinal at first-point time; orients floor/ceiling content. */
+    var horizontalFacing: Direction = Direction.NORTH
     override var isReady: Boolean = false
 
     /** Resets all selection state back to defaults. */
@@ -90,6 +115,7 @@ interface SelectionData {
         pos2 = null
         worldKey = null
         facing = Direction.NORTH
+        horizontalFacing = Direction.NORTH
         isReady = false
     }
 
@@ -144,16 +170,27 @@ interface SelectionData {
     fun generateDisplayData(ownerId: UUID): FabricDisplayData {
         val r = requireNotNull(region()) { "region is null" }
         val wk = requireNotNull(worldKey) { "worldKey is null" }
+        val isVertical = facing == Direction.UP || facing == Direction.DOWN
         return FabricDisplayData(
             id = randomUUID(),
             ownerId = ownerId,
             worldKey = wk,
             pos1 = BlockPos(r.minX, r.minY, r.minZ),
             pos2 = BlockPos(r.maxX, r.maxY, r.maxZ),
-            width = r.width,
-            height = r.height,
+            width = if (isVertical) r.deltaX else r.width,
+            height = if (isVertical) r.deltaZ else r.height,
             facing = facing,
+            rotation = if (isVertical) horizontalIndex(horizontalFacing) else 0,
         )
+    }
+
+    /** Maps a horizontal cardinal to a 0-3 quarter-turn index for floor/ceiling content. */
+    private fun horizontalIndex(dir: Direction): Int = when (dir) {
+        Direction.NORTH -> 0
+        Direction.EAST -> 1
+        Direction.SOUTH -> 2
+        Direction.WEST -> 3
+        else -> 0
     }
 
     /** Compact result of a selection region calculation. */

@@ -196,6 +196,7 @@ import java.util.UUID
                 display.isLocked,
                 display.mode,
                 display.qualityCap,
+                display.rotation,
             )
         }
     }

@@ -76,6 +76,8 @@ import kotlinx.serialization.protobuf.ProtoType
     @ProtoNumber(12) val isLocked: Boolean = true,
     @ProtoNumber(13) val mode: Int = 0,
     @ProtoNumber(14) val qualityCap: Int = 0,
+    /** Content quarter-turn rotation (0-3), only meaningful for `UP`/`DOWN` facings. */
+    @ProtoNumber(15) val rotation: Int = 0,
 ) : DreamPacket
 
 /** Removes a display (server broadcast) or requests its deletion (client action). */

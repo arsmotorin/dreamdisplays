@@ -108,6 +108,8 @@ message DisplayInfo {
   optional int32 mode = 13;
   // WARNING: a default value decoded when value is missing
   optional int32 qualityCap = 14;
+  // WARNING: a default value decoded when value is missing
+  optional int32 rotation = 15;
 }
 
 // serial name 'com.dreamdisplays.protocol.DisplayDelete'

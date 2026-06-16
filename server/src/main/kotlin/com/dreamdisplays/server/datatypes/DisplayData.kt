@@ -24,6 +24,9 @@ interface DisplayData {
     val ownerId: UUID
     val width: Int
     val height: Int
+
+    /** Content quarter-turn rotation (0-3); only meaningful for floor/ceiling (`UP`/`DOWN`) facings. */
+    val rotation: Int
     var url: String
     var lang: String
 
@@ -66,6 +69,7 @@ interface DisplayData {
     override val width: Int,
     override val height: Int,
     val facing: BlockFace = BlockFace.NORTH,
+    override val rotation: Int = 0,
 ) : DisplayData {
     override var url: String = ""
     override var lang: String = ""
@@ -95,6 +99,7 @@ interface DisplayData {
     override val width: Int,
     override val height: Int,
     val facing: Direction,
+    override val rotation: Int = 0,
 ) : DisplayData {
     override var url: String = ""
     override var lang: String = ""

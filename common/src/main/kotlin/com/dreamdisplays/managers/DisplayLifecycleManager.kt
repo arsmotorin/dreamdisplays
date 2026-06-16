@@ -59,18 +59,18 @@ object DisplayLifecycleManager {
         createScreen(
             packet.id, packet.ownerId, Vector3i(packet.x, packet.y, packet.z), facing,
             packet.width, packet.height, packet.url, packet.lang,
-            PlaybackMode.fromWire(packet.mode), packet.qualityCap,
+            PlaybackMode.fromWire(packet.mode), packet.qualityCap, packet.rotation,
         )
     }
 
     fun createScreen(
         uuid: UUID, ownerUuid: UUID, pos: Vector3i, facingUtil: FacingUtil,
         width: Int, height: Int, code: String, lang: String,
-        mode: PlaybackMode, qualityCap: Int,
+        mode: PlaybackMode, qualityCap: Int, rotation: Int = 0,
     ) {
         val displayScreen = DisplayScreen(
             uuid, ownerUuid, pos.x(), pos.y(), pos.z(), facingUtil.toDisplayFacing(),
-            width, height, mode, qualityCap
+            width, height, mode, qualityCap, rotation
         )
 
         val savedData = ServerDisplayStore.getDisplayData(uuid)
@@ -100,7 +100,7 @@ object DisplayLifecycleManager {
 
         val displayScreen = DisplayScreen(
             data.uuid, data.ownerUuid, data.x, data.y, data.z, data.facing,
-            data.width, data.height, data.mode ?: PlaybackMode.LOCAL
+            data.width, data.height, data.mode ?: PlaybackMode.LOCAL, rotation = data.rotation
         )
         displayScreen.renderDistance = data.renderDistance
         displayScreen.savedTimeNanos = data.currentTimeNanos
@@ -124,11 +124,16 @@ object DisplayLifecycleManager {
         x: Int, y: Int, z: Int, width: Int, height: Int, facing: DisplayFacing, playerPos: BlockPos
     ): Double {
         var maxX = x
-        val maxY = y + height - 1
+        var maxY = y + height - 1
         var maxZ = z
         when (facing) {
             DisplayFacing.NORTH, DisplayFacing.SOUTH -> maxX += width - 1
             DisplayFacing.EAST, DisplayFacing.WEST -> maxZ += width - 1
+            DisplayFacing.UP, DisplayFacing.DOWN -> {
+                maxX += width - 1
+                maxZ += height - 1
+                maxY = y
+            }
         }
         return sqrt(playerPos.distSqr(BlockPos(
             minOf(maxOf(playerPos.x, x), maxX),

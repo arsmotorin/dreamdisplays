@@ -56,6 +56,8 @@ class DisplayScreen(
     var height: Int,
     var mode: PlaybackMode,
     var qualityCap: Int = 0,
+    /** Content quarter-turn rotation (0-3); only used for floor/ceiling (`UP`/`DOWN`) screens. */
+    var rotation: Int = 0,
 ) {
     private val savedSettings = ClientSettingsStore.getSettings(uuid)
 
@@ -303,6 +305,7 @@ class DisplayScreen(
         z = packet.z
         blockPos = null
         facing = FacingUtil.fromPacket(packet.facing.toByte()).toDisplayFacing()
+        rotation = packet.rotation
         width = packet.width
         height = packet.height
         mode = if (packet.mode == PlaybackMode.LOCAL.wire && packet.isSync) {

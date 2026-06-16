@@ -12,6 +12,7 @@ import com.dreamdisplays.protocol.SetDisplaysEnabled
 import com.dreamdisplays.server.Main
 import com.dreamdisplays.server.datatypes.FabricDisplayData
 import com.dreamdisplays.server.datatypes.SyncData
+import com.dreamdisplays.server.managers.PlayerManager
 import com.dreamdisplays.utils.FacingUtil
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.core.Direction
@@ -28,6 +29,16 @@ import java.io.DataOutputStream
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.util.*
+
+/**
+ * Returns true if the client identified by [uuid] runs a mod version that understands vertical
+ * (`UP` / `DOWN`) display facings (>= 1.8.0). Older clients would crash decoding facing bytes 4/5,
+ * so vertical displays are simply never sent to them. A missing version is treated as unsupported.
+ */
+private fun supportsVertical(uuid: UUID): Boolean {
+    val v = PlayerManager.getVersion(uuid) ?: return false
+    return v.major > 1 || (v.major == 1 && v.minor >= 8)
+}
 
 /**
  * Dual-protocol send facade for the Paper flavor. Each method partitions the recipients by
@@ -62,8 +73,11 @@ import java.util.*
         isLocked: Boolean = true,
         mode: PlaybackMode = if (isSync) PlaybackMode.SYNCED else PlaybackMode.LOCAL,
         qualityCap: Int = 0,
+        rotation: Int = 0,
     ) {
-        val (v2, players) = partition(players)
+        val isVertical = facing == BlockFace.UP || facing == BlockFace.DOWN
+        val recipients = if (isVertical) players.filterNotNull().filter { supportsVertical(it.uniqueId) } else players
+        val (v2, players) = partition(recipients)
         PaperV2Networking.send(
             v2,
             DisplayInfo(
@@ -73,6 +87,7 @@ import java.util.*
                 facing = facing.toPacketByte().toInt(),
                 isSync = isSync, lang = lang, isLocked = isLocked,
                 mode = mode.wire, qualityCap = qualityCap,
+                rotation = rotation,
             ),
         )
         if (players.isEmpty()) return
@@ -255,12 +270,14 @@ import java.util.*
         write(bytes)
     }
 
-    /** Maps a cardinal [BlockFace] to its wire byte; non-cardinal faces fall back to north. */
+    /** Maps a [BlockFace] to its wire byte; faces not in the protocol fall back to north. */
     private fun BlockFace.toPacketByte(): Byte = when (this) {
         BlockFace.NORTH -> 0
         BlockFace.EAST -> 1
         BlockFace.SOUTH -> 2
         BlockFace.WEST -> 3
+        BlockFace.UP -> 4
+        BlockFace.DOWN -> 5
         else -> 0
     }
 
@@ -315,7 +332,9 @@ import java.util.*
 
     /** Encodes and broadcasts a `display_info` packet describing a single display to [players]. */
     fun sendDisplayInfo(players: List<ServerPlayer>, display: FabricDisplayData) {
-        val (v2, legacy) = partition(players)
+        val isVertical = display.facing == Direction.UP || display.facing == Direction.DOWN
+        val recipients = if (isVertical) players.filter { supportsVertical(it.uuid) } else players
+        val (v2, legacy) = partition(recipients)
         FabricV2Networking.send(
             v2,
             DisplayInfo(
@@ -325,6 +344,7 @@ import java.util.*
                 facing = directionToFacingUtil(display.facing).toPacket().toInt(),
                 isSync = display.isSync, lang = display.lang, isLocked = display.isLocked,
                 mode = display.mode.wire, qualityCap = display.qualityCap,
+                rotation = display.rotation,
             ),
         )
         if (legacy.isEmpty()) return
@@ -415,14 +435,15 @@ import java.util.*
         }
     }
 
-    /** Maps a cardinal [Direction] to its wire byte; non-cardinal faces fall back to the north. */
+    /** Maps a [Direction] to its wire [FacingUtil]; faces not in the protocol fall back to north. */
     private fun directionToFacingUtil(direction: Direction): FacingUtil {
         return when (direction) {
             Direction.NORTH -> FacingUtil.NORTH
             Direction.EAST -> FacingUtil.EAST
             Direction.SOUTH -> FacingUtil.SOUTH
             Direction.WEST -> FacingUtil.WEST
-            else -> FacingUtil.NORTH
+            Direction.UP -> FacingUtil.UP
+            Direction.DOWN -> FacingUtil.DOWN
         }
     }
 }

@@ -94,11 +94,11 @@ object ScreenRenderer : ClientRenderService {
             renderGpuTexture(drawQuad, displayScreen)
         } else if (displayScreen.fallbackRenderType != null) {
             if (displayScreen.errored) {
-                renderColor(drawQuad, displayScreen.fallbackRenderType!!, 35, 5, 5)
+                renderColor(drawQuad, displayScreen.fallbackRenderType!!, 35, 5, 5, displayScreen.rotation)
             } else {
                 val pulse = abs(sin(System.nanoTime() / 1_500_000_000.0 * Math.PI)).toFloat()
                 val v = (10 + pulse * 20).toInt()
-                renderColor(drawQuad, displayScreen.fallbackRenderType!!, v, v, v)
+                renderColor(drawQuad, displayScreen.fallbackRenderType!!, v, v, v, displayScreen.rotation)
             }
         }
         stack.popPose()
@@ -112,22 +112,27 @@ object ScreenRenderer : ClientRenderService {
             255
         }
         drawQuad(displayScreen.renderType!!) { pose, builder ->
-            appendQuad(pose, builder, c, c, c)
+            appendQuad(pose, builder, c, c, c, displayScreen.rotation)
         }
     }
 
     /** Draws a unit quad filled with a solid RGB color (used for loading / error state). */
-    private fun renderColor(drawQuad: QuadRenderer, type: RenderType, r: Int, g: Int, b: Int) {
+    private fun renderColor(drawQuad: QuadRenderer, type: RenderType, r: Int, g: Int, b: Int, rotation: Int) {
         drawQuad(type) { pose, builder ->
-            appendQuad(pose, builder, r, g, b)
+            appendQuad(pose, builder, r, g, b, rotation)
         }
     }
 
-    private fun appendQuad(pose: PoseStack.Pose, builder: VertexConsumer, r: Int, g: Int, b: Int) {
-        addVertex(pose, builder, 0f, 0f, 0f, r, g, b, 0f, 1f)
-        addVertex(pose, builder, 1f, 0f, 0f, r, g, b, 1f, 1f)
-        addVertex(pose, builder, 1f, 1f, 0f, r, g, b, 1f, 0f)
-        addVertex(pose, builder, 0f, 1f, 0f, r, g, b, 0f, 0f)
+    /** Texture corners in vertex order; rotating the list by [rotation] quarter-turns spins the image. */
+    private val baseUv = arrayOf(0f to 1f, 1f to 1f, 1f to 0f, 0f to 0f)
+
+    private fun appendQuad(pose: PoseStack.Pose, builder: VertexConsumer, r: Int, g: Int, b: Int, rotation: Int) {
+        val rot = ((rotation % 4) + 4) % 4
+        val uv = Array(4) { baseUv[(it + rot) % 4] }
+        addVertex(pose, builder, 0f, 0f, 0f, r, g, b, uv[0].first, uv[0].second)
+        addVertex(pose, builder, 1f, 0f, 0f, r, g, b, uv[1].first, uv[1].second)
+        addVertex(pose, builder, 1f, 1f, 0f, r, g, b, uv[2].first, uv[2].second)
+        addVertex(pose, builder, 0f, 1f, 0f, r, g, b, uv[3].first, uv[3].second)
     }
 
     private fun addVertex(

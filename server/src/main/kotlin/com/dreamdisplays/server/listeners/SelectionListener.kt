@@ -54,13 +54,19 @@ import org.bukkit.inventory.EquipmentSlot
         event.isCancelled = true
 
         when (event.action) {
-            LEFT_CLICK_BLOCK -> SelectionManager.setFirstPoint(player, block.location, event.blockFace)
+            LEFT_CLICK_BLOCK -> SelectionManager.setFirstPoint(player, block.location, player.facingDirection())
             RIGHT_CLICK_BLOCK -> SelectionManager.setSecondPoint(player, block.location)
             else -> {}
         }
     }
 
     private val Action.isRightClick get() = this in listOf(RIGHT_CLICK_AIR, RIGHT_CLICK_BLOCK)
+
+    private fun org.bukkit.entity.Player.facingDirection(): org.bukkit.block.BlockFace = when {
+        location.pitch < -45f -> org.bukkit.block.BlockFace.DOWN
+        location.pitch > 45f  -> org.bukkit.block.BlockFace.UP
+        else                  -> facing.oppositeFace
+    }
 }
 
 /**
@@ -86,7 +92,7 @@ import org.bukkit.inventory.EquipmentSlot
             if (blockKey != baseMaterialKey) return@register InteractionResult.PASS
 
             val worldKey = RegionUtil.getLevelKey(world)
-            val face = horizontalFaceFromDirection(direction)
+            val face = Direction.orderedByNearest(player)[0].opposite
             SelectionManager.setFirstPoint(player, pos, worldKey, face)
 
             InteractionResult.SUCCESS
@@ -124,13 +130,4 @@ import org.bukkit.inventory.EquipmentSlot
         }
     }
 
-    /** Returns the horizontal face from the given direction. */
-    private fun horizontalFaceFromDirection(dir: Direction): Direction {
-        return when (dir) {
-            Direction.NORTH, Direction.SOUTH,
-            Direction.EAST, Direction.WEST -> dir
-
-            else -> Direction.NORTH
-        }
-    }
 }

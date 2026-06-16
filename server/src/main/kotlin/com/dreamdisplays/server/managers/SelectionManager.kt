@@ -31,6 +31,7 @@ object SelectionManager {
         if (sel.pos1?.world != loc.world || sel.pos2?.world != loc.world) sel.reset()
         sel.pos1 = loc.clone()
         sel.setFace(face as BlockFace)
+        sel.setHorizontal(player.facing)
         sel.isReady = false
         MessageUtil.sendMessage(player, "firstPointSelected")
     }
@@ -43,6 +44,7 @@ object SelectionManager {
         sel.pos1 = pos
         sel.worldKey = worldKey
         sel.facing = face
+        sel.horizontalFacing = player.direction
         sel.isReady = false
         MessageUtil.sendMessage(player, "firstPointSelected")
     }

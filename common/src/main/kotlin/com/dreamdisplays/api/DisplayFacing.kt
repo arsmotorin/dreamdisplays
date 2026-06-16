@@ -21,7 +21,13 @@ enum class DisplayFacing(val byte: Byte) {
     SOUTH(2),
 
     /** Facing west (−X). */
-    WEST(3);
+    WEST(3),
+
+    /** Facing up (+Y); display lies flat on the floor, visible from above. */
+    UP(4),
+
+    /** Facing down (−Y); display lies flat on the ceiling, visible from below. */
+    DOWN(5);
 
     /** The facing 180 degrees from this one. */
     val opposite: DisplayFacing get() = when (this) {
@@ -29,6 +35,8 @@ enum class DisplayFacing(val byte: Byte) {
         SOUTH -> NORTH
         EAST -> WEST
         WEST -> EAST
+        UP -> DOWN
+        DOWN -> UP
     }
 
     companion object {

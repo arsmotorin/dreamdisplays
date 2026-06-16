@@ -150,7 +150,7 @@ import java.util.function.Consumer
             players as MutableList<Player?>,
             display.id, display.ownerId, display.box.min, display.width, display.height,
             display.url, display.lang, display.facing, display.isSync, display.isLocked,
-            display.mode, display.qualityCap,
+            display.mode, display.qualityCap, display.rotation,
         )
     }
 

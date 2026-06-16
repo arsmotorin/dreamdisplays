@@ -19,6 +19,7 @@ import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.network.chat.Component
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerPlayer
+import org.bukkit.block.BlockFace
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import kotlin.math.abs
@@ -95,17 +96,21 @@ import kotlin.math.abs
         val maxZ = maxOf(pos1.blockZ, pos2.blockZ)
         val deltaX = maxX - minX + 1
         val deltaZ = maxZ - minZ + 1
+        val deltaY = maxY - minY + 1
         val face = sel.getFace()
-        val width = maxOf(deltaX, deltaZ)
-        val height = maxY - minY + 1
+        val isVertical = face == BlockFace.UP || face == BlockFace.DOWN
+        val width = if (isVertical) deltaX else maxOf(deltaX, deltaZ)
+        val height = if (isVertical) deltaZ else deltaY
 
         return validateRegion(
             minY = minY,
             maxY = maxY,
             deltaX = deltaX,
             deltaZ = deltaZ,
-            faceModX = abs(face.modX),
-            faceModZ = abs(face.modZ),
+            deltaY = deltaY,
+            faceModX = if (!isVertical) abs(face.modX) else 0,
+            faceModZ = if (!isVertical) abs(face.modZ) else 0,
+            faceModY = if (isVertical) abs(face.modY) else 0,
             width = width,
             height = height,
             minHeight = Main.config.settings.minHeight,
@@ -203,18 +208,25 @@ import kotlin.math.abs
         }
 
         val facing = sel.facing
-        val faceModX = if (facing == Direction.EAST || facing == Direction.WEST) 1 else 0
-        val faceModZ = if (facing == Direction.NORTH || facing == Direction.SOUTH) 1 else 0
+        val isVertical = facing == Direction.UP || facing == Direction.DOWN
+        val faceModX = if (!isVertical && (facing == Direction.EAST || facing == Direction.WEST)) 1 else 0
+        val faceModZ = if (!isVertical && (facing == Direction.NORTH || facing == Direction.SOUTH)) 1 else 0
+        val faceModY = if (isVertical) 1 else 0
+        val deltaY = region.maxY - region.minY + 1
+        val screenWidth = if (isVertical) region.deltaX else region.width
+        val screenHeight = if (isVertical) region.deltaZ else region.height
 
         return validateRegion(
             minY = region.minY,
             maxY = region.maxY,
             deltaX = region.deltaX,
             deltaZ = region.deltaZ,
-            faceModX = abs(faceModX),
-            faceModZ = abs(faceModZ),
-            width = region.width,
-            height = region.height,
+            deltaY = deltaY,
+            faceModX = faceModX,
+            faceModZ = faceModZ,
+            faceModY = faceModY,
+            width = screenWidth,
+            height = screenHeight,
             minHeight = Server.config.settings.minHeight,
             minWidth = Server.config.settings.minWidth,
             maxHeight = Server.config.settings.maxHeight,
@@ -245,8 +257,10 @@ private fun validateRegion(
     maxY: Int,
     deltaX: Int,
     deltaZ: Int,
+    deltaY: Int,
     faceModX: Int,
     faceModZ: Int,
+    faceModY: Int = 0,
     width: Int,
     height: Int,
     minHeight: Int,
@@ -257,7 +271,10 @@ private fun validateRegion(
     sendError: (String) -> Unit,
     onWrongStructure: (() -> Unit)? = null,
 ): Unit? {
-    if (deltaX != faceModX && deltaZ != faceModZ) {
+    val depthOk = (faceModX != 0 && deltaX == faceModX)
+        || (faceModZ != 0 && deltaZ == faceModZ)
+        || (faceModY != 0 && deltaY == faceModY)
+    if (!depthOk) {
         sendError("structureWrongDepth")
         return null
     }

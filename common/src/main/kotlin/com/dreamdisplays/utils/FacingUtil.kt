@@ -18,7 +18,13 @@ enum class FacingUtil {
     SOUTH,
 
     /** Facing west (−X). Wire byte 3. */
-    WEST;
+    WEST,
+
+    /** Facing up (+Y). Wire byte 4. */
+    UP,
+
+    /** Facing down (−Y). Wire byte 5. */
+    DOWN;
 
     /** Serializes this facing to a single byte using its ordinal index. */
     fun toPacket(): Byte = ordinal.toByte()
