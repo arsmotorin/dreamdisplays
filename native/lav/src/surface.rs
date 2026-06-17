@@ -10,9 +10,7 @@ use ffmpeg_next as ffmpeg;
 use crate::session::{ERR_BAD_ARGS, ERR_BAD_HANDLE, ERR_IO};
 
 pub const ERR_UNSUPPORTED: i32 = -4;
-
 pub const SURFACE_ABI_VERSION: u32 = 1;
-
 pub const SURFACE_PLATFORM_MACOS_IOSURFACE: u32 = 1;
 pub const SURFACE_FORMAT_NV12_8: u32 = 1;
 pub const SURFACE_FORMAT_P010_10: u32 = 2;
@@ -85,14 +83,8 @@ impl LavSurfaceTable {
         if texture_id == 0 {
             return ERR_BAD_ARGS;
         }
-        let map = match self.map.lock() {
-            Ok(m) => m,
-            Err(_) => return ERR_IO,
-        };
-        let surface = match map.get(&handle) {
-            Some(s) => s,
-            None => return ERR_BAD_HANDLE,
-        };
+        let Ok(map) = self.map.lock() else { return ERR_IO; };
+        let Some(surface) = map.get(&handle) else { return ERR_BAD_HANDLE; };
         surface.bind_plane_gl(plane, texture_id)
     }
 }
@@ -120,7 +112,7 @@ impl LavSurfaceFrame {
     pub fn from_video_frame(frame: &VideoFrame) -> Result<LavSurfaceFrame, String> {
         if frame.format() != Pixel::VIDEOTOOLBOX {
             return Err(format!(
-                "zero-copy surface import is unsupported for {:?}.",
+                "Zero-copy surface import is unsupported for {:?}.",
                 frame.format()
             ));
         }
@@ -176,7 +168,7 @@ unsafe fn describe_frame(
             }
         }
         _ => Err(format!(
-            "zero-copy surface import is unsupported for {:?}.",
+            "Zero-copy surface import is unsupported for {:?}.",
             format
         )),
     }
@@ -219,20 +211,20 @@ mod macos {
     const CV_XF20: OSType = u32::from_be_bytes(*b"xf20");
 
     #[link(name = "CoreVideo", kind = "framework")]
-    extern "C" {
+    unsafe extern "C" {
         fn CVPixelBufferGetIOSurface(pixel_buffer: CVPixelBufferRef) -> IOSurfaceRef;
         fn CVPixelBufferGetPixelFormatType(pixel_buffer: CVPixelBufferRef) -> OSType;
     }
 
     #[link(name = "IOSurface", kind = "framework")]
-    extern "C" {
+    unsafe extern "C" {
         fn IOSurfaceGetPlaneCount(buffer: IOSurfaceRef) -> usize;
         fn IOSurfaceGetWidthOfPlane(buffer: IOSurfaceRef, plane: usize) -> usize;
         fn IOSurfaceGetHeightOfPlane(buffer: IOSurfaceRef, plane: usize) -> usize;
     }
 
     #[link(name = "OpenGL", kind = "framework")]
-    extern "C" {
+    unsafe extern "C" {
         fn CGLGetCurrentContext() -> CGLContextObj;
         fn CGLTexImageIOSurface2D(
             ctx: CGLContextObj,
@@ -271,7 +263,7 @@ mod macos {
             CV_X420 | CV_XF20 => SURFACE_FORMAT_P010_10,
             other => {
                 return Err(format!(
-                    "unsupported CVPixelBuffer pixel format 0x{other:08x}."
+                    "Unsupported CVPixelBuffer pixel format 0x{other:08x}."
                 ))
             }
         };
@@ -279,7 +271,7 @@ mod macos {
         let plane_count = IOSurfaceGetPlaneCount(surface);
         if plane_count < 2 {
             return Err(format!(
-                "expected at least two IOSurface planes, got {plane_count}."
+                "Expected at least two IOSurface planes, got {plane_count}."
             ));
         }
 
@@ -353,7 +345,7 @@ mod macos {
 
     unsafe fn pixel_buffer(frame: *mut ffi::AVFrame) -> Result<CVPixelBufferRef, String> {
         if frame.is_null() {
-            return Err("null AVFrame".to_string());
+            return Err("Null AVFrame".to_string());
         }
         let pixel_buffer = (*frame).data[3] as CVPixelBufferRef;
         if pixel_buffer.is_null() {

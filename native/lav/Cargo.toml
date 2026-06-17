@@ -1,9 +1,9 @@
 [package]
 name = "dreamdisplays-lav"
-version = "1.0.0"
-edition = "2021"
+version = "1.0.1"
+edition = "2024"
 authors = ["arsmotorin"]
-description = "Optional in-process libav decode backend for Dream Displays."
+description = "In-process libav decode backend for Dream Displays."
 license = "LGPL-3.0"
 
 [lib]

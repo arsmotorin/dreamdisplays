@@ -28,7 +28,7 @@ fn sessions() -> &'static Sessions {
 }
 
 /// Returns [`ABI_VERSION`]; the JVM bridge calls this first as a sanity check.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn dd_abi_version() -> u32 {
     ABI_VERSION
 }
@@ -39,7 +39,7 @@ pub extern "C" fn dd_abi_version() -> u32 {
 /// as the first one) terminated by `\0`. `pix_fmt`: 0 = rgb24, 1 = nv12.
 ///
 /// Safety: `argv_blob` must point to `blob_len` readable bytes.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn dd_video_open(
     argv_blob: *const u8,
     blob_len: u64,
@@ -52,10 +52,7 @@ pub unsafe extern "C" fn dd_video_open(
     }
     let blob = std::slice::from_raw_parts(argv_blob, blob_len as usize);
     catch_unwind(AssertUnwindSafe(|| {
-        let pix = match PixFmt::from_u32(pix_fmt) {
-            Some(p) => p,
-            None => return 0,
-        };
+        let Some(pix) = PixFmt::from_u32(pix_fmt) else { return 0; };
         let args: Vec<String> = blob
             .split(|&b| b == 0)
             .filter(|part| !part.is_empty())
@@ -73,7 +70,7 @@ pub unsafe extern "C" fn dd_video_open(
 ///
 /// Safety: `dst` must point to `dst_len` writable bytes and remain valid for the duration of
 /// the call. Only one thread may read a given handle at a time.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn dd_video_read_frame(
     handle: i64,
     dst: *mut u8,
@@ -97,7 +94,7 @@ pub unsafe extern "C" fn dd_video_read_frame(
 ///
 /// Safety: `dst` must point to `dst_len` writable bytes and remain valid for the duration of
 /// the call. Only one thread may read a given handle at a time.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn dd_video_read_frame_rgba(
     handle: i64,
     dst: *mut u8,
@@ -122,7 +119,7 @@ pub unsafe extern "C" fn dd_video_read_frame_rgba(
 ///
 /// Safety: `dst` must point to `dst_len` writable bytes and remain valid for the duration of
 /// the call. Only one thread may read a given handle at a time.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn dd_video_read_frame_i420(handle: i64, dst: *mut u8, dst_len: u64) -> i32 {
     if dst.is_null() {
         return ERR_BAD_ARGS;
@@ -137,7 +134,7 @@ pub unsafe extern "C" fn dd_video_read_frame_i420(handle: i64, dst: *mut u8, dst
 /// Returns 0 on success, negative on error.
 ///
 /// Safety: `src` must point to `src_len` readable bytes, `dst` to `dst_len` writable bytes.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn dd_i420_to_rgba(
     src: *const u8,
     src_len: u64,
@@ -166,7 +163,7 @@ pub unsafe extern "C" fn dd_i420_to_rgba(
 /// or a negative error code.
 ///
 /// Safety: `dst` must point to `dst_len` writable bytes.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn dd_video_stderr(handle: i64, dst: *mut u8, dst_len: u64) -> i32 {
     if dst.is_null() {
         return ERR_BAD_ARGS;
@@ -177,7 +174,7 @@ pub unsafe extern "C" fn dd_video_stderr(handle: i64, dst: *mut u8, dst_len: u64
 
 /// Waits up to `wait_millis` for the `FFmpeg` process to exit; returns its exit code or -1
 /// (killing it if it is still running after the timeout).
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn dd_video_exit_code(handle: i64, wait_millis: u32) -> i32 {
     catch_unwind(AssertUnwindSafe(|| {
         sessions().exit_code(handle, wait_millis)
@@ -187,14 +184,14 @@ pub extern "C" fn dd_video_exit_code(handle: i64, wait_millis: u32) -> i32 {
 
 /// Kills the `FFmpeg` process, unblocking any reader stuck in [`dd_video_read_frame`].
 /// The handle stays valid (for stderr / exit-code queries) until [`dd_video_close`].
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn dd_video_kill(handle: i64) {
     let _ = catch_unwind(AssertUnwindSafe(|| sessions().kill(handle)));
 }
 
 /// Frees the session. Must not be called while another thread is inside
 /// [`dd_video_read_frame`] for the same handle (join the reader thread first).
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn dd_video_close(handle: i64) {
     let _ = catch_unwind(AssertUnwindSafe(|| sessions().close(handle)));
 }

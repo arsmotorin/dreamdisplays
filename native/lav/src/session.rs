@@ -260,19 +260,13 @@ impl LavSessions {
 
     /// Opens the stream and registers a session. Returns the new handle, or 0 on failure.
     pub fn open(&self, url: &str, w: usize, h: usize, start_micros: i64, hw_accel: u32) -> i64 {
-        let session = match LavSession::open(url, w, h, start_micros, hw_accel) {
-            Ok(s) => s,
-            Err(_) => return 0,
-        };
+        let Ok(session) = LavSession::open(url, w, h, start_micros, hw_accel) else { return 0; };
         self.insert(session)
     }
 
     /// Opens a replay session from a serialized packet-ring snapshot.
     pub fn open_replay(&self, blob: &[u8], w: usize, h: usize, resume_nanos: i64) -> i64 {
-        let session = match LavSession::open_replay(blob, w, h, resume_nanos) {
-            Ok(s) => s,
-            Err(_) => return 0,
-        };
+        let Ok(session) = LavSession::open_replay(blob, w, h, resume_nanos) else { return 0; };
         self.insert(session)
     }
 
@@ -289,28 +283,19 @@ impl LavSessions {
 
     /// Blocking decode of the next frame into `dst` as I420. See `dd_lav_read_frame_i420`.
     pub fn read_frame(&self, handle: i64, dst: &mut [u8]) -> i32 {
-        let session = match self.get(handle) {
-            Some(s) => s,
-            None => return ERR_BAD_HANDLE,
-        };
+        let Some(session) = self.get(handle) else { return ERR_BAD_HANDLE; };
         session.read_frame(dst)
     }
 
     /// Blocking decode of the next frame into `dst` as I420 and returns normalized frame PTS.
     pub fn read_frame_with_pts(&self, handle: i64, dst: &mut [u8], pts_nanos: &mut i64) -> i32 {
-        let session = match self.get(handle) {
-            Some(s) => s,
-            None => return ERR_BAD_HANDLE,
-        };
+        let Some(session) = self.get(handle) else { return ERR_BAD_HANDLE; };
         session.read_frame_with_pts(dst, pts_nanos)
     }
 
     /// Blocking decode of the next hardware frame and registers it as a retained GPU-importable surface.
     pub fn read_surface(&self, handle: i64, desc: &mut LavSurfaceDesc) -> i32 {
-        let session = match self.get(handle) {
-            Some(s) => s,
-            None => return ERR_BAD_HANDLE,
-        };
+        let Some(session) = self.get(handle) else { return ERR_BAD_HANDLE; };
         match session.read_surface() {
             Ok(Some(surface)) => self.surfaces.insert(surface, desc),
             Ok(None) => READ_EOF,
@@ -339,14 +324,8 @@ impl LavSessions {
 
     /// Copies the last error description into `dst`, returning the number of bytes written.
     pub fn error(&self, handle: i64, dst: &mut [u8]) -> i32 {
-        let session = match self.get(handle) {
-            Some(s) => s,
-            None => return ERR_BAD_HANDLE,
-        };
-        let err = match session.error.lock() {
-            Ok(e) => e,
-            Err(_) => return ERR_IO,
-        };
+        let Some(session) = self.get(handle) else { return ERR_BAD_HANDLE; };
+        let Ok(err) = session.error.lock() else { return ERR_IO; };
         let bytes = err.as_bytes();
         let n = bytes.len().min(dst.len());
         dst[..n].copy_from_slice(&bytes[..n]);
@@ -355,13 +334,9 @@ impl LavSessions {
 
     /// Enables / resizes the rolling packet cache on `handle`. See [`LavSession::enable_cache`].
     pub fn enable_cache(&self, handle: i64, window_nanos: i64, max_bytes: usize) -> i32 {
-        match self.get(handle) {
-            Some(session) => {
-                session.enable_cache(window_nanos, max_bytes);
-                READ_OK
-            }
-            None => ERR_BAD_HANDLE,
-        }
+        let Some(session) = self.get(handle) else { return ERR_BAD_HANDLE; };
+        session.enable_cache(window_nanos, max_bytes);
+        READ_OK
     }
 
     /// Copies the cache snapshot for `handle` into `dst`, returning the total blob length (which
@@ -590,10 +565,7 @@ impl LavSession {
         if dst.len() < self.w * self.h + 2 * c {
             return ERR_BAD_ARGS;
         }
-        let mut state = match self.read.lock() {
-            Ok(s) => s,
-            Err(_) => return ERR_IO,
-        };
+        let Ok(mut state) = self.read.lock() else { return ERR_IO; };
         match self.next_frame(&mut state, dst) {
             Ok(Some(pts)) => {
                 *pts_nanos = pts;
@@ -1124,7 +1096,7 @@ unsafe extern "C" fn prefer_selected_hw_format(
 
         let sessions = LavSessions::new();
         let handle = sessions.open(clip.to_str().unwrap(), 640, 360, 0, 0);
-        assert_ne!(handle, 0, "open failed.");
+        assert_ne!(handle, 0, "Open failed.");
 
         let mut dst = vec![0u8; 640 * 360 * 3 / 2];
         let mut frames = 0;
@@ -1133,21 +1105,21 @@ unsafe extern "C" fn prefer_selected_hw_format(
             let mut pts_nanos = NO_PTS_NANOS;
             match sessions.read_frame_with_pts(handle, &mut dst, &mut pts_nanos) {
                 READ_OK => {
-                    assert_ne!(pts_nanos, NO_PTS_NANOS, "test clip should expose frame PTS");
+                    assert_ne!(pts_nanos, NO_PTS_NANOS, "Test clip should expose frame PTS");
                     if frames == 0 {
-                        assert!(pts_nanos >= 0, "first PTS should be normalized");
+                        assert!(pts_nanos >= 0, "First PTS should be normalized");
                     }
                     if let Some(prev) = last_pts {
-                        assert!(pts_nanos >= prev, "frame PTS should be monotonic");
+                        assert!(pts_nanos >= prev, "Frame PTS should be monotonic");
                     }
                     last_pts = Some(pts_nanos);
                     frames += 1;
                 }
                 READ_EOF => break,
-                e => panic!("read error {e}."),
+                e => panic!("Read error {e}."),
             }
         }
-        assert_eq!(frames, 30, "expected 30 frames.");
+        assert_eq!(frames, 30, "Expected 30 frames.");
         sessions.close(handle);
     }
 
@@ -1187,23 +1159,23 @@ unsafe extern "C" fn prefer_selected_hw_format(
 
         // Query size, then fill
         let len = sessions.snapshot(handle, &mut []);
-        assert!(len > 0, "snapshot should be non-empty after capture.");
+        assert!(len > 0, "Snapshot should be non-empty after capture.");
         let mut blob = vec![0u8; len as usize];
-        assert_eq!(sessions.snapshot(handle, &mut blob), len, "second call should write the whole blob.");
+        assert_eq!(sessions.snapshot(handle, &mut blob), len, "Second call should write the whole blob.");
 
         let (params, packets) =
-            crate::cache::deserialize_snapshot(&blob).expect("snapshot must be a valid blob.");
-        assert!(!packets.is_empty(), "should have captured packets.");
-        assert!(packets[0].keyframe, "cache must start at a keyframe.");
-        assert!(params.width > 0 && params.height > 0, "codec params dimensions.");
-        assert_ne!(params.codec_id, 0, "codec id should be captured.");
+            crate::cache::deserialize_snapshot(&blob).expect("Snapshot must be a valid blob.");
+        assert!(!packets.is_empty(), "Should have captured packets.");
+        assert!(packets[0].keyframe, "Cache must start at a keyframe.");
+        assert!(params.width > 0 && params.height > 0, "Codec params dimensions.");
+        assert_ne!(params.codec_id, 0, "Codec id should be captured.");
         assert!(!params.extradata.is_empty(), "H.264 in MP4 carries extradata.");
         // PTS should be monotonic and normalized (>= 0 from the start)
         let first_pts = packets.iter().find_map(|p| {
             if p.pts_nanos != crate::cache::NO_PTS { Some(p.pts_nanos) } else { None }
         });
         if let Some(first) = first_pts {
-            assert!(first >= 0, "normalized PTS should start at / after zero.");
+            assert!(first >= 0, "Normalized PTS should start at / after zero.");
         }
         sessions.close(handle);
     }
@@ -1229,21 +1201,21 @@ unsafe extern "C" fn prefer_selected_hw_format(
 
         let sessions = LavSessions::new();
         let live = sessions.open(clip.to_str().unwrap(), 640, 360, 0, 0);
-        assert_ne!(live, 0, "live open failed.");
+        assert_ne!(live, 0, "Live open failed.");
         assert_eq!(sessions.enable_cache(live, i64::MAX / 4, 64 * 1024 * 1024), READ_OK);
 
         let mut dst = vec![0u8; 640 * 360 * 3 / 2];
         while sessions.read_frame(live, &mut dst) == READ_OK {}
 
         let len = sessions.snapshot(live, &mut []);
-        assert!(len > 0, "snapshot should be non-empty.");
+        assert!(len > 0, "Snapshot should be non-empty.");
         let mut blob = vec![0u8; len as usize];
         assert_eq!(sessions.snapshot(live, &mut blob), len);
         sessions.close(live);
 
         let resume_nanos = 900_000_000;
         let replay = sessions.open_replay(&blob, 640, 360, resume_nanos);
-        assert_ne!(replay, 0, "replay open failed.");
+        assert_ne!(replay, 0, "Replay open failed.");
 
         let mut frames = 0;
         let mut last_pts = None;
@@ -1251,19 +1223,19 @@ unsafe extern "C" fn prefer_selected_hw_format(
             let mut pts_nanos = NO_PTS_NANOS;
             match sessions.read_frame_with_pts(replay, &mut dst, &mut pts_nanos) {
                 READ_OK => {
-                    assert_ne!(pts_nanos, NO_PTS_NANOS, "replay frames should expose PTS.");
-                    assert!(pts_nanos >= resume_nanos, "pre-roll should be discarded.");
+                    assert_ne!(pts_nanos, NO_PTS_NANOS, "Replay frames should expose PTS.");
+                    assert!(pts_nanos >= resume_nanos, "Pre-roll should be discarded.");
                     if let Some(prev) = last_pts {
-                        assert!(pts_nanos >= prev, "replay PTS should be monotonic.");
+                        assert!(pts_nanos >= prev, "Replay PTS should be monotonic.");
                     }
                     last_pts = Some(pts_nanos);
                     frames += 1;
                 }
                 READ_EOF => break,
-                e => panic!("replay read error {e}."),
+                e => panic!("Replay read error {e}."),
             }
         }
-        assert!(frames > 0, "replay should produce frames after resume.");
+        assert!(frames > 0, "Replay should produce frames after resume.");
         sessions.close(replay);
     }
 }

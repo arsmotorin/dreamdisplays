@@ -3,8 +3,8 @@ members = ["lav"]
 
 [package]
 name = "dreamdisplays-native"
-version = "1.0.0"
-edition = "2021"
+version = "1.0.1"
+edition = "2024"
 authors = ["arsmotorin"]
 description = "Native media pipeline kernels for Dream Displays."
 license = "LGPL-3.0"

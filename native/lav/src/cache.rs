@@ -39,11 +39,7 @@ const SNAPSHOT_MAGIC: u32 = 0x44_44_52_31;
 impl CachedPacket {
     /// Best available ordering timestamp: PTS when present, else DTS, else [`NO_PTS`].
     fn order_ts(&self) -> i64 {
-        if self.pts_nanos != NO_PTS {
-            self.pts_nanos
-        } else {
-            self.dts_nanos
-        }
+        ts_opt(self.pts_nanos).unwrap_or(self.dts_nanos)
     }
 }
 
@@ -93,7 +89,7 @@ impl PacketRing {
         }
     }
 
-    /// PTS of the newest retained packet, or [`NO_PTS`] when empty/untimed.
+    /// PTS of the newest retained packet, or [`NO_PTS`] when empty / untimed.
     pub fn newest_ts(&self) -> i64 {
         self.packets
             .iter()
@@ -338,11 +334,7 @@ impl<'a> Reader<'a> {
 
 /// Maps an order timestamp to `Some` unless it is the [`NO_PTS`] sentinel.
 fn ts_opt(ts: i64) -> Option<i64> {
-    if ts == NO_PTS {
-        None
-    } else {
-        Some(ts)
-    }
+    (ts != NO_PTS).then_some(ts)
 }
 
 #[cfg(test)] mod tests {
@@ -359,7 +351,7 @@ fn ts_opt(ts: i64) -> Option<i64> {
         }
     }
 
-    /// One GOP every 5 frames (30 fps ⇒ ~166 ms each), `bytes` per packet.
+    /// One GOP every 5 frames, `bytes` here is the sum of all frames' data lengths.
     fn fill(ring: &mut PacketRing, frames: i64, bytes: usize) {
         for i in 0..frames {
             ring.push(pkt(i * 33, i % 5 == 0, bytes));
@@ -373,34 +365,34 @@ fn ts_opt(ts: i64) -> Option<i64> {
         // Front is always a keyframe
         assert!(
             ring.packets.front().unwrap().keyframe,
-            "ring must start at a keyframe."
+            "Ring must start at a keyframe."
         );
         // Retains at least the window, but not the whole 10 s
-        assert!(ring.span_nanos() >= 1_000 * MS, "should cover >= window.");
+        assert!(ring.span_nanos() >= 1_000 * MS, "Should cover >= window.");
         assert!(
             ring.span_nanos() < 2_000 * MS,
-            "should not hoard far beyond the window."
+            "Should not hoard far beyond the window."
         );
-        assert!(ring.len() < 300, "old GOPs must be evicted.");
+        assert!(ring.len() < 300, "Old GOPs must be evicted.");
     }
 
     #[test] fn enforces_byte_budget_by_dropping_gops() {
         // Window huge, but cap bytes so the budget is the binding constraint
         let mut ring = PacketRing::new(i64::MAX / 4, 1_000);
         fill(&mut ring, 300, 100);
-        assert!(ring.total_bytes() <= 1_000, "must honor byte budget.");
+        assert!(ring.total_bytes() <= 1_000, "Must honor byte budget.");
         assert!(
             ring.packets.front().unwrap().keyframe,
-            "still keyframe-aligned under byte pressure."
+            "Still keyframe-aligned under byte pressure."
         );
-        assert!(!ring.is_empty(), "keeps at least one decodable GOP.");
+        assert!(!ring.is_empty(), "Keeps at least one decodable GOP.");
     }
 
     #[test] fn never_drops_below_one_gop() {
         // Absurdly tight budget; a single GOP (5 frames) still exceeds it but must be retained
         let mut ring = PacketRing::new(0, 1);
         fill(&mut ring, 7, 100);
-        assert!(!ring.is_empty(), "cannot drop the only decodable GOP.");
+        assert!(!ring.is_empty(), "Cannot drop the only decodable GOP.");
         assert!(ring.packets.front().unwrap().keyframe);
         // At most the current partial GOP plus the previous one's tail is kept
         assert!(ring.len() <= 7);
@@ -413,11 +405,11 @@ fn ts_opt(ts: i64) -> Option<i64> {
                                   // one GOP for H.264/open-GOP decoder references.
         let out = ring.drain_from(500 * MS);
         assert!(!out.is_empty());
-        assert!(out[0].keyframe, "replay must begin on a keyframe.");
+        assert!(out[0].keyframe, "Replay must begin on a keyframe.");
         assert_eq!(
             out[0].pts_nanos,
             330 * MS,
-            "should include one extra GOP of pre-roll."
+            "Should include one extra GOP of pre-roll."
         );
         assert!(out.iter().all(|p| p.pts_nanos >= 330 * MS));
     }
@@ -498,7 +490,7 @@ fn ts_opt(ts: i64) -> Option<i64> {
         t.truncate(t.len() - 2);
         assert!(
             deserialize_snapshot(&t).is_none(),
-            "truncated packet data must be rejected."
+            "Truncated packet data must be rejected."
         );
     }
 }

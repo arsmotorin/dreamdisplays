@@ -1,4 +1,4 @@
-//! Optional in-process libav decode backend, shipped as its own cdylib so the main
+//! In-process libav decode backend, shipped as its own cdylib so the main
 //! `dreamdisplays_native` library stays free of libav link dependencies (this one fails to
 //! load on machines without the `FFmpeg` shared libraries, and the JVM treats that as
 //! "feature unavailable" instead of losing the whole native pipeline).
@@ -29,21 +29,23 @@ use surface::{LavSurfaceDesc, SURFACE_ABI_VERSION};
 /// Bumped on any breaking change of this ABI.
 pub const LAV_ABI_VERSION: u32 = 4;
 
+/// Global state, one per process.
 static SESSIONS: OnceLock<LavSessions> = OnceLock::new();
 
+/// Returns the global state.
 fn sessions() -> &'static LavSessions {
     SESSIONS.get_or_init(LavSessions::new)
 }
 
 /// Returns [`LAV_ABI_VERSION`]; the JVM bridge calls this first as a sanity check.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn dd_lav_abi_version() -> u32 {
     LAV_ABI_VERSION
 }
 
 /// Returns the optional hardware-surface ABI version. This ABI is additive to the I420 path:
 /// callers can probe it and fall back to [`dd_lav_read_frame_i420`] without reopening.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn dd_lav_surface_abi_version() -> u32 {
     SURFACE_ABI_VERSION
 }
@@ -56,7 +58,7 @@ pub extern "C" fn dd_lav_surface_abi_version() -> u32 {
 /// Hardware setup is best-effort; every backend falls back to software decode.
 ///
 /// Safety: `url` must point to `url_len` readable bytes.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn dd_lav_open(
     url: *const u8,
     url_len: u64,
@@ -84,7 +86,7 @@ pub unsafe extern "C" fn dd_lav_open(
 /// with [`dd_lav_close`], same as a live session.
 ///
 /// Safety: `blob` must point to `blob_len` readable bytes.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn dd_lav_open_replay(
     blob: *const u8,
     blob_len: u64,
@@ -110,7 +112,7 @@ pub unsafe extern "C" fn dd_lav_open_replay(
 ///
 /// Safety: `dst` must point to `dst_len` writable bytes for the duration of the call.
 /// Only one thread may read a given handle at a time.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn dd_lav_read_frame_i420(handle: i64, dst: *mut u8, dst_len: u64) -> i32 {
     if dst.is_null() {
         return ERR_BAD_ARGS;
@@ -128,7 +130,7 @@ pub unsafe extern "C" fn dd_lav_read_frame_i420(handle: i64, dst: *mut u8, dst_l
 ///
 /// Safety: `dst` must point to `dst_len` writable bytes for the duration of the call. If
 /// `pts_nanos` is non-null, it must point to one writable `i64`.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn dd_lav_read_frame_i420_pts(
     handle: i64,
     dst: *mut u8,
@@ -160,7 +162,7 @@ pub unsafe extern "C" fn dd_lav_read_frame_i420_pts(
 /// Returns 0 on success, 1 on EOF, negative on error or unsupported platform/format.
 ///
 /// Safety: `desc` must point to writable memory for one [`LavSurfaceDesc`].
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn dd_lav_read_surface(handle: i64, desc: *mut LavSurfaceDesc) -> i32 {
     if desc.is_null() {
         return ERR_BAD_ARGS;
@@ -176,7 +178,7 @@ pub unsafe extern "C" fn dd_lav_read_surface(handle: i64, desc: *mut LavSurfaceD
 /// The call must run on the render thread with the destination OpenGL context current. The
 /// texture object must match the descriptor's `texture_target` (currently GL_TEXTURE_RECTANGLE
 /// for macOS IOSurface).
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn dd_lav_bind_surface_plane_gl(
     surface_handle: i64,
     plane: u32,
@@ -189,7 +191,7 @@ pub extern "C" fn dd_lav_bind_surface_plane_gl(
 }
 
 /// Releases a surface returned by [`dd_lav_read_surface`]. Safe to call with 0 or stale handles.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn dd_lav_release_surface(surface_handle: i64) {
     let _ = catch_unwind(AssertUnwindSafe(|| {
         sessions().release_surface(surface_handle)
@@ -200,7 +202,7 @@ pub extern "C" fn dd_lav_release_surface(surface_handle: i64) {
 /// or a negative error code.
 ///
 /// Safety: `dst` must point to `dst_len` writable bytes.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn dd_lav_error(handle: i64, dst: *mut u8, dst_len: u64) -> i32 {
     if dst.is_null() {
         return ERR_BAD_ARGS;
@@ -214,7 +216,7 @@ pub unsafe extern "C" fn dd_lav_error(handle: i64, dst: *mut u8, dst_len: u64) -
 /// reappearance. Capture starts with the next demuxed packet.
 ///
 /// `window_ms = 0` or `max_bytes = 0` is a no-op. Returns 0 on success, negative on a bad handle.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn dd_lav_enable_cache(handle: i64, window_ms: u32, max_bytes: u64) -> i32 {
     if window_ms == 0 || max_bytes == 0 {
         return ERR_BAD_ARGS;
@@ -235,7 +237,7 @@ pub extern "C" fn dd_lav_enable_cache(handle: i64, window_ms: u32, max_bytes: u6
 /// soft unload and later hands it to a replay session.
 ///
 /// Safety: `dst` must point to `dst_len` writable bytes (or be null when `dst_len == 0`).
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn dd_lav_ring_snapshot(handle: i64, dst: *mut u8, dst_len: u64) -> i32 {
     let dst_slice: &mut [u8] = if dst.is_null() || dst_len == 0 {
         &mut []
@@ -250,7 +252,7 @@ pub unsafe extern "C" fn dd_lav_ring_snapshot(handle: i64, dst: *mut u8, dst_len
 /// mutating the live demuxer is safe because the session is about to be closed.
 ///
 /// Safety: `dst` must point to `dst_len` writable bytes (or be null when `dst_len == 0`).
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn dd_lav_ring_snapshot_at(
     handle: i64,
     position_nanos: i64,
@@ -271,14 +273,14 @@ pub unsafe extern "C" fn dd_lav_ring_snapshot_at(
 
 /// Interrupts the session's network/decode loop, unblocking any reader stuck in
 /// [`dd_lav_read_frame_i420`]. The handle stays valid until [`dd_lav_close`].
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn dd_lav_kill(handle: i64) {
     let _ = catch_unwind(AssertUnwindSafe(|| sessions().kill(handle)));
 }
 
 /// Frees the session. Must not be called while another thread is inside
 /// [`dd_lav_read_frame_i420`] for the same handle (join the reader thread first).
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn dd_lav_close(handle: i64) {
     let _ = catch_unwind(AssertUnwindSafe(|| sessions().close(handle)));
 }
