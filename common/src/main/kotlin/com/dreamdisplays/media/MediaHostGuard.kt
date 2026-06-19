@@ -55,11 +55,34 @@ object MediaHostGuard {
 
     /** True when [addr] is anything other than a public unicast address. */
     private fun isNonPublic(addr: InetAddress): Boolean {
+        // Loopback (127/8, ::1), link-local (169.254/16, fe80::/10), site-local (10/8, 172.16/12,
+        // 192.168/16), wildcard (0.0.0.0, ::) and multicast are all handled by the platform flags.
         if (addr.isLoopbackAddress || addr.isLinkLocalAddress || addr.isSiteLocalAddress ||
             addr.isAnyLocalAddress || addr.isMulticastAddress
         ) return true
-        // IPv6 unique-local (fc00::/7) is not covered by isSiteLocalAddress
         val bytes = addr.address
-        return bytes.size == 16 && (bytes[0].toInt() and 0xfe) == 0xfc
+        return when (bytes.size) {
+            4 -> isNonPublicV4(bytes)
+            16 -> isNonPublicV6(bytes)
+            else -> false
+        }
+    }
+
+    /** Non-public IPv4 ranges the [InetAddress] flag checks miss (CGNAT, "this network", reserved). */
+    private fun isNonPublicV4(bytes: ByteArray): Boolean {
+        val o0 = bytes[0].toInt() and 0xff
+        val o1 = bytes[1].toInt() and 0xff
+        return o0 == 0 ||                      // 0.0.0.0/8 "this network" (only 0.0.0.0 is isAnyLocal)
+            (o0 == 100 && o1 in 64..127) ||    // 100.64.0.0/10 carrier-grade NAT (RFC 6598)
+            o0 >= 240                          // 240.0.0.0/4 reserved + 255.255.255.255 broadcast
+    }
+
+    /** Non-public IPv6: unique-local fc00::/7, plus IPv4-mapped addresses re-checked as IPv4. */
+    private fun isNonPublicV6(bytes: ByteArray): Boolean {
+        if ((bytes[0].toInt() and 0xfe) == 0xfc) return true // fc00::/7 unique-local
+        // IPv4-mapped (::ffff:a.b.c.d): the flag checks above don't unwrap it, so re-check the IPv4.
+        val isMappedV4 = (0..9).all { bytes[it].toInt() == 0 } &&
+            bytes[10] == 0xff.toByte() && bytes[11] == 0xff.toByte()
+        return isMappedV4 && isNonPublicV4(bytes.copyOfRange(12, 16))
     }
 }

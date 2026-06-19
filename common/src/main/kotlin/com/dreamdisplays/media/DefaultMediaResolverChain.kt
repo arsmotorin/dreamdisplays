@@ -6,6 +6,7 @@ import com.dreamdisplays.media.api.MediaResolverChain
 import com.dreamdisplays.media.api.MediaSource
 import com.dreamdisplays.media.api.ResolvedMedia
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executors
 
 /**
  * Default [MediaResolverChain]: tries registered [MediaResolver]s highest-[MediaResolver.priority]
@@ -20,6 +21,15 @@ class DefaultMediaResolverChain : MediaResolverChain {
 
     private val backing = CopyOnWriteArrayList<MediaResolver>()
 
+    /**
+     * Prefetch is a best-effort hint that opens with a blocking DNS lookup (the SSRF guard), so it
+     * must never run on the caller's thread — [prefetch] is invoked from the client / render thread on
+     * every URL change. A single daemon worker serializes the hints off that path.
+     */
+    private val prefetchExecutor = Executors.newSingleThreadExecutor { r ->
+        Thread(r, "DreamDisplays-prefetch").apply { isDaemon = true }
+    }
+
     override val resolvers: List<MediaResolver>
         get() = backing.sortedByDescending { it.priority }
 
@@ -33,11 +43,16 @@ class DefaultMediaResolverChain : MediaResolverChain {
         backing.remove(resolver)
     }
 
-    /** Calls [MediaResolver.prefetch] on every capable resolver for [source]. */
+    /**
+     * Calls [MediaResolver.prefetch] on every capable resolver for [source]. The SSRF host check and
+     * the dispatch run on [prefetchExecutor] so the blocking DNS lookup never stalls the caller.
+     */
     override fun prefetch(source: MediaSource) {
-        if (isBlockedHost(source)) return
-        for (resolver in resolvers) {
-            if (resolver.canResolve(source)) resolver.prefetch(source)
+        prefetchExecutor.execute {
+            if (isBlockedHost(source)) return@execute
+            for (resolver in resolvers) {
+                if (resolver.canResolve(source)) runCatching { resolver.prefetch(source) }
+            }
         }
     }
 
