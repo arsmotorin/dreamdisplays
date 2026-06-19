@@ -18,7 +18,6 @@ class DefaultStreamSelector : StreamSelector {
         get() = System.getProperty("dreamdisplays.debug")?.toBoolean() == true
                 || System.getenv("DREAMDISPLAYS_DEBUG").let { it == "1" || it.equals("true", ignoreCase = true) }
 
-    // muxed progressive audio survives SABR; toggle with -Ddreamdisplays.audio.preferProgressive=false
     private val preferProgressiveAudio: Boolean =
         System.getProperty("dreamdisplays.audio.preferProgressive", "true").toBoolean()
 
@@ -41,7 +40,7 @@ class DefaultStreamSelector : StreamSelector {
         if (debug) {
             logger.debug(
                 "Video stream ${MediaStreamSelector.describeVideoChoice(video, targetHeight, preferences.preferFps60)} " +
-                        "candidates=${videoStreams.size} preferFps60=${preferences.preferFps60}",
+                        "candidates=${videoStreams.size} preferFps60=${preferences.preferFps60}.",
             )
         }
 
