@@ -241,6 +241,12 @@ class DisplayMenu private constructor(
         lockButton.enabledWhen = { ds.canToggleLockHere }
         lockButton.visibleWhen = { ds.isLocked != null && !ds.errored }
 
+        val retryButton = addUi(IconButton("refresh") {
+            ds.retryVideo() // Local re-resolve; the error panel clears itself once it succeeds
+        })
+        // Only the error panel places it; keep it hidden in the normal menu so it never strays to (0,0)
+        retryButton.visibleWhen = { ds.errored }
+
         val deleteButton = addUi(IconButton(
             icon = { IconButton.modIcon("delete") },
             sprites = IconButton.RED_SPRITES,
@@ -287,7 +293,7 @@ class DisplayMenu private constructor(
                 reportButton to { buttonTooltip("dreamdisplays.button.report") },
             ),
         )
-        errorPanel = ErrorPanel(deleteButton, reportButton)
+        errorPanel = ErrorPanel(retryButton, deleteButton, reportButton) { ds.mediaError }
     }
 
     /** Builds the five settings rows with their tooltip content. */

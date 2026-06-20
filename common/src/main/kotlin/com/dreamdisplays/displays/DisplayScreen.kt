@@ -265,6 +265,16 @@ class DisplayScreen(
         loadVideoInternal(videoUrl, lang, false)
     }
 
+    /**
+     * Re-attempts the current video after a load failure. Purely local: re-resolves and restarts the
+     * same URL (clearing [mediaError] via the controller), with no server packet and no URL-override
+     * change — so a transient resolve failure never costs the display.
+     */
+    fun retryVideo() {
+        val url = videoUrl ?: return
+        loadVideoInternal(url, lang ?: "", preservePausedState = true)
+    }
+
     /** Requests a server-authoritative video change from a picked suggestion. */
     fun playSuggestedVideo(videoUrl: String, lang: String): Boolean {
         if (!canSetVideoHere) return false
