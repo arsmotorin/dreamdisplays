@@ -318,6 +318,7 @@ class DisplayScreen(
         owner = Minecraft.getInstance().player?.gameProfile?.id?.toString() == packet.ownerId.toString()
 
         if (videoUrl != packet.url || lang != packet.lang) {
+            val previousUrl = videoUrl
             if (clientUrlOverride && canSetVideoHere) return
             if (clientUrlOverride) {
                 clientUrlOverride = false
@@ -330,6 +331,7 @@ class DisplayScreen(
                 clientUrlOverride = true
                 val overrideLang = ds.langOverride ?: packet.lang
                 paused = false
+                if (override != previousUrl) savedTimeNanos = 0L
                 loadVideo(override, overrideLang)
                 return
             } else if (!override.isNullOrEmpty()) {
@@ -337,6 +339,7 @@ class DisplayScreen(
             }
 
             paused = false
+            if (packet.url != previousUrl) savedTimeNanos = 0L
             loadVideo(packet.url, packet.lang)
             sendRequestSyncPacket()
         }
