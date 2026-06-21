@@ -1,15 +1,15 @@
 package com.dreamdisplays.platform.client.net
 
 import com.dreamdisplays.platform.client.managers.ClientPacketManager
-import com.dreamdisplays.protocol.DisplaySync
-import com.dreamdisplays.protocol.DreamPacket
-import com.dreamdisplays.protocol.PacketRegistry
-import com.dreamdisplays.protocol.ServerHello
+import com.dreamdisplays.core.protocol.DisplaySync
+import com.dreamdisplays.core.protocol.DreamPacket
+import com.dreamdisplays.core.protocol.PacketRegistry
+import com.dreamdisplays.core.protocol.ServerHello
 import org.slf4j.LoggerFactory
 
 /**
  * Client-side protocol negotiation: speaks v2 only after the server has proven v2 support by
- * answering the blind [com.dreamdisplays.protocol.ClientHello] with a [ServerHello].
+ * answering the blind [com.dreamdisplays.core.protocol.ClientHello] with a [ServerHello].
  */
 object ProtocolRouter {
     private val logger = LoggerFactory.getLogger("DreamDisplays/ProtocolRouter")

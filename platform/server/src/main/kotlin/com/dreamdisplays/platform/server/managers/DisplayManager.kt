@@ -3,7 +3,7 @@ package com.dreamdisplays.platform.server.managers
 import io.github.arsmotorin.ofrat.FabricOnly
 import io.github.arsmotorin.ofrat.PaperOnly
 
-import com.dreamdisplays.protocol.DreamPacket
+import com.dreamdisplays.core.protocol.DreamPacket
 import com.dreamdisplays.platform.server.Main.Companion.config
 import com.dreamdisplays.platform.server.Main.Companion.getInstance
 import com.dreamdisplays.platform.server.Server

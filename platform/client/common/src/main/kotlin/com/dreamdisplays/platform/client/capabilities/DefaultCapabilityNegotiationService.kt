@@ -1,8 +1,8 @@
 package com.dreamdisplays.platform.client.capabilities
 
 import com.dreamdisplays.platform.client.net.ProtocolRouter
-import com.dreamdisplays.protocol.ClientHello
-import com.dreamdisplays.protocol.ServerHello
+import com.dreamdisplays.core.protocol.ClientHello
+import com.dreamdisplays.core.protocol.ServerHello
 import com.dreamdisplays.util.GeneralUtil
 import org.slf4j.LoggerFactory
 

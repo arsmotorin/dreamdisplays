@@ -3,11 +3,10 @@ package com.dreamdisplays.platform.client.managers
 import com.dreamdisplays.core.display.DisplayFacing
 import com.dreamdisplays.platform.client.displays.DisplayRegistry
 import com.dreamdisplays.platform.client.displays.DisplayScreen
-import com.dreamdisplays.storage.DisplayStorage
-import com.dreamdisplays.storage.FullDisplayData
-import com.dreamdisplays.storage.ServerDisplayStore
+import com.dreamdisplays.core.storage.DisplayStorage
+import com.dreamdisplays.core.storage.FullDisplayData
 import com.dreamdisplays.core.media.VideoQuality
-import com.dreamdisplays.protocol.DisplayInfo
+import com.dreamdisplays.core.protocol.DisplayInfo
 import com.dreamdisplays.core.playback.PlaybackMode
 import com.dreamdisplays.util.FacingUtil
 import com.dreamdisplays.platform.client.core.DreamServices
@@ -45,7 +44,7 @@ object DisplayLifecycleManager {
         val facing = FacingUtil.fromPacket(packet.facing.toByte())
 
         Minecraft.getInstance().player?.let { player ->
-            val renderDistance = ServerDisplayStore.getDisplayData(packet.id)?.renderDistance ?: ClientStateManager.config.defaultDistance
+            val renderDistance = DisplayStorage.getDisplayData(packet.id)?.renderDistance ?: ClientStateManager.config.defaultDistance
             val dist = distanceToScreen(
                 packet.x, packet.y, packet.z,
                 packet.width, packet.height, facing.toDisplayFacing(),
@@ -74,7 +73,7 @@ object DisplayLifecycleManager {
             width, height, mode, qualityCap, rotation
         )
 
-        val savedData = ServerDisplayStore.getDisplayData(uuid)
+        val savedData = DisplayStorage.getDisplayData(uuid)
         displayScreen.renderDistance = savedData?.renderDistance ?: ClientStateManager.config.defaultDistance
 
         displayScreen.createTexture()

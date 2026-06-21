@@ -7,7 +7,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.resources.Identifier
 
 /**
- * The single Minecraft payload wrapper for protocol v2: opaque [PacketRegistry][com.dreamdisplays.protocol.PacketRegistry]
+ * The single Minecraft payload wrapper for protocol v2: opaque [PacketRegistry][com.dreamdisplays.core.protocol.PacketRegistry]
  * envelope bytes on the `dreamdisplays:v2` channel. All structure lives in the platform-free
  * `:protocol` module.
  */

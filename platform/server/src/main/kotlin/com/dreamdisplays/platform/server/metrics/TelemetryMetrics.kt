@@ -1,7 +1,7 @@
 package com.dreamdisplays.platform.server.metrics
 
-import com.dreamdisplays.protocol.ClientHello
-import com.dreamdisplays.protocol.ProtocolVersion
+import com.dreamdisplays.core.protocol.ClientHello
+import com.dreamdisplays.core.protocol.ProtocolVersion
 import com.dreamdisplays.platform.server.Main
 import com.dreamdisplays.platform.server.managers.DisplayManager
 import com.dreamdisplays.platform.server.utils.net.V2PlayerTracker

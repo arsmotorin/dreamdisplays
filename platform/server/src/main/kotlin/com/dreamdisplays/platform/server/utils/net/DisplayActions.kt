@@ -1,7 +1,7 @@
 package com.dreamdisplays.platform.server.utils.net
 
 import com.dreamdisplays.core.playback.PlaybackAction
-import com.dreamdisplays.protocol.MediaUrlPolicy
+import com.dreamdisplays.core.security.MediaUrlPolicy
 import com.dreamdisplays.core.playback.PlaybackMode
 import com.dreamdisplays.core.playback.PlaybackPermissions
 import com.dreamdisplays.core.playback.WatchPartyAction

@@ -4,11 +4,11 @@ import io.github.arsmotorin.ofrat.FabricOnly
 import io.github.arsmotorin.ofrat.PaperOnly
 
 import com.dreamdisplays.platform.client.net.Packets
-import com.dreamdisplays.protocol.ClearCache
-import com.dreamdisplays.protocol.DisplayDelete
-import com.dreamdisplays.protocol.DisplayInfo
+import com.dreamdisplays.core.protocol.ClearCache
+import com.dreamdisplays.core.protocol.DisplayDelete
+import com.dreamdisplays.core.protocol.DisplayInfo
 import com.dreamdisplays.core.playback.PlaybackMode
-import com.dreamdisplays.protocol.SetDisplaysEnabled
+import com.dreamdisplays.core.protocol.SetDisplaysEnabled
 import com.dreamdisplays.platform.server.Main
 import com.dreamdisplays.platform.server.datatypes.FabricDisplayData
 import com.dreamdisplays.platform.server.datatypes.SyncData

@@ -11,7 +11,7 @@ import com.dreamdisplays.core.playback.WatchPartySessionState.PAUSED
 import com.dreamdisplays.core.playback.WatchPartySessionState.PLAYING
 import com.dreamdisplays.core.playback.WatchPartySessionState.PREPARING
 import com.dreamdisplays.core.playback.WatchPartySessionState.WAITING
-import com.dreamdisplays.protocol.WatchPartyState
+import com.dreamdisplays.core.protocol.WatchPartyState
 import com.dreamdisplays.platform.server.datatypes.DisplayData
 import com.dreamdisplays.platform.server.managers.DisplayManager
 import java.util.UUID

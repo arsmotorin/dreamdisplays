@@ -53,7 +53,9 @@ dependencies {
     }
 
     implementation(project(":core"))
-    implementation(project(":protocol"))
+    implementation(project(":core:storage"))
+    implementation(project(":core:protocol"))
+    implementation(libs.gson)
     implementation(libs.kotlinxSerializationProtobuf)
     implementation(libs.kotlinxCoroutinesCore)
     implementation(libs.semver4j)

@@ -5,9 +5,9 @@ import com.dreamdisplays.platform.client.core.DreamServices
 import com.dreamdisplays.platform.client.core.getOrNull
 import com.dreamdisplays.core.display.DisplayEvent
 import com.dreamdisplays.core.display.DisplayId
-import com.dreamdisplays.storage.ClientSettingsStore
-import com.dreamdisplays.storage.FullDisplayData
-import com.dreamdisplays.storage.ServerDisplayStore
+import com.dreamdisplays.platform.client.storage.ClientSettingsStore
+import com.dreamdisplays.core.storage.FullDisplayData
+import com.dreamdisplays.core.storage.DisplayStorage
 import com.dreamdisplays.core.media.VideoQuality
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -58,7 +58,7 @@ object DisplayRegistry {
         displayScreen.quality = VideoQuality.parse(clientSettings.quality)
         displayScreen.muted = clientSettings.muted
 
-        ServerDisplayStore.getDisplayData(displayScreen.uuid)?.let { saved ->
+        DisplayStorage.getDisplayData(displayScreen.uuid)?.let { saved ->
             displayScreen.renderDistance = saved.renderDistance
             displayScreen.savedTimeNanos = saved.currentTimeNanos
         }
@@ -85,12 +85,12 @@ object DisplayRegistry {
 
     /** Saves the display screen data to disk. */
     fun saveScreenData(displayScreen: DisplayScreen) {
-        ServerDisplayStore.saveDisplayData(displayScreen.uuid, displayScreen.toFullDisplayData())
+        DisplayStorage.saveDisplayData(displayScreen.uuid, displayScreen.toFullDisplayData())
     }
 
     /** Loads all display screens for a given server from disk. */
     fun loadScreensForServer(serverId: String) {
-        ServerDisplayStore.load(serverId)
+        DisplayStorage.load(serverId)
     }
 
     /** Saves all display screens to disk. */

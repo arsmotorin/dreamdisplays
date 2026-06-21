@@ -4,7 +4,7 @@ import com.dreamdisplays.core.playback.PlaybackAction
 import com.dreamdisplays.core.playback.PlaybackMode
 import com.dreamdisplays.core.playback.PlaybackPermissions
 import com.dreamdisplays.core.playback.Timeline
-import com.dreamdisplays.protocol.toSync
+import com.dreamdisplays.core.protocol.toSync
 import com.dreamdisplays.platform.server.datatypes.DisplayData
 import com.dreamdisplays.platform.server.managers.DisplayManager
 import org.slf4j.LoggerFactory
@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Owns the authoritative playback clock for every `SYNCED` and `BROADCAST` display. Clients never
- * report their own time; they send intents ([com.dreamdisplays.protocol.PlaybackCommand]) and this
+ * report their own time; they send intents ([com.dreamdisplays.core.protocol.PlaybackCommand]) and this
  * manager mutates the single [Timeline] and rebroadcasts it. Replaces the old owner-relay
  * `StateManager` for the v2 path. Watch-party timelines live in [WatchPartyManager].
  */

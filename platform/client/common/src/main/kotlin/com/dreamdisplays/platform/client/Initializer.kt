@@ -15,7 +15,7 @@ import com.dreamdisplays.platform.client.managers.ClientTickManager
 import com.dreamdisplays.platform.client.managers.DisplayLifecycleManager
 import com.dreamdisplays.platform.client.net.LegacyAdapter
 import com.dreamdisplays.platform.client.net.ProtocolRouter
-import com.dreamdisplays.protocol.DreamPacket
+import com.dreamdisplays.core.protocol.DreamPacket
 import com.dreamdisplays.platform.client.utils.MinecraftScreenUtil
 import net.minecraft.client.Minecraft
 //? if >=26 {

@@ -10,7 +10,6 @@ repositories {
 dependencies {
     api(project(":core"))
     api(project(":api"))
-    api(project(":protocol"))
     api(project(":util"))
     api(project(":media:player"))
     api(libs.newpipeExtractor)

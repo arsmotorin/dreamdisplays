@@ -7,15 +7,15 @@ import com.dreamdisplays.platform.client.core.DreamServices
 import com.dreamdisplays.platform.client.core.getOrNull
 import com.dreamdisplays.core.display.DisplayId
 import com.dreamdisplays.platform.client.displays.DisplayRegistry
-import com.dreamdisplays.storage.DisplayStorage
-import com.dreamdisplays.protocol.ClearCache
-import com.dreamdisplays.protocol.DisplayDelete
-import com.dreamdisplays.protocol.DisplayInfo
-import com.dreamdisplays.protocol.DisplaySync
-import com.dreamdisplays.protocol.DreamPacket
-import com.dreamdisplays.protocol.ServerHello
-import com.dreamdisplays.protocol.SetDisplaysEnabled
-import com.dreamdisplays.protocol.WatchPartyState
+import com.dreamdisplays.core.storage.DisplayStorage
+import com.dreamdisplays.core.protocol.ClearCache
+import com.dreamdisplays.core.protocol.DisplayDelete
+import com.dreamdisplays.core.protocol.DisplayInfo
+import com.dreamdisplays.core.protocol.DisplaySync
+import com.dreamdisplays.core.protocol.DreamPacket
+import com.dreamdisplays.core.protocol.ServerHello
+import com.dreamdisplays.core.protocol.SetDisplaysEnabled
+import com.dreamdisplays.core.protocol.WatchPartyState
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import org.slf4j.LoggerFactory
 

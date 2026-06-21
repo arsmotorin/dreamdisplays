@@ -1,6 +1,6 @@
 package com.dreamdisplays.platform.server.playback
 
-import com.dreamdisplays.protocol.DreamPacket
+import com.dreamdisplays.core.protocol.DreamPacket
 import com.dreamdisplays.platform.server.Main
 import com.dreamdisplays.platform.server.datatypes.DisplayData
 import com.dreamdisplays.platform.server.datatypes.PaperDisplayData

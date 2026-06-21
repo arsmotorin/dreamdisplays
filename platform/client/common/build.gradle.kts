@@ -13,17 +13,18 @@ repositories {
 dependencies {
     api(project(":core"))
     api(project(":api"))
-    api(project(":storage"))
+    api(project(":core:storage"))
     api(project(":media:player"))
     api(project(":media:source"))
     api(project(":util"))
-    api(project(":protocol"))
+    api(project(":core:protocol"))
     api(libs.jspecify)
     api(libs.commonsCompress)
     api(libs.tukaaniXz)
     api(libs.semver4j)
     api(libs.newpipeExtractor)
     api(libs.kotlinxCoroutinesCore)
+    compileOnly(libs.gson)
     compileOnly(libs.kotlinStdlib)
 }
 

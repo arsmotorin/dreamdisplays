@@ -1,6 +1,6 @@
 package com.dreamdisplays.platform.server.playback
 
-import com.dreamdisplays.protocol.DreamPacket
+import com.dreamdisplays.core.protocol.DreamPacket
 import com.dreamdisplays.platform.server.datatypes.DisplayData
 import java.util.UUID
 

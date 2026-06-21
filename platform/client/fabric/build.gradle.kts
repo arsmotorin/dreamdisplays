@@ -109,9 +109,10 @@ dependencies {
     }
     implementation(project(":platform:client:common"))
     shadow(project(":core"))
+    shadow(project(":core:storage"))
     shadow(project(":api"))
     shadow(project(":platform:client:common"))
-    shadow(project(":protocol"))
+    shadow(project(":core:protocol"))
     shadow(libs.kotlinxSerializationProtobuf)
     shadow(libs.kotlinStdlib)
     shadow(libs.tomlj)
@@ -172,8 +173,9 @@ tasks.shadowJar {
     dependencies {
         include(project(":platform:client:common"))
         include(project(":core"))
+        include(project(":core:storage"))
         include(project(":api"))
-        include(project(":protocol"))
+        include(project(":core:protocol"))
         include(dependency("org.jetbrains.kotlinx:kotlinx-serialization-core"))
         include(dependency("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm"))
         include(dependency("org.jetbrains.kotlinx:kotlinx-serialization-protobuf"))

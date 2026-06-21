@@ -1,17 +1,17 @@
 package com.dreamdisplays.platform.client.net
 
 import com.dreamdisplays.platform.client.managers.ClientPacketManager
-import com.dreamdisplays.protocol.ClearCache
-import com.dreamdisplays.protocol.ClientHello
-import com.dreamdisplays.protocol.DisplayDelete
-import com.dreamdisplays.protocol.DisplayInfo
-import com.dreamdisplays.protocol.DisplaySync
-import com.dreamdisplays.protocol.DreamPacket
-import com.dreamdisplays.protocol.ReportDisplay
-import com.dreamdisplays.protocol.RequestSync
-import com.dreamdisplays.protocol.SetDisplaysEnabled
-import com.dreamdisplays.protocol.SetLocked
-import com.dreamdisplays.protocol.SetVideo
+import com.dreamdisplays.core.protocol.ClearCache
+import com.dreamdisplays.core.protocol.ClientHello
+import com.dreamdisplays.core.protocol.DisplayDelete
+import com.dreamdisplays.core.protocol.DisplayInfo
+import com.dreamdisplays.core.protocol.DisplaySync
+import com.dreamdisplays.core.protocol.DreamPacket
+import com.dreamdisplays.core.protocol.ReportDisplay
+import com.dreamdisplays.core.protocol.RequestSync
+import com.dreamdisplays.core.protocol.SetDisplaysEnabled
+import com.dreamdisplays.core.protocol.SetLocked
+import com.dreamdisplays.core.protocol.SetVideo
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 
 /**
@@ -41,7 +41,7 @@ object LegacyAdapter {
 
     /**
      * Lifts an incoming frozen-v1 [payload] into its v2 packet. Per-flag legacy packets merge
-     * into the current [ServerHello][com.dreamdisplays.protocol.ServerHello] snapshot.
+     * into the current [ServerHello][com.dreamdisplays.core.protocol.ServerHello] snapshot.
      */
     fun fromLegacy(payload: CustomPacketPayload): DreamPacket = when (payload) {
         is Packets.Info -> DisplayInfo(

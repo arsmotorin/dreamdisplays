@@ -107,7 +107,10 @@ object DreamServices {
             register(NewPipeResolver)
             register(YtDlpResolver)
         }
+
         val displaySystem = DefaultDisplaySystem(MinecraftDisplayCommands())
+        val displayService = DefaultDisplayService(displaySystem, displaySystem)
+        val playbackService = DefaultPlaybackService(displaySystem)
 
         registry.register<DisplaySystem>(displaySystem)
         registry.register<DisplayLookup>(displaySystem)
@@ -124,8 +127,6 @@ object DreamServices {
         registry.register<InputHandler>(CompositeInputHandler().apply { register(DisplayMenuInputHandler()) })
         registry.register<ClientRenderService>(ScreenRenderer)
         registry.register<PopoutManager>(DefaultPopoutManager())
-        val displayService = DefaultDisplayService(displaySystem, displaySystem)
-        val playbackService = DefaultPlaybackService(displaySystem)
         registry.register<DisplayService>(displayService)
         registry.register<PlaybackService>(playbackService)
         registry.register<MediaSessionManager>(DefaultMediaSessionManager(playbackService, displayService))

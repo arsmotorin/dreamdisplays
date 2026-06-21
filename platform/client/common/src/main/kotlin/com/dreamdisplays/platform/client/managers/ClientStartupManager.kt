@@ -12,7 +12,7 @@ import com.dreamdisplays.platform.client.core.register
 import com.dreamdisplays.platform.client.displays.DisplayRegistry
 import com.dreamdisplays.platform.api.Platform
 import com.dreamdisplays.platform.client.displays.DisplayScreen
-import com.dreamdisplays.storage.DisplayStorage
+import com.dreamdisplays.platform.client.storage.ClientSettingsStore
 import com.dreamdisplays.media.player.nativebridge.NativeMedia
 import com.dreamdisplays.media.player.process.FFmpegBinary
 import com.dreamdisplays.media.source.ytdlp.FormatDiskCache
@@ -47,7 +47,7 @@ object ClientStartupManager {
 
     fun start() {
         config.reload()
-        DisplayStorage.load()
+        ClientSettingsStore.load()
 
         // Wire the contract-typed service graph (media resolver chain, ...) before any
         // background prewarm touches it.

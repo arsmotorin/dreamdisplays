@@ -1,6 +1,6 @@
 package com.dreamdisplays.platform.client.capabilities
 
-import com.dreamdisplays.protocol.ClientHello
+import com.dreamdisplays.core.protocol.ClientHello
 
 /**
  * Detects the capabilities of the client device, such as supported codecs, maximum texture size, and whether popout
