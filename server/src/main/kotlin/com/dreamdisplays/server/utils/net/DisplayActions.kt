@@ -11,6 +11,7 @@ import com.dreamdisplays.server.managers.DisplayManager
 import com.dreamdisplays.server.managers.PlayerManager
 import com.dreamdisplays.server.managers.StateManager
 import com.dreamdisplays.server.meta.Scheduler
+import com.dreamdisplays.server.meta.Scheduler.runAsync
 import com.dreamdisplays.server.playback.PlaybackContexts
 import com.dreamdisplays.server.playback.TimelineManager
 import com.dreamdisplays.server.playback.WatchPartyManager
@@ -62,8 +63,9 @@ import java.util.UUID
         displayData.url = url
         displayData.lang = lang
 
+        runAsync { Main.getInstance().storage.saveDisplay(displayData) }
         DisplayManager.broadcastUpdate(displayData)
-        if (wasSync) StateManager.resetAndBroadcast(displayData) // frozen-v1 clock
+        if (wasSync) StateManager.resetAndBroadcast(displayData) // Frozen-v1 clock
         TimelineManager.onVideoChanged(displayData)
     }
 
@@ -74,6 +76,7 @@ import java.util.UUID
 
         displayData.isLocked = locked
 
+        runAsync { Main.getInstance().storage.saveDisplay(displayData) }
         DisplayManager.broadcastUpdate(displayData)
     }
 
@@ -90,6 +93,7 @@ import java.util.UUID
         }
 
         displayData.mode = mode
+        runAsync { Main.getInstance().storage.saveDisplay(displayData) }
         DisplayManager.broadcastUpdate(displayData)
         TimelineManager.onModeChanged(displayData, positionMs)
     }

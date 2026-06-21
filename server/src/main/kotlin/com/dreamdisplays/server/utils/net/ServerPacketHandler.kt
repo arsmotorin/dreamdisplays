@@ -117,6 +117,7 @@ import org.slf4j.LoggerFactory
         val wasSync = displayData.isSync
         displayData.url = url
         displayData.lang = lang
+        Server.storage?.saveDisplay(displayData)
 
         val receivers = DisplayManager.getReceivers(displayData, server)
         FabricPacketUtil.sendDisplayInfo(receivers, displayData)

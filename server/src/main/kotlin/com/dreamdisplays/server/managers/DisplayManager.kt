@@ -138,9 +138,10 @@ import java.util.function.Consumer
         }
     }
 
-    /** Registers a new display and broadcasts an update to nearby players. */
+    /** Registers a new display, persists it, and broadcasts an update to nearby players. */
     @PaperOnly fun register(data: PaperDisplayData) {
         displays[data.id] = data
+        runAsync { getInstance().storage.saveDisplay(data) }
         broadcastUpdate(data)
     }
 
