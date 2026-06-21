@@ -1,6 +1,6 @@
 If you enjoy Dream Displays, consider [buying me a coffee](https://ko-fi.com/arsmotorin). Every contribution helps keep the project alive!
 
-[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/frogdream)
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/arsmotorin)
 
 - - -
 
