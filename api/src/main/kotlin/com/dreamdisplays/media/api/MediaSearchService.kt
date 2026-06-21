@@ -1,8 +1,5 @@
-@file:OptIn(DreamDisplaysUnstableApi::class)
-
 package com.dreamdisplays.media.api
 
-import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
 /** Contract for YouTube search, related-video lookup, and video-ID extraction. */
 interface MediaSearchService {

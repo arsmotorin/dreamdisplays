@@ -1,8 +1,5 @@
-@file:OptIn(DreamDisplaysUnstableApi::class)
-
 package com.dreamdisplays.media.api
 
-import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
 /**
  * What a [MediaStream] carries. Drives track selection: a video-only and an audio-only stream are

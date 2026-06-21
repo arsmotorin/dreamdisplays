@@ -1,9 +1,11 @@
 package com.dreamdisplays.core.display
 
-import com.dreamdisplays.core.display.DisplayRuntimeState
-import com.dreamdisplays.core.display.WatchPartySession
+import com.dreamdisplays.api.*
+
+import com.dreamdisplays.api.DisplayRuntimeState
+import com.dreamdisplays.api.WatchPartySession
 import com.dreamdisplays.media.VideoQuality
-import com.dreamdisplays.core.playback.PlaybackMode
+import com.dreamdisplays.api.PlaybackMode
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration

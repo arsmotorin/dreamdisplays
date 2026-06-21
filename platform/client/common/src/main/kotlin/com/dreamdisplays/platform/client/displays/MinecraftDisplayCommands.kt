@@ -1,11 +1,11 @@
 package com.dreamdisplays.platform.client.displays
 
 import com.dreamdisplays.core.display.DisplayCommandExecutor
-import com.dreamdisplays.core.display.Display
-import com.dreamdisplays.core.display.DisplayId
-import com.dreamdisplays.core.display.DisplaySettings
+import com.dreamdisplays.api.Display
+import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.api.DisplaySettings
 import com.dreamdisplays.media.VideoQuality
-import com.dreamdisplays.core.playback.PlaybackMode
+import com.dreamdisplays.api.PlaybackMode
 import kotlin.time.Duration
 
 class MinecraftDisplayCommands : DisplayCommandExecutor {

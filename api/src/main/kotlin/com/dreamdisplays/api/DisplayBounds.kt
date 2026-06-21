@@ -1,4 +1,4 @@
-package com.dreamdisplays.core.display
+package com.dreamdisplays.api
 
 /**
  * The bounds of a display.

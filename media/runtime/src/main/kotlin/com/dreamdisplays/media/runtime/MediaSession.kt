@@ -1,6 +1,6 @@
 package com.dreamdisplays.media.runtime
 
-import com.dreamdisplays.core.display.DisplayId
+import com.dreamdisplays.api.DisplayId
 import kotlin.time.Duration
 
 interface MediaSession : AutoCloseable {

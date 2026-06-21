@@ -1,4 +1,4 @@
-package com.dreamdisplays.core.display
+package com.dreamdisplays.api
 
 import com.dreamdisplays.media.DreamMediaException
 

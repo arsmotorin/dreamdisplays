@@ -8,6 +8,7 @@ repositories {
 }
 
 dependencies {
+    api(project(":api"))
     api(project(":media"))
     api(libs.kotlinxSerializationProtobuf)
     // slf4j is provided at runtime by the Minecraft/Paper platform; compile-only here.

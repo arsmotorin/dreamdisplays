@@ -4,7 +4,7 @@ package com.dreamdisplays.api
  * Marks an API as unstable. It may change incompatibly or be removed in any release without a
  * major version bump. Callers must opt in explicitly with `@OptIn(DreamDisplaysUnstableApi::class)`.
  *
- * Dream Displays will provide a stable API in 2.0.0 version.
+ * Stable APIs are not annotated with this marker.
  *
  * @since 1.8.0
  */

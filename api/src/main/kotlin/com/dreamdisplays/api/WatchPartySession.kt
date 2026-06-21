@@ -1,6 +1,5 @@
-package com.dreamdisplays.core.display
+package com.dreamdisplays.api
 
-import com.dreamdisplays.core.playback.WatchPartySessionState
 
 /**
  * A live watch-party session over a display, as seen by the local client. Ephemeral, so it exists only

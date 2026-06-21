@@ -1,6 +1,5 @@
-package com.dreamdisplays.core.display
+package com.dreamdisplays.api
 
-import com.dreamdisplays.core.playback.PlaybackMode
 
 /**
  * Represents a display that can be rendered on the client.

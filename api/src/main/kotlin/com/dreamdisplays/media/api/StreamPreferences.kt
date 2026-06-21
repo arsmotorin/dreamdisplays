@@ -1,8 +1,5 @@
-@file:OptIn(DreamDisplaysUnstableApi::class)
-
 package com.dreamdisplays.media.api
 
-import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
 data class StreamPreferences(
     val maxHeight: Int?,

@@ -1,10 +1,10 @@
 package com.dreamdisplays.media.runtime
 
-import com.dreamdisplays.core.display.DisplayEvent
-import com.dreamdisplays.core.display.DisplayId
-import com.dreamdisplays.core.display.PlaybackService
-import com.dreamdisplays.core.display.DisplayService
-import com.dreamdisplays.core.display.DisplayRuntimeState
+import com.dreamdisplays.api.DisplayEvent
+import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.api.PlaybackService
+import com.dreamdisplays.api.DisplayService
+import com.dreamdisplays.api.DisplayRuntimeState
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds

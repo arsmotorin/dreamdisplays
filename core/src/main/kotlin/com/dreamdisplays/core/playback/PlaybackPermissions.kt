@@ -1,9 +1,11 @@
 package com.dreamdisplays.core.playback
 
-import com.dreamdisplays.core.playback.PlaybackMode.BROADCAST
-import com.dreamdisplays.core.playback.PlaybackMode.LOCAL
-import com.dreamdisplays.core.playback.PlaybackMode.SYNCED
-import com.dreamdisplays.core.playback.PlaybackMode.WATCH_PARTY
+import com.dreamdisplays.api.*
+
+import com.dreamdisplays.api.PlaybackMode.BROADCAST
+import com.dreamdisplays.api.PlaybackMode.LOCAL
+import com.dreamdisplays.api.PlaybackMode.SYNCED
+import com.dreamdisplays.api.PlaybackMode.WATCH_PARTY
 
 /**
  * Inputs the permission rules need. Built the same way on the client (to grey out UI) and on the

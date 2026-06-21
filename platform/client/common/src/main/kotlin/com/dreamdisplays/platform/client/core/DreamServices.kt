@@ -4,9 +4,9 @@ package com.dreamdisplays.platform.client.core
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
-import com.dreamdisplays.core.display.DisplayService
-import com.dreamdisplays.core.display.PlaybackService
-import com.dreamdisplays.core.display.WatchPartyService
+import com.dreamdisplays.api.DisplayService
+import com.dreamdisplays.api.PlaybackService
+import com.dreamdisplays.api.WatchPartyService
 import com.dreamdisplays.core.display.DefaultDisplayService
 import com.dreamdisplays.core.display.DefaultDisplaySystem
 import com.dreamdisplays.core.display.DefaultPlaybackService

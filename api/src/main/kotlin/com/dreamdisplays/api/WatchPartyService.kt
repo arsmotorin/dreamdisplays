@@ -1,9 +1,7 @@
-@file:OptIn(DreamDisplaysUnstableApi::class)
-
 package com.dreamdisplays.api
 
-import com.dreamdisplays.core.display.DisplayId
-import com.dreamdisplays.core.display.WatchPartySession
+import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.api.WatchPartySession
 
 /**
  * Controls ephemeral watch-party sessions on displays. Starting one is open to any nearby player

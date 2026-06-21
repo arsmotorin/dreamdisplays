@@ -2,15 +2,15 @@ package com.dreamdisplays.platform.server.playback
 
 import com.dreamdisplays.core.playback.PlaybackPermissions
 import com.dreamdisplays.core.playback.Timeline
-import com.dreamdisplays.core.playback.WatchPartyAction
-import com.dreamdisplays.core.playback.WatchPartySessionState
-import com.dreamdisplays.core.playback.WatchPartySessionState.COUNTDOWN
-import com.dreamdisplays.core.playback.WatchPartySessionState.CREATED
-import com.dreamdisplays.core.playback.WatchPartySessionState.ENDED
-import com.dreamdisplays.core.playback.WatchPartySessionState.PAUSED
-import com.dreamdisplays.core.playback.WatchPartySessionState.PLAYING
-import com.dreamdisplays.core.playback.WatchPartySessionState.PREPARING
-import com.dreamdisplays.core.playback.WatchPartySessionState.WAITING
+import com.dreamdisplays.api.WatchPartyAction
+import com.dreamdisplays.api.WatchPartySessionState
+import com.dreamdisplays.api.WatchPartySessionState.COUNTDOWN
+import com.dreamdisplays.api.WatchPartySessionState.CREATED
+import com.dreamdisplays.api.WatchPartySessionState.ENDED
+import com.dreamdisplays.api.WatchPartySessionState.PAUSED
+import com.dreamdisplays.api.WatchPartySessionState.PLAYING
+import com.dreamdisplays.api.WatchPartySessionState.PREPARING
+import com.dreamdisplays.api.WatchPartySessionState.WAITING
 import com.dreamdisplays.core.protocol.WatchPartyState
 import com.dreamdisplays.platform.server.datatypes.DisplayData
 import com.dreamdisplays.platform.server.managers.DisplayManager

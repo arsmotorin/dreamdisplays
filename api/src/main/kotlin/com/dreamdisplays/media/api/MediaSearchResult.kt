@@ -1,8 +1,5 @@
-@file:OptIn(DreamDisplaysUnstableApi::class)
-
 package com.dreamdisplays.media.api
 
-import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
 /** Describes a single video returned by a search or related-video query. */
 data class MediaSearchResult(

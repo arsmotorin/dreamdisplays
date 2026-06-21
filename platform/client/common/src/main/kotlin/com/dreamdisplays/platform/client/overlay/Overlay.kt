@@ -1,6 +1,6 @@
 package com.dreamdisplays.platform.client.overlay
 
-import com.dreamdisplays.core.display.DisplayId
+import com.dreamdisplays.api.DisplayId
 
 /**
  * Represents an overlay that can be rendered on top of a display.

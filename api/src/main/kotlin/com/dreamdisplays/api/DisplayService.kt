@@ -1,11 +1,9 @@
-@file:OptIn(DreamDisplaysUnstableApi::class)
-
 package com.dreamdisplays.api
 
-import com.dreamdisplays.core.display.Display
-import com.dreamdisplays.core.display.DisplayEvent
-import com.dreamdisplays.core.display.DisplayId
-import com.dreamdisplays.core.display.DisplaySettings
+import com.dreamdisplays.api.Display
+import com.dreamdisplays.api.DisplayEvent
+import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.api.DisplaySettings
 
 /**
  * Represents a display in the system.

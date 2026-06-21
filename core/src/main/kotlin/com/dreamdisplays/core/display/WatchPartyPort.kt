@@ -1,6 +1,8 @@
 package com.dreamdisplays.core.display
 
-import com.dreamdisplays.core.display.WatchPartySession
+import com.dreamdisplays.api.*
+
+import com.dreamdisplays.api.WatchPartySession
 
 interface WatchPartyPort {
     fun start(displayId: DisplayId, url: String?): Boolean

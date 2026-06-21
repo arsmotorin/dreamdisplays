@@ -1,8 +1,8 @@
 package com.dreamdisplays.platform.client.ui
 
 import com.dreamdisplays.platform.client.Initializer
-import com.dreamdisplays.core.display.DisplayId
-import com.dreamdisplays.core.display.PlaybackService
+import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.api.PlaybackService
 import com.dreamdisplays.platform.client.core.DreamServices
 import com.dreamdisplays.platform.client.core.get
 import com.dreamdisplays.platform.client.core.getOrNull
@@ -29,7 +29,7 @@ import com.dreamdisplays.media.api.MediaSearchResult
 import com.dreamdisplays.media.api.MediaSearchService
 import com.dreamdisplays.media.VideoQuality
 import com.dreamdisplays.core.protocol.DisplayDelete
-import com.dreamdisplays.core.playback.PlaybackMode
+import com.dreamdisplays.api.PlaybackMode
 import com.dreamdisplays.core.protocol.ReportDisplay
 import com.dreamdisplays.core.protocol.SetLocked
 import com.dreamdisplays.platform.client.utils.MinecraftScreenUtil

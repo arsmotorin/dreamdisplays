@@ -1,5 +1,7 @@
 package com.dreamdisplays.core.protocol
 
+import com.dreamdisplays.api.*
+
 /**
  * Marker for every protocol-v2 packet. The sealed hierarchy exists for exhaustive `when` dispatch
  * in handlers; it is never serialized polymorphically — the wire envelope carries an explicit

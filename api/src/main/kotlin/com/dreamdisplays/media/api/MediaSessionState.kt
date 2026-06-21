@@ -1,8 +1,5 @@
-@file:OptIn(DreamDisplaysUnstableApi::class)
-
 package com.dreamdisplays.media.api
 
-import com.dreamdisplays.api.DreamDisplaysUnstableApi
 import com.dreamdisplays.media.DreamMediaException
 
 sealed interface MediaSessionState {

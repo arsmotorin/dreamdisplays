@@ -1,5 +1,7 @@
 package com.dreamdisplays.core.protocol
 
+import com.dreamdisplays.api.*
+
 /** Protocol-v2 version constants and compatibility checks. */
 object ProtocolVersion {
     const val CURRENT = 5

@@ -1,5 +1,7 @@
 package com.dreamdisplays.core.display
 
+import com.dreamdisplays.api.*
+
 /**
  * Default core implementation of [DisplayService].
  */

@@ -8,7 +8,7 @@ repositories {
 
 dependencies {
     api(project(":media"))
-    api(project(":core"))
+    api(project(":api"))
     compileOnly(libs.kotlinStdlib)
     testImplementation(libs.kotlinStdlib)
     testImplementation(kotlin("test"))

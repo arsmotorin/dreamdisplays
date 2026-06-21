@@ -1,5 +1,7 @@
 package com.dreamdisplays.core.playback
 
+import com.dreamdisplays.api.*
+
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

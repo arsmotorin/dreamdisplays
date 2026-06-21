@@ -1,6 +1,6 @@
 package com.dreamdisplays.render.api
 
-import com.dreamdisplays.core.display.DisplayBounds
+import com.dreamdisplays.api.DisplayBounds
 
 interface RenderSurface {
     val bounds: DisplayBounds

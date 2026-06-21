@@ -1,9 +1,6 @@
-@file:OptIn(DreamDisplaysUnstableApi::class)
-
 package com.dreamdisplays.media.api
 
-import com.dreamdisplays.api.DreamDisplaysUnstableApi
-import com.dreamdisplays.core.display.DisplayId
+import com.dreamdisplays.api.DisplayId
 
 /** Hands out [MediaSession] views onto playing displays. */
 interface MediaSessionManager {

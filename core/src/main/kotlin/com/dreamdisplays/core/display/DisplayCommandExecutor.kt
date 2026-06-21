@@ -1,7 +1,9 @@
 package com.dreamdisplays.core.display
 
+import com.dreamdisplays.api.*
+
 import com.dreamdisplays.media.VideoQuality
-import com.dreamdisplays.core.playback.PlaybackMode
+import com.dreamdisplays.api.PlaybackMode
 import kotlin.time.Duration
 
 interface DisplayCommandExecutor {

@@ -2,10 +2,12 @@
 
 package com.dreamdisplays.core.protocol
 
-import com.dreamdisplays.core.playback.PlaybackAction
-import com.dreamdisplays.core.playback.PlaybackMode
-import com.dreamdisplays.core.playback.WatchPartyAction
-import com.dreamdisplays.core.playback.WatchPartySessionState
+import com.dreamdisplays.api.*
+
+import com.dreamdisplays.api.PlaybackAction
+import com.dreamdisplays.api.PlaybackMode
+import com.dreamdisplays.api.WatchPartyAction
+import com.dreamdisplays.api.WatchPartySessionState
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.protobuf.ProtoBuf
 import java.util.UUID
