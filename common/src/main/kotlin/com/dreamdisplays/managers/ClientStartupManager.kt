@@ -17,27 +17,26 @@ import com.dreamdisplays.player.nativebridge.NativeMedia
 import com.dreamdisplays.player.process.FFmpegBinary
 import com.dreamdisplays.ytdlp.FormatDiskCache
 import com.dreamdisplays.ytdlp.YtDlp
+import org.slf4j.LoggerFactory
 import java.io.File
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
 /**
  * Handles client bootstrapping and background maintenance threads.
  */
 object ClientStartupManager {
+    private val logger = LoggerFactory.getLogger("DreamDisplays/ClientStartupManager")
     val config: Config = Config(File("./config/${Initializer.MOD_ID}"))
 
-    // TODO: this is ugly, but it works
-    val qualityRefreshThread: Thread = Thread({
-        var running = true
-        while (running) {
-            DisplayRegistry.getScreens().forEach(DisplayScreen::reloadQuality)
-            try {
-                Thread.sleep(2500)
-            } catch (_: InterruptedException) {
-                Thread.currentThread().interrupt()
-                running = false
-            }
-        }
-    }, "dreamdisplays-quality-refresh")
+    /** Daemon so a hung refresh / sweep can never block JVM shutdown; [stop] still cancels it cleanly on a normal exit. */
+    private val qualityRefreshExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { r ->
+        Thread(r, "dreamdisplays-quality-refresh").apply { isDaemon = true }
+    }
+    private val cacheSweepExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { r ->
+        Thread(r, "dreamdisplays-cache-sweep").apply { isDaemon = true }
+    }
 
     fun start() {
         config.reload()
@@ -47,7 +46,7 @@ object ClientStartupManager {
         // background prewarm touches it.
         DreamServices.bootstrap()
 
-        // If the loader entrypoint registered a Platform, host the module system on top of it.
+        // If the loader entrypoint registered a Platform, host the module system on top of it
         DreamServices.registry.getOrNull<Platform>()?.let { platform ->
             val application = DefaultClientApplication(DefaultClientContext(platform))
             DreamServices.registry.register<ClientApplication>(application)
@@ -58,8 +57,20 @@ object ClientStartupManager {
         FFmpegBinary.prewarmAsync()
         NativeMedia.prewarmAsync()
 
-        Thread({ FormatDiskCache.sweepExpired() }, "dreamdisplays-cache-sweep").start()
+        cacheSweepExecutor.execute {
+            runCatching { FormatDiskCache.sweepExpired() }
+                .onFailure { e -> logger.warn("Cache sweep failed.", e) }
+        }
         Focuser().start()
-        qualityRefreshThread.start()
+        qualityRefreshExecutor.scheduleWithFixedDelay({
+            runCatching { DisplayRegistry.getScreens().forEach(DisplayScreen::reloadQuality) }
+                .onFailure { e -> logger.warn("Quality refresh failed.", e) }
+        }, 2500, 2500, TimeUnit.MILLISECONDS)
+    }
+
+    /** Cancels the background refresh / sweep tasks. Safe to call multiple times. */
+    fun stop() {
+        qualityRefreshExecutor.shutdownNow()
+        cacheSweepExecutor.shutdownNow()
     }
 }

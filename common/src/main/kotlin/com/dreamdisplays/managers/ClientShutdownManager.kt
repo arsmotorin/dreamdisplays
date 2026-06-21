@@ -13,7 +13,7 @@ object ClientShutdownManager {
     fun stop() {
         DreamServices.registry.getOrNull<ClientApplication>()?.stop()
         DisplayRegistry.saveAllScreens()
-        ClientStateManager.qualityRefreshThread.interrupt()
+        ClientStartupManager.stop()
         DisplayRegistry.unloadAll()
         Focuser.instance?.interrupt()
     }
