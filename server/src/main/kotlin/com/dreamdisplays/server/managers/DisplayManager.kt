@@ -16,6 +16,8 @@ import com.dreamdisplays.server.datatypes.SyncData
 import com.dreamdisplays.server.meta.Scheduler
 import com.dreamdisplays.server.meta.Scheduler.runAsync
 import com.dreamdisplays.server.meta.Scheduler.runSync
+import com.dreamdisplays.server.meta.ServerCoroutines
+import kotlinx.coroutines.launch
 import com.dreamdisplays.server.playback.TimelineManager
 import com.dreamdisplays.server.playback.WatchPartyManager
 import com.dreamdisplays.server.utils.MessageUtil
@@ -39,7 +41,6 @@ import org.bukkit.entity.Player
 import org.bukkit.util.BoundingBox
 import org.jspecify.annotations.NullMarked
 import java.util.*
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Consumer
 
@@ -411,12 +412,12 @@ import java.util.function.Consumer
         }
     }
 
-    /** Removes [data] from storage and the registry. */
+    /** Removes [data] from storage and the registry. The JDBC delete runs off-thread on [ServerCoroutines.io]. */
     @FabricOnly fun delete(data: FabricDisplayData) {
         displays.remove(data.id)
         TimelineManager.remove(data.id)
         WatchPartyManager.remove(data.id)
-        Server.storage?.deleteDisplay(data)
+        ServerCoroutines.io.launch { Server.storage?.deleteDisplay(data) }
     }
 
     /**
@@ -435,7 +436,7 @@ import java.util.function.Consumer
         val ownerName = server.playerList.players.find { it.uuid == displayData.ownerId }?.name?.string ?: "Unknown"
         val locationStr = "${displayData.worldKey} (x=${displayData.minX}, y=${displayData.minY}, z=${displayData.minZ})"
 
-        CompletableFuture.runAsync {
+        ServerCoroutines.io.launch {
             runCatching {
                 ReporterUtil.sendReport(
                     locationStr, displayData.url, displayData.id, player.name.string, ownerName, cfg.settings.webhookUrl,
@@ -482,7 +483,7 @@ import java.util.function.Consumer
         }
 
         return removeDisplays(invalidDisplays) { display ->
-            Server.storage?.deleteDisplay(display as FabricDisplayData)
+            ServerCoroutines.io.launch { Server.storage?.deleteDisplay(display as FabricDisplayData) }
         }
     }
 }
