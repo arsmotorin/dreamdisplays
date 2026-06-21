@@ -76,9 +76,8 @@ import java.util.*
             lang = normalizeLangCode(args.getOrNull(2).orEmpty())
         }
 
-        val receivers = DisplayManager.getReceivers(data)
-        DisplayManager.sendUpdate(data, receivers)
-        if (wasSync) StateManager.resetAndBroadcast(data.id, receivers)
+        DisplayManager.broadcastUpdate(data)
+        if (wasSync) StateManager.resetAndBroadcast(data)
         TimelineManager.onVideoChanged(data)
 
         MessageUtil.sendMessage(player, "settedURL")

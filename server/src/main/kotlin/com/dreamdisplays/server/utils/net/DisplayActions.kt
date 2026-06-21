@@ -62,9 +62,8 @@ import java.util.UUID
         displayData.url = url
         displayData.lang = lang
 
-        val receivers = DisplayManager.getReceivers(displayData)
-        DisplayManager.sendUpdate(displayData, receivers)
-        if (wasSync) StateManager.resetAndBroadcast(displayData.id, receivers) // frozen-v1 clock
+        DisplayManager.broadcastUpdate(displayData)
+        if (wasSync) StateManager.resetAndBroadcast(displayData) // frozen-v1 clock
         TimelineManager.onVideoChanged(displayData)
     }
 
@@ -75,8 +74,7 @@ import java.util.UUID
 
         displayData.isLocked = locked
 
-        val receivers = DisplayManager.getReceivers(displayData)
-        DisplayManager.sendUpdate(displayData, receivers)
+        DisplayManager.broadcastUpdate(displayData)
     }
 
     /** Switches a display's persistent base mode (`LOCAL` / `SYNCED` / `BROADCAST`) and re-anchors its clock. */
@@ -92,7 +90,7 @@ import java.util.UUID
         }
 
         displayData.mode = mode
-        DisplayManager.sendUpdate(displayData, DisplayManager.getReceivers(displayData))
+        DisplayManager.broadcastUpdate(displayData)
         TimelineManager.onModeChanged(displayData, positionMs)
     }
 
@@ -178,7 +176,7 @@ import java.util.UUID
             if (delayTicks == 0L) {
                 sendDisplayBatch(player, batch)
             } else {
-                Scheduler.runLater(delayTicks) {
+                Scheduler.runPlayerLater(player, delayTicks) {
                     if (player.isOnline) sendDisplayBatch(player, batch)
                 }
             }
