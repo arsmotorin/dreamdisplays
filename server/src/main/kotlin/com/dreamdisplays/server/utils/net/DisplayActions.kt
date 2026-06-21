@@ -16,7 +16,7 @@ import com.dreamdisplays.server.playback.PlaybackContexts
 import com.dreamdisplays.server.playback.TimelineManager
 import com.dreamdisplays.server.playback.WatchPartyManager
 import com.dreamdisplays.server.utils.MessageUtil
-import com.dreamdisplays.server.utils.YouTubeUtil
+import com.dreamdisplays.server.utils.VersionUtil
 import com.google.gson.Gson
 import io.github.arsmotorin.ofrat.PaperOnly
 import net.kyori.adventure.text.TextReplacementConfig
@@ -155,7 +155,7 @@ import java.util.UUID
     /** Records the player's reported mod version and runs the mod / plugin update checks. */
     fun recordVersionAndCheckUpdates(player: Player, versionString: String) {
         logger.info("${player.name} joined with Dream Displays $versionString.")
-        val version = parseVersionOrNull(versionString)
+        val version = VersionUtil.parseOrNull(versionString)
         PlayerManager.setVersion(player, version)
 
         if (version != null) checkModUpdate(player, version)
@@ -264,11 +264,5 @@ import java.util.UUID
         val template = Main.config.getMessageForPlayer(player, "newPluginVersion") as? String ?: return
         val message = String.format(template, version)
         MessageUtil.sendColoredMessage(player, message)
-    }
-
-    /** Sanitizes [raw] and coerces it into a [Semver], returning null if parsing fails. */
-    private fun parseVersionOrNull(raw: String): Semver? {
-        val sanitized = YouTubeUtil.sanitize(raw)?.takeIf { it.isNotEmpty() } ?: return null
-        return Semver.coerce(sanitized)
     }
 }

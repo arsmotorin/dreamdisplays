@@ -16,7 +16,7 @@ import com.dreamdisplays.server.playback.PlaybackContexts
 import com.dreamdisplays.server.playback.TimelineManager
 import com.dreamdisplays.server.playback.WatchPartyManager
 import com.dreamdisplays.server.utils.MessageUtil
-import com.dreamdisplays.server.utils.YouTubeUtil
+import com.dreamdisplays.server.utils.VersionUtil
 import io.github.arsmotorin.ofrat.FabricOnly
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.server.MinecraftServer
@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory
     /** Records the player's reported mod version and runs the mod / plugin update checks. */
     fun recordVersionAndCheckUpdates(player: ServerPlayer, version: String) {
         logger.info("${player.name.string} joined with Dream Displays $version.")
-        val parsedVersion = parseVersionOrNull(version)
+        val parsedVersion = VersionUtil.parseOrNull(version)
         PlayerManager.setVersion(player, parsedVersion)
 
         val config = Server.config
@@ -271,12 +271,6 @@ import org.slf4j.LoggerFactory
                 logger.warn("Failed to handle set_locked packet", e)
             }
         }
-    }
-
-    /** Sanitizes [raw] and coerces it into a [Semver], returning null if parsing fails. */
-    private fun parseVersionOrNull(raw: String): Semver? {
-        val sanitized = YouTubeUtil.sanitize(raw)?.takeIf { it.isNotEmpty() } ?: return null
-        return Semver.coerce(sanitized)
     }
 
     /** Checks if [player] has operator level 2 permissions, which is the threshold for privileged actions. */
