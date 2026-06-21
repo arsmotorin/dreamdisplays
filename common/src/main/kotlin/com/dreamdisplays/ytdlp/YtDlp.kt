@@ -78,9 +78,20 @@ object YtDlp {
             return emptyList()
         }
 
-        loadFromDisk(videoUrl)?.let { return it }
-        return formatMemo.getBlocking(videoUrl) { fetchAndPersist(it) }
+        val streams = loadFromDisk(videoUrl) ?: formatMemo.getBlocking(videoUrl) { fetchAndPersist(it) }
+        if (streams.isNotEmpty() && !offersFullResult(streams)) {
+            formatMemo.invalidate(videoUrl)
+            FormatDiskCache.deleteEntry(videoUrl)
+        }
+        return streams
     }
+
+    /**
+     * Whether [streams] is a result worth caching at the full TTL: a real quality ladder, or a live
+     * stream (which legitimately exposes a single height and must not be re-resolved every play).
+     */
+    private fun offersFullResult(streams: List<YtStream>): Boolean =
+        streams.any { it.isLive } || YtStreams.offersQualityLadder(streams)
 
     /** Resolves the binary path, cookie browser, and cookie header in the background to reduce first-fetch latency. */
     fun prewarmAsync() {
@@ -118,7 +129,7 @@ object YtDlp {
     @Throws(IOException::class)
     private suspend fun fetchAndPersist(videoUrl: String): List<YtStream> {
         val streams = fetchUncached(videoUrl).toList()
-        FormatDiskCache.saveAsync(videoUrl, streams)
+        if (streams.isNotEmpty() && offersFullResult(streams)) FormatDiskCache.saveAsync(videoUrl, streams)
         return streams
     }
 
