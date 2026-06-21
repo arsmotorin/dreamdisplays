@@ -1,11 +1,11 @@
 package com.dreamdisplays.displays
 
-import com.dreamdisplays.api.DisplayEvent
-import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.core.display.DisplayEvent
+import com.dreamdisplays.core.display.DisplayId
 import com.dreamdisplays.displays.store.ClientSettingsStore
 import com.dreamdisplays.displays.store.FullDisplayData
 import com.dreamdisplays.displays.store.ServerDisplayStore
-import com.dreamdisplays.media.api.VideoQuality
+import com.dreamdisplays.core.media.VideoQuality
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList

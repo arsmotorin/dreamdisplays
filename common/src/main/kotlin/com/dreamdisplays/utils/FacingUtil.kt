@@ -1,6 +1,6 @@
 package com.dreamdisplays.utils
 
-import com.dreamdisplays.api.DisplayFacing
+import com.dreamdisplays.core.display.DisplayFacing
 
 /**
  * Facing directions for block placement and interaction. The ordinal doubles as the wire byte (see

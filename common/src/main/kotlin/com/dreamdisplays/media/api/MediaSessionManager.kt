@@ -4,7 +4,7 @@ package com.dreamdisplays.media.api
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
-import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.core.display.DisplayId
 
 /** Hands out [MediaSession] views onto playing displays. */
 interface MediaSessionManager {

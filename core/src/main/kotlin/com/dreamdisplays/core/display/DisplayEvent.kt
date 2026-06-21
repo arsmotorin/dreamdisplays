@@ -1,8 +1,6 @@
-@file:OptIn(DreamDisplaysUnstableApi::class)
+package com.dreamdisplays.core.display
 
-package com.dreamdisplays.api
-
-import com.dreamdisplays.media.api.DreamMediaException
+import com.dreamdisplays.core.media.DreamMediaException
 
 /**
  * Represents an event that occurred on a display.

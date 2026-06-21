@@ -1,4 +1,4 @@
-package com.dreamdisplays.protocol
+package com.dreamdisplays.core.playback
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -28,14 +28,6 @@ class PlaybackCoreTest {
         val paused = running.withPaused(true, nowMs = 4_000)
         assertEquals(4_000, paused.positionMs)
         assertEquals(4_000, paused.positionAt(99_999))
-    }
-
-    @Test fun syncRoundTripsThroughTimeline() {
-        val original = Timeline(positionMs = 2_000, serverTimeMs = 50_000, paused = false, durationMs = 600_000)
-        val sync = original.toSync(ZERO_UUID, PlaybackMode.SYNCED, nowMs = 50_000)
-        assertEquals(PlaybackMode.SYNCED.wire, sync.mode)
-        assertTrue(sync.isSync)
-        assertEquals(original, Timeline.fromSync(sync))
     }
 
     private fun ctx(

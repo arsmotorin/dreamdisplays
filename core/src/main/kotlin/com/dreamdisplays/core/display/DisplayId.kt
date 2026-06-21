@@ -1,6 +1,4 @@
-@file:OptIn(DreamDisplaysUnstableApi::class)
-
-package com.dreamdisplays.api
+package com.dreamdisplays.core.display
 
 import java.util.UUID
 

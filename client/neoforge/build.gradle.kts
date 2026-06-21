@@ -15,6 +15,7 @@ repositories {
 
 dependencies {
     implementation(project(":common"))
+    shadow(project(":core"))
     shadow(project(":common"))
     shadow(project(":protocol"))
     shadow(libs.kotlinxSerializationProtobuf)
@@ -77,6 +78,7 @@ tasks.shadowJar {
     archiveVersion.set("$activeStonecutterVersion-${rootProject.version}")
     dependencies {
         include(project(":common"))
+        include(project(":core"))
         include(project(":protocol"))
         include(dependency("org.jetbrains.kotlinx:kotlinx-serialization-core"))
         include(dependency("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm"))

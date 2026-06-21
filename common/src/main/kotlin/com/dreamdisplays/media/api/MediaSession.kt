@@ -4,7 +4,7 @@ package com.dreamdisplays.media.api
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
-import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.core.display.DisplayId
 import kotlin.time.Duration
 
 interface MediaSession : AutoCloseable {

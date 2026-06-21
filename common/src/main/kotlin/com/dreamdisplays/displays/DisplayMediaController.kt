@@ -1,7 +1,7 @@
 package com.dreamdisplays.displays
 
-import com.dreamdisplays.api.DisplayEvent
-import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.core.display.DisplayEvent
+import com.dreamdisplays.core.display.DisplayId
 import com.dreamdisplays.client.core.DreamServices
 import com.dreamdisplays.client.core.getOrNull
 import com.dreamdisplays.media.api.MediaResolverChain

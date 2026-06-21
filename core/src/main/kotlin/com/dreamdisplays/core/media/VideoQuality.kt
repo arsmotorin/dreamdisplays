@@ -1,8 +1,4 @@
-@file:OptIn(DreamDisplaysUnstableApi::class)
-
-package com.dreamdisplays.media.api
-
-import com.dreamdisplays.api.DreamDisplaysUnstableApi
+package com.dreamdisplays.core.media
 
 /**
  * Requested video quality for a display: either [Auto] (let the client pick the best available

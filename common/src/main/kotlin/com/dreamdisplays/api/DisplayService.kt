@@ -2,6 +2,11 @@
 
 package com.dreamdisplays.api
 
+import com.dreamdisplays.core.display.Display
+import com.dreamdisplays.core.display.DisplayEvent
+import com.dreamdisplays.core.display.DisplayId
+import com.dreamdisplays.core.display.DisplaySettings
+
 /**
  * Represents a display in the system.
  */

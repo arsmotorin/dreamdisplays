@@ -1,6 +1,6 @@
 package com.dreamdisplays.server.commands.subcommands
 
-import com.dreamdisplays.protocol.PlaybackPermissions
+import com.dreamdisplays.core.playback.PlaybackPermissions
 import com.dreamdisplays.server.Main
 import com.dreamdisplays.server.Server
 import com.dreamdisplays.server.managers.DisplayManager

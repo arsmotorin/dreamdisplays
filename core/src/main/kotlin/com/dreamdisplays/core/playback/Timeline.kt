@@ -1,4 +1,4 @@
-package com.dreamdisplays.protocol
+package com.dreamdisplays.core.playback
 
 /**
  * An authoritative playback clock. [positionMs] is the playback position *as of* [serverTimeMs];
@@ -34,33 +34,9 @@ data class Timeline(
     fun seekedTo(positionMs: Long, nowMs: Long): Timeline =
         copy(positionMs = positionMs.coerceAtLeast(0), serverTimeMs = nowMs)
 
-    /** Builds the wire [DisplaySync] for [id] in [mode], stamped with the current [nowMs] anchor. */
-    fun toSync(id: ProtoUuid, mode: PlaybackMode, nowMs: Long): DisplaySync {
-        val anchored = anchoredAt(nowMs)
-        return DisplaySync(
-            id = id,
-            isSync = mode == PlaybackMode.SYNCED,
-            isPaused = anchored.paused,
-            currentTimeMs = anchored.positionMs,
-            durationMs = anchored.durationMs,
-            serverTimeMs = anchored.serverTimeMs,
-            loop = anchored.loop,
-            mode = mode.wire,
-        )
-    }
-
     companion object {
         /** A fresh timeline anchored at [nowMs], position 0. */
         fun start(nowMs: Long, paused: Boolean = false, durationMs: Long = 0, loop: Boolean = false) =
             Timeline(0, nowMs, paused, durationMs, loop)
-
-        /** Reconstructs the client-side timeline from an incoming [sync] packet. */
-        fun fromSync(sync: DisplaySync): Timeline = Timeline(
-            positionMs = sync.currentTimeMs,
-            serverTimeMs = sync.serverTimeMs,
-            paused = sync.isPaused,
-            durationMs = sync.durationMs,
-            loop = sync.loop,
-        )
     }
 }

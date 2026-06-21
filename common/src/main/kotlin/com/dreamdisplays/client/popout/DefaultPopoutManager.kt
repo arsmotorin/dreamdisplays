@@ -1,6 +1,6 @@
 package com.dreamdisplays.client.popout
 
-import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.core.display.DisplayId
 import com.dreamdisplays.client.core.DreamServices
 import com.dreamdisplays.client.core.getOrNull
 import com.dreamdisplays.client.overlay.OverlayManager

@@ -24,9 +24,9 @@ import com.dreamdisplays.displays.store.DisplayStorage
 import com.dreamdisplays.managers.ClientStateManager
 import com.dreamdisplays.media.api.MediaSearchResult
 import com.dreamdisplays.media.api.MediaSearchService
-import com.dreamdisplays.media.api.VideoQuality
+import com.dreamdisplays.core.media.VideoQuality
 import com.dreamdisplays.protocol.DisplayDelete
-import com.dreamdisplays.protocol.PlaybackMode
+import com.dreamdisplays.core.playback.PlaybackMode
 import com.dreamdisplays.protocol.ReportDisplay
 import com.dreamdisplays.protocol.SetLocked
 import com.dreamdisplays.utils.MinecraftScreenUtil

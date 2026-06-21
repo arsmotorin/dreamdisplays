@@ -43,6 +43,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 dependencies {
     paperweight.devBundle("io.papermc.paper", scVersion("paper.api.version"))
     compileOnly(libs.jspecify)
+    compileOnly(project(":core"))
     compileOnly(project(":common"))
     compileOnly("net.fabricmc:fabric-loader:${scVersion("fabric.loader.version")}")
     if (isLegacyObfuscatedMinecraft) {
@@ -51,6 +52,7 @@ dependencies {
         compileOnly("net.fabricmc.fabric-api:fabric-api:${scVersion("fabric.api.version")}")
     }
 
+    implementation(project(":core"))
     implementation(project(":protocol"))
     implementation(libs.kotlinxSerializationProtobuf)
     implementation(libs.kotlinxCoroutinesCore)

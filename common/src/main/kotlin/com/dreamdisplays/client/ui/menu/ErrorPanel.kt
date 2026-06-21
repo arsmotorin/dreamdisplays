@@ -6,8 +6,8 @@ import com.dreamdisplays.client.ui.kit.UiRect
 import com.dreamdisplays.client.ui.kit.UiTheme
 import com.dreamdisplays.client.ui.kit.drawPanel
 import com.dreamdisplays.client.ui.widgets.IconButton
-import com.dreamdisplays.media.api.DreamMediaException
-import com.dreamdisplays.media.api.MediaFailureKind
+import com.dreamdisplays.core.media.DreamMediaException
+import com.dreamdisplays.core.media.MediaFailureKind
 import net.minecraft.ChatFormatting
 import net.minecraft.client.gui.Font
 import net.minecraft.client.Minecraft

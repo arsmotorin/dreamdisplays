@@ -1,14 +1,14 @@
 package com.dreamdisplays.managers
 
-import com.dreamdisplays.api.DisplayFacing
+import com.dreamdisplays.core.display.DisplayFacing
 import com.dreamdisplays.displays.DisplayRegistry
 import com.dreamdisplays.displays.DisplayScreen
 import com.dreamdisplays.displays.store.DisplayStorage
 import com.dreamdisplays.displays.store.FullDisplayData
 import com.dreamdisplays.displays.store.ServerDisplayStore
-import com.dreamdisplays.media.api.VideoQuality
+import com.dreamdisplays.core.media.VideoQuality
 import com.dreamdisplays.protocol.DisplayInfo
-import com.dreamdisplays.protocol.PlaybackMode
+import com.dreamdisplays.core.playback.PlaybackMode
 import com.dreamdisplays.utils.FacingUtil
 import com.dreamdisplays.client.core.DreamServices
 import com.dreamdisplays.client.core.getOrNull

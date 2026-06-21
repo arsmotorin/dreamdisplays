@@ -16,10 +16,10 @@ import com.dreamdisplays.player.stream.MediaStreamSelector
 import com.dreamdisplays.player.stream.ActiveStreams
 import com.dreamdisplays.player.util.MediaUtil
 import com.dreamdisplays.player.util.daemon
-import com.dreamdisplays.media.api.DreamMediaException
+import com.dreamdisplays.core.media.DreamMediaException
 import com.dreamdisplays.media.api.MediaStream
-import com.dreamdisplays.media.api.VideoQuality
-import com.dreamdisplays.protocol.PlaybackMode
+import com.dreamdisplays.core.media.VideoQuality
+import com.dreamdisplays.core.playback.PlaybackMode
 import com.dreamdisplays.render.UploadPixelFormat
 import com.dreamdisplays.ytdlp.YtDlp
 import com.mojang.blaze3d.textures.GpuTexture

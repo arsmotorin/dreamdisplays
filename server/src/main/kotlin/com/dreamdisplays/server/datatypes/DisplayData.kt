@@ -1,7 +1,7 @@
 package com.dreamdisplays.server.datatypes
 
-import com.dreamdisplays.protocol.PlaybackMode
-import com.dreamdisplays.protocol.PlaybackPermissions
+import com.dreamdisplays.core.playback.PlaybackMode
+import com.dreamdisplays.core.playback.PlaybackPermissions
 import io.github.arsmotorin.ofrat.FabricOnly
 import io.github.arsmotorin.ofrat.PaperOnly
 import net.minecraft.core.BlockPos

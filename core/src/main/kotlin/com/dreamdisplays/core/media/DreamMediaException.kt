@@ -1,8 +1,4 @@
-@file:OptIn(DreamDisplaysUnstableApi::class)
-
-package com.dreamdisplays.media.api
-
-import com.dreamdisplays.api.DreamDisplaysUnstableApi
+package com.dreamdisplays.core.media
 
 /**
  * Typed exception hierarchy for media failures. Every subclass carries a machine-readable

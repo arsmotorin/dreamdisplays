@@ -1,4 +1,4 @@
-package com.dreamdisplays.protocol
+package com.dreamdisplays.core.playback
 
 /*
  * Shared playback enums for protocol v2. These travel on the wire as their [ordinal] int

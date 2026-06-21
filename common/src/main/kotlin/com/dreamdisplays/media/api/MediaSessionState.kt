@@ -3,6 +3,7 @@
 package com.dreamdisplays.media.api
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
+import com.dreamdisplays.core.media.DreamMediaException
 
 sealed interface MediaSessionState {
     data object Idle : MediaSessionState

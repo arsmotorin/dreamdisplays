@@ -2,7 +2,9 @@
 
 package com.dreamdisplays.api
 
-import com.dreamdisplays.protocol.PlaybackMode
+import com.dreamdisplays.core.display.DisplayId
+import com.dreamdisplays.core.display.DisplayRuntimeState
+import com.dreamdisplays.core.playback.PlaybackMode
 import kotlin.time.Duration
 
 /**

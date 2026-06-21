@@ -1,6 +1,6 @@
 package com.dreamdisplays.client.render
 
-import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.core.display.DisplayId
 import com.dreamdisplays.render.api.RenderContext
 import com.dreamdisplays.render.api.TextureHandle
 

@@ -1,6 +1,6 @@
 package com.dreamdisplays.client.input
 
-import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.core.display.DisplayId
 import com.dreamdisplays.displays.DisplayRegistry
 import com.dreamdisplays.utils.RayCastingUtil
 import net.minecraft.client.Minecraft

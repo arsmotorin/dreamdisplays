@@ -11,6 +11,7 @@ repositories {
 }
 
 dependencies {
+    api(project(":core"))
     api(project(":protocol"))
     api(libs.jspecify)
     api(libs.commonsCompress)

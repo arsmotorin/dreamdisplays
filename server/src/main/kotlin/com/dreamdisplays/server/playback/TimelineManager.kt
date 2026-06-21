@@ -1,9 +1,10 @@
 package com.dreamdisplays.server.playback
 
-import com.dreamdisplays.protocol.PlaybackAction
-import com.dreamdisplays.protocol.PlaybackMode
-import com.dreamdisplays.protocol.PlaybackPermissions
-import com.dreamdisplays.protocol.Timeline
+import com.dreamdisplays.core.playback.PlaybackAction
+import com.dreamdisplays.core.playback.PlaybackMode
+import com.dreamdisplays.core.playback.PlaybackPermissions
+import com.dreamdisplays.core.playback.Timeline
+import com.dreamdisplays.protocol.toSync
 import com.dreamdisplays.server.datatypes.DisplayData
 import com.dreamdisplays.server.managers.DisplayManager
 import org.slf4j.LoggerFactory

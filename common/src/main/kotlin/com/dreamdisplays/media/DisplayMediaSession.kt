@@ -1,8 +1,8 @@
 package com.dreamdisplays.media
 
-import com.dreamdisplays.api.DisplayEvent
-import com.dreamdisplays.api.DisplayId
-import com.dreamdisplays.api.DisplayRuntimeState
+import com.dreamdisplays.core.display.DisplayEvent
+import com.dreamdisplays.core.display.DisplayId
+import com.dreamdisplays.core.display.DisplayRuntimeState
 import com.dreamdisplays.displays.DisplayRegistry
 import com.dreamdisplays.displays.DisplayScreen
 import com.dreamdisplays.media.api.MediaMetadata

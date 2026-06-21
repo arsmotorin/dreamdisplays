@@ -8,8 +8,8 @@ import com.dreamdisplays.server.datatypes.FabricDisplayData
 import com.dreamdisplays.server.datatypes.PaperDisplayData
 import com.dreamdisplays.server.datatypes.StateData
 import com.dreamdisplays.server.datatypes.SyncData
-import com.dreamdisplays.protocol.PlaybackMode
-import com.dreamdisplays.protocol.PlaybackPermissions
+import com.dreamdisplays.core.playback.PlaybackMode
+import com.dreamdisplays.core.playback.PlaybackPermissions
 import com.dreamdisplays.server.Main
 import com.dreamdisplays.server.managers.DisplayManager.getDisplayData
 import com.dreamdisplays.server.managers.DisplayManager.getReceivers

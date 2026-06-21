@@ -1,8 +1,6 @@
-@file:OptIn(DreamDisplaysUnstableApi::class)
+package com.dreamdisplays.core.display
 
-package com.dreamdisplays.api
-
-import com.dreamdisplays.media.api.VideoQuality
+import com.dreamdisplays.core.media.VideoQuality
 
 /**
  * Represents the settings for a display.

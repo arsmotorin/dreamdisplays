@@ -1,7 +1,7 @@
 package com.dreamdisplays.client.ui
 
 import com.dreamdisplays.Initializer
-import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.core.display.DisplayId
 import com.dreamdisplays.client.overlay.Overlay
 import com.dreamdisplays.client.overlay.OverlayBounds
 import com.dreamdisplays.client.overlay.OverlayEvent

@@ -2,12 +2,12 @@ package com.dreamdisplays.player.preparation
 
 import com.dreamdisplays.client.core.DreamServices
 import com.dreamdisplays.client.core.get
-import com.dreamdisplays.media.api.DreamMediaException
+import com.dreamdisplays.core.media.DreamMediaException
 import com.dreamdisplays.media.api.MediaResolverChain
 import com.dreamdisplays.media.api.MediaSource
 import com.dreamdisplays.media.api.StreamPreferences
 import com.dreamdisplays.media.api.StreamSelector
-import com.dreamdisplays.media.api.VideoQuality
+import com.dreamdisplays.core.media.VideoQuality
 import com.dreamdisplays.player.stream.ActiveStreams
 
 /**

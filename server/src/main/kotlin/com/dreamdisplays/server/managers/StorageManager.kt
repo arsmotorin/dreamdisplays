@@ -1,6 +1,6 @@
 package com.dreamdisplays.server.managers
 
-import com.dreamdisplays.protocol.PlaybackMode
+import com.dreamdisplays.core.playback.PlaybackMode
 import com.dreamdisplays.server.datatypes.*
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource

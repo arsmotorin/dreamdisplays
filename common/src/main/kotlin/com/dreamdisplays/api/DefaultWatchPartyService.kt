@@ -2,6 +2,8 @@
 
 package com.dreamdisplays.api
 
+import com.dreamdisplays.core.display.DisplayId
+import com.dreamdisplays.core.display.WatchPartySession
 import com.dreamdisplays.displays.DisplayRegistry
 import com.dreamdisplays.displays.DisplayScreen
 

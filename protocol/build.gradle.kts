@@ -8,6 +8,7 @@ repositories {
 }
 
 dependencies {
+    api(project(":core"))
     api(libs.kotlinxSerializationProtobuf)
     compileOnly(libs.kotlinStdlib)
     testImplementation(libs.kotlinStdlib)

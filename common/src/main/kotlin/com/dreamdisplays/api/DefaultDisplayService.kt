@@ -2,6 +2,10 @@
 
 package com.dreamdisplays.api
 
+import com.dreamdisplays.core.display.Display
+import com.dreamdisplays.core.display.DisplayEvent
+import com.dreamdisplays.core.display.DisplayId
+import com.dreamdisplays.core.display.DisplaySettings
 import com.dreamdisplays.displays.DisplayRegistry
 import com.dreamdisplays.displays.toDisplay
 

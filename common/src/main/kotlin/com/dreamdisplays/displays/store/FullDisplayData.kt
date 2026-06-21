@@ -1,7 +1,7 @@
 package com.dreamdisplays.displays.store
 
-import com.dreamdisplays.api.DisplayFacing
-import com.dreamdisplays.protocol.PlaybackMode
+import com.dreamdisplays.core.display.DisplayFacing
+import com.dreamdisplays.core.playback.PlaybackMode
 import java.util.UUID
 
 /**

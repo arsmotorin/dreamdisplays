@@ -1,6 +1,6 @@
 package com.dreamdisplays.media
 
-import com.dreamdisplays.media.api.DreamMediaException
+import com.dreamdisplays.core.media.DreamMediaException
 import com.dreamdisplays.media.api.MediaResolver
 import com.dreamdisplays.media.api.MediaResolverChain
 import com.dreamdisplays.media.api.MediaSource

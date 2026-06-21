@@ -2,7 +2,7 @@ package com.dreamdisplays.player.managers
 
 import com.dreamdisplays.player.process.FFmpegBinary
 import com.dreamdisplays.media.MediaHostGuard
-import com.dreamdisplays.media.api.DreamMediaException
+import com.dreamdisplays.core.media.DreamMediaException
 import com.dreamdisplays.player.MediaPlayer
 import com.dreamdisplays.player.events.PlayerEvents
 import com.dreamdisplays.player.nativebridge.NativeMedia

@@ -2,6 +2,9 @@
 
 package com.dreamdisplays.api
 
+import com.dreamdisplays.core.display.DisplayId
+import com.dreamdisplays.core.display.WatchPartySession
+
 /**
  * Controls ephemeral watch-party sessions on displays. Starting one is open to any nearby player
  * when the display is unlocked (owner / admin only when locked); once running, only the host drives

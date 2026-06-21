@@ -1,6 +1,4 @@
-@file:OptIn(DreamDisplaysUnstableApi::class)
-
-package com.dreamdisplays.api
+package com.dreamdisplays.core.display
 
 /**
  * The facing direction of a display. [byte] is the stable wire encoding (see [fromByte]); it is

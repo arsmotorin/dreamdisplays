@@ -1,6 +1,6 @@
 package com.dreamdisplays.managers
 
-import com.dreamdisplays.api.DisplayId
+import com.dreamdisplays.core.display.DisplayId
 import com.dreamdisplays.client.capabilities.CapabilityNegotiationService
 import com.dreamdisplays.client.core.ClientApplication
 import com.dreamdisplays.client.core.ClientLifecycleEvent
