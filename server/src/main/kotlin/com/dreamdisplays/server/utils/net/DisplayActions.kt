@@ -42,8 +42,7 @@ import java.util.UUID
             ?: return MessageUtil.sendMessage(player, "noDisplay")
 
         val isOwner = displayData.ownerId == player.uniqueId
-        val canDelete = if (isOwner) player.hasPermission(Main.config.permissions.delete)
-                        else player.hasPermission(Main.config.permissions.deleteOthers)
+        val canDelete = isOwner || player.hasPermission(Main.config.permissions.deleteOthers)
         if (!canDelete) {
             MessageUtil.sendMessage(player, "displayCommandMissingPermission")
             return
