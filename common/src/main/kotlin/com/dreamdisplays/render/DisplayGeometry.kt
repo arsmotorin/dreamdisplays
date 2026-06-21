@@ -57,12 +57,27 @@ internal object DisplayGeometry {
     private const val SURFACE_OFFSET = 0.008f
 
     /**
+     * Larger surface offset used while a shader pack is active. Shader packs (notably OptiFine /
+     * SEUS Renewed) drive the depth buffer with far coarser precision than vanilla, so the tiny
+     * [SURFACE_OFFSET] no longer separates the video plane from the backing block: past a few blocks
+     * the block wins the depth test and the screen reverts to the bare block. A wider gap keeps the
+     * quad in front across the whole render distance.
+     *
+     * @see <a href="https://github.com/arsmotorin/dreamdisplays/issues/108">Issue #108</a>
+     */
+    private const val SHADER_SURFACE_OFFSET = 0.016f
+
+    /** Surface offset in effect right now: widened while a shader pack owns the depth buffer. */
+    private fun surfaceOffset(): Float =
+        if (ShaderPackCompat.isShaderPackActive) SHADER_SURFACE_OFFSET else SURFACE_OFFSET
+
+    /**
      * Applies the full transform for a screen of [width] x [height] blocks facing [facing]:
      * surface offset, per-facing corner correction, rotation, and scale. The stack is expected to
      * already be translated to the screen's anchor block.
      */
     fun applyScreenTransform(stack: PoseStack, facing: DisplayFacing, width: Int, height: Int) {
-        moveForward(stack, facing, SURFACE_OFFSET)
+        moveForward(stack, facing, surfaceOffset())
 
         when (facing) {
             DisplayFacing.NORTH -> {
