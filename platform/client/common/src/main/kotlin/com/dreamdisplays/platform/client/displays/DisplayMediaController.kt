@@ -2,8 +2,8 @@ package com.dreamdisplays.platform.client.displays
 
 import com.dreamdisplays.platform.client.core.DreamServices
 import com.dreamdisplays.platform.client.core.getOrNull
-import com.dreamdisplays.api.media.MediaResolverChain
-import com.dreamdisplays.api.media.MediaSource
+import com.dreamdisplays.api.media.source.MediaResolverRegistry
+import com.dreamdisplays.api.media.source.MediaSource
 import com.dreamdisplays.media.player.MediaPlayer
 import com.dreamdisplays.platform.client.player.platform.DisplayPlaybackHost
 import com.dreamdisplays.platform.client.player.platform.DreamPlaybackEnvironment
@@ -41,7 +41,7 @@ internal class DisplayMediaController(private val screen: DisplayScreen) {
     fun load(videoUrl: String, lang: String, preservePausedState: Boolean) {
         if (videoUrl == "") return
 
-        DreamServices.registry.getOrNull<MediaResolverChain>()?.prefetch(MediaSource.from(videoUrl))
+        DreamServices.registry.getOrNull<MediaResolverRegistry>()?.prefetch(MediaSource.from(videoUrl))
 
         val expected = generation.incrementAndGet()
         val oldPlayer = player

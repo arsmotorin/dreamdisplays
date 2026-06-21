@@ -1,4 +1,4 @@
-package com.dreamdisplays.api.media
+package com.dreamdisplays.api.media.source
 
 
 interface MediaResolver {

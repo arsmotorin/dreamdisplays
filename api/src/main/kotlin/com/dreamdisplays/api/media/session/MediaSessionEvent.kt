@@ -1,7 +1,7 @@
-package com.dreamdisplays.media.runtime
+package com.dreamdisplays.api.media.session
 
 import com.dreamdisplays.media.DreamMediaException
-
+import com.dreamdisplays.api.media.source.MediaMetadata
 import kotlin.time.Duration
 
 sealed interface MediaSessionEvent {

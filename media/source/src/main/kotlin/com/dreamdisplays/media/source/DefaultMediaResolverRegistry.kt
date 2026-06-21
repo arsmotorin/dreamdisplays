@@ -2,15 +2,15 @@ package com.dreamdisplays.media.source
 
 import com.dreamdisplays.media.DreamMediaException
 import com.dreamdisplays.core.security.MediaHostGuard
-import com.dreamdisplays.api.media.MediaResolver
-import com.dreamdisplays.api.media.MediaResolverChain
-import com.dreamdisplays.api.media.MediaSource
-import com.dreamdisplays.api.media.ResolvedMedia
+import com.dreamdisplays.api.media.source.MediaResolver
+import com.dreamdisplays.api.media.source.MediaResolverRegistry
+import com.dreamdisplays.api.media.source.MediaSource
+import com.dreamdisplays.api.media.source.ResolvedMedia
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 
 /**
- * Default [MediaResolverChain]: tries registered [MediaResolver]s highest-[MediaResolver.priority]
+ * Default [MediaResolverRegistry]: tries registered [MediaResolver]s highest-[MediaResolver.priority]
  * first, skipping any whose [MediaResolver.canResolve] returns false. A resolver that throws is
  * treated as a soft failure and the chain falls through to the next candidate; the last error is
  * rethrown only if every candidate fails.
@@ -18,7 +18,7 @@ import java.util.concurrent.Executors
  * Registration is backed by a [CopyOnWriteArrayList], so [register] / [unregister] are safe to call
  * concurrently with [resolve].
  */
-class DefaultMediaResolverChain : MediaResolverChain {
+class DefaultMediaResolverRegistry : MediaResolverRegistry {
 
     private val backing = CopyOnWriteArrayList<MediaResolver>()
 

@@ -1,4 +1,4 @@
-package com.dreamdisplays.media.runtime
+package com.dreamdisplays.api.media.source
 
 import kotlin.time.Duration
 

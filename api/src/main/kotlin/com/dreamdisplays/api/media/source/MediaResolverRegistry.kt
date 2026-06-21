@@ -1,7 +1,7 @@
-package com.dreamdisplays.api.media
+package com.dreamdisplays.api.media.source
 
 
-interface MediaResolverChain {
+interface MediaResolverRegistry {
     fun register(resolver: MediaResolver)
     fun unregister(resolver: MediaResolver)
     fun resolve(source: MediaSource): ResolvedMedia

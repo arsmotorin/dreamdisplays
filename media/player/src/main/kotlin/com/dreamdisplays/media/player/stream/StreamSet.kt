@@ -1,5 +1,7 @@
-package com.dreamdisplays.api.media
+package com.dreamdisplays.media.player.stream
 
+import com.dreamdisplays.api.media.stream.MediaStream
+import com.dreamdisplays.api.media.stream.MediaStreamType
 
 data class StreamSet(
     val videoStream: MediaStream?,

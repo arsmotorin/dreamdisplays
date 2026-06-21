@@ -1,4 +1,4 @@
-package com.dreamdisplays.api.media
+package com.dreamdisplays.media.player.stream
 
 
 data class StreamPreferences(

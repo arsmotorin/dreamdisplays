@@ -2,6 +2,7 @@ package com.dreamdisplays.media.runtime
 
 import com.dreamdisplays.api.display.model.DisplayId
 import com.dreamdisplays.api.display.service.DisplayService
+import com.dreamdisplays.api.media.session.MediaSession
 import com.dreamdisplays.api.playback.PlaybackService
 
 /**

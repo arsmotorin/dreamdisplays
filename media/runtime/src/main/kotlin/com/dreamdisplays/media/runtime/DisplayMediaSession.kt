@@ -4,6 +4,10 @@ import com.dreamdisplays.api.display.event.DisplayEvent
 import com.dreamdisplays.api.display.model.DisplayId
 import com.dreamdisplays.api.display.model.DisplayRuntimeState
 import com.dreamdisplays.api.display.service.DisplayService
+import com.dreamdisplays.api.media.session.MediaSession
+import com.dreamdisplays.api.media.session.MediaSessionEvent
+import com.dreamdisplays.api.media.session.MediaSessionState
+import com.dreamdisplays.api.media.source.MediaMetadata
 import com.dreamdisplays.api.playback.PlaybackService
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration

@@ -1,5 +1,6 @@
-package com.dreamdisplays.api.media
+package com.dreamdisplays.api.media.source
 
+import com.dreamdisplays.api.media.stream.MediaStream
 
 data class ResolvedMedia(
     val streams: List<MediaStream>,

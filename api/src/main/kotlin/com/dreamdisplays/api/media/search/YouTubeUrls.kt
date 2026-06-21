@@ -1,4 +1,4 @@
-package com.dreamdisplays.api.media
+package com.dreamdisplays.api.media.search
 
 
 import java.net.URI

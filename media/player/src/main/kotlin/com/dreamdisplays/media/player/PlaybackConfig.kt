@@ -1,4 +1,4 @@
-package com.dreamdisplays.api.media.player
+package com.dreamdisplays.media.player
 
 /** Read-only playback-relevant configuration the media player needs from the host application. */
 interface PlaybackConfig {

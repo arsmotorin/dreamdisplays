@@ -1,10 +1,10 @@
 package com.dreamdisplays.media.source
 
-import com.dreamdisplays.api.media.MediaStream
-import com.dreamdisplays.api.media.MediaStreamType
-import com.dreamdisplays.api.media.StreamPreferences
-import com.dreamdisplays.api.media.StreamSelector
-import com.dreamdisplays.api.media.StreamSet
+import com.dreamdisplays.api.media.stream.MediaStream
+import com.dreamdisplays.api.media.stream.MediaStreamType
+import com.dreamdisplays.media.player.stream.StreamPreferences
+import com.dreamdisplays.media.player.stream.StreamSelector
+import com.dreamdisplays.media.player.stream.StreamSet
 import com.dreamdisplays.media.player.stream.MediaStreamSelector
 import org.slf4j.LoggerFactory
 

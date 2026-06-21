@@ -1,4 +1,4 @@
-package com.dreamdisplays.api.media
+package com.dreamdisplays.api.media.search
 
 
 /** Contract for YouTube search, related-video lookup, and video-ID extraction. */

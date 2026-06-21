@@ -1,6 +1,6 @@
 package com.dreamdisplays.api.render
 
-import com.dreamdisplays.api.media.DecodedVideoFrame
+import com.dreamdisplays.api.media.sink.DecodedVideoFrame
 
 interface TextureUploader : AutoCloseable {
     val supportsAsync: Boolean

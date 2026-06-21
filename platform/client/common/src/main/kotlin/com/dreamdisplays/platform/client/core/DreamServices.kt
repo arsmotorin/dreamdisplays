@@ -36,14 +36,14 @@ import com.dreamdisplays.platform.client.render.RenderHook
 import com.dreamdisplays.platform.client.ui.PipOverlayManager
 import com.dreamdisplays.platform.client.displays.MinecraftDisplayCommands
 import com.dreamdisplays.platform.client.managers.ClientStateManager
-import com.dreamdisplays.media.source.DefaultMediaResolverChain
+import com.dreamdisplays.media.source.DefaultMediaResolverRegistry
 import com.dreamdisplays.media.runtime.DefaultMediaSessionManager
 import com.dreamdisplays.media.source.DefaultStreamSelector
 import com.dreamdisplays.media.source.YtDlpSearchService
-import com.dreamdisplays.api.media.MediaResolverChain
-import com.dreamdisplays.api.media.MediaSearchService
+import com.dreamdisplays.api.media.source.MediaResolverRegistry
+import com.dreamdisplays.api.media.search.MediaSearchService
 import com.dreamdisplays.media.runtime.MediaSessionManager
-import com.dreamdisplays.api.media.StreamSelector
+import com.dreamdisplays.media.player.stream.StreamSelector
 import com.dreamdisplays.platform.client.render.AsyncTextureUploader
 import com.dreamdisplays.platform.client.render.DefaultDisplayRenderer
 import com.dreamdisplays.platform.client.render.ScreenRenderer
@@ -57,7 +57,7 @@ import com.dreamdisplays.media.source.ytdlp.YtDlpResolver
  * Process-wide [ServiceRegistry] holder and bootstrap entry point.
  *
  * Replaces scattered `object` singletons accessed by name with contract-typed lookups:
- * call [registry].`get<MediaResolverChain>()` instead of touching the concrete resolver objects.
+ * call [registry].`get<MediaResolverRegistry>()` instead of touching the concrete resolver objects.
  * [bootstrap] wires the default service graph and is idempotent, so it is safe to call from each
  * platform's startup path.
  *
@@ -76,7 +76,7 @@ object DreamServices {
     /**
      * Registers the default service graph exactly once.
      *
-     * Media pipeline: [MediaResolverChain] ([NewPipeResolver] fast path at priority 10,
+     * Media pipeline: [MediaResolverRegistry] ([NewPipeResolver] fast path at priority 10,
      * [YtDlpResolver] subprocess fallback at 0), [MediaSearchService], [MediaSessionManager],
      * and [StreamSelector].
      *
@@ -103,7 +103,7 @@ object DreamServices {
             override val ytdlpCookiesFromBrowser: String get() = ClientStateManager.config.ytdlpCookiesFromBrowser
         }
 
-        val resolverChain = DefaultMediaResolverChain().apply {
+        val resolverChain = DefaultMediaResolverRegistry().apply {
             register(NewPipeResolver)
             register(YtDlpResolver)
         }
@@ -117,7 +117,7 @@ object DreamServices {
         registry.register<DisplayMutationPort>(displaySystem)
         registry.register<PlaybackPort>(displaySystem)
         registry.register<WatchPartyPort>(displaySystem)
-        registry.register<MediaResolverChain>(resolverChain)
+        registry.register<MediaResolverRegistry>(resolverChain)
         registry.register<MediaSearchService>(YtDlpSearchService())
         registry.register<StreamSelector>(DefaultStreamSelector())
         registry.register<OverlayManager>(PipOverlayManager)

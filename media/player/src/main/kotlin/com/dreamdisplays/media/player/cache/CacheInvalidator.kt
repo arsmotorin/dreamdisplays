@@ -1,4 +1,4 @@
-package com.dreamdisplays.api.media.player
+package com.dreamdisplays.media.player.cache
 
 /** Purges any cached resolution for a media URL so the next resolve hits the network fresh. */
 fun interface CacheInvalidator {

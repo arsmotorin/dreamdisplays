@@ -1,6 +1,6 @@
 package com.dreamdisplays.platform.client.render
 
-import com.dreamdisplays.api.media.DecodedVideoFrame
+import com.dreamdisplays.api.media.sink.DecodedVideoFrame
 import com.dreamdisplays.api.render.TextureHandle
 import com.dreamdisplays.api.render.TextureUploader
 import com.mojang.blaze3d.opengl.GlStateManager

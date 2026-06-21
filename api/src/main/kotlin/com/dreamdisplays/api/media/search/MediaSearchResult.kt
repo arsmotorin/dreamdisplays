@@ -1,4 +1,4 @@
-package com.dreamdisplays.api.media
+package com.dreamdisplays.api.media.search
 
 
 /** Describes a single video returned by a search or related-video query. */

@@ -3,13 +3,13 @@ package com.dreamdisplays.platform.client.player.platform
 import com.dreamdisplays.platform.client.core.DreamServices
 import com.dreamdisplays.platform.client.core.get
 import com.dreamdisplays.platform.client.managers.ClientStateManager
-import com.dreamdisplays.api.media.MediaResolverChain
-import com.dreamdisplays.api.media.StreamSelector
-import com.dreamdisplays.api.media.player.CacheInvalidator
+import com.dreamdisplays.api.media.source.MediaResolverRegistry
+import com.dreamdisplays.media.player.stream.StreamSelector
+import com.dreamdisplays.media.player.cache.CacheInvalidator
 import com.dreamdisplays.api.media.player.FrameUploader
 import com.dreamdisplays.api.media.player.FrameUploaderFactory
-import com.dreamdisplays.api.media.player.PlaybackConfig
-import com.dreamdisplays.api.media.player.PlaybackEnvironment
+import com.dreamdisplays.media.player.PlaybackConfig
+import com.dreamdisplays.media.player.PlaybackEnvironment
 import com.dreamdisplays.api.media.player.RenderThreadExecutor
 import com.dreamdisplays.platform.client.render.DisplayYuvRenderTypes
 import com.dreamdisplays.platform.client.render.GpuFrameUploader
@@ -39,7 +39,7 @@ object DreamPlaybackEnvironment : PlaybackEnvironment {
     override val cacheInvalidator: CacheInvalidator =
         CacheInvalidator { url -> YtDlp.invalidateCache(url) }
 
-    override fun resolverChain(): MediaResolverChain = DreamServices.registry.get<MediaResolverChain>()
+    override fun resolverChain(): MediaResolverRegistry = DreamServices.registry.get<MediaResolverRegistry>()
 
     override fun streamSelector(): StreamSelector = DreamServices.registry.get<StreamSelector>()
 }

@@ -13,8 +13,8 @@ import com.dreamdisplays.platform.client.displays.DisplayScreen
 import com.dreamdisplays.platform.client.render.AsyncTextureUploader
 import com.dreamdisplays.platform.client.render.TextureUploadUtil
 import com.dreamdisplays.platform.client.render.UploadPixelFormat
-import com.dreamdisplays.api.media.YouTubeUrls
-import com.dreamdisplays.api.media.MediaSearchService
+import com.dreamdisplays.api.media.search.YouTubeUrls
+import com.dreamdisplays.api.media.search.MediaSearchService
 import com.dreamdisplays.platform.client.render.Thumbnails
 import com.dreamdisplays.media.source.ytdlp.VideoMetadataCache
 import com.dreamdisplays.media.source.ytdlp.VideoTitleCache

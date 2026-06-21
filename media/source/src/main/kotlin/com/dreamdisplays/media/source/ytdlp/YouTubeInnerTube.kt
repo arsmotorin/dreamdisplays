@@ -1,6 +1,6 @@
 package com.dreamdisplays.media.source.ytdlp
 
-import com.dreamdisplays.api.media.MediaSearchResult
+import com.dreamdisplays.api.media.search.MediaSearchResult
 import com.dreamdisplays.util.optString
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject

@@ -5,7 +5,7 @@ import com.dreamdisplays.platform.client.core.DreamServices
 import com.dreamdisplays.platform.client.core.getOrNull
 import com.dreamdisplays.platform.client.overlay.OverlayManager
 import com.dreamdisplays.platform.client.displays.DisplayRegistry
-import com.dreamdisplays.api.media.VideoFrameSink
+import com.dreamdisplays.api.media.sink.VideoFrameSink
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**

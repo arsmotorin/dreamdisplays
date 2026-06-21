@@ -1,6 +1,5 @@
 package com.dreamdisplays.media.player
 
-import com.dreamdisplays.api.media.player.PlaybackEnvironment
 import com.dreamdisplays.api.media.player.PlaybackHost
 import com.dreamdisplays.media.player.events.PlayerEvents
 import com.dreamdisplays.media.player.managers.PlaybackSessionManager
@@ -17,7 +16,7 @@ import com.dreamdisplays.media.player.stream.ActiveStreams
 import com.dreamdisplays.media.player.util.MediaUtil
 import com.dreamdisplays.media.player.util.daemon
 import com.dreamdisplays.media.DreamMediaException
-import com.dreamdisplays.api.media.MediaStream
+import com.dreamdisplays.api.media.stream.MediaStream
 import com.dreamdisplays.media.VideoQuality
 import com.dreamdisplays.api.playback.PlaybackMode
 import com.dreamdisplays.media.FramePixelFormat

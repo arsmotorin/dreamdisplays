@@ -1,6 +1,7 @@
 package com.dreamdisplays.media.runtime
 
 import com.dreamdisplays.api.display.model.DisplayId
+import com.dreamdisplays.api.media.session.MediaSession
 
 /** Hands out [MediaSession] views onto playing displays. */
 interface MediaSessionManager {

@@ -1,22 +1,22 @@
 package com.dreamdisplays.media.player.preparation
 
 import com.dreamdisplays.media.DreamMediaException
-import com.dreamdisplays.api.media.MediaResolverChain
-import com.dreamdisplays.api.media.MediaSource
-import com.dreamdisplays.api.media.StreamPreferences
-import com.dreamdisplays.api.media.StreamSelector
+import com.dreamdisplays.api.media.source.MediaResolverRegistry
+import com.dreamdisplays.api.media.source.MediaSource
+import com.dreamdisplays.media.player.stream.StreamPreferences
+import com.dreamdisplays.media.player.stream.StreamSelector
 import com.dreamdisplays.media.VideoQuality
-import com.dreamdisplays.api.media.player.PlaybackEnvironment
+import com.dreamdisplays.media.player.PlaybackEnvironment
 import com.dreamdisplays.media.player.stream.ActiveStreams
 
 /**
- * Resolves stream metadata via [MediaResolverChain], selects the best tracks via [StreamSelector],
+ * Resolves stream metadata via [MediaResolverRegistry], selects the best tracks via [StreamSelector],
  * and returns a [PreparedMedia] ready for playback. Runs on a background thread.
  */
 internal object MediaPreparationService {
 
     /**
-     * Resolves [url] through the registry's [MediaResolverChain], selects tracks via [StreamSelector],
+     * Resolves [url] through the registry's [MediaResolverRegistry], selects tracks via [StreamSelector],
      * and returns all necessary playback metadata.
      *
      * @param url raw media URL (YouTube, direct stream, etc.)
@@ -25,7 +25,7 @@ internal object MediaPreparationService {
      * @throws DreamMediaException if no usable streams are found
      */
     fun prepare(url: String, lang: String, quality: VideoQuality, env: PlaybackEnvironment): PreparedMedia {
-        val chain: MediaResolverChain = env.resolverChain()
+        val chain: MediaResolverRegistry = env.resolverChain()
         val selector: StreamSelector = env.streamSelector()
         val source = MediaSource.from(url)
         val resolved = chain.resolve(source)

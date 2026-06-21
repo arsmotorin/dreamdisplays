@@ -1,6 +1,5 @@
 package com.dreamdisplays.api.platform
 
-
 /**
  * Which logical side of the game a [Platform] runs on. Drives side-aware guards so common code can
  * ask "am I on the client?" without touching loader internals.
