@@ -3,6 +3,7 @@ package com.dreamdisplays.application.display
 import com.dreamdisplays.api.PlaybackService
 import com.dreamdisplays.core.display.DisplayId
 import com.dreamdisplays.core.display.DisplayRuntimeState
+import com.dreamdisplays.core.media.VideoQuality
 import com.dreamdisplays.core.playback.PlaybackMode
 import kotlin.time.Duration
 
@@ -20,7 +21,13 @@ class DefaultPlaybackService(
 
     override fun seek(displayId: DisplayId, position: Duration) = playback.seek(displayId, position)
 
+    override fun seekRelative(displayId: DisplayId, delta: Duration) = playback.seekRelative(displayId, delta)
+
     override fun setVolume(displayId: DisplayId, volume: Float) = playback.setVolume(displayId, volume)
+
+    override fun setQuality(displayId: DisplayId, quality: VideoQuality) = playback.setQuality(displayId, quality)
+
+    override fun setBrightness(displayId: DisplayId, brightness: Float) = playback.setBrightness(displayId, brightness)
 
     override fun mute(displayId: DisplayId, muted: Boolean) = playback.mute(displayId, muted)
 

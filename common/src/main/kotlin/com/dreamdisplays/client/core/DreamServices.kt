@@ -37,7 +37,7 @@ import com.dreamdisplays.client.ui.PipOverlayManager
 import com.dreamdisplays.displays.MinecraftDisplayCommands
 import com.dreamdisplays.managers.ClientStateManager
 import com.dreamdisplays.media.DefaultMediaResolverChain
-import com.dreamdisplays.media.DefaultMediaSessionManager
+import com.dreamdisplays.application.media.DefaultMediaSessionManager
 import com.dreamdisplays.media.DefaultStreamSelector
 import com.dreamdisplays.media.YtDlpSearchService
 import com.dreamdisplays.media.api.MediaResolverChain
@@ -109,7 +109,6 @@ object DreamServices {
         registry.register<WatchPartyPort>(displaySystem)
         registry.register<MediaResolverChain>(resolverChain)
         registry.register<MediaSearchService>(YtDlpSearchService())
-        registry.register<MediaSessionManager>(DefaultMediaSessionManager())
         registry.register<StreamSelector>(DefaultStreamSelector())
         registry.register<OverlayManager>(PipOverlayManager)
         registry.register<CrosshairPolicy>(CrosshairPolicy { ClientStateManager.isOnScreen })
@@ -118,8 +117,11 @@ object DreamServices {
         registry.register<InputHandler>(CompositeInputHandler().apply { register(DisplayMenuInputHandler()) })
         registry.register<ClientRenderService>(ScreenRenderer)
         registry.register<PopoutManager>(DefaultPopoutManager())
-        registry.register<DisplayService>(DefaultDisplayService(displaySystem, displaySystem))
-        registry.register<PlaybackService>(DefaultPlaybackService(displaySystem))
+        val displayService = DefaultDisplayService(displaySystem, displaySystem)
+        val playbackService = DefaultPlaybackService(displaySystem)
+        registry.register<DisplayService>(displayService)
+        registry.register<PlaybackService>(playbackService)
+        registry.register<MediaSessionManager>(DefaultMediaSessionManager(playbackService, displayService))
         registry.register<WatchPartyService>(DefaultWatchPartyService(displaySystem))
         registry.register<ClientCapabilityDetector>(MinecraftClientCapabilityDetector)
         registry.register<CapabilityNegotiationService>(DefaultCapabilityNegotiationService(MinecraftClientCapabilityDetector))

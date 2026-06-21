@@ -6,6 +6,7 @@ import com.dreamdisplays.core.display.DisplayId
 import com.dreamdisplays.core.display.DisplayRuntimeState
 import com.dreamdisplays.core.display.DisplaySettings
 import com.dreamdisplays.core.display.WatchPartySession
+import com.dreamdisplays.core.media.VideoQuality
 import com.dreamdisplays.core.playback.PlaybackMode
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -75,8 +76,20 @@ class DefaultDisplaySystem(
         apply(commands.seek(displayId, position))
     }
 
+    override fun seekRelative(displayId: DisplayId, delta: Duration) {
+        apply(commands.seekRelative(displayId, delta))
+    }
+
     override fun setVolume(displayId: DisplayId, volume: Float) {
         apply(commands.setVolume(displayId, volume))
+    }
+
+    override fun setQuality(displayId: DisplayId, quality: VideoQuality) {
+        apply(commands.setQuality(displayId, quality))
+    }
+
+    override fun setBrightness(displayId: DisplayId, brightness: Float) {
+        apply(commands.setBrightness(displayId, brightness))
     }
 
     override fun mute(displayId: DisplayId, muted: Boolean) {

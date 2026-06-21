@@ -3,6 +3,7 @@ package com.dreamdisplays.application.display
 import com.dreamdisplays.core.display.Display
 import com.dreamdisplays.core.display.DisplayId
 import com.dreamdisplays.core.display.DisplaySettings
+import com.dreamdisplays.core.media.VideoQuality
 import com.dreamdisplays.core.playback.PlaybackMode
 import kotlin.time.Duration
 
@@ -14,7 +15,10 @@ interface DisplayCommandExecutor {
     fun pause(displayId: DisplayId): Display? = null
     fun stop(displayId: DisplayId): Boolean = false
     fun seek(displayId: DisplayId, position: Duration): Display? = null
+    fun seekRelative(displayId: DisplayId, delta: Duration): Display? = null
     fun setVolume(displayId: DisplayId, volume: Float): Display? = null
+    fun setQuality(displayId: DisplayId, quality: VideoQuality): Display? = null
+    fun setBrightness(displayId: DisplayId, brightness: Float): Display? = null
     fun mute(displayId: DisplayId, muted: Boolean): Display? = null
     fun restart(displayId: DisplayId): Display? = null
     fun setMode(displayId: DisplayId, mode: PlaybackMode): Display? = null

@@ -1,69 +1,73 @@
-package com.dreamdisplays.media
+package com.dreamdisplays.application.media
 
+import com.dreamdisplays.api.DisplayService
+import com.dreamdisplays.api.PlaybackService
 import com.dreamdisplays.core.display.DisplayEvent
 import com.dreamdisplays.core.display.DisplayId
 import com.dreamdisplays.core.display.DisplayRuntimeState
-import com.dreamdisplays.displays.DisplayRegistry
-import com.dreamdisplays.displays.DisplayScreen
 import com.dreamdisplays.media.api.MediaMetadata
 import com.dreamdisplays.media.api.MediaSession
 import com.dreamdisplays.media.api.MediaSessionEvent
 import com.dreamdisplays.media.api.MediaSessionState
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * [MediaSession] view onto a live [DisplayScreen]. Transport calls delegate to the screen's
- * public playback API; events are translated from the [DisplayRegistry] event bus, filtered to
- * this display. Closing the session only detaches listeners. Playback is unaffected.
+ * [MediaSession] view onto a display, expressed purely over the application services: transport calls
+ * delegate to [PlaybackService], state and events come from [DisplayService] (snapshots + event bus),
+ * filtered to this display. No Minecraft view object is referenced, so the session is platform-agnostic.
+ * Closing the session only detaches listeners; playback is unaffected.
  */
-internal class DisplayMediaSession(private val screen: DisplayScreen) : MediaSession {
+internal class DisplayMediaSession(
+    override val displayId: DisplayId,
+    private val playback: PlaybackService,
+    private val displays: DisplayService,
+) : MediaSession {
 
-    override val sessionId: String = screen.uuid.toString()
-    override val displayId: DisplayId = DisplayId(screen.uuid)
+    override val sessionId: String = displayId.toString()
 
     private val subscriptions = CopyOnWriteArrayList<AutoCloseable>()
 
     @Volatile
     private var closed = false
 
+    /** The latest runtime state from the display snapshot, or null when the display is gone. */
+    private fun runtimeState(): DisplayRuntimeState? = displays.getDisplay(displayId)?.state
+
     override val state: MediaSessionState
-        get() = when {
-            closed -> MediaSessionState.Released
-            screen.mediaError != null -> MediaSessionState.Error(screen.mediaError!!)
-            screen.videoUrl.isNullOrEmpty() -> MediaSessionState.Idle
-            !screen.isVideoStarted -> MediaSessionState.Preparing
-            else -> MediaSessionState.Active(isPlaying = !screen.isPaused, isBuffering = false)
-        }
+        get() = if (closed) MediaSessionState.Released
+        else runtimeState()?.toSessionState() ?: MediaSessionState.Released
 
     override val currentPosition: Duration
-        get() = screen.currentTimeNanos.nanoseconds
+        get() = when (val s = runtimeState()) {
+            is DisplayRuntimeState.Playing -> s.positionMs.milliseconds
+            is DisplayRuntimeState.Paused -> s.positionMs.milliseconds
+            else -> Duration.ZERO
+        }
 
     override val duration: Duration?
-        get() = screen.mediaPlayerDurationNanos.takeIf { it > 0L }?.nanoseconds
+        get() = (runtimeState() as? DisplayRuntimeState.Playing)?.durationMs?.milliseconds
 
     /** Only the duration is known at this layer; rich metadata lives in the search/metadata caches. */
     override val metadata: MediaMetadata
         get() = MediaMetadata.UNKNOWN.copy(duration = duration)
 
-    override fun play() = screen.setPaused(false)
+    override fun play() = playback.play(displayId)
 
-    override fun pause() = screen.setPaused(true)
+    override fun pause() = playback.pause(displayId)
 
-    override fun seek(position: Duration) = screen.seekToMillis(position.inWholeMilliseconds)
+    override fun seek(position: Duration) = playback.seek(displayId, position)
 
-    override fun setVolume(volume: Float) {
-        screen.volume = volume
-    }
+    override fun setVolume(volume: Float) = playback.setVolume(displayId, volume)
 
     /**
      * Subscribes [listener] to this display's lifecycle, translated into [MediaSessionEvent]s.
      * Close the returned handle (or the whole session) to unsubscribe.
      */
     override fun on(listener: (MediaSessionEvent) -> Unit): AutoCloseable {
-        val handle = DisplayRegistry.addListener { event ->
-            if (event.displayId != displayId) return@addListener
+        val handle = displays.on { event ->
+            if (event.displayId != displayId) return@on
             event.toSessionEvent()?.let(listener)
         }
         subscriptions += handle

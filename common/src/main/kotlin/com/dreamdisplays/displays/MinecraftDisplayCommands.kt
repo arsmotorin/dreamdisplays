@@ -4,6 +4,7 @@ import com.dreamdisplays.application.display.DisplayCommandExecutor
 import com.dreamdisplays.core.display.Display
 import com.dreamdisplays.core.display.DisplayId
 import com.dreamdisplays.core.display.DisplaySettings
+import com.dreamdisplays.core.media.VideoQuality
 import com.dreamdisplays.core.playback.PlaybackMode
 import kotlin.time.Duration
 
@@ -56,9 +57,27 @@ class MinecraftDisplayCommands : DisplayCommandExecutor {
         return screen.toDisplay()
     }
 
+    override fun seekRelative(displayId: DisplayId, delta: Duration): Display? {
+        val screen = DisplayRegistry.screens[displayId.uuid] ?: return null
+        screen.seekVideoRelative(delta.inWholeMilliseconds / 1000.0)
+        return screen.toDisplay()
+    }
+
     override fun setVolume(displayId: DisplayId, volume: Float): Display? {
         val screen = DisplayRegistry.screens[displayId.uuid] ?: return null
         screen.volume = volume
+        return screen.toDisplay()
+    }
+
+    override fun setQuality(displayId: DisplayId, quality: VideoQuality): Display? {
+        val screen = DisplayRegistry.screens[displayId.uuid] ?: return null
+        screen.quality = quality
+        return screen.toDisplay()
+    }
+
+    override fun setBrightness(displayId: DisplayId, brightness: Float): Display? {
+        val screen = DisplayRegistry.screens[displayId.uuid] ?: return null
+        screen.brightness = brightness
         return screen.toDisplay()
     }
 

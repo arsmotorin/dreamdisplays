@@ -1,8 +1,11 @@
 package com.dreamdisplays.client.ui
 
 import com.dreamdisplays.Initializer
+import com.dreamdisplays.api.PlaybackService
 import com.dreamdisplays.client.core.DreamServices
+import com.dreamdisplays.client.core.get
 import com.dreamdisplays.client.core.getOrNull
+import com.dreamdisplays.core.display.DisplayId
 import com.dreamdisplays.client.ui.kit.UiRect
 import com.dreamdisplays.client.ui.kit.UiTheme
 import com.dreamdisplays.client.ui.kit.UiScreenBase
@@ -38,6 +41,8 @@ import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.network.chat.Component
 import kotlin.math.abs
 import kotlin.math.floor
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -73,6 +78,10 @@ class DisplayMenu private constructor(
     override fun init() {
         super.init()
         val ds = displayScreen
+        // Playback controls drive the display through the application PlaybackService instead of mutating
+        // the DisplayScreen directly, so the UI no longer reaches into the live screen for these actions.
+        val displayId = DisplayId(ds.uuid)
+        val playback = DreamServices.registry.get<PlaybackService>()
         val videoReady = { ds.isVideoStarted && !ds.errored }
         val notErrored = { !ds.errored }
 
@@ -87,7 +96,7 @@ class DisplayMenu private constructor(
         volume = addUi(ValueSlider(
             initial = ds.volume.toDouble(),
             label = { Component.literal("${floor(it * 200).toInt()}%") },
-        ) { ds.volume = it.toFloat() })
+        ) { playback.setVolume(displayId, it.toFloat()) })
         volume.enabledWhen = videoReady
         volume.visibleWhen = notErrored
 
@@ -114,7 +123,7 @@ class DisplayMenu private constructor(
             // Commit on release: a quality change restarts the video, so don't fire on every drag step
             live = false,
         ) {
-            if (ds.qualityList.isNotEmpty()) ds.quality = VideoQuality.parse(qualityFromFraction(it))
+            if (ds.qualityList.isNotEmpty()) playback.setQuality(displayId, VideoQuality.parse(qualityFromFraction(it)))
         })
         quality.enabledWhen = { videoReady() && ds.qualityList.isNotEmpty() && ds.canChangeQualityHere }
         quality.visibleWhen = notErrored
@@ -122,7 +131,7 @@ class DisplayMenu private constructor(
         brightness = addUi(ValueSlider(
             initial = ds.brightness.toDouble().coerceIn(0.0, 1.0),
             label = { Component.literal("${floor(it * 100).toInt()}%") },
-        ) { ds.brightness = it.toFloat() })
+        ) { playback.setBrightness(displayId, it.toFloat()) })
         brightness.enabledWhen = { videoReady() && (!ds.isSync || ds.canEdit) }
         brightness.visibleWhen = notErrored
 
@@ -141,7 +150,7 @@ class DisplayMenu private constructor(
             when {
                 mode == ds.effectiveMode -> Unit
                 ds.watchParty != null && mode == PlaybackMode.LOCAL -> ds.closeWatchParty()
-                PlaybackMode.isBaseMode(mode) -> ds.requestMode(mode)
+                PlaybackMode.isBaseMode(mode) -> playback.setMode(displayId, mode)
             }
         })
         sync.enabledWhen = {
@@ -150,7 +159,7 @@ class DisplayMenu private constructor(
         sync.visibleWhen = notErrored
 
         val volumeReset = addUi(IconButton("refresh") {
-            ds.volume = 0.5f
+            playback.setVolume(displayId, 0.5f)
             volume.value = 0.5
         })
         volumeReset.enabledWhen = { videoReady() && abs(volume.value - 0.5) > 0.01 }
@@ -169,36 +178,36 @@ class DisplayMenu private constructor(
         renderDReset.visibleWhen = notErrored
 
         val qualityReset = addUi(IconButton("refresh") {
-            ds.quality = VideoQuality.DEFAULT
+            playback.setQuality(displayId, VideoQuality.DEFAULT)
             quality.value = qualityFraction(VideoQuality.DEFAULT.serialize())
         })
         qualityReset.enabledWhen = { videoReady() && ds.canChangeQualityHere && ds.quality != VideoQuality.DEFAULT }
         qualityReset.visibleWhen = notErrored
 
         val brightnessReset = addUi(IconButton("refresh") {
-            ds.brightness = 1.0f
+            playback.setBrightness(displayId, 1.0f)
             brightness.value = 1.0
         })
         brightnessReset.enabledWhen = { videoReady() && abs(brightness.value - 0.5) > 0.01 }
         brightnessReset.visibleWhen = notErrored
 
         val syncReset = addUi(IconButton("refresh") {
-            if (ds.canSetModeHere) ds.requestMode(PlaybackMode.LOCAL)
+            if (ds.canSetModeHere) playback.setMode(displayId, PlaybackMode.LOCAL)
         })
         syncReset.enabledWhen = { videoReady() && ds.canSetModeHere && ds.effectiveMode != PlaybackMode.LOCAL }
         syncReset.visibleWhen = notErrored
 
         val canSeekNow = { ds.canSeekHere && ds.canSeek() }
-        val backButton = addUi(IconButton("left") { ds.seekBackward() })
+        val backButton = addUi(IconButton("left") { playback.seekRelative(displayId, (-5).seconds) })
         backButton.enabledWhen = canSeekNow
         backButton.visibleWhen = notErrored
-        val forwardButton = addUi(IconButton("right") { ds.seekForward() })
+        val forwardButton = addUi(IconButton("right") { playback.seekRelative(displayId, 5.seconds) })
         forwardButton.enabledWhen = canSeekNow
         forwardButton.visibleWhen = notErrored
 
         val muteButton = addUi(IconButton(
             icon = { IconButton.modIcon(if (ds.muted) "mute" else "sound") },
-        ) { ds.mute(!ds.muted) })
+        ) { playback.mute(displayId, !ds.muted) })
         muteButton.enabledWhen = videoReady
         muteButton.visibleWhen = notErrored
 
@@ -215,7 +224,7 @@ class DisplayMenu private constructor(
 
         val pauseButton = addUi(IconButton(
             icon = { IconButton.modIcon(if (ds.isPaused) "play" else "pause") },
-        ) { ds.setPaused(!ds.isPaused) })
+        ) { if (ds.isPaused) playback.play(displayId) else playback.pause(displayId) })
         pauseButton.enabledWhen = { ds.canControlPlayback }
         pauseButton.visibleWhen = notErrored
 
@@ -224,7 +233,7 @@ class DisplayMenu private constructor(
             duration = { ds.mediaPlayerDurationNanos },
         ) { nanos ->
             if (ds.canSeek() && !ds.isLive && ds.canSeekHere) {
-                ds.seekToMillis(nanos / 1_000_000L)
+                playback.seek(displayId, (nanos / 1_000_000L).milliseconds)
             }
         })
         progress.enabledWhen = { videoReady() && ds.canSeek() && !ds.isLive && ds.canSeekHere }

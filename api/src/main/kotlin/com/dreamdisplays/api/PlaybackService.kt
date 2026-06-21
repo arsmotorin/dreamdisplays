@@ -4,6 +4,7 @@ package com.dreamdisplays.api
 
 import com.dreamdisplays.core.display.DisplayId
 import com.dreamdisplays.core.display.DisplayRuntimeState
+import com.dreamdisplays.core.media.VideoQuality
 import com.dreamdisplays.core.playback.PlaybackMode
 import kotlin.time.Duration
 
@@ -25,8 +26,17 @@ interface PlaybackService {
     /** Seeks to a specific position in the video for [displayId]. */
     fun seek(displayId: DisplayId, position: Duration)
 
+    /** Seeks [delta] relative to the current position for [displayId] (negative = backward). */
+    fun seekRelative(displayId: DisplayId, delta: Duration)
+
     /** Sets the volume for [displayId]. */
     fun setVolume(displayId: DisplayId, volume: Float)
+
+    /** Sets the preferred video quality for [displayId]. */
+    fun setQuality(displayId: DisplayId, quality: VideoQuality)
+
+    /** Sets the brightness multiplier (0.0–2.0) for [displayId]. */
+    fun setBrightness(displayId: DisplayId, brightness: Float)
 
     /** Mutes or unmutes the audio for [displayId]. */
     fun mute(displayId: DisplayId, muted: Boolean)

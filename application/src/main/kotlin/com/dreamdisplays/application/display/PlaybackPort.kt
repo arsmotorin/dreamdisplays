@@ -2,6 +2,7 @@ package com.dreamdisplays.application.display
 
 import com.dreamdisplays.core.display.DisplayId
 import com.dreamdisplays.core.display.DisplayRuntimeState
+import com.dreamdisplays.core.media.VideoQuality
 import com.dreamdisplays.core.playback.PlaybackMode
 import kotlin.time.Duration
 
@@ -10,7 +11,10 @@ interface PlaybackPort {
     fun pause(displayId: DisplayId)
     fun stop(displayId: DisplayId)
     fun seek(displayId: DisplayId, position: Duration)
+    fun seekRelative(displayId: DisplayId, delta: Duration)
     fun setVolume(displayId: DisplayId, volume: Float)
+    fun setQuality(displayId: DisplayId, quality: VideoQuality)
+    fun setBrightness(displayId: DisplayId, brightness: Float)
     fun mute(displayId: DisplayId, muted: Boolean)
     fun getState(displayId: DisplayId): DisplayRuntimeState
     fun restart(displayId: DisplayId)
