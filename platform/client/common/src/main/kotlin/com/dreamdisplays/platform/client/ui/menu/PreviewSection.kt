@@ -90,11 +90,16 @@ class PreviewSection(
         val videoX = x + (w - videoW) / 2
         val videoY = y + (h - videoH) / 2
 
-        val texId = ds.textureId
-        if (ds.isVideoStarted && ds.texture != null && texId != null) {
+        if (ds.isVideoStarted && ds.texture != null && ds.textureId != null) {
             yuvPreview.detach()
             ds.fitTexture()
-            g.blit(RenderPipelines.GUI_TEXTURED, texId, videoX, videoY, 0f, 0f, videoW, videoH, videoW, videoH)
+            // fitTexture() may promote a staged quality-handoff texture, which releases and
+            // unregisters the previous one. Re-read the id afterwards so we never blit a
+            // just-freed texture (otherwise: "Missing resource" + GL_INVALID_OPERATION).
+            val texId = ds.textureId
+            if (texId != null) {
+                g.blit(RenderPipelines.GUI_TEXTURED, texId, videoX, videoY, 0f, 0f, videoW, videoH, videoW, videoH)
+            }
         } else if (ds.isVideoStarted && ds.isYuvTexture) {
             yuvPreview.attach()
             yuvPreview.uploadFrame()
