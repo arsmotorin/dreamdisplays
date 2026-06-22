@@ -3,7 +3,11 @@ package com.dreamdisplays.api.platform
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 import java.nio.file.Path
 
-/** Platform-resolved filesystem locations used by API consumers and shared modules. */
+/**
+ * Platform-resolved filesystem locations used by API consumers and shared modules.
+ *
+ * @since 1.8.0
+ */
 @DreamDisplaysUnstableApi
 interface PlatformPaths {
     /** User-editable configuration directory. */

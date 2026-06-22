@@ -3,7 +3,11 @@ package com.dreamdisplays.api.render
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 import com.dreamdisplays.api.media.sink.DecodedVideoFrame
 
-/** Uploads decoded video frames into platform-owned textures. */
+/**
+ * Uploads decoded video frames into platform-owned textures.
+ *
+ * @since 1.8.0
+ */
 @DreamDisplaysUnstableApi
 interface TextureUploader : AutoCloseable {
     /** True when the implementation can perform upload work asynchronously. */

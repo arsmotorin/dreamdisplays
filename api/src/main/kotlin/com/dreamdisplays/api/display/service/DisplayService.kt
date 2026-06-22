@@ -10,6 +10,8 @@ import com.dreamdisplays.api.display.model.DisplaySettings
  * Public display registry and command surface. Implementations expose immutable [Display] snapshots
  * and forward mutations to the authoritative side, which validates ownership / permissions and
  * emits [DisplayEvent] updates.
+ *
+ * @since 1.8.0
  */
 @DreamDisplaysUnstableApi
 interface DisplayService {

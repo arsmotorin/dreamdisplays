@@ -2,7 +2,11 @@ package com.dreamdisplays.api.media.search
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
-/** Describes a single video returned by a search or related-video query. */
+/**
+ * Describes a single video returned by a search or related-video query.
+ *
+ * @since 1.6.0
+ */
 @DreamDisplaysUnstableApi
 data class MediaSearchResult(
     val id: String,

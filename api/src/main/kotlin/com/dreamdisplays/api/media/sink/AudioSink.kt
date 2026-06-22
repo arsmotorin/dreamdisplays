@@ -2,7 +2,11 @@ package com.dreamdisplays.api.media.sink
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
-/** PCM audio output controlled by the media player. Implementations bridge to the platform mixer. */
+/**
+ * PCM audio output controlled by the media player. Implementations bridge to the platform mixer.
+ *
+ * @since 1.8.0
+ */
 @DreamDisplaysUnstableApi
 interface AudioSink : AutoCloseable {
     /** Queues decoded PCM bytes with their media timestamp in microseconds. */

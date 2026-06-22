@@ -3,7 +3,11 @@ package com.dreamdisplays.api.render
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 import com.dreamdisplays.api.display.model.DisplayBounds
 
-/** Renderable display plane with its current texture and visibility state. */
+/**
+ * Renderable display plane with its current texture and visibility state.
+ *
+ * @since 1.8.0
+ */
 @DreamDisplaysUnstableApi
 interface RenderSurface {
     /** World-space display bounds. */

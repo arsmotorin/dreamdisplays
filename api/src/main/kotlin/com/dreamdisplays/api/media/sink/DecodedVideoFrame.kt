@@ -2,7 +2,11 @@ package com.dreamdisplays.api.media.sink
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
-/** Decoded video frame payload before GPU upload. [data] is owned by the frame producer. */
+/**
+ * Decoded video frame payload before GPU upload. [data] is owned by the frame producer.
+ *
+ * @since 1.8.0
+ */
 @DreamDisplaysUnstableApi
 data class DecodedVideoFrame(
     /** Pixel bytes in the decoder-selected format. */

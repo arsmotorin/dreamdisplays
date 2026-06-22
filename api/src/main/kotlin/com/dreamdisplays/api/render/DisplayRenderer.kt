@@ -1,6 +1,10 @@
 package com.dreamdisplays.api.render
 
-/** Registry and dispatcher for display render surfaces in one render context. */
+/**
+ * Registry and dispatcher for display render surfaces in one render context.
+ *
+ * @since 1.8.0
+ */
 interface DisplayRenderer {
     /** Adds [surface] to the render set. */
     fun register(surface: RenderSurface)

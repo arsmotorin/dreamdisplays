@@ -2,7 +2,11 @@ package com.dreamdisplays.api.platform
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
-/** Loader-neutral facts and services supplied by the active Minecraft platform adapter. */
+/**
+ * Loader-neutral facts and services supplied by the active Minecraft platform adapter.
+ *
+ * @since 1.8.0
+ */
 @DreamDisplaysUnstableApi
 interface Platform {
     /** Stable platform id, e.g. `fabric`, `neoforge`, or `paper`. */

@@ -10,6 +10,8 @@ import java.util.UUID
  * The display a [com.dreamdisplays.media.player.MediaPlayer] drives, abstracted away from the Minecraft
  * `DisplayScreen`. The platform layer implements this; the player reads playback-relevant state and
  * signals render-side transitions through it.
+ *
+ * @since 1.8.0
  */
 @DreamDisplaysUnstableApi
 interface PlaybackHost {

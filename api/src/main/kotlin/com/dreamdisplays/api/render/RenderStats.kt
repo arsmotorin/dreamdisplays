@@ -2,7 +2,11 @@ package com.dreamdisplays.api.render
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
-/** Rolling render and texture-upload counters for display diagnostics. */
+/**
+ * Rolling render and texture-upload counters for display diagnostics.
+ *
+ * @since 1.8.0
+ */
 @DreamDisplaysUnstableApi
 data class RenderStats(
     /** Frames decoded per second. */

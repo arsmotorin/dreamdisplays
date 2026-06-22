@@ -3,7 +3,11 @@ package com.dreamdisplays.api.media.source
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 import com.dreamdisplays.api.media.stream.MediaStream
 
-/** Fully resolved media: candidate streams plus metadata and timeline capabilities. */
+/**
+ * Fully resolved media: candidate streams plus metadata and timeline capabilities.
+ *
+ * @since 1.8.0
+ */
 @DreamDisplaysUnstableApi
 data class ResolvedMedia(
     /** All playable streams returned by the resolver. */

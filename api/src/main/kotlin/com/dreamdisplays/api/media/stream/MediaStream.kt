@@ -2,7 +2,11 @@ package com.dreamdisplays.api.media.stream
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
-/** One playable media track or muxed stream produced by a resolver. */
+/**
+ * One playable media track or muxed stream produced by a resolver.
+ *
+ * @since 1.6.0
+ */
 @DreamDisplaysUnstableApi
 data class MediaStream(
     /** Direct URL the player can open. */

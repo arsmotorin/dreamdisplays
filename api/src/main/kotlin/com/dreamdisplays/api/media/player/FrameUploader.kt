@@ -10,6 +10,8 @@ import java.nio.ByteBuffer
  * layer supplies the concrete implementation.
  *
  * All methods are called on the render thread.
+ *
+ * @since 1.8.0
  */
 @DreamDisplaysUnstableApi
 interface FrameUploader {

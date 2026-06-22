@@ -8,6 +8,8 @@ import com.dreamdisplays.api.DreamDisplaysUnstableApi
  * The media player never inspects it: it only forwards the handle to a [FrameUploader], whose
  * platform implementation casts it back to the concrete texture type. This keeps Minecraft's
  * `GpuTexture` out of the platform-agnostic player module.
+ *
+ * @since 1.8.0
  */
 @DreamDisplaysUnstableApi
 interface GpuTextureRef

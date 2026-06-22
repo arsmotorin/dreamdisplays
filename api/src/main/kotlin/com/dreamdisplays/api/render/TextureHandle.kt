@@ -2,7 +2,11 @@ package com.dreamdisplays.api.render
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
-/** Opaque integer texture id owned by the platform renderer. */
+/**
+ * Opaque integer texture id owned by the platform renderer.
+ *
+ * @since 1.8.0
+ */
 @DreamDisplaysUnstableApi
 @JvmInline
 value class TextureHandle(val id: Int) {

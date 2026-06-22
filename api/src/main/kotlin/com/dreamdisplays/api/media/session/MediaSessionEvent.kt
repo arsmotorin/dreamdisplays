@@ -5,7 +5,11 @@ import com.dreamdisplays.media.DreamMediaException
 import com.dreamdisplays.api.media.source.MediaMetadata
 import kotlin.time.Duration
 
-/** Events emitted by a [MediaSession] as its state, timeline, and metadata change. */
+/**
+ * Events emitted by a [MediaSession] as its state, timeline, and metadata change.
+ *
+ * @since 1.8.0
+ */
 @DreamDisplaysUnstableApi
 sealed interface MediaSessionEvent {
     /** The session changed from [previous] to [current]. */

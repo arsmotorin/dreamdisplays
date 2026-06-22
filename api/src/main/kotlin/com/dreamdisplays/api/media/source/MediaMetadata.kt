@@ -3,7 +3,11 @@ package com.dreamdisplays.api.media.source
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 import kotlin.time.Duration
 
-/** Metadata resolved for a media item. Fields are nullable because providers expose different facts. */
+/**
+ * Metadata resolved for a media item. Fields are nullable because providers expose different facts.
+ *
+ * @since 1.8.0
+ */
 @DreamDisplaysUnstableApi
 data class MediaMetadata(
     /** Human-readable title, if known. */

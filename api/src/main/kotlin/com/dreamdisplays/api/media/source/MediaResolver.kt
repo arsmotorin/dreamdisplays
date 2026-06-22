@@ -2,7 +2,11 @@ package com.dreamdisplays.api.media.source
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
-/** Resolves a [MediaSource] into playable streams and metadata. */
+/**
+ * Resolves a [MediaSource] into playable streams and metadata.
+ *
+ * @since 1.8.0
+ */
 @DreamDisplaysUnstableApi
 interface MediaResolver {
     /** Higher-priority resolvers are preferred when several can resolve the same source. */

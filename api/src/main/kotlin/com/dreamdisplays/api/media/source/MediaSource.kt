@@ -2,7 +2,11 @@ package com.dreamdisplays.api.media.source
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
-/** User-provided media locator before resolver-specific stream extraction. */
+/**
+ * User-provided media locator before resolver-specific stream extraction.
+ *
+ * @since 1.8.0
+ */
 @DreamDisplaysUnstableApi
 sealed interface MediaSource {
     /** Generic remote URL, passed through to the resolver pipeline. */

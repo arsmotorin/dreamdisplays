@@ -8,6 +8,8 @@ import kotlin.time.Duration
 /**
  * Live playback session for one display. Implementations own decoder / player resources; callers
  * control playback through this contract and close the session when the display stops using it.
+ *
+ * @since 1.8.0
  */
 @DreamDisplaysUnstableApi
 interface MediaSession : AutoCloseable {
