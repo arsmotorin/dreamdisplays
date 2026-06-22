@@ -532,9 +532,9 @@ jobs:
       - name: Build with Gradle
         run: |
           ./gradlew \
-            :client:fabric:publishJar \
-            :client:neoforge:shadowJar \
-            :server:shadowJar \
+            :platform:client:fabric:publishJar \
+            :platform:client:neoforge:shadowJar \
+            :platform:server:shadowJar \
             --no-daemon \
             --parallel \
             --build-cache

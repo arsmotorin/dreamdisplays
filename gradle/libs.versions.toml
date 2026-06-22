@@ -15,7 +15,7 @@ kotlinxSerialization = "1.11.0"
 kotlinxCoroutines = "1.11.0"
 paperweight = "2.0.0-beta.21"
 newpipeExtractor = "v0.26.3"
-gson = "2.14.0"
+gson = "2.13.2"
 slf4j = "2.0.18"
 
 [libraries]
