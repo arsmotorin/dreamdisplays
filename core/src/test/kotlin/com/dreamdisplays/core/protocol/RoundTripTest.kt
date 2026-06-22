@@ -8,7 +8,7 @@ import com.dreamdisplays.api.playback.WatchPartyAction
 import com.dreamdisplays.api.playback.WatchPartySessionState
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.protobuf.ProtoBuf
-import java.util.UUID
+import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

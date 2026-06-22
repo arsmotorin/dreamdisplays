@@ -8,17 +8,17 @@
 
 use std::collections::HashMap;
 use std::ffi::c_void;
-use std::{mem, ptr};
 use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
 use std::sync::{Arc, Mutex, Once};
+use std::{mem, ptr};
 
 use ffmpeg::ffi;
 use ffmpeg::format::context::Input;
 use ffmpeg::format::Pixel;
 use ffmpeg::media::Type;
 use ffmpeg::software::scaling;
-use ffmpeg::util::log::Level;
 use ffmpeg::util::frame::video::Video as VideoFrame;
+use ffmpeg::util::log::Level;
 use ffmpeg::{codec, Dictionary};
 use ffmpeg_next as ffmpeg;
 
