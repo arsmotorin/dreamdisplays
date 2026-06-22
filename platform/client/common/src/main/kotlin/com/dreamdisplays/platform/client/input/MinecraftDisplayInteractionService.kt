@@ -1,9 +1,9 @@
-package com.dreamdisplays.client.input
+package com.dreamdisplays.platform.client.input
 
-import com.dreamdisplays.api.DisplayFacing
-import com.dreamdisplays.api.DisplayId
-import com.dreamdisplays.displays.DisplayRegistry
-import com.dreamdisplays.utils.RayCastingUtil
+import com.dreamdisplays.api.display.model.DisplayFacing
+import com.dreamdisplays.api.display.model.DisplayId
+import com.dreamdisplays.platform.client.displays.DisplayRegistry
+import com.dreamdisplays.platform.client.utils.RayCastingUtil
 import net.minecraft.client.Minecraft
 import net.minecraft.core.Direction
 import java.util.concurrent.CopyOnWriteArrayList

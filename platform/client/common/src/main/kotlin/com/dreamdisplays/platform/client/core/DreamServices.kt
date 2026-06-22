@@ -128,11 +128,7 @@ object DreamServices {
         registry.register<MediaSessionManager>(DefaultMediaSessionManager(playbackService, displayService))
         registry.register<WatchPartyService>(DefaultWatchPartyService(displaySystem))
         registry.register<ClientCapabilityDetector>(MinecraftClientCapabilityDetector)
-        registry.register<CapabilityNegotiationService>(
-            DefaultCapabilityNegotiationService(
-                MinecraftClientCapabilityDetector
-            )
-        )
+        registry.register<CapabilityNegotiationService>(DefaultCapabilityNegotiationService(MinecraftClientCapabilityDetector))
         registry.register<DisplayRenderer>(DefaultDisplayRenderer())
         registry.register<TextureUploaderFactory>(TextureUploaderFactory { AsyncTextureUploader(stateCache = it) })
         registry.register<RenderHook>(RenderHook { context ->
