@@ -138,6 +138,23 @@ object MessageUtil {
         sendColoredMessage(player, message)
     }
 
+    /**
+     * Interpolates `%s` placeholders in a raw config [message] with [args], preserving its form:
+     * plain strings are formatted directly, JSON component maps have `%s` substituted inside their
+     * text fields so the resulting component still renders (rather than being dumped via `toString`).
+     */
+    @FabricOnly
+    fun formatMessage(message: Any?, vararg args: String): Any? = when (message) {
+        null -> null
+        is String -> if (args.isEmpty()) message else String.format(message, *args)
+        is Map<*, *> -> {
+            var json = gson.toJson(message)
+            for (arg in args) json = json.replaceFirst("%s", arg)
+            gson.fromJson(json, Map::class.java)
+        }
+        else -> message
+    }
+
     /** Sends [message] to [player], converting strings / maps to `NMS Component`. */
     @FabricOnly
     fun sendColoredMessage(player: ServerPlayer?, message: Any?) {

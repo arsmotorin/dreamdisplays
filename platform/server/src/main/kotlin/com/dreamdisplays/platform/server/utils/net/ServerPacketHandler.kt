@@ -50,7 +50,7 @@ object ServerPacketHandler {
             !PlayerManager.hasBeenNotifiedAboutModUpdate(player)
         ) {
             val msg = config.getMessageForPlayer(player, "newVersion")
-            MessageUtil.sendColoredMessage(player, msg?.let { String.format(it.toString(), modLatest.toString()) })
+            MessageUtil.sendColoredMessage(player, MessageUtil.formatMessage(msg, modLatest.toString()))
             PlayerManager.setModUpdateNotified(player, true)
         }
 
