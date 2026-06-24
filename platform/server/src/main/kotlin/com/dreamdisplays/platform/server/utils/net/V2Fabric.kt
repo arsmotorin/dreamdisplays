@@ -93,6 +93,7 @@ object FabricV2Networking {
 
     /** Marks [player] as a v2 peer, replies with the [ServerHello] and the display batch. */
     private fun handleHello(player: ServerPlayer, server: MinecraftServer, hello: ClientHello) {
+        if (V2PlayerTracker.isV2(player.uuid)) return
         V2PlayerTracker.markV2(player.uuid, hello)
         send(
             listOf(player),
