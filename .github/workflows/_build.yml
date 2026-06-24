@@ -71,7 +71,7 @@ jobs:
           tasks = (
               [{"kind": "fabric", "mc": version} for version in versions] +
               [{"kind": "neoforge", "mc": version} for version in versions] +
-              [{"kind": "paper", "mc": versions[0]}]
+              [{"kind": "paper", "mc": versions[-1]}]
           )
 
           native_matrix = [
