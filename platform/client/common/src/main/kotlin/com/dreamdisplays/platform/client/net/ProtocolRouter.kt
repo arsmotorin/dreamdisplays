@@ -3,6 +3,7 @@ package com.dreamdisplays.platform.client.net
 import com.dreamdisplays.platform.client.managers.ClientPacketManager
 import com.dreamdisplays.core.protocol.DisplaySync
 import com.dreamdisplays.core.protocol.DreamPacket
+import com.dreamdisplays.core.protocol.PacketDirection
 import com.dreamdisplays.core.protocol.PacketRegistry
 import com.dreamdisplays.core.protocol.ServerHello
 import org.slf4j.LoggerFactory
@@ -41,7 +42,7 @@ object ProtocolRouter {
 
     /** Decodes and dispatches v2 envelope bytes; the first [ServerHello] flips the v2 switch. */
     fun onV2Received(bytes: ByteArray) {
-        val packet = runCatching { PacketRegistry.decode(bytes) }
+        val packet = runCatching { PacketRegistry.decode(bytes, PacketDirection.SERVER_TO_CLIENT) }
             .onFailure { logger.warn("Failed to decode v2 packet", it) }
             .getOrNull() ?: return
         if (packet is ServerHello && !v2Negotiated) {

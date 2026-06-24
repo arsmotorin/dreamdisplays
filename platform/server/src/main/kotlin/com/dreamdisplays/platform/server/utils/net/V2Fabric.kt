@@ -4,6 +4,7 @@ import com.dreamdisplays.platform.client.net.V2Payload
 import com.dreamdisplays.core.protocol.ClientHello
 import com.dreamdisplays.core.protocol.DisplayDelete
 import com.dreamdisplays.core.protocol.DreamPacket
+import com.dreamdisplays.core.protocol.PacketDirection
 import com.dreamdisplays.core.protocol.PacketRegistry
 import com.dreamdisplays.api.playback.PlaybackAction
 import com.dreamdisplays.core.protocol.PlaybackCommand
@@ -50,7 +51,11 @@ object FabricV2Networking {
     fun registerReceivers() {
         ServerPlayNetworking.registerGlobalReceiver(V2Payload.TYPE) { payload, context ->
             runCatching {
-                dispatch(context.player(), context.server(), PacketRegistry.decode(payload.bytes) ?: return@runCatching)
+                dispatch(
+                    context.player(),
+                    context.server(),
+                    PacketRegistry.decode(payload.bytes, PacketDirection.CLIENT_TO_SERVER) ?: return@runCatching,
+                )
             }.onFailure { e ->
                 logger.warn("Failed to handle v2 packet", e)
             }

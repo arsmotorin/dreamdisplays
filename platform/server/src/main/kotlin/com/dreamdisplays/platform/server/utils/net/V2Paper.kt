@@ -3,6 +3,7 @@ package com.dreamdisplays.platform.server.utils.net
 import com.dreamdisplays.core.protocol.ClientHello
 import com.dreamdisplays.core.protocol.DisplayDelete
 import com.dreamdisplays.core.protocol.DreamPacket
+import com.dreamdisplays.core.protocol.PacketDirection
 import com.dreamdisplays.core.protocol.PacketRegistry
 import com.dreamdisplays.api.playback.PlaybackAction
 import com.dreamdisplays.core.protocol.PlaybackCommand
@@ -62,7 +63,7 @@ object PaperV2Networking : PluginMessageListener {
     /** Decodes an envelope frame and dispatches the packet; unknown type ids are skipped. */
     override fun onPluginMessageReceived(channel: String, player: Player, message: ByteArray) {
         if (channel != V2_CHANNEL) return
-        val packet = runCatching { PacketRegistry.decode(message) }
+        val packet = runCatching { PacketRegistry.decode(message, PacketDirection.CLIENT_TO_SERVER) }
             .onFailure { logger.warn("Failed to decode v2 packet from ${player.name}", it) }
             .getOrNull() ?: return
 
