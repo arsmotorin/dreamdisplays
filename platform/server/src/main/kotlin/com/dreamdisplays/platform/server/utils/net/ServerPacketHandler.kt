@@ -122,7 +122,7 @@ object ServerPacketHandler {
 
         val wasSync = displayData.isSync
         displayData.url = url
-        displayData.lang = lang
+        displayData.lang = MediaUrlPolicy.sanitizeLang(lang)
         ServerCoroutines.io.launch { Server.storage?.saveDisplay(displayData) }
 
         val receivers = DisplayManager.getReceivers(displayData, server)
@@ -178,7 +178,7 @@ object ServerPacketHandler {
     fun watchPartyStart(player: ServerPlayer, displayId: java.util.UUID, url: String, lang: String) {
         val displayData = DisplayManager.getDisplayData(displayId) as? FabricDisplayData ?: return
         if (!MediaUrlPolicy.isAllowed(url)) return
-        WatchPartyManager.start(displayData, player.uuid, url, lang)
+        WatchPartyManager.start(displayData, player.uuid, url, MediaUrlPolicy.sanitizeLang(lang))
     }
 
     /** Routes a watch-party control (ready / host action) to the session manager. */

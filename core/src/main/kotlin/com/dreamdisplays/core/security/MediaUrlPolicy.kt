@@ -4,6 +4,7 @@ package com.dreamdisplays.core.security
  * Trust-boundary policy for client-supplied media URLs.
  */
 object MediaUrlPolicy {
+    /** 11-character YouTube id (which may legitimately start with `-`). */
     private val BARE_YOUTUBE_ID = Regex("[A-Za-z0-9_-]{11}")
 
     /**
@@ -13,9 +14,23 @@ object MediaUrlPolicy {
      */
     const val MAX_URL_LENGTH = 2048
 
+    /** Maximum accepted audio-language length. */
+    const val MAX_LANG_LENGTH = 16
+
+    /**
+     * Bounds a client-supplied audio-language code: drops whitespace / control characters and
+     * truncates to [MAX_LANG_LENGTH]. Returns a value always safe to store and rebroadcast;
+     * canonicalization (aliases, region suffixes) is the caller's concern.
+     */
+    fun sanitizeLang(lang: String): String =
+        lang.asSequence()
+            .filterNot { it.isWhitespace() || it.isISOControl() }
+            .take(MAX_LANG_LENGTH)
+            .joinToString("")
+
     /**
      * A bare 11-character YouTube id (which may legitimately start with `-`), or a trimmed
-     * `http://` / `https://` URL with no whitespace or control characters, within [MAX_URL_LENGTH].
+     * `http://` or `https://` URL with no whitespace or control characters, within [MAX_URL_LENGTH].
      */
     fun isAllowed(url: String): Boolean {
         if (url.isEmpty()) return true

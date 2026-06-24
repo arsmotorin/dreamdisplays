@@ -62,7 +62,7 @@ object DisplayActions {
 
         val wasSync = displayData.isSync
         displayData.url = url
-        displayData.lang = lang
+        displayData.lang = MediaUrlPolicy.sanitizeLang(lang)
 
         runAsync { Main.getInstance().storage.saveDisplay(displayData) }
         DisplayManager.broadcastUpdate(displayData)
@@ -116,7 +116,7 @@ object DisplayActions {
             logger.warn("Rejected unsafe watch-party URL from ${player.name}: ${url.take(120)}")
             return
         }
-        WatchPartyManager.start(displayData, player.uniqueId, url, lang)
+        WatchPartyManager.start(displayData, player.uniqueId, url, MediaUrlPolicy.sanitizeLang(lang))
     }
 
     /** Routes a watch-party control (ready / host action) to the session manager. */
