@@ -34,29 +34,31 @@ object PacketRegistry {
     private val proto = ProtoBuf { encodeDefaults = false }
 
     private class Entry<T : DreamPacket>(
-        val id: Int,
+        val packetType: ProtocolPacketType,
         val type: KClass<T>,
         val serializer: KSerializer<T>,
-        val direction: PacketDirection,
-    )
+    ) {
+        val id: Int get() = packetType.id
+        val direction: PacketDirection get() = packetType.direction
+    }
 
     private val entries: List<Entry<out DreamPacket>> = listOf(
-        Entry(1, ClientHello::class, ClientHello.serializer(), PacketDirection.CLIENT_TO_SERVER),
-        Entry(2, ServerHello::class, ServerHello.serializer(), PacketDirection.SERVER_TO_CLIENT),
-        Entry(3, DisplayInfo::class, DisplayInfo.serializer(), PacketDirection.SERVER_TO_CLIENT),
-        Entry(4, DisplayDelete::class, DisplayDelete.serializer(), PacketDirection.BIDIRECTIONAL),
-        Entry(5, DisplaySync::class, DisplaySync.serializer(), PacketDirection.BIDIRECTIONAL),
-        Entry(6, RequestSync::class, RequestSync.serializer(), PacketDirection.CLIENT_TO_SERVER),
-        Entry(7, SetVideo::class, SetVideo.serializer(), PacketDirection.CLIENT_TO_SERVER),
-        Entry(8, SetLocked::class, SetLocked.serializer(), PacketDirection.CLIENT_TO_SERVER),
-        Entry(9, ReportDisplay::class, ReportDisplay.serializer(), PacketDirection.CLIENT_TO_SERVER),
-        Entry(10, SetDisplaysEnabled::class, SetDisplaysEnabled.serializer(), PacketDirection.BIDIRECTIONAL),
-        Entry(11, ClearCache::class, ClearCache.serializer(), PacketDirection.SERVER_TO_CLIENT),
-        Entry(12, PlaybackCommand::class, PlaybackCommand.serializer(), PacketDirection.CLIENT_TO_SERVER),
-        Entry(13, SetMode::class, SetMode.serializer(), PacketDirection.CLIENT_TO_SERVER),
-        Entry(14, WatchPartyStart::class, WatchPartyStart.serializer(), PacketDirection.CLIENT_TO_SERVER),
-        Entry(15, WatchPartyControl::class, WatchPartyControl.serializer(), PacketDirection.CLIENT_TO_SERVER),
-        Entry(16, WatchPartyState::class, WatchPartyState.serializer(), PacketDirection.SERVER_TO_CLIENT),
+        Entry(ProtocolPacketType.CLIENT_HELLO, ClientHello::class, ClientHello.serializer()),
+        Entry(ProtocolPacketType.SERVER_HELLO, ServerHello::class, ServerHello.serializer()),
+        Entry(ProtocolPacketType.DISPLAY_INFO, DisplayInfo::class, DisplayInfo.serializer()),
+        Entry(ProtocolPacketType.DISPLAY_DELETE, DisplayDelete::class, DisplayDelete.serializer()),
+        Entry(ProtocolPacketType.DISPLAY_SYNC, DisplaySync::class, DisplaySync.serializer()),
+        Entry(ProtocolPacketType.REQUEST_SYNC, RequestSync::class, RequestSync.serializer()),
+        Entry(ProtocolPacketType.SET_VIDEO, SetVideo::class, SetVideo.serializer()),
+        Entry(ProtocolPacketType.SET_LOCKED, SetLocked::class, SetLocked.serializer()),
+        Entry(ProtocolPacketType.REPORT_DISPLAY, ReportDisplay::class, ReportDisplay.serializer()),
+        Entry(ProtocolPacketType.SET_DISPLAYS_ENABLED, SetDisplaysEnabled::class, SetDisplaysEnabled.serializer()),
+        Entry(ProtocolPacketType.CLEAR_CACHE, ClearCache::class, ClearCache.serializer()),
+        Entry(ProtocolPacketType.PLAYBACK_COMMAND, PlaybackCommand::class, PlaybackCommand.serializer()),
+        Entry(ProtocolPacketType.SET_MODE, SetMode::class, SetMode.serializer()),
+        Entry(ProtocolPacketType.WATCH_PARTY_START, WatchPartyStart::class, WatchPartyStart.serializer()),
+        Entry(ProtocolPacketType.WATCH_PARTY_CONTROL, WatchPartyControl::class, WatchPartyControl.serializer()),
+        Entry(ProtocolPacketType.WATCH_PARTY_STATE, WatchPartyState::class, WatchPartyState.serializer()),
     )
 
     private val byId = entries.associateBy { it.id }
@@ -65,6 +67,15 @@ object PacketRegistry {
     init {
         require(byId.size == entries.size) { "Duplicate packet type ids." }
         require(byType.size == entries.size) { "Duplicate packet classes." }
+        require(entries.map { it.packetType }.toSet() == ProtocolPacketType.entries.toSet()) {
+            "PacketRegistry must bind every ProtocolPacketType exactly once."
+        }
+        entries.forEach { entry ->
+            require(entry.type == entry.packetType.packetClass) {
+                "Packet type ${entry.packetType} is bound to ${entry.packetType.packetClass.simpleName}, " +
+                        "but registry entry uses ${entry.type.simpleName}."
+            }
+        }
     }
 
     /** Encodes [packet] into envelope bytes ready for the `dreamdisplays:v2` channel. */

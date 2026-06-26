@@ -11,6 +11,7 @@ import com.dreamdisplays.api.playback.PlaybackMode
 import com.dreamdisplays.core.protocol.ReportDisplay
 import com.dreamdisplays.core.protocol.RequestSync
 import com.dreamdisplays.core.protocol.ServerHello
+import com.dreamdisplays.core.protocol.ServerFeature
 import com.dreamdisplays.core.protocol.SetDisplaysEnabled
 import com.dreamdisplays.core.protocol.SetLocked
 import com.dreamdisplays.core.protocol.SetMode
@@ -57,7 +58,7 @@ object PaperV2Networking : PluginMessageListener {
         isPremium = player.hasPermission(Main.config.permissions.premium),
         isAdmin = player.hasPermission(Main.config.permissions.delete),
         isReportingEnabled = Main.config.settings.webhookUrl.isNotEmpty(),
-        allowedFeatures = PLAYBACK_FEATURES,
+        allowedFeatures = ServerFeature.playbackFeatureWires,
     )
 
     /** Decodes an envelope frame and dispatches the packet; unknown type ids are skipped. */
@@ -94,9 +95,6 @@ object PaperV2Networking : PluginMessageListener {
             else -> logger.debug("Ignoring non-serverbound v2 packet {}.", packet::class.simpleName)
         }
     }
-
-    /** v2 feature flags advertised to clients so they only surface modes / parties on capable servers. */
-    private val PLAYBACK_FEATURES = listOf("modes", "watch_party", "broadcast")
 
     /**
      * Marks [player] as a v2 peer, replies with the [ServerHello] and the display batch, and runs

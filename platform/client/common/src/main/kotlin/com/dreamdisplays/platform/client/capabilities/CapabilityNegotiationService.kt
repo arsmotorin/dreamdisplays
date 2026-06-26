@@ -2,6 +2,7 @@ package com.dreamdisplays.platform.client.capabilities
 
 import com.dreamdisplays.core.protocol.ClientHello
 import com.dreamdisplays.core.protocol.ServerHello
+import com.dreamdisplays.core.protocol.ServerFeature
 
 /**
  * Service responsible for negotiating capabilities between the client and server. Detects the client's abilities,
@@ -24,5 +25,5 @@ interface CapabilityNegotiationService {
     fun onServerCapabilities(capabilities: ServerHello)
 
     /** True if the negotiated server allows [feature]; false before negotiation completes. */
-    fun isFeatureEnabled(feature: String): Boolean
+    fun isFeatureEnabled(feature: ServerFeature): Boolean
 }

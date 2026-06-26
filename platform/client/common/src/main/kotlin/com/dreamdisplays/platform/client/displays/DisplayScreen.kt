@@ -23,12 +23,14 @@ import com.dreamdisplays.core.playback.PlaybackContext
 import com.dreamdisplays.api.playback.PlaybackMode
 import com.dreamdisplays.core.playback.PlaybackPermissions
 import com.dreamdisplays.core.protocol.RequestSync
+import com.dreamdisplays.core.protocol.ServerFeature
 import com.dreamdisplays.core.protocol.SetMode
 import com.dreamdisplays.core.protocol.SetVideo
 import com.dreamdisplays.api.playback.WatchPartyAction
 import com.dreamdisplays.core.protocol.WatchPartyControl
 import com.dreamdisplays.api.playback.WatchPartySessionState
 import com.dreamdisplays.core.protocol.WatchPartyState
+import com.dreamdisplays.core.protocol.hasFeature
 import com.dreamdisplays.util.FacingUtil
 import com.dreamdisplays.platform.client.utils.MinecraftScreenUtil
 import com.dreamdisplays.media.DreamMediaException
@@ -523,7 +525,7 @@ class DisplayScreen(
 
     /** True once sync should come from v2 server timelines rather than the frozen-v1 owner relay. */
     private fun usesV2Timeline(): Boolean =
-        ProtocolRouter.v2Negotiated || ClientPacketManager.serverSnapshot.allowedFeatures.contains("modes")
+        ProtocolRouter.v2Negotiated || ClientPacketManager.serverSnapshot.hasFeature(ServerFeature.MODES)
 
     /**
      * Applies a watch-party snapshot: tracks the session for UI / permissions, loads the host's video

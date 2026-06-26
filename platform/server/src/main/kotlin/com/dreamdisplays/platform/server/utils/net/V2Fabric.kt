@@ -12,6 +12,7 @@ import com.dreamdisplays.api.playback.PlaybackMode
 import com.dreamdisplays.core.protocol.ReportDisplay
 import com.dreamdisplays.core.protocol.RequestSync
 import com.dreamdisplays.core.protocol.ServerHello
+import com.dreamdisplays.core.protocol.ServerFeature
 import com.dreamdisplays.core.protocol.SetDisplaysEnabled
 import com.dreamdisplays.core.protocol.SetLocked
 import com.dreamdisplays.core.protocol.SetMode
@@ -93,9 +94,6 @@ object FabricV2Networking {
         }
     }
 
-    /** v2 feature flags advertised to clients so they only surface modes / parties on capable servers. */
-    private val PLAYBACK_FEATURES = listOf("modes", "watch_party", "broadcast")
-
     /** Marks [player] as a v2 peer, replies with the [ServerHello] and the display batch. */
     private fun handleHello(player: ServerPlayer, server: MinecraftServer, hello: ClientHello) {
         if (V2PlayerTracker.isV2(player.uuid)) return
@@ -106,7 +104,7 @@ object FabricV2Networking {
                 isPremium = ServerPacketHandler.isOpLevel2(player),
                 isAdmin = ServerPacketHandler.isOpLevel2(player),
                 isReportingEnabled = Server.config.settings.webhookUrl.isNotEmpty(),
-                allowedFeatures = PLAYBACK_FEATURES,
+                allowedFeatures = ServerFeature.playbackFeatureWires,
             ),
         )
         ServerPacketHandler.recordVersionAndCheckUpdates(player, hello.modVersion)

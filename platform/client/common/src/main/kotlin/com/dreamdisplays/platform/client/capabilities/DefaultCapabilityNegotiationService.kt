@@ -3,6 +3,8 @@ package com.dreamdisplays.platform.client.capabilities
 import com.dreamdisplays.platform.client.net.ProtocolRouter
 import com.dreamdisplays.core.protocol.ClientHello
 import com.dreamdisplays.core.protocol.ServerHello
+import com.dreamdisplays.core.protocol.ServerFeature
+import com.dreamdisplays.core.protocol.hasFeature
 import com.dreamdisplays.util.GeneralUtil
 import org.slf4j.LoggerFactory
 
@@ -52,6 +54,6 @@ class DefaultCapabilityNegotiationService(
     }
 
     /** True if the negotiated server allows [feature]; false before negotiation completes. */
-    override fun isFeatureEnabled(feature: String): Boolean =
-        serverCapabilities?.allowedFeatures?.contains(feature) == true
+    override fun isFeatureEnabled(feature: ServerFeature): Boolean =
+        serverCapabilities?.hasFeature(feature) == true
 }
