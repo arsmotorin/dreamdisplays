@@ -11,18 +11,18 @@ object ResolverConfig {
         /** `yt-dlp` proxy URL, or blank for none. */
         val ytdlpProxy: String
 
-        /** Browser to import cookies from (e.g. "chrome"), or "none". */
-        val ytdlpCookiesFromBrowser: String
+        /** Browser to import cookies from, or [CookieSource.NONE]. */
+        val ytdlpCookieSource: CookieSource
     }
 
     private object Defaults : Provider {
         override val ytdlpProxy: String = ""
-        override val ytdlpCookiesFromBrowser: String = "none"
+        override val ytdlpCookieSource: CookieSource = CookieSource.NONE
     }
 
     @Volatile
     var provider: Provider = Defaults
 
     val ytdlpProxy: String get() = provider.ytdlpProxy
-    val ytdlpCookiesFromBrowser: String get() = provider.ytdlpCookiesFromBrowser
+    val ytdlpCookieSource: CookieSource get() = provider.ytdlpCookieSource
 }

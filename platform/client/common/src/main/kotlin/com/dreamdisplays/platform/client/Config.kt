@@ -1,5 +1,6 @@
 package com.dreamdisplays.platform.client
 
+import com.dreamdisplays.media.source.ytdlp.CookieSource
 import java.io.File
 import kotlin.math.roundToInt
 
@@ -20,8 +21,8 @@ class Config(private val baseDir: File) {
     /** Whether displays are enabled at all. */
     var displaysEnabled: Boolean = true
 
-    /** Browser to import `yt-dlp` cookies from, or `none` to disable. */
-    var ytdlpCookiesFromBrowser: String = "none"
+    /** Browser to import `yt-dlp` cookies from, or [CookieSource.NONE] to disable. */
+    var ytdlpCookieSource: CookieSource = CookieSource.NONE
 
     /** Proxy URL passed to `yt-dlp`, or empty for a direct connection. */
     var ytdlpProxy: String = ""
@@ -60,7 +61,9 @@ class Config(private val baseDir: File) {
         defaultDistance = ((rawDistance / 16.0).roundToInt().coerceIn(2, 12)) * 16
         defaultDisplayVolume = data["default-default-display-volume"]?.toDoubleOrNull() ?: defaultDisplayVolume
         displaysEnabled = data["displays-enabled"]?.toBooleanStrictOrNull() ?: displaysEnabled
-        ytdlpCookiesFromBrowser = data["ytdlp-cookies-from-browser"] ?: ytdlpCookiesFromBrowser
+        ytdlpCookieSource = data["ytdlp-cookies-from-browser"]
+            ?.let { CookieSource.fromConfig(it) }
+            ?: ytdlpCookieSource
         ytdlpProxy = data["ytdlp-proxy"] ?: ytdlpProxy
         useHwAccel = data["use-hw-accel"]?.toBooleanStrictOrNull() ?: useHwAccel
     }
@@ -73,7 +76,7 @@ class Config(private val baseDir: File) {
             appendLine("default-render-distance: $defaultDistance")
             appendLine("default-default-display-volume: $defaultDisplayVolume")
             appendLine("displays-enabled: $displaysEnabled")
-            appendLine("ytdlp-cookies-from-browser: ${ytdlpCookiesFromBrowser.yamlQuoted()}")
+            appendLine("ytdlp-cookies-from-browser: ${ytdlpCookieSource.configToken.yamlQuoted()}")
             appendLine("ytdlp-proxy: ${ytdlpProxy.yamlQuoted()}")
             appendLine("use-hw-accel: $useHwAccel")
         })

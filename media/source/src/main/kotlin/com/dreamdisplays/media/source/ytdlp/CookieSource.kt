@@ -25,9 +25,14 @@ enum class CookieSource(val browserName: String?) {
     /** True when no browser is selected and cookie export is off. */
     val isDisabled: Boolean get() = this == NONE
 
+    /** Value written to `ytdlp-cookies-from-browser` in client config. */
+    val configToken: String get() = browserName ?: DISABLED_TOKEN
+
     companion object {
+        private const val DISABLED_TOKEN = "none"
+
         /** Config values, besides an empty string, that explicitly disable cookie export. */
-        private val DISABLED_ALIASES = setOf("none", "off", "disabled", "auto")
+        private val DISABLED_ALIASES = setOf(DISABLED_TOKEN, "off", "disabled", "auto")
 
         /**
          * Parses a raw config value into a [CookieSource].

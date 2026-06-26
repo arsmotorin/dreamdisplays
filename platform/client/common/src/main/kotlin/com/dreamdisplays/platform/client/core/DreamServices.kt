@@ -96,7 +96,7 @@ object DreamServices {
         // Bridge the platform-agnostic media resolvers to the live client config (proxy / browser cookies).
         ResolverConfig.provider = object : ResolverConfig.Provider {
             override val ytdlpProxy: String get() = ClientStateManager.config.ytdlpProxy
-            override val ytdlpCookiesFromBrowser: String get() = ClientStateManager.config.ytdlpCookiesFromBrowser
+            override val ytdlpCookieSource get() = ClientStateManager.config.ytdlpCookieSource
         }
 
         val resolverChain = DefaultMediaResolverRegistry().apply {

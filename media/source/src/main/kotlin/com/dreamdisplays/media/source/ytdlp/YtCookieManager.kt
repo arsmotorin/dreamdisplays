@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -50,7 +49,7 @@ class YtCookieManager {
 
     /** True when the user explicitly disabled browser cookies in the config. */
     fun disabledByConfig(): Boolean =
-        CookieSource.fromConfig(ResolverConfig.ytdlpCookiesFromBrowser)?.isDisabled ?: false
+        ResolverConfig.ytdlpCookieSource.isDisabled
 
     /** Resolves the browser and exports the header in the background to cut first-fetch latency. */
     fun prewarm() {
@@ -232,7 +231,7 @@ class YtCookieManager {
         synchronized(this) {
             if (browserResolved && resolvedBrowser != null) return resolvedBrowser
             if (browserResolved && (now - browserResolvedAt) < BROWSER_RETRY_MS) return null
-            val configured = ResolverConfig.ytdlpCookiesFromBrowser.trim().lowercase(Locale.ENGLISH)
+            val cookieSource = ResolverConfig.ytdlpCookieSource
 
             if (disabledByConfig()) {
                 browserResolved = true
@@ -256,15 +255,16 @@ class YtCookieManager {
                 browserResolved = true
                 return null
             }
-            if (testBrowser(binary, configured)) {
-                logger.info("Using cookies from browser: $configured...")
-                resolvedBrowser = configured
+            val browser = cookieSource.browserName ?: return null
+            if (testBrowser(binary, browser)) {
+                logger.info("Using cookies from browser: $browser...")
+                resolvedBrowser = browser
                 browserResolved = true
                 browserResolvedAt = System.currentTimeMillis()
-                return configured
+                return browser
             }
             logger.warn(
-                "Browser '$configured' not found or has no YouTube cookies. " +
+                "Browser '$browser' not found or has no YouTube cookies. " +
                         "YouTube may rate-limit or refuse requests. " +
                         "Set 'ytdlp-cookies-from-browser' to 'none' to disable."
             )
