@@ -4,7 +4,7 @@ import io.github.arsmotorin.ofrat.FabricOnly
 import io.github.arsmotorin.ofrat.PaperOnly
 
 import com.dreamdisplays.platform.client.net.Packets
-import com.dreamdisplays.core.display.ContentRotation
+import com.dreamdisplays.api.display.model.ContentRotation
 import com.dreamdisplays.core.protocol.ClearCache
 import com.dreamdisplays.core.protocol.DisplayDelete
 import com.dreamdisplays.core.protocol.DisplayInfo

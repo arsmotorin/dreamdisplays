@@ -1,7 +1,7 @@
 package com.dreamdisplays.platform.server.datatypes
 
 import com.dreamdisplays.api.playback.PlaybackMode
-import com.dreamdisplays.core.display.ContentRotation
+import com.dreamdisplays.api.display.model.ContentRotation
 import com.dreamdisplays.core.playback.PlaybackPermissions
 import io.github.arsmotorin.ofrat.FabricOnly
 import io.github.arsmotorin.ofrat.PaperOnly

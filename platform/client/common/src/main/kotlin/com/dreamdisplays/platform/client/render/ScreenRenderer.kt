@@ -1,8 +1,8 @@
 package com.dreamdisplays.platform.client.render
 
+import com.dreamdisplays.api.display.model.ContentRotation
 import com.dreamdisplays.api.display.model.DisplayFacing
 import com.dreamdisplays.api.display.model.DisplayId
-import com.dreamdisplays.core.display.ContentRotation
 import com.dreamdisplays.platform.client.core.DreamServices
 import com.dreamdisplays.platform.client.core.getOrNull
 import com.dreamdisplays.platform.client.displays.DisplayRegistry

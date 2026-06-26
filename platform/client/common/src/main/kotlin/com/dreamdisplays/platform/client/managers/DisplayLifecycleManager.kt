@@ -1,9 +1,9 @@
 package com.dreamdisplays.platform.client.managers
 
 import com.dreamdisplays.api.display.model.DisplayFacing
+import com.dreamdisplays.api.display.model.ContentRotation
 import com.dreamdisplays.platform.client.displays.DisplayRegistry
 import com.dreamdisplays.platform.client.displays.DisplayScreen
-import com.dreamdisplays.core.display.ContentRotation
 import com.dreamdisplays.core.storage.DisplayStorage
 import com.dreamdisplays.core.storage.FullDisplayData
 import com.dreamdisplays.media.VideoQuality

@@ -15,7 +15,7 @@ import com.dreamdisplays.platform.client.render.DisplayTextureResource
 import com.dreamdisplays.platform.client.render.UploadPixelFormat
 import com.dreamdisplays.platform.client.render.toUploadFormat
 import com.dreamdisplays.api.watchparty.WatchPartySession
-import com.dreamdisplays.core.display.ContentRotation
+import com.dreamdisplays.api.display.model.ContentRotation
 import com.dreamdisplays.core.protocol.DisplayInfo
 import com.dreamdisplays.core.protocol.DisplaySync
 import com.dreamdisplays.api.playback.PlaybackAction

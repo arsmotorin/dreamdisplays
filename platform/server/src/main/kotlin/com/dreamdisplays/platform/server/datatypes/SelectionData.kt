@@ -1,6 +1,6 @@
 package com.dreamdisplays.platform.server.datatypes
 
-import com.dreamdisplays.core.display.ContentRotation
+import com.dreamdisplays.api.display.model.ContentRotation
 import com.dreamdisplays.platform.server.utils.RegionUtil
 import io.github.arsmotorin.ofrat.FabricOnly
 import io.github.arsmotorin.ofrat.PaperOnly

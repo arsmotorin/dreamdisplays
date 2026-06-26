@@ -1,7 +1,7 @@
 package com.dreamdisplays.platform.server.managers
 
 import com.dreamdisplays.api.playback.PlaybackMode
-import com.dreamdisplays.core.display.ContentRotation
+import com.dreamdisplays.api.display.model.ContentRotation
 import com.dreamdisplays.platform.server.datatypes.*
 import com.dreamdisplays.platform.server.storage.StorageBackend
 import com.zaxxer.hikari.HikariConfig
