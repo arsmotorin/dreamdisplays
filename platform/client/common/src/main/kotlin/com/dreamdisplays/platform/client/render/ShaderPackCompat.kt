@@ -9,14 +9,14 @@ package com.dreamdisplays.platform.client.render
  */
 internal object ShaderPackCompat {
     /** True when any supported shader pack is currently in use. */
-    val isShaderPackActive: Boolean; get() = shaderBackendName() != "none"
+    val isShaderPackActive: Boolean get() = shaderBackend() != ShaderBackend.NONE
 
-    /** Name of the active shader backend (`iris` / `optifine` / `canvas`), or `none`. */
-    fun shaderBackendName(): String = when {
-        irisShaderPackActive() -> "iris"
-        optifineShaderPackActive() -> "optifine"
-        canvasRendererActive() -> "canvas"
-        else -> "none"
+    /** Active shader backend, or [ShaderBackend.NONE]. */
+    fun shaderBackend(): ShaderBackend = when {
+        irisShaderPackActive() -> ShaderBackend.IRIS
+        optifineShaderPackActive() -> ShaderBackend.OPTIFINE
+        canvasRendererActive() -> ShaderBackend.CANVAS
+        else -> ShaderBackend.NONE
     }
 
     /** Iris shaders. */

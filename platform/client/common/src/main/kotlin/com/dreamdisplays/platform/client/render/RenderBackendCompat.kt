@@ -12,20 +12,20 @@ internal object RenderBackendCompat {
     /** True when raw OpenGL calls are safe (real GL backend and no Vulkan replacement). */
     fun canUseDirectOpenGl(): Boolean = isOpenGlBackend() && !isVulkanModLoaded
 
-    /** Best-effort name of the active render backend (`opengl` / `vulkan` / `vulkanmod` / `other`). */
-    fun backendName(): String = runCatching {
+    /** Best-effort typed active render backend. */
+    fun backend(): RenderBackend = runCatching {
         val deviceClass = RenderSystem.getDevice().javaClass.name.lowercase()
         when {
-            isVulkanModLoaded -> "vulkanmod"
-            "vulkan" in deviceClass -> "vulkan"
-            ".opengl." in deviceClass || deviceClass.substringAfterLast('.').startsWith("gl") -> "opengl"
-            else -> "other"
+            isVulkanModLoaded -> RenderBackend.VULKAN_MOD
+            "vulkan" in deviceClass -> RenderBackend.VULKAN
+            ".opengl." in deviceClass || deviceClass.substringAfterLast('.').startsWith("gl") -> RenderBackend.OPENGL
+            else -> RenderBackend.OTHER
         }
-    }.getOrDefault("unknown")
+    }.getOrDefault(RenderBackend.UNKNOWN)
 
-    /** Name of the texture-upload path taken for this backend (direct PBO vs. command encoder). */
-    fun textureUploadPath(): String =
-        if (canUseDirectOpenGl()) "direct_opengl_pbo" else "command_encoder"
+    /** Texture-upload path taken for this backend (direct PBO vs. command encoder). */
+    fun textureUploadPath(): TextureUploadPath =
+        if (canUseDirectOpenGl()) TextureUploadPath.DIRECT_OPENGL_PBO else TextureUploadPath.COMMAND_ENCODER
 
     /** True when the active render device is a real OpenGL backend. */
     fun isOpenGlBackend(): Boolean {

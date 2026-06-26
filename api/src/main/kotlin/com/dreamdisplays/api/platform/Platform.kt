@@ -12,6 +12,9 @@ interface Platform {
     /** Stable platform id, e.g. `fabric`, `neoforge`, or `paper`. */
     val id: String
 
+    /** Typed platform id. [id] remains the string form for compatibility. */
+    val platformId: PlatformId get() = PlatformId.fromWire(id)
+
     /** Logical side this platform instance runs on. */
     val side: PlatformSide
 

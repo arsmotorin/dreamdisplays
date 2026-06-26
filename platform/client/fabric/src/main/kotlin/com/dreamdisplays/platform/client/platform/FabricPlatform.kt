@@ -2,6 +2,7 @@ package com.dreamdisplays.platform.client.platform
 
 import com.dreamdisplays.platform.client.Initializer
 import com.dreamdisplays.api.platform.Platform
+import com.dreamdisplays.api.platform.PlatformId
 import com.dreamdisplays.api.platform.PlatformLogger
 import com.dreamdisplays.api.platform.PlatformPaths
 import com.dreamdisplays.api.platform.PlatformScheduler
@@ -13,7 +14,8 @@ import java.nio.file.Path
 /** Fabric client [Platform]. Versions and paths come from [FabricLoader] metadata. */
 object FabricPlatform : Platform {
 
-    override val id: String = "fabric"
+    override val platformId: PlatformId = PlatformId.FABRIC
+    override val id: String get() = platformId.wire
     override val side: PlatformSide = PlatformSide.CLIENT
 
     @Suppress("TYPE_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")

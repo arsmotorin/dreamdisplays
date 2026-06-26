@@ -1,6 +1,7 @@
 package com.dreamdisplays.platform.client.capabilities
 
 import com.dreamdisplays.core.protocol.ClientHello
+import com.dreamdisplays.media.player.stream.SupportedCodec
 
 /**
  * Detects the capabilities of the client device, such as supported codecs, maximum texture size, and whether popout
@@ -20,5 +21,5 @@ interface ClientCapabilityDetector {
     val maxTextureSize: Int
 
     /** Codecs the `FFmpeg` decode pipeline accepts regardless of hwaccel availability. */
-    val supportedCodecs: List<String>
+    val supportedCodecs: List<SupportedCodec>
 }

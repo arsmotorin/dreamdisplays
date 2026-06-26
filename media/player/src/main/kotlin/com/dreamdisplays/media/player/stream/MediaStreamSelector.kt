@@ -6,16 +6,28 @@ import kotlin.math.abs
 
 /** Pure helpers for parsing quality values and picking video / audio tracks from a [MediaStream] list. */
 object MediaStreamSelector {
-    private val realtimeSafeSelection: Boolean =
-        System.getProperty("dreamdisplays.stream.realtimeSafe", "true").toBoolean()
-    private val defaultPreferFps60: Boolean =
-        System.getProperty("dreamdisplays.stream.prefer60", "false").toBoolean()
-    private val defaultFps60Penalty: Int =
-        System.getProperty("dreamdisplays.stream.fps60Penalty", "420").toIntOrNull()?.coerceAtLeast(0) ?: 420
+    /** Realtime-safe selection is enabled by default, but can be disabled via system property. */
+    private val realtimeSafeSelection: Boolean = System.getProperty("dreamdisplays.stream.realtimeSafe", "true").toBoolean()
+
+    /** Default 60 fps preference. Can be overridden by system property. */
+    private val defaultPreferFps60: Boolean = System.getProperty("dreamdisplays.stream.prefer60", "false").toBoolean()
+
+    /** Default 60 fps penalty. Can be overridden by system property. */
+    private val defaultFps60Penalty: Int = System.getProperty("dreamdisplays.stream.fps60Penalty", "420").toIntOrNull()?.coerceAtLeast(0) ?: 420
+
+    /** Operating system name. Used to determine platform-specific behavior. */
     private val osName: String = System.getProperty("os.name").orEmpty().lowercase()
+
+    /** Operating system architecture. Used to determine platform-specific behavior. */
     private val osArch: String = System.getProperty("os.arch").orEmpty().lowercase()
+
+    /** Is the current platform macOS? */
     private val isMac: Boolean = osName.contains("mac") || osName.contains("darwin")
+
+    /** Is the current platform Windows? */
     private val isWindows: Boolean = osName.contains("win")
+
+    /** Is the current platform Apple Silicon? */
     private val isAppleSilicon: Boolean = isMac && (osArch.contains("aarch64") || osArch.contains("arm64"))
 
     /** Returns the pixel height of [stream], or [Int.MAX_VALUE] if unknown. */
@@ -43,7 +55,7 @@ object MediaStreamSelector {
     internal fun switchQuality(streams: ActiveStreams, target: Int, lang: String): ActiveStreams? {
         val best = pickVideo(streams.availableVideo, target)
             ?.takeIf { it.url != streams.currentVideo.url } ?: return null
-        // keep the current audio so the progressive pick isn't reverted on a quality switch
+        // Keep the current audio so the progressive pick isn't reverted on a quality switch
         return streams.copy(currentVideo = best, currentAudio = streams.currentAudio)
     }
 
@@ -92,41 +104,42 @@ object MediaStreamSelector {
     }
 
     /**
-     * Decode-cost penalty by platform. macOS is deliberately conservative: YouTube 4K VP9 often
-     * lands outside the fast VideoToolbox path or pays an expensive hardware-surface download,
-     * which is exactly the stutter pattern the LAV diagnostics exposed.
+     * Decode-cost penalty by platform.
+     *
+     * Note: macOS is deliberately conservative: YouTube 4K VP9 often lands outside the fast `VideoToolbox` path or
+     * pays an expensive hardware-surface download, which is exactly the stutter pattern the LAV diagnostics exposed.
      */
     private fun platformCodecPenalty(stream: MediaStream): Int {
         if (!realtimeSafeSelection) return genericCodecRank(stream) * 32
         val height = stream.height ?: Int.MAX_VALUE
         return when {
-            isMac -> when (codecFamily(stream)) {
-                CodecFamily.H264 -> 0
-                CodecFamily.HEVC -> if (height <= 2160) 80 else 300
-                CodecFamily.AV1 -> if (isAppleSilicon && height <= 2160) 160 else 1200
-                CodecFamily.VP9 -> when {
+            isMac -> when (codec(stream)) {
+                SupportedCodec.H264 -> 0
+                SupportedCodec.HEVC -> if (height <= 2160) 80 else 300
+                SupportedCodec.AV1 -> if (isAppleSilicon && height <= 2160) 160 else 1200
+                SupportedCodec.VP9 -> when {
                     height <= 1080 -> 220
                     height <= 1440 -> 760
                     else -> 1700
                 }
 
-                CodecFamily.UNKNOWN -> 1300
+                SupportedCodec.UNKNOWN -> 1300
             }
 
-            isWindows -> when (codecFamily(stream)) {
-                CodecFamily.H264 -> 0
-                CodecFamily.HEVC -> 90
-                CodecFamily.VP9 -> 140
-                CodecFamily.AV1 -> 220
-                CodecFamily.UNKNOWN -> 900
+            isWindows -> when (codec(stream)) {
+                SupportedCodec.H264 -> 0
+                SupportedCodec.HEVC -> 90
+                SupportedCodec.VP9 -> 140
+                SupportedCodec.AV1 -> 220
+                SupportedCodec.UNKNOWN -> 900
             }
 
-            else -> when (codecFamily(stream)) {
-                CodecFamily.H264 -> 0
-                CodecFamily.HEVC -> 120
-                CodecFamily.VP9 -> 180
-                CodecFamily.AV1 -> 260
-                CodecFamily.UNKNOWN -> 900
+            else -> when (codec(stream)) {
+                SupportedCodec.H264 -> 0
+                SupportedCodec.HEVC -> 120
+                SupportedCodec.VP9 -> 180
+                SupportedCodec.AV1 -> 260
+                SupportedCodec.UNKNOWN -> 900
             }
         }
     }
@@ -145,28 +158,19 @@ object MediaStreamSelector {
         }
     }
 
-    private fun codecFamily(stream: MediaStream): CodecFamily {
-        val c = stream.codec?.lowercase() ?: return CodecFamily.UNKNOWN
-        return when {
-            c.startsWith("avc") || c.startsWith("h264") -> CodecFamily.H264
-            c.startsWith("hvc") || c.startsWith("hev") || c.startsWith("h265") -> CodecFamily.HEVC
-            c.startsWith("vp9") || c.startsWith("vp09") -> CodecFamily.VP9
-            c.startsWith("av01") || c.startsWith("av1") -> CodecFamily.AV1
-            else -> CodecFamily.UNKNOWN
-        }
-    }
+    /** Codec name to enum mapping. */
+    private fun codec(stream: MediaStream): SupportedCodec = SupportedCodec.fromCodecName(stream.codec)
 
+    /** Generic codec ranking. Used when the platform-specific ranking is not available. */
     private fun genericCodecRank(stream: MediaStream): Int {
-        return when (codecFamily(stream)) {
-            CodecFamily.H264 -> 0
-            CodecFamily.HEVC -> 1
-            CodecFamily.VP9 -> 2
-            CodecFamily.AV1 -> 3
-            CodecFamily.UNKNOWN -> 4
+        return when (codec(stream)) {
+            SupportedCodec.H264 -> 0
+            SupportedCodec.HEVC -> 1
+            SupportedCodec.VP9 -> 2
+            SupportedCodec.AV1 -> 3
+            SupportedCodec.UNKNOWN -> 4
         }
     }
-
-    private enum class CodecFamily { H264, HEVC, VP9, AV1, UNKNOWN }
 
     /** Pick the best audio stream for [lang], falling back to default / first available. */
     fun pickAudio(audioStreams: List<MediaStream>, lang: String, chosenVideo: MediaStream?): MediaStream? {

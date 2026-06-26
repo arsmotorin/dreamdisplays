@@ -4,9 +4,13 @@ import com.dreamdisplays.platform.client.ui.VideoPopoutWindow
 import com.dreamdisplays.platform.client.managers.WarmParkPolicy
 import com.dreamdisplays.media.player.nativebridge.NativeMedia
 import com.dreamdisplays.media.player.process.HwAccelBackend
+import com.dreamdisplays.media.player.stream.SupportedCodec
 import com.dreamdisplays.core.protocol.ClientHello
 import com.dreamdisplays.platform.client.render.RenderBackendCompat
 import com.dreamdisplays.platform.client.render.ShaderPackCompat
+import com.dreamdisplays.platform.client.render.RenderBackend
+import com.dreamdisplays.platform.client.render.ShaderBackend
+import com.dreamdisplays.platform.client.render.TextureUploadPath
 
 /**
  * Probes the running client for [ClientHello] capabilities. Popout support comes from the `GLFW`
@@ -25,7 +29,7 @@ object MinecraftClientCapabilityDetector : ClientCapabilityDetector {
     override val supportsHardwareDecode: Boolean get() = HwAccelBackend.detectDefault() != HwAccelBackend.NONE
 
     /** Codecs the `FFmpeg` decode pipeline accepts regardless of hwaccel availability. */
-    override val supportedCodecs: List<String> = listOf("h264", "hevc", "vp9", "av1")
+    override val supportedCodecs: List<SupportedCodec> = SupportedCodec.advertised
 
     /** Snapshots all probes into an immutable [ClientHello] for the handshake. */
     override fun detect(): ClientHello {
@@ -38,12 +42,12 @@ object MinecraftClientCapabilityDetector : ClientCapabilityDetector {
             supportsHardwareDecode = hwAccel != HwAccelBackend.NONE,
             supportsHighResolution = maxTextureSize >= 4096,
             maxTextureSize = maxTextureSize,
-            supportedCodecs = supportedCodecs,
+            supportedCodecs = supportedCodecs.map { it.wire },
             supportsPip = true,
             supportsAudio = true,
-            renderBackend = safeString("unknown") { RenderBackendCompat.backendName() },
-            shaderBackend = safeString("unknown") { ShaderPackCompat.shaderBackendName() },
-            textureUploadPath = safeString("unknown") { RenderBackendCompat.textureUploadPath() },
+            renderBackend = safeString(RenderBackend.UNKNOWN.wire) { RenderBackendCompat.backend().wire },
+            shaderBackend = safeString(ShaderBackend.UNKNOWN.wire) { ShaderPackCompat.shaderBackend().wire },
+            textureUploadPath = safeString(TextureUploadPath.UNKNOWN.wire) { RenderBackendCompat.textureUploadPath().wire },
             hwAccelBackend = hwAccel.name.lowercase(),
             nativeBackendAvailable = nativeAvailable,
             nativeRgbaFramesEnabled = nativeAvailable && safeBool { NativeMedia.rgbaFramesEnabled },

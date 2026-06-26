@@ -2,6 +2,7 @@ package com.dreamdisplays.platform.client.platform
 
 import com.dreamdisplays.platform.client.Initializer
 import com.dreamdisplays.api.platform.Platform
+import com.dreamdisplays.api.platform.PlatformId
 import com.dreamdisplays.api.platform.PlatformLogger
 import com.dreamdisplays.api.platform.PlatformPaths
 import com.dreamdisplays.api.platform.PlatformScheduler
@@ -15,7 +16,8 @@ import java.nio.file.Path
 /** NeoForge client [Platform]. Versions come from [ModList]; paths from [FMLPaths]. */
 object NeoForgePlatform : Platform {
 
-    override val id: String = "neoforge"
+    override val platformId: PlatformId = PlatformId.NEOFORGE
+    override val id: String get() = platformId.wire
     override val side: PlatformSide = PlatformSide.CLIENT
 
     override val minecraftVersion: String by lazy {
