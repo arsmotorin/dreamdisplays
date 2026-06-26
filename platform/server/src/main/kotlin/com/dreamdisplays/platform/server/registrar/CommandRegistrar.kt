@@ -291,7 +291,7 @@ object FabricCommandRegistrar {
             .then(
                 net.minecraft.commands.Commands.argument("filter", StringArgumentType.word())
                     .suggests { _, builder ->
-                        listOf("mine", "world", "owner", "sync").forEach { builder.suggest(it) }
+                        ListFilter.tokens.forEach { builder.suggest(it) }
                         builder.buildFuture()
                     }
                     .executes { ctx ->

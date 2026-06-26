@@ -31,10 +31,6 @@ import kotlin.math.max
 class ListCommand : SubCommand {
     private companion object {
         const val PAGE_SIZE = 10
-        const val FILTER_MINE = "mine"
-        const val FILTER_WORLD = "world"
-        const val FILTER_OWNER = "owner"
-        const val FILTER_SYNC = "sync"
         val LEGACY_SERIALIZER: LegacyComponentSerializer = LegacyComponentSerializer.legacyAmpersand()
     }
 
@@ -141,15 +137,12 @@ class ListCommand : SubCommand {
 
         return when (args.size) {
             2 -> mutableSetOf<String>().apply {
-                add(FILTER_MINE)
-                add(FILTER_WORLD)
-                add(FILTER_OWNER)
-                add(FILTER_SYNC)
+                addAll(ListFilter.tokens)
                 addAll(pageSuggestions(displays.size))
             }.sorted()
 
-            3 -> when (args[1]?.lowercase()) {
-                FILTER_MINE -> {
+            3 -> when (ListFilter.fromToken(args[1])) {
+                ListFilter.MINE -> {
                     if (sender !is Player) {
                         emptyList()
                     } else {
@@ -157,13 +150,13 @@ class ListCommand : SubCommand {
                     }
                 }
 
-                FILTER_SYNC -> pageSuggestions(displays.count { it.isSync })
-                FILTER_WORLD -> displays
+                ListFilter.SYNC -> pageSuggestions(displays.count { it.isSync })
+                ListFilter.WORLD -> displays
                     .mapNotNull { it.pos1.world?.name }
                     .distinct()
                     .sorted()
 
-                FILTER_OWNER -> displays
+                ListFilter.OWNER -> displays
                     .mapNotNull { getOwnerName(it.ownerId, ownerNameCache) }
                     .distinct()
                     .sorted()
@@ -171,9 +164,9 @@ class ListCommand : SubCommand {
                 else -> emptyList()
             }
 
-            4 -> when (args[1]?.lowercase()) {
-                FILTER_WORLD -> pageSuggestions(filterByWorld(displays, args[2].orEmpty()).size)
-                FILTER_OWNER -> pageSuggestions(filterByOwner(displays, args[2].orEmpty(), ownerNameCache).size)
+            4 -> when (ListFilter.fromToken(args[1])) {
+                ListFilter.WORLD -> pageSuggestions(filterByWorld(displays, args[2].orEmpty()).size)
+                ListFilter.OWNER -> pageSuggestions(filterByOwner(displays, args[2].orEmpty(), ownerNameCache).size)
                 else -> emptyList()
             }
 
@@ -190,15 +183,15 @@ class ListCommand : SubCommand {
     ): ListQuery? {
         if (args.size == 1) return ListQuery(displays, 1)
 
-        val selector = args.getOrNull(1)?.lowercase() ?: return wrong(sender)
+        val selector = args.getOrNull(1) ?: return wrong(sender)
         val pageOnly = selector.toIntOrNull()
         if (pageOnly != null) {
             if (args.size != 2) return wrong(sender)
             return ListQuery(displays, pageOnly)
         }
 
-        return when (selector) {
-            FILTER_MINE -> {
+        return when (ListFilter.fromToken(selector)) {
+            ListFilter.MINE -> {
                 if (sender !is Player) {
                     MessageUtil.sendMessage(sender, "commandPlayersOnly")
                     return null
@@ -208,20 +201,20 @@ class ListCommand : SubCommand {
                 ListQuery(displays.filter { it.ownerId == sender.uniqueId }, page)
             }
 
-            FILTER_SYNC -> {
+            ListFilter.SYNC -> {
                 if (args.size !in 2..3) return wrong(sender)
                 val page = parseOptionalPage(sender, args.getOrNull(2)) ?: return null
                 ListQuery(displays.filter { it.isSync }, page)
             }
 
-            FILTER_WORLD -> {
+            ListFilter.WORLD -> {
                 if (args.size !in 3..4) return wrong(sender)
                 val worldName = args.getOrNull(2)?.takeIf { it.isNotBlank() } ?: return wrong(sender)
                 val page = parseOptionalPage(sender, args.getOrNull(3)) ?: return null
                 ListQuery(filterByWorld(displays, worldName), page)
             }
 
-            FILTER_OWNER -> {
+            ListFilter.OWNER -> {
                 if (args.size !in 3..4) return wrong(sender)
                 val ownerName = args.getOrNull(2)?.takeIf { it.isNotBlank() } ?: return wrong(sender)
                 val page = parseOptionalPage(sender, args.getOrNull(3)) ?: return null
@@ -319,10 +312,6 @@ class ListCommand : SubCommand {
 @FabricOnly
 object FabricListCommand {
     private const val PAGE_SIZE = 10
-    private const val FILTER_MINE = "mine"
-    private const val FILTER_WORLD = "world"
-    private const val FILTER_OWNER = "owner"
-    private const val FILTER_SYNC = "sync"
 
     /** Renders a paged, filterable listing of all displays; supports `mine`, `world`, `owner`, and `sync` filters. */
     fun execute(
@@ -348,13 +337,21 @@ object FabricListCommand {
                 server.playerList.players.find { it.uuid == ownerId }?.name?.string
             }
 
-        val filtered: List<FabricDisplayData> = when (filter?.lowercase()) {
-            null -> displays
-            FILTER_MINE -> if (player != null) displays.filter { it.ownerId == player.uuid } else displays
-            FILTER_WORLD -> value?.let { wn -> displays.filter { it.worldKey.endsWith(wn, ignoreCase = true) } }
+        val filtered: List<FabricDisplayData> = when (ListFilter.fromToken(filter)) {
+            null -> {
+                val pageNum = filter?.toIntOrNull()
+                if (pageNum != null) {
+                    sendPage(ctx, player, displays, ownerNameCache, pageNum, config)
+                    return 1
+                }
+                displays
+            }
+
+            ListFilter.MINE -> if (player != null) displays.filter { it.ownerId == player.uuid } else displays
+            ListFilter.WORLD -> value?.let { wn -> displays.filter { it.worldKey.endsWith(wn, ignoreCase = true) } }
                 ?: displays
 
-            FILTER_OWNER -> value?.let { on ->
+            ListFilter.OWNER -> value?.let { on ->
                 displays.filter {
                     getOwnerName(it.ownerId)?.equals(
                         on,
@@ -363,15 +360,7 @@ object FabricListCommand {
                 }
             } ?: displays
 
-            FILTER_SYNC -> displays.filter { it.isSync }
-            else -> {
-                val pageNum = filter.toIntOrNull()
-                if (pageNum != null) {
-                    sendPage(ctx, player, displays, ownerNameCache, pageNum, config)
-                    return 1
-                }
-                displays
-            }
+            ListFilter.SYNC -> displays.filter { it.isSync }
         }
 
         if (filtered.isEmpty()) {
