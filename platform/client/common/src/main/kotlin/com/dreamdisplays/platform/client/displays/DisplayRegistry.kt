@@ -58,7 +58,10 @@ object DisplayRegistry {
     fun registerScreen(displayScreen: DisplayScreen) {
         screens[displayScreen.uuid]?.unregister()
 
-        val clientSettings = ClientSettingsStore.getSettings(displayScreen.uuid)
+        val clientSettings = ClientSettingsStore.getSettings(
+            displayScreen.uuid,
+            DisplayScreen.defaultVolumeFor(displayScreen.mode),
+        )
         displayScreen.volume = clientSettings.volume
         displayScreen.quality = VideoQuality.parse(clientSettings.quality)
         displayScreen.muted = clientSettings.muted

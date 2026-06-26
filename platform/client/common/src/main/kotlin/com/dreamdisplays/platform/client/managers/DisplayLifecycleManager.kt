@@ -60,10 +60,16 @@ object DisplayLifecycleManager {
         DreamServices.registry.getOrNull<MediaResolverRegistry>()?.prefetch(MediaSource.from(packet.url))
         DisplayRegistry.unloadedScreens.remove(packet.id)
 
+        val mode = if (packet.mode == PlaybackMode.LOCAL.wire && packet.isSync) {
+            PlaybackMode.SYNCED
+        } else {
+            PlaybackMode.fromWire(packet.mode)
+        }
+
         createScreen(
             packet.id, packet.ownerId, Vector3i(packet.x, packet.y, packet.z), facing,
             packet.width, packet.height, packet.url, packet.lang,
-            PlaybackMode.fromWire(packet.mode), packet.qualityCap, packet.rotation,
+            mode, packet.qualityCap, packet.rotation,
         )
     }
 

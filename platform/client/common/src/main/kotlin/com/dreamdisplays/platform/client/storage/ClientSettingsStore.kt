@@ -42,8 +42,15 @@ object ClientSettingsStore {
     }
 
     /** Returns the settings for [displayUuid], creating a default entry if absent. */
-    fun getSettings(displayUuid: UUID): ClientDisplaySettings =
-        settings.getOrPut(displayUuid) { ClientDisplaySettings() }
+    fun getSettings(
+        displayUuid: UUID,
+        defaultVolume: Float = ClientDisplaySettings.DEFAULT_VOLUME,
+    ): ClientDisplaySettings =
+        settings.getOrPut(displayUuid) {
+            ClientDisplaySettings().apply {
+                volume = defaultVolume.coerceIn(0f, 1f)
+            }
+        }
 
     /** Updates all playback settings for [displayUuid] and immediately persists them to disk. */
     fun updateSettings(

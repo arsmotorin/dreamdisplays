@@ -167,11 +167,13 @@ class DisplayMenu private constructor(
         }
         sync.visibleWhen = notErrored
 
+        val defaultVolume = { DisplayScreen.defaultVolumeFor(ds.mode) }
         val volumeReset = addUi(IconButton("refresh") {
-            playback.setVolume(displayId, 0.5f)
-            volume.value = 0.5
+            val resetValue = defaultVolume()
+            playback.setVolume(displayId, resetValue)
+            volume.value = resetValue.toDouble()
         })
-        volumeReset.enabledWhen = { videoReady() && abs(volume.value - 0.5) > 0.01 }
+        volumeReset.enabledWhen = { videoReady() && abs(volume.value - defaultVolume().toDouble()) > 0.01 }
         volumeReset.visibleWhen = notErrored
 
         val renderDReset = addUi(IconButton("refresh") {

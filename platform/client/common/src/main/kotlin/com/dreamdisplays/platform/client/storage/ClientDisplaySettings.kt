@@ -8,7 +8,7 @@ package com.dreamdisplays.platform.client.storage
  */
 class ClientDisplaySettings {
     /** Volume in the range [0.0, 1.0]. */
-    var volume: Float = 0.5f
+    var volume: Float = DEFAULT_VOLUME
 
     /** Video quality, e.g. "720" or "1080". */
     var quality: String = "720"
@@ -27,4 +27,12 @@ class ClientDisplaySettings {
 
     /** Language override for the video, or null if not overridden. */
     var langOverride: String? = null
+
+    companion object {
+        /** Default volume for local displays. The UI presents this as 100%. */
+        const val DEFAULT_VOLUME = 0.5f
+
+        /** Default volume for synced and broadcast displays. The UI presents this as 50%. */
+        const val DEFAULT_SHARED_MODE_VOLUME = 0.25f
+    }
 }
