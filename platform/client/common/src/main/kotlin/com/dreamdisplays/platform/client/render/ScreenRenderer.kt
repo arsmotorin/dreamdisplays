@@ -186,8 +186,10 @@ object ScreenRenderer : ClientRenderService {
         stack.popPose()
     }
 
-    /** Appends a solid-color rectangle spanning [x0,y0]-[x1,y1] in unit-quad space (UV is ignored: the
-     *  overlay type samples a 1x1 white texture). Wound CCW to match the video quad. */
+    /**
+     * Appends a solid-color rectangle spanning [[x0], [y0] and [x1],[y1]] in unit-quad space (UV is ignored: the
+     * overlay type samples a 1x1 white texture). Wound CCW to match the video quad.
+     */
     private fun appendRect(
         pose: PoseStack.Pose, builder: VertexConsumer,
         x0: Float, y0: Float, x1: Float, y1: Float, r: Int, g: Int, b: Int,
