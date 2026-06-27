@@ -1,8 +1,8 @@
-package com.dreamdisplays.media.player.stream
+package com.dreamdisplays.api.media.stream
 
-import com.dreamdisplays.api.media.stream.MediaStream
-import com.dreamdisplays.api.media.stream.MediaStreamType
+import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
+@DreamDisplaysUnstableApi
 data class StreamSet(
     val videoStream: MediaStream?,
     val audioStream: MediaStream?,

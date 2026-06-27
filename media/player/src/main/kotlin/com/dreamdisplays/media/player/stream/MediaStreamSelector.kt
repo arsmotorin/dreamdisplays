@@ -2,6 +2,7 @@ package com.dreamdisplays.media.player.stream
 
 import com.dreamdisplays.api.media.stream.MediaStream
 import com.dreamdisplays.api.media.stream.MediaStreamType
+import com.dreamdisplays.api.media.stream.SupportedCodec
 import kotlin.math.abs
 
 /** Pure helpers for parsing quality values and picking video / audio tracks from a [MediaStream] list. */

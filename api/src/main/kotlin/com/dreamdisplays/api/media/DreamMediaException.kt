@@ -1,4 +1,6 @@
-package com.dreamdisplays.media
+package com.dreamdisplays.api.media
+
+import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
 /**
  * Typed exception hierarchy for media failures. Every subclass carries a machine-readable
@@ -9,6 +11,7 @@ package com.dreamdisplays.media
  *
  * @since 1.8.0
  */
+@DreamDisplaysUnstableApi
 sealed class DreamMediaException(
     message: String,
     cause: Throwable? = null,

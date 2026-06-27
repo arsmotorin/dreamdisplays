@@ -1,6 +1,9 @@
-package com.dreamdisplays.media.player
+package com.dreamdisplays.api.media.player
+
+import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
 /** Read-only playback-relevant configuration the media player needs from the host application. */
+@DreamDisplaysUnstableApi
 interface PlaybackConfig {
     /** Default per-display volume (0–2.0) applied to a freshly created player. */
     val defaultDisplayVolume: Double

@@ -7,10 +7,11 @@ repositories {
 }
 
 dependencies {
-    api(project(":media"))
     api(project(":api"))
+    compileOnly(libs.slf4jApi)
     compileOnly(libs.kotlinStdlib)
     testImplementation(libs.kotlinStdlib)
+    testImplementation(libs.slf4jApi)
     testImplementation(kotlin("test"))
 }
 

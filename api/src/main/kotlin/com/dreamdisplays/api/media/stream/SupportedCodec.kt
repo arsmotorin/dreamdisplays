@@ -1,14 +1,29 @@
-package com.dreamdisplays.media.player.stream
+package com.dreamdisplays.api.media.stream
 
+import com.dreamdisplays.api.DreamDisplaysUnstableApi
 import com.dreamdisplays.api.util.WireEnum
 import com.dreamdisplays.api.util.wireEnumValueOf
 
-/** Video codecs the player pipeline recognizes and can advertise to the server. */
+/**
+ * Video codecs the media pipeline recognizes and can advertise to servers.
+ *
+ * @since 1.8.4
+ */
+@DreamDisplaysUnstableApi
 enum class SupportedCodec(override val wire: String, private vararg val prefixes: String) : WireEnum {
+    /** H.264 / AVC video. */
     H264("h264", "avc", "h264"),
+
+    /** HEVC / H.265 video. */
     HEVC("hevc", "hvc", "hev", "h265"),
+
+    /** VP9 video. */
     VP9("vp9", "vp9", "vp09"),
+
+    /** AV1 video. */
     AV1("av1", "av01", "av1"),
+
+    /** Unknown or unsupported codec. */
     UNKNOWN("unknown");
 
     companion object {

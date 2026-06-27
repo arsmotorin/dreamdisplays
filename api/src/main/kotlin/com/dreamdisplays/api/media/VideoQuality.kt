@@ -1,4 +1,6 @@
-package com.dreamdisplays.media
+package com.dreamdisplays.api.media
+
+import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
 /**
  * Requested video quality for a display: either [Auto] (let the client pick the best available
@@ -9,6 +11,7 @@ package com.dreamdisplays.media
  *
  * @since 1.8.0
  */
+@DreamDisplaysUnstableApi
 sealed interface VideoQuality {
     /** Quality is chosen automatically from the available streams. */
     data object Auto : VideoQuality

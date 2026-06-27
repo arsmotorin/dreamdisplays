@@ -1,6 +1,8 @@
-package com.dreamdisplays.media.player.stream
+package com.dreamdisplays.api.media.stream
 
+import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
+@DreamDisplaysUnstableApi
 data class StreamPreferences(
     val maxHeight: Int?,
     val preferFps60: Boolean,

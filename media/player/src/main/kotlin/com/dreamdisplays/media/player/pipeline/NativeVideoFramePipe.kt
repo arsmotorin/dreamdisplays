@@ -4,7 +4,7 @@ import com.dreamdisplays.media.player.MediaPlayer
 import com.dreamdisplays.media.player.nativebridge.NativeMedia
 import com.dreamdisplays.media.player.process.HwAccelBackend
 import com.dreamdisplays.media.player.util.daemon
-import com.dreamdisplays.media.FramePixelFormat
+import com.dreamdisplays.api.media.FramePixelFormat
 import com.dreamdisplays.media.runtime.OsInfo
 import com.dreamdisplays.api.media.player.FrameUploaderFactory
 import com.dreamdisplays.api.media.player.GpuTextureRef
