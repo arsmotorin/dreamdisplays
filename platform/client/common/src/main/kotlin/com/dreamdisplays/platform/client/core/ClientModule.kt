@@ -1,20 +1,21 @@
 package com.dreamdisplays.platform.client.core
 
+import com.dreamdisplays.api.runtime.DreamDisplaysModule
+import com.dreamdisplays.api.runtime.ModuleContext
+
 /**
  * Client module: a self-contained unit of functionality, which can be installed into the client context.
  */
-interface ClientModule {
-    /** Unique identifier for this module. Should be in the format `namespace:name`. */
-    val id: String
-
-    /**
-     * List of module IDs that this module depends on. Modules will be installed in dependency order, and
-     * if any dependencies are missing, the module will not be installed.
-     */
-    val dependencies: List<String> get() = emptyList()
-
+interface ClientModule : DreamDisplaysModule {
     /** Installs this module into the given [context]. This will only be called once, and only after all dependencies have been installed. */
     fun install(context: ClientContext)
+
+    /** Bridges the loader-neutral module contract to the richer client context. */
+    override fun install(context: ModuleContext) {
+        val clientContext = context as? ClientContext
+            ?: error("Client module '$id' requires ClientContext, got ${context::class.java.name}.")
+        install(clientContext)
+    }
 
     /** Called when the client lifecycle changes. */
     fun onEvent(event: ClientLifecycleEvent) {}
