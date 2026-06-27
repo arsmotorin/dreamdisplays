@@ -1,8 +1,13 @@
-package com.dreamdisplays.core.security
+package com.dreamdisplays.api.security
+
+import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
 /**
  * Trust-boundary policy for client-supplied media URLs.
+ *
+ * @since 1.8.4
  */
+@DreamDisplaysUnstableApi
 object MediaUrlPolicy {
     /** 11-character YouTube id (which may legitimately start with `-`). */
     private val BARE_YOUTUBE_ID = Regex("[A-Za-z0-9_-]{11}")
