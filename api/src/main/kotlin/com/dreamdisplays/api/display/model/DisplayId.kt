@@ -8,8 +8,8 @@ import java.util.UUID
  *
  * @since 1.0.0
  */
-@DreamDisplaysUnstableApi
 @JvmInline
+@DreamDisplaysUnstableApi
 value class DisplayId(val uuid: UUID) {
     /** Returns the string representation of the display ID. */
     override fun toString(): String = uuid.toString()

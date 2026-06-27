@@ -7,8 +7,8 @@ import com.dreamdisplays.api.DreamDisplaysUnstableApi
  *
  * @since 1.8.0
  */
-@DreamDisplaysUnstableApi
 @JvmInline
+@DreamDisplaysUnstableApi
 value class TextureHandle(val id: Int) {
     /** True when [id] points at a platform-owned texture. */
     val isValid: Boolean get() = id > 0

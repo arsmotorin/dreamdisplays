@@ -33,6 +33,7 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions.jvmTarget.set(JvmTarget.fromTarget(javaVersion.toString()))
+    compilerOptions.optIn.add("com.dreamdisplays.api.DreamDisplaysUnstableApi")
 }
 
 tasks.withType<Jar>().configureEach {
