@@ -1,12 +1,12 @@
 package com.dreamdisplays.platform.server.playback
 
-import com.dreamdisplays.core.playback.PlaybackContext
+import com.dreamdisplays.api.playback.PlaybackContext
 import com.dreamdisplays.api.playback.PlaybackMode
 import com.dreamdisplays.platform.server.datatypes.DisplayData
 import java.util.UUID
 
 /**
- * Builds the [PlaybackContext] the shared [com.dreamdisplays.core.playback.PlaybackPermissions] rules
+ * Builds the [PlaybackContext] the shared [com.dreamdisplays.api.playback.PlaybackPermissions] rules
  * consume, folding in any live watch-party session so the effective mode and host identity are
  * correct. Used by every server entry point that enforces permissions.
  */

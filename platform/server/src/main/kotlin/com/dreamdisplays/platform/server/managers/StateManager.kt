@@ -9,7 +9,7 @@ import com.dreamdisplays.platform.server.datatypes.PaperDisplayData
 import com.dreamdisplays.platform.server.datatypes.StateData
 import com.dreamdisplays.platform.server.datatypes.SyncData
 import com.dreamdisplays.api.playback.PlaybackMode
-import com.dreamdisplays.core.playback.PlaybackPermissions
+import com.dreamdisplays.api.playback.PlaybackPermissions
 import com.dreamdisplays.platform.server.Main
 import com.dreamdisplays.platform.server.managers.DisplayManager.getDisplayData
 import com.dreamdisplays.platform.server.managers.DisplayManager.getReceivers

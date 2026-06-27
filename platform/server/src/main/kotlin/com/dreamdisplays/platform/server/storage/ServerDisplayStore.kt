@@ -1,7 +1,7 @@
 package com.dreamdisplays.platform.server.storage
 
+import com.dreamdisplays.api.storage.FullDisplayData
 import com.dreamdisplays.core.storage.DisplayStorage
-import com.dreamdisplays.core.storage.FullDisplayData
 import com.google.gson.reflect.TypeToken
 import org.slf4j.LoggerFactory
 import java.io.File

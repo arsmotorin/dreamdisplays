@@ -1,12 +1,11 @@
 package com.dreamdisplays.platform.client
 
 import com.dreamdisplays.platform.client.core.DreamServices
-import com.dreamdisplays.platform.client.core.register
 import com.dreamdisplays.platform.client.displays.DisplayRegistry
 import com.dreamdisplays.platform.client.net.Packets
 import com.dreamdisplays.platform.client.net.V2Payload
-import com.dreamdisplays.platform.client.platform.NeoForgePlatform
-import com.dreamdisplays.api.platform.Platform
+import com.dreamdisplays.platform.client.platform.NeoForgePlatformIntegrationProvider
+import com.dreamdisplays.api.platform.PlatformServices
 import com.dreamdisplays.platform.client.render.ScreenRenderer
 import com.mojang.blaze3d.systems.RenderSystem
 import net.minecraft.client.Camera
@@ -30,7 +29,7 @@ class Client(modEventBus: IEventBus) : com.dreamdisplays.platform.client.Mod {
     init {
         // The Platform must be in the registry before onModInit, so ClientStartupManager
         // can host the ClientApplication on top of it during bootstrap.
-        DreamServices.registry.register<Platform>(NeoForgePlatform)
+        DreamServices.registry.register(PlatformServices.PLATFORM, NeoForgePlatformIntegrationProvider.create())
         Initializer.onModInit(this)
         modEventBus.addListener(::registerPayloads)
         NeoForge.EVENT_BUS.register(this)
