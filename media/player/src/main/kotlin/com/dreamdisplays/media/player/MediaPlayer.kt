@@ -125,7 +125,7 @@ class MediaPlayer(
     // Watchdog is created before sessionManager but its lambdas reference sessionManager lazily
     private val watchdog = StreamWatchdog(
         debugLabel = debugLabel,
-        isActive = { sessionManager.isPlaying && !terminated.get() },
+        isActive = { sessionManager.isPlaying && !sessionManager.isParked() && !terminated.get() },
         getLastFrameNanos = { sessionManager.lastFrameNanos.get() },
         onStall = {
             val ss = streams
@@ -235,8 +235,9 @@ class MediaPlayer(
         doSeek((getCurrentTime() + (s * 1e9).toLong()).coerceIn(0, max), true)
     }
 
-    /** Current playback position in nanos. Falls back to seek offset when paused or not started. */
+    /** Current playback position in nanos. Falls back to the frozen / seek offset when paused or not started. */
     fun getCurrentTime(): Long {
+        sessionManager.parkedPositionNanos()?.let { return it }
         if (!isReady || !sessionManager.isPlaying) return clock.seekOffsetNanos
         return clock.currentTime()
     }
@@ -288,8 +289,9 @@ class MediaPlayer(
     /** Returns true if the stream supports seeking. */
     fun canSeek(): Boolean = isReady && seekable
 
-    /** Returns true once the wall clock is running (first frame has arrived). */
-    fun isClockRunning(): Boolean = clock.isRunning
+    /** Returns true once active playback is advancing (first frame arrived, not paused / parked). */
+    fun isClockRunning(): Boolean =
+        sessionManager.isPlaying && !sessionManager.isParked() && clock.isRunning
 
     /** Connects or disconnects the popout window sink. Pass null to detach. */
     fun setPopoutSink(sink: ((ByteBuffer, Int, Int, FramePixelFormat) -> Unit)?) {
@@ -367,11 +369,13 @@ class MediaPlayer(
     /** Reopens the current stream without changing URL/quality; used when render backend requirements change. */
     fun restartVideoPipeline() = safeExecute {
         val ss = streams ?: return@safeExecute
+        if (isPausedWarm()) freezePausedWarmSession()
         val pos = if (liveStream) 0L else getCurrentTime()
         env.renderExecutor.execute {
             host.reloadTexture()
             safeExecute {
-                if (sessionManager.isPlaying) startStreams(ss, pos) else clock.seekOffsetNanos = pos
+                if (sessionManager.isPlaying && !sessionManager.isParked()) startStreams(ss, pos)
+                else clock.seekOffsetNanos = pos
             }
         }
     }
@@ -633,17 +637,32 @@ class MediaPlayer(
 
     /** Starts `FFmpeg` from the current seek offset. No-op if already playing or not ready. */
     private fun doPlay() {
-        if (!isReady || terminated.get() || sessionManager.isPlaying) return
+        if (!isReady || terminated.get()) return
+        if (isPausedWarm()) {
+            sessionManager.resume()
+            state.set(PlaybackState.PLAYING)
+            watchdog.start()
+            return
+        }
+        if (sessionManager.isPlaying) return
         val ss = streams ?: return
         val offset = if (endedAtEnd.getAndSet(false)) 0L else clock.seekOffsetNanos
         startStreams(ss, offset)
     }
 
     /**
-     * Captures position from the audio clock when available, then stops the session.
+     * Pauses at the current position. Parkable VOD sessions stay warm so resume is immediate; other
+     * pipelines fall back to the old cold pause path.
      */
     private fun doPause() {
         if (!sessionManager.isPlaying) return
+        if (!liveStream) {
+            watchdog.stop()
+            if (sessionManager.suspend()) {
+                state.set(PlaybackState.PAUSED)
+                return
+            }
+        }
         val fp = sessionManager.audioFramePosition
         clock.seekOffsetNanos = if (fp >= 0) clock.audioClockNanos(fp, AudioSink.SAMPLE_RATE) else clock.currentTime()
         state.set(PlaybackState.PAUSED)
@@ -668,9 +687,10 @@ class MediaPlayer(
     private fun doSeek(nanos: Long, fire: Boolean) {
         if (!isReady || !seekable) return
         endedAtEnd.set(false)
+        if (isPausedWarm()) freezePausedWarmSession()
         clock.seekOffsetNanos = nanos
         val ss = streams ?: return
-        if (sessionManager.isPlaying) startStreams(ss, nanos)
+        if (sessionManager.isPlaying && !sessionManager.isParked()) startStreams(ss, nanos)
         if (fire) events.onSeek()
     }
 
@@ -685,13 +705,14 @@ class MediaPlayer(
             if (DEBUG) logger.debug("$debugLabel Quality switch no-op target=$target last=$lastQuality.")
             return
         }
+        if (isPausedWarm()) freezePausedWarmSession()
         val newSs = MediaStreamSelector.switchQuality(ss, target, lang) ?: return
         val pos = if (liveStream) 0L else getCurrentTime()
         streams = newSs
         lastQuality = MediaStreamSelector.parseQuality(newSs.currentVideo)
         host.videoContentAspect = newSs.currentVideo.contentAspect()
         env.renderExecutor.execute {
-            if (sessionManager.isPlaying) {
+            if (sessionManager.isPlaying && !sessionManager.isParked()) {
                 // Parallel quality switch: stage the new-resolution texture, but the live video keeps
                 // decoding and rendering. The new resolution warms up in a second channel; fitTexture
                 // promotes both (channel + texture) on its first frame, so the picture never freezes.
@@ -703,6 +724,22 @@ class MediaPlayer(
                 safeExecute { clock.seekOffsetNanos = pos }
             }
         }
+    }
+
+    /** Is warm session paused? */
+    private fun isPausedWarm(): Boolean =
+        state.get() == PlaybackState.PAUSED && sessionManager.isParked()
+
+    /**
+     * Converts a warm-paused session back to the ordinary paused representation before operations that
+     * need a cold restart later (seek, quality / backend switch). This preserves pause semantics instead of
+     * accidentally starting decode while the UI still says paused.
+     */
+    private fun freezePausedWarmSession() {
+        val pos = sessionManager.parkedPositionNanos() ?: getCurrentTime()
+        stopSession()
+        clock.reset(pos)
+        state.set(PlaybackState.PAUSED)
     }
 
     private fun MediaStream.contentAspect(): Double {

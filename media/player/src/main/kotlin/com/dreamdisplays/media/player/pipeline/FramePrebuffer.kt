@@ -19,8 +19,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  * presenting from the queue, so playback stays smooth until the cushion drains. The audio master clock
  * ([onFirstFrame]) is started only once the queue has pre-filled, so playback begins with a head start.
  *
- * Disabled by default ([prefillFrames] is derived from `dreamdisplays.playback.prebufferMs`, default 0);
- * when off, the pipes keep their original inline pace-and-publish path and this class is never created.
+ * Enabled by default ([prefillFrames] is derived from `dreamdisplays.playback.prebufferMs`, default 400 ms);
+ * set the property to 0 to keep the original inline pace-and-publish path.
  */
 internal class FramePrebuffer(
     private val surface: FrameSurface,

@@ -3,6 +3,7 @@ package com.dreamdisplays.media.player.pipeline
 import com.dreamdisplays.api.media.FramePixelFormat
 import com.dreamdisplays.api.media.player.GpuTextureRef
 import java.nio.ByteBuffer
+import java.util.concurrent.locks.LockSupport
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -61,10 +62,16 @@ internal object FramePacing {
         val diff = videoPts - if (audioClock >= 0) audioClock else videoPts
         if (diff > 0) {
             val target = System.nanoTime() + diff
-            if (diff > SPIN_THRESHOLD_NS) {
-                Thread.sleep(diff / 1_000_000)
-            } else {
-                while (System.nanoTime() < target) {
+            while (true) {
+                val remaining = target - System.nanoTime()
+                if (remaining <= 0) break
+                if (remaining > SPIN_THRESHOLD_NS) {
+                    LockSupport.parkNanos(remaining - SPIN_THRESHOLD_NS)
+                    if (Thread.interrupted()) {
+                        Thread.currentThread().interrupt()
+                        break
+                    }
+                } else {
                     Thread.onSpinWait()
                 }
             }
