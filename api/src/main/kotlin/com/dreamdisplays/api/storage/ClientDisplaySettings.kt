@@ -1,11 +1,16 @@
-package com.dreamdisplays.platform.client.storage
+package com.dreamdisplays.api.storage
+
+import com.dreamdisplays.api.DreamDisplaysUnstableApi
 
 /**
- * Per-display, client-local preferences persisted in `client-display-settings.json`.
+ * Client-local preferences.
  *
- * These are the viewer's own choices (volume, quality, mute, an optional URL/language override) and are
+ * These are the viewer's own choices (volume, quality, mute, an optional URL / language override) and are
  * kept separate from the server-authoritative display snapshot.
+ *
+ * @since 1.8.4
  */
+@DreamDisplaysUnstableApi
 class ClientDisplaySettings {
     /** Volume in the range [0.0, 1.0]. */
     var volume: Float = DEFAULT_VOLUME

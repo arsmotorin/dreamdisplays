@@ -1,15 +1,21 @@
-package com.dreamdisplays.core.storage
+package com.dreamdisplays.api.storage
 
+import com.dreamdisplays.api.DreamDisplaysUnstableApi
 import com.dreamdisplays.api.display.model.DisplayFacing
 import com.dreamdisplays.api.playback.PlaybackMode
 import java.util.UUID
 
 /**
- * Full persisted snapshot of a single display on a server, stored in `server-{serverId}-displays.json`.
+ * Full persisted snapshot of a single display on a server.
  *
- * Holds everything needed to recreate a [com.dreamdisplays.platform.client.displays.DisplayScreen] after a reconnect:
- * world placement, dimensions, the resolved video, and the last-known playback settings.
+ * Holds everything needed to recreate a display.
+ *
+ * Render distance here is the distance at which the display is rendered. Can be replaced with a different
+ * approach or removed entirely.
+ *
+ * @since 1.8.4
  */
+@DreamDisplaysUnstableApi
 class FullDisplayData(
     var uuid: UUID,
     var x: Int,
@@ -28,10 +34,6 @@ class FullDisplayData(
     var ownerUuid: UUID,
     var renderDistance: Int = 96,
     var currentTimeNanos: Long = 0,
-    /** Content quarter-turn rotation (0-3); only used for floor/ceiling (`UP`/`DOWN`) screens. */
-
     var rotation: Int = 0,
-
-    /** Broadcast quality clamp (0 = unclamped); see [com.dreamdisplays.platform.client.displays.DisplayScreen.qualityCap]. */
     var qualityCap: Int = 0,
 )
