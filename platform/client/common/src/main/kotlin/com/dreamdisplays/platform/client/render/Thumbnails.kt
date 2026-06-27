@@ -1,6 +1,9 @@
 package com.dreamdisplays.platform.client.render
 
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
 import com.dreamdisplays.platform.client.Initializer
+import com.dreamdisplays.util.AsyncMemo
 import com.dreamdisplays.util.DreamCoroutines
 import com.dreamdisplays.util.net.DreamHttpClient
 import com.mojang.blaze3d.platform.NativeImage
@@ -15,10 +18,11 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Deferred
 import org.slf4j.LoggerFactory
-import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 import javax.imageio.ImageIO
 
 /**
@@ -32,10 +36,24 @@ object Thumbnails {
     private val logger = LoggerFactory.getLogger("DreamDisplays/Thumbnails")
 
     /** The Minecraft texture [Identifier] for each video ID, or null if not yet loaded. */
-    private val READY = ConcurrentHashMap<String, Identifier>()
+    private val READY: Cache<String, Identifier> = Caffeine.newBuilder()
+        .maximumSize(1_024)
+        .expireAfterAccess(6, TimeUnit.HOURS)
+        .build()
 
     /** Tracks which video IDs are currently in flight (downloading or decoding). */
-    private val IN_FLIGHT = ConcurrentHashMap<String, Boolean>()
+    private val IN_FLIGHT: Cache<String, Boolean> = Caffeine.newBuilder()
+        .maximumSize(512)
+        .expireAfterWrite(2, TimeUnit.MINUTES)
+        .build()
+
+    /** Deduplicates thumbnail byte loads and keeps recently used compressed bytes warm. */
+    private val BYTES = AsyncMemo<String, ByteArray>(
+        maxSize = 512,
+        ttlMs = 30L * 60L * 1_000L,
+        scope = DreamCoroutines.clientIo,
+        tag = "thumbnail",
+    )
 
     /** Directory for cached thumbnails. */
     private val THUMB_CACHE_DIR: Path = Path.of("config", "dreamdisplays", "thumb-cache")
@@ -53,28 +71,36 @@ object Thumbnails {
     }
 
     /** Returns the registered Minecraft texture [Identifier] for [videoId], or null if not yet loaded. */
-    fun get(videoId: String): Identifier? = READY[videoId]
+    fun get(videoId: String): Identifier? = READY.getIfPresent(videoId)
 
     /** Schedules a background download of the thumbnail at [url] for [videoId] if not already in flight or ready. */
     fun request(videoId: String, url: String) {
-        if (READY.containsKey(videoId)) return
-        if (IN_FLIGHT.putIfAbsent(videoId, true) != null) return
-        DreamCoroutines.clientIo.launch { download(videoId, url) }
+        if (READY.getIfPresent(videoId) != null) return
+        if (IN_FLIGHT.asMap().putIfAbsent(videoId, true) != null) return
+        DreamCoroutines.clientIo.launch { download(videoId, loadBytesAsync(videoId, url)) }
     }
 
-    /** Fetches the thumbnail for [videoId] from [url] (or disk cache) and registers it on the render thread. */
-    private fun download(videoId: String, url: String) {
+    /** Starts or joins the thumbnail byte load for [videoId]. */
+    private fun loadBytesAsync(videoId: String, url: String): Deferred<ByteArray> =
+        BYTES.load(videoId) { loadBytes(it, url) }
+
+    /** Fetches the thumbnail bytes for [videoId] from memory, disk, or network. */
+    private fun loadBytes(videoId: String, url: String): ByteArray {
+        readDiskCache(videoId)?.let { return it }
+        val bytes = fetch(url) ?: throw IOException("thumbnail HTTP fetch failed")
+        writeDiskCacheAsync(videoId, bytes)
+        return bytes
+    }
+
+    /** Awaits the thumbnail bytes and registers them on the render thread. */
+    private suspend fun download(videoId: String, bytesDeferred: Deferred<ByteArray>) {
         try {
-            readDiskCache(videoId)?.let { bytes ->
-                Minecraft.getInstance().execute { register(videoId, bytes) }
-                return
-            }
-            val bytes = fetch(url) ?: error("fetch returned null")
-            writeDiskCacheAsync(videoId, bytes)
+            val bytes = bytesDeferred.await()
             Minecraft.getInstance().execute { register(videoId, bytes) }
         } catch (e: Exception) {
             logger.warn("Fetch failed for $videoId: ${e.message}")
-            IN_FLIGHT.remove(videoId)
+            BYTES.invalidate(videoId)
+            IN_FLIGHT.invalidate(videoId)
         }
     }
 
@@ -124,11 +150,12 @@ object Thumbnails {
             val safe = videoId.lowercase(Locale.ROOT).replace(Regex("[^a-z0-9_]"), "_")
             val id = Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "yt_thumb/$safe")
             Minecraft.getInstance().textureManager.register(id, tex)
-            READY[videoId] = id
+            READY.put(videoId, id)
         } catch (e: IOException) {
             logger.warn("Decode failed for $videoId: ${e.message}")
+            BYTES.invalidate(videoId)
         } finally {
-            IN_FLIGHT.remove(videoId)
+            IN_FLIGHT.invalidate(videoId)
         }
     }
 

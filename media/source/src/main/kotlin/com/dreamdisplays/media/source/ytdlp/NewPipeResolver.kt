@@ -1,5 +1,8 @@
 package com.dreamdisplays.media.source.ytdlp
 
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
+import com.github.benmanes.caffeine.cache.Expiry
 import com.dreamdisplays.api.media.source.MediaMetadata
 import com.dreamdisplays.api.media.source.MediaResolver
 import com.dreamdisplays.api.media.source.MediaSource
@@ -20,7 +23,6 @@ import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.extractor.stream.VideoStream
 import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -37,12 +39,32 @@ object NewPipeResolver : MediaResolver {
     private val initialized = AtomicBoolean(false)
 
     /** How long a resolved (or unresolvable) video is reused before `NewPipeExtractor` is hit again. */
-    private val POSITIVE_TTL_NANOS = 60L * 1_000_000_000L
-    private val NEGATIVE_TTL_NANOS = 20L * 1_000_000_000L
+    private val POSITIVE_TTL_NANOS = 60_000_000_000L
+    private val NEGATIVE_TTL_NANOS = 20_000_000_000L
     private const val MAX_CACHE_ENTRIES = 256
 
     /** Recently resolved videos, keyed by video id (falling back to the full URL). */
-    private val cache = ConcurrentHashMap<String, CacheEntry>()
+    private val cache: Cache<String, CacheEntry> = Caffeine.newBuilder()
+        .maximumSize(MAX_CACHE_ENTRIES.toLong())
+        .expireAfter(object : Expiry<String, CacheEntry> {
+            override fun expireAfterCreate(key: String, value: CacheEntry, currentTime: Long): Long =
+                value.ttlNanos
+
+            override fun expireAfterUpdate(
+                key: String,
+                value: CacheEntry,
+                currentTime: Long,
+                currentDuration: Long,
+            ): Long = value.ttlNanos
+
+            override fun expireAfterRead(
+                key: String,
+                value: CacheEntry,
+                currentTime: Long,
+                currentDuration: Long,
+            ): Long = currentDuration
+        })
+        .build()
 
     override val priority: Int = 10
 
@@ -125,21 +147,13 @@ object NewPipeResolver : MediaResolver {
      */
     private fun resolveCached(url: String): Resolved? {
         val key = YouTubeUrls.extractVideoId(url) ?: url
-        val now = System.nanoTime()
-        cache[key]?.let { if (now < it.expiresAtNanos) return it.value }
-
-        val resolved = doExtract(url)
-        val ttl = if (resolved != null) POSITIVE_TTL_NANOS else NEGATIVE_TTL_NANOS
-        pruneIfNeeded(now)
-        cache[key] = CacheEntry(resolved, now + ttl)
-        return resolved
-    }
-
-    /** Drops expired entries (and, if still over the cap, clears the cache) before inserting a new one. */
-    private fun pruneIfNeeded(now: Long) {
-        if (cache.size < MAX_CACHE_ENTRIES) return
-        cache.entries.removeIf { now >= it.value.expiresAtNanos }
-        if (cache.size >= MAX_CACHE_ENTRIES) cache.clear()
+        return cache.get(key) {
+            val resolved = doExtract(url)
+            CacheEntry(
+                value = resolved,
+                ttlNanos = if (resolved != null) POSITIVE_TTL_NANOS else NEGATIVE_TTL_NANOS,
+            )
+        }.value
     }
 
     /**
@@ -300,8 +314,8 @@ object NewPipeResolver : MediaResolver {
         val isSeekable: Boolean,
     )
 
-    /** A cached [Resolved] (or `null` for a known-unresolvable video) with its monotonic expiry. */
-    private class CacheEntry(val value: Resolved?, val expiresAtNanos: Long)
+    /** A cached [Resolved] (or `null` for a known-unresolvable video) with its `Caffeine` TTL. */
+    private class CacheEntry(val value: Resolved?, val ttlNanos: Long)
 
     /**
      * Minimal [Downloader] implementation over the shared facade, honoring the configured proxy
