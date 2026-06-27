@@ -1,6 +1,6 @@
 package com.dreamdisplays.media.player.pipeline
 
-import com.dreamdisplays.media.FramePixelFormat
+import com.dreamdisplays.api.media.FramePixelFormat
 import com.dreamdisplays.media.player.MediaPlayer
 import com.dreamdisplays.api.media.player.FrameUploader
 import com.dreamdisplays.api.media.player.FrameUploaderFactory

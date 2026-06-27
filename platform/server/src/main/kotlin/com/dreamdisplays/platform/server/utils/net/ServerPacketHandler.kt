@@ -1,10 +1,10 @@
 package com.dreamdisplays.platform.server.utils.net
 
 import com.dreamdisplays.platform.client.net.Packets
-import com.dreamdisplays.core.security.MediaUrlPolicy
+import com.dreamdisplays.api.security.MediaUrlPolicy
 import com.dreamdisplays.api.playback.PlaybackAction
 import com.dreamdisplays.api.playback.PlaybackMode
-import com.dreamdisplays.core.playback.PlaybackPermissions
+import com.dreamdisplays.api.playback.PlaybackPermissions
 import com.dreamdisplays.api.playback.WatchPartyAction
 import com.dreamdisplays.platform.server.Server
 import com.dreamdisplays.platform.server.datatypes.FabricDisplayData

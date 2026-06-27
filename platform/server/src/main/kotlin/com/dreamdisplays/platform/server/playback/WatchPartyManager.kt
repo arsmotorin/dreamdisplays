@@ -1,7 +1,7 @@
 package com.dreamdisplays.platform.server.playback
 
-import com.dreamdisplays.core.playback.PlaybackPermissions
-import com.dreamdisplays.core.playback.Timeline
+import com.dreamdisplays.api.playback.PlaybackPermissions
+import com.dreamdisplays.api.playback.Timeline
 import com.dreamdisplays.api.playback.WatchPartyAction
 import com.dreamdisplays.api.playback.WatchPartySessionState
 import com.dreamdisplays.api.playback.WatchPartySessionState.COUNTDOWN

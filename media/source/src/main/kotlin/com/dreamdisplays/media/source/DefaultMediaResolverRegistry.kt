@@ -1,7 +1,7 @@
 package com.dreamdisplays.media.source
 
-import com.dreamdisplays.media.DreamMediaException
-import com.dreamdisplays.core.security.MediaHostGuard
+import com.dreamdisplays.api.media.DreamMediaException
+import com.dreamdisplays.media.runtime.MediaHostGuard
 import com.dreamdisplays.api.media.source.MediaResolver
 import com.dreamdisplays.api.media.source.MediaResolverRegistry
 import com.dreamdisplays.api.media.source.MediaSource

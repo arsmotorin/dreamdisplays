@@ -1,7 +1,7 @@
 package com.dreamdisplays.api.media.session
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
-import com.dreamdisplays.media.DreamMediaException
+import com.dreamdisplays.api.media.DreamMediaException
 import com.dreamdisplays.api.media.source.MediaMetadata
 import kotlin.time.Duration
 

@@ -1,9 +1,10 @@
 package com.dreamdisplays.platform.server.utils.net
 
+import com.dreamdisplays.api.capability.ServerFeature
 import com.dreamdisplays.core.protocol.ClientHello
 import com.dreamdisplays.core.protocol.DisplayDelete
 import com.dreamdisplays.core.protocol.DreamPacket
-import com.dreamdisplays.core.protocol.PacketDirection
+import com.dreamdisplays.api.protocol.PacketDirection
 import com.dreamdisplays.core.protocol.PacketRegistry
 import com.dreamdisplays.api.playback.PlaybackAction
 import com.dreamdisplays.core.protocol.PlaybackCommand
@@ -11,7 +12,6 @@ import com.dreamdisplays.api.playback.PlaybackMode
 import com.dreamdisplays.core.protocol.ReportDisplay
 import com.dreamdisplays.core.protocol.RequestSync
 import com.dreamdisplays.core.protocol.ServerHello
-import com.dreamdisplays.core.protocol.ServerFeature
 import com.dreamdisplays.core.protocol.SetDisplaysEnabled
 import com.dreamdisplays.core.protocol.SetLocked
 import com.dreamdisplays.core.protocol.SetMode

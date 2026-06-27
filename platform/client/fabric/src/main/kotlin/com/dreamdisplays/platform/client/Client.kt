@@ -1,12 +1,11 @@
 package com.dreamdisplays.platform.client
 
 import com.dreamdisplays.platform.client.core.DreamServices
-import com.dreamdisplays.platform.client.core.register
 import com.dreamdisplays.platform.client.displays.DisplayRegistry
 import com.dreamdisplays.platform.client.net.Packets
 import com.dreamdisplays.platform.client.net.V2Payload
-import com.dreamdisplays.platform.client.platform.FabricPlatform
-import com.dreamdisplays.api.platform.Platform
+import com.dreamdisplays.platform.client.platform.FabricPlatformIntegrationProvider
+import com.dreamdisplays.api.platform.PlatformServices
 import com.dreamdisplays.platform.client.render.ScreenRenderer
 import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.blaze3d.vertex.VertexConsumer
@@ -36,7 +35,7 @@ class Client : ClientModInitializer, Mod {
     override fun onInitializeClient() {
         // The Platform must be in the registry before onModInit so ClientStartupManager
         // can host the ClientApplication on top of it during bootstrap.
-        DreamServices.registry.register<Platform>(FabricPlatform)
+        DreamServices.registry.register(PlatformServices.PLATFORM, FabricPlatformIntegrationProvider.create())
         Initializer.onModInit(this)
 
         // Note: PayloadTypeRegistry registrations are done in platform/server/ (it's a main entrypoint)

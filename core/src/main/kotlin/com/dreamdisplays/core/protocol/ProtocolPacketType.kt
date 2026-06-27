@@ -1,5 +1,6 @@
 package com.dreamdisplays.core.protocol
 
+import com.dreamdisplays.api.protocol.PacketDirection
 import kotlin.reflect.KClass
 
 /**

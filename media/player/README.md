@@ -18,4 +18,4 @@ Client playback engine. It prepares, starts, and controls playback of media stre
 
 ## Dependencies
 
-Allowed: `api`, `media`, `media:runtime`, selected `core` security / protocol pieces where needed, native helpers.
+Allowed: `api`, `media`, `media:runtime`.

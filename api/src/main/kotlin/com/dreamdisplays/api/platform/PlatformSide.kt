@@ -10,13 +10,13 @@ import com.dreamdisplays.api.DreamDisplaysUnstableApi
  */
 @DreamDisplaysUnstableApi
 enum class PlatformSide {
-    /** The physical client (rendering, input, the local player). */
+    /** The physical client (rendering, input, local). */
     CLIENT,
 
-    /** The dedicated or integrated server (world state, no rendering). */
+    /** The dedicated or integrated server. */
     SERVER,
 
-    /** Both sides at once, e.g. a singleplayer integrated server. */
+    /** Both sides at once. */
     BOTH;
 
     /** True on [CLIENT] or [BOTH]. */

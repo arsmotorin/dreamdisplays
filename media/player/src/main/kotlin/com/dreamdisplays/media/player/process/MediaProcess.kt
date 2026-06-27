@@ -1,6 +1,6 @@
 package com.dreamdisplays.media.player.process
 
-import com.dreamdisplays.core.security.MediaHostGuard
+import com.dreamdisplays.media.runtime.MediaHostGuard
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.TimeUnit

@@ -1,5 +1,8 @@
 package com.dreamdisplays.platform.client.core
 
+import com.dreamdisplays.api.runtime.DreamDisplaysModule
+import com.dreamdisplays.api.runtime.ServiceRegistry
+import com.dreamdisplays.core.runtime.DefaultDreamDisplaysRuntime
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
@@ -7,31 +10,12 @@ import java.util.concurrent.CopyOnWriteArrayList
  * dependency order on [start]; lifecycle events fan out to external listeners (via [onEvent]) and
  * to every installed module's [ClientModule.onEvent].
  *
- * The application itself does not render videos, draw overlays, manage popouts, talk to YouTube, or
- * handle input. Those responsibilities belong to modules.
- *
- * Its job is boring (and it's great):
- *  - Install modules
- *  - Resolve dependencies
- *  - Dispatch lifecycle events
- *  - Shut everything down cleanly
- *
- * Modules declare dependencies through [ClientModule.dependencies]. During
- * [start], dependencies are installed before dependents. Missing dependencies
- * and dependency cycles are fatal because silently continuing would be even
- * dumber.
- *
- * Lifecycle events are dispatched through a single path instead of every
- * subsystem inventing its own special snowflake startup hook.
- *
- * Put everything in one place and don't make garbage.
+ * Module installation is delegated to the shared core runtime; this class only adds client
+ * lifecycle events around it.
  */
 class DefaultClientApplication(override val context: ClientContext) : ClientApplication {
-    /** Map of registered modules by id. */
-    private val modules = LinkedHashMap<String, ClientModule>()
-
-    /** Set of installed module ids. */
-    private val installed = LinkedHashSet<String>()
+    private val runtime = DefaultDreamDisplaysRuntime(context)
+    private val clientModules = LinkedHashMap<String, ClientModule>()
 
     /** Listeners for lifecycle events. */
     private val listeners = CopyOnWriteArrayList<(ClientLifecycleEvent) -> Unit>()
@@ -40,24 +24,39 @@ class DefaultClientApplication(override val context: ClientContext) : ClientAppl
     @Volatile
     private var started = false
 
+    /** Service registry for the application. */
+    override val services: ServiceRegistry; get() = runtime.services
+
+    /** Registered module IDs. */
+    override val registeredModuleIds: Set<String>; get() = runtime.registeredModuleIds
+
+    /** Installed module IDs. */
+    override val installedModuleIds: Set<String>; get() = runtime.installedModuleIds
+
     /**
      * Adds [module] to the application. Before [start] the install is deferred; after [start] the
      * module is installed immediately (its dependencies must already be installed).
      */
     @Synchronized
-    override fun registerModule(module: ClientModule) {
-        require(module.id !in modules) { "Module '${module.id}' is already registered." }
-        modules[module.id] = module
-        if (started) install(module)
+    override fun registerModule(module: DreamDisplaysModule) {
+        if (module is ClientModule) {
+            require(module.id !in clientModules) { "Client module '${module.id}' is already registered." }
+            clientModules[module.id] = module
+        }
+        runtime.registerModule(module)
     }
 
     /** Emits [ClientLifecycleEvent.Initializing], installs all modules in dependency order, then [ClientLifecycleEvent.Ready]. */
     @Synchronized
     override fun start() {
         if (started) return
-        started = true
         emit(ClientLifecycleEvent.Initializing)
-        modules.values.forEach(::install)
+        runCatching { runtime.start() }
+            .onFailure {
+                runtime.stop()
+                throw it
+            }
+        started = true
         emit(ClientLifecycleEvent.Ready)
     }
 
@@ -66,35 +65,19 @@ class DefaultClientApplication(override val context: ClientContext) : ClientAppl
     override fun stop() {
         if (!started) return
         emit(ClientLifecycleEvent.ShuttingDown)
+        runtime.stop()
         started = false
-        installed.clear()
     }
 
     /** Fans [event] out to external listeners first, then to every installed module. */
     override fun emit(event: ClientLifecycleEvent) {
         listeners.forEach { it(event) }
-        installed.forEach { modules[it]?.onEvent(event) }
+        installedModuleIds.forEach { clientModules[it]?.onEvent(event) }
     }
 
     /** Subscribes [listener] to lifecycle events; close the returned handle to unsubscribe. */
     override fun onEvent(listener: (ClientLifecycleEvent) -> Unit): AutoCloseable {
         listeners += listener
         return AutoCloseable { listeners -= listener }
-    }
-
-    /** Installs [module] after its dependencies, failing fast on unknown or circular dependencies. */
-    private fun install(module: ClientModule, chain: List<String> = emptyList()) {
-        if (module.id in installed) return
-        check(module.id !in chain) {
-            "Circular module dependency: ${(chain + module.id).joinToString(" -> ")}."
-        }
-        for (depId in module.dependencies) {
-            val dep = checkNotNull(modules[depId]) {
-                "Module '${module.id}' depends on unregistered module '$depId'."
-            }
-            install(dep, chain + module.id)
-        }
-        module.install(context)
-        installed += module.id
     }
 }

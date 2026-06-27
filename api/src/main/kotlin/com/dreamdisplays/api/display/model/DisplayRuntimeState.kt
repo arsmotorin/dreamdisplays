@@ -1,7 +1,7 @@
 package com.dreamdisplays.api.display.model
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
-import com.dreamdisplays.media.DreamMediaException
+import com.dreamdisplays.api.media.DreamMediaException
 
 /**
  * Represents the runtime state of a display.

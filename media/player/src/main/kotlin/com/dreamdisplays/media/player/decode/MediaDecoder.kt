@@ -2,7 +2,7 @@ package com.dreamdisplays.media.player.decode
 
 import com.dreamdisplays.api.media.sink.AudioSink
 import com.dreamdisplays.api.media.sink.VideoFrameSink
-import com.dreamdisplays.media.player.stream.StreamSet
+import com.dreamdisplays.api.media.stream.StreamSet
 
 interface MediaDecoder : AutoCloseable {
     val isRunning: Boolean
