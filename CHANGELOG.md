@@ -1,3 +1,18 @@
+# Version 1.8.5
+
+## Client
+
+### Improvements
+
+- Replaced `GSON` library with `kotlinx.serialization` for better maintainability and performance
+- Discord publisher integration
+
+## Server
+
+### Improvements
+
+- Replaced `GSON` library with `kotlinx.serialization` for better maintainability and performance
+
 # Version 1.8.4
 
 ## Client
@@ -144,6 +159,17 @@
 
 # Version 1.8.0
 
+## Highlights
+
+- Added support for Minecraft 26.2
+- Brought back Minecraft 1.21.11 support ([#91](https://github.com/arsmotorin/dreamdisplays/pull/91))
+- Added a native Rust media pipeline with `FFmpeg` and in-process LAV decoding
+- Added stable `Vulkan` support for display rendering (`OpenGL` rendering is still supported)
+- Replaced the old synchronization mode with new local, synced, and broadcast playback modes
+- Added a new packet protocol v2
+- Reduced CPU usage by up to 50–70× on tested hardware scenarios (Java 25 required)
+- Improved video stream resolving speed by up to 10–12× in supported cases
+
 ## Client
 
 ### Features
@@ -277,6 +303,13 @@
 
 # Version 1.8.0-SNAPSHOT.2
 
+## Highlights
+
+- 10-12× faster video downloading
+- Faster DRM-protected videos handling
+- Fix critical crash on the `Fabric` 1.21.11 version
+- Fix incompatibility between the popout window and `Vivecraft` mod
+
 ## Client
 
 ### Features
@@ -301,6 +334,17 @@
 - No changes
 
 # Version 1.8.0-SNAPSHOT.1
+
+## Highlights
+
+- Support 26.2-pre4 version
+- Back 1.21.11 support ([#91](https://github.com/arsmotorin/dreamdisplays/pull/91))
+- Use `Stonecutter` for the multiversion system
+- Support `Vulcan` for display rendering (`OpenGL` still supported)
+- Implement 1.21.11 support for `Fabric` servers
+- Critical `Quilt` entry point crash fix
+- `MariaDB` compatibility issue fix ([#88](https://github.com/arsmotorin/dreamdisplays/pull/88))
+- Picture-in-Picture mode displays size calculation fix
 
 ## Client
 
@@ -386,6 +430,17 @@
 
 # Version 1.7.0
 
+## Highlights
+
+- Support 26.1.2 version and Java 25
+- Support `Fabric` servers
+- Support YouTube shorts
+- Windowed and Picture-in-Picture mode
+- Hardware-accelerated `FFmpeg` video decoding
+- Show max 72 recommended videos based on the current video instead of 24
+- Switch from RGBA to RGB24 for improved rendering performance
+- Fix the "You have to look at the display block" error when there is actually display ([#79](https://github.com/arsmotorin/dreamdisplays/issues/79))
+
 ## Client
 
 ### Features
@@ -436,6 +491,13 @@
 
 # Version 1.7.0-SNAPSHOT.4
 
+## Highlights
+
+- Now you can decide whether to lock or unlock a display from modifying by other players in the menu
+- New async texture uploader with a triple-buffered PBO ring
+- Hardware-accelerated `FFmpeg` video decoding
+- Update Paper API to the 65-stable build
+
 ## Mod
 
 - Now you can decide whether to lock or unlock a display from modifying by other players in the menu (works only on servers with the new plugin version)
@@ -464,6 +526,12 @@
 
 # Version 1.7.0-SNAPSHOT.3
 
+## Highlights
+
+- Use RGB format instead of RGBA for Picture-in-Picture mode
+- Fix OpenGL `GL_INVALID_VALUE` error in windowed mode
+- Fix `EXCEPTION_ACCESS_VIOLATION` crash because of `GL_INVALID_VALUE` errors
+
 ## Mod
 
 - Use RGB format instead of RGBA for Picture-in-Picture mode
@@ -475,6 +543,12 @@
 - No changes
 
 # Version 1.7.0-SNAPSHOT.2
+
+## Highlights
+
+- Windowed and Picture-in-Picture mode
+- Enhance YouTube's cache for stability
+- Fix OpenGL `GL_INVALID_VALUE` error
 
 ## Mod
 
@@ -488,6 +562,12 @@
 - No changes
 
 # Version 1.7.0-SNAPSHOT.1
+
+## Highlights
+
+- Support 26.1.2 version and Java 25
+- Support Fabric servers
+- Switch from RGBA to RGB24 for improved rendering performance
 
 ## Mod
 
@@ -564,6 +644,17 @@
 
 # Version 1.6.0
 
+## Highlights
+
+- Switch mod channel from Beta to Release
+- Support YouTube livestreams (live, première, and regular streams)
+- Direct searching and playback of YouTube videos without leaving the game
+- Switch to Paper plugin, drop Bukkit and Spigot support
+- Progress slider with seeking support
+- Single unified pipeline for all content (merged video + audio)
+- Rewrite seek and quality-change to use a single reliable pipeline rebuild
+- Improved video quality and format detection
+
 ## Mod
 
 - Switch mod channel from Beta to Release
@@ -592,6 +683,13 @@
 - Various optimizations and some small bug fixes
 
 # Version 1.5.0
+
+## Highlights
+
+- Switch YouTube playback to `yt-dlp`
+- Improve video playback stability and reduce some lags
+- Improve seeking, synchronization and buffering behavior
+- Better detection of system GStreamer library path on macOS and Linux
 
 ## Mod
 
@@ -679,6 +777,11 @@
 
 # Version 1.4.0
 
+## Highlights
+
+- Support Quilt
+- Fix display directions not being created properly in some cases
+
 ## Mod
 
 - Support Quilt
@@ -716,6 +819,15 @@
 
 # Version 1.3.0
 
+## Highlights
+
+- We've created a [Discord server](https://discord.gg/uwMMZ2KWk6)!
+- Video brightness control
+- Change maximum of render distance to 128 blocks ([#59](https://github.com/arsmotorin/dreamdisplays/issues/59))
+- Change maximum volume to 200% ([#60](https://github.com/arsmotorin/dreamdisplays/issues/60))
+- Support CurseForge releases
+- Smoother video playback and some optimizations
+
 ## Mod
 
 - We've created [Discord server](https://discord.gg/uwMMZ2KWk6)!
@@ -735,6 +847,14 @@
 - Improve update logic and fix ignoring mod versions ([#63](https://github.com/arsmotorin/dreamdisplays/issues/63))
 
 # Version 1.2.0
+
+## Highlights
+
+- New, refreshed logo
+- All messages from plugin are in client's language now
+- New languages: Belarusian, Czech, German and Hebrew for plugin messages
+- Add `/display help` and `/display stats` commands
+- Fix an issue when after re-enabling displays they don't load until relog
 
 ## Mod
 
@@ -798,6 +918,17 @@
 - Fix display desynchronization with server and client
 
 # Version 1.1.0
+
+## Highlights
+
+- Support 1.21.11 version
+- Support NeoForge
+- Huge reduction of CPU usage, more stable and optimized
+- Store all displays from the servers
+- Support more YouTube links
+- Switched to Mojang mappings
+- Plugin rewritten in Kotlin
+- bStats
 
 ## Mod
 
@@ -931,6 +1062,10 @@
 - Bump version (not public)
 
 # Version 1.0.0
+
+## Highlights
+
+- First version
 
 ## Mod
 

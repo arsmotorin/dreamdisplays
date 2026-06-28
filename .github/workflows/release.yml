@@ -384,7 +384,7 @@ jobs:
           if highlights:
               highlights_text = "\n".join(highlights)
           else:
-              highlights_text = "- See the full changelog below for all changes." # Should never happen
+              highlights_text = "- See the full changelog below for all changes."
 
           if is_snapshot:
               intro = (
