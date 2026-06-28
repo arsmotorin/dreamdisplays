@@ -33,7 +33,7 @@ For this mod to work, players install the client mod, while server admins can in
 - Server plugin on Paper / Folia / Purpur or other fork
 - Fabric server mod on Fabric servers
 
-![img](https://i.imgur.com/yyIKdp8.png)
+![img](https://i.imgur.com/lOKNx6g.png)
 
 ## Features
 
@@ -43,21 +43,22 @@ For this mod to work, players install the client mod, while server admins can in
 - **Seamless multiplayer synchronization: local, synced, and broadcast**
 - **Livestreams and premières support**
 - **Direct YouTube search and suggestions**
-- **Hardware acceleration for smooth video playback**
 - **Vertical display orientation support**
+- **Picture-in-Picture mode**
 - Adjustable resolutions from 144p up to 4K
 - Volume control from 0% to 200%
 - Brightness control from 0% to 100%
 - Multiple video languages support
 - Customizable display sizes in blocks
 - Integrated controls for play, pause, and seek
-- A lot of performance optimizations
+- Hardware accelerations
 - And much more!
 
 ### Server
 
 - **Screens and settings remain after the server restarts or when unloaded**
 - **Simple and precise server-side configuration**
+- **Ultra-low network impact and zero lags**
 - **Fabric server support (1:1 as Paper)**
 - Display commands — manage your in-game screens: create, delete, etc.
 - Fine-grained permissions for admin-only control
@@ -71,4 +72,4 @@ Done! To customize the display, look at it and press `Shift + RMB`
 
 [Read more in our wiki](https://github.com/arsmotorin/dreamdisplays/wiki).
 
-![img](https://i.imgur.com/6tEWQrv.png)
+![img](https://i.imgur.com/yyIKdp8.png)
