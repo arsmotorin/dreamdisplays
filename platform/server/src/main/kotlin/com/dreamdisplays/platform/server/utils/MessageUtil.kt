@@ -4,8 +4,8 @@ import io.github.arsmotorin.ofrat.FabricOnly
 import io.github.arsmotorin.ofrat.PaperOnly
 
 import com.dreamdisplays.platform.server.Main
-import com.google.gson.Gson
-import com.mojang.serialization.JsonOps
+import com.dreamdisplays.platform.server.Server
+import com.dreamdisplays.util.toJsonString
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.HoverEvent
@@ -14,9 +14,8 @@ import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.data.AtlasIds
 import net.minecraft.network.chat.Component as NmsComponent
 import net.minecraft.network.chat.MutableComponent
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
+import net.kyori.adventure.text.serializer.json.JSONComponentSerializer
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
-import net.minecraft.network.chat.ComponentSerialization
 import net.minecraft.network.chat.contents.ObjectContents as NmsObjectContents
 import net.minecraft.network.chat.contents.objects.AtlasSprite
 import net.minecraft.resources.Identifier
@@ -29,6 +28,7 @@ import org.bukkit.Material
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.jspecify.annotations.NullMarked
+import java.net.URI
 import java.util.Optional
 
 /**
@@ -39,16 +39,13 @@ import java.util.Optional
  * Used throughout the plugin for consistent message formatting and localization support.
  */
 object MessageUtil {
-    /** Global instance of [Gson] used for JSON serialization. */
-    private val gson by lazy { Gson() }
-
     /** Legacy and JSON serializers for legacy color-coded strings. */
     @PaperOnly
     private val legacySerializer = LegacyComponentSerializer.legacyAmpersand()
 
     /** Legacy and JSON serializers for `Adventure Components`. */
     @PaperOnly
-    private val gsonSerializer = GsonComponentSerializer.gson()
+    private val jsonSerializer = JSONComponentSerializer.json()
 
     /** Sends a localized message identified by [messageKey] to [sender]. */
     @PaperOnly
@@ -67,9 +64,15 @@ object MessageUtil {
         when (message) {
             is Component -> sender.sendMessage(message)
             is String -> sender.sendMessage(legacySerializer.deserialize(message))
-            else -> sender.sendMessage(gsonSerializer.deserialize(gson.toJson(message)))
+            else -> sender.sendMessage(deserializeJsonComponent(message))
         }
     }
+
+    /** Deserializes a JSON component represented as Map/List primitives using Kotlin serialization. */
+    @PaperOnly
+    fun deserializeJsonComponent(message: Any?): Component =
+        runCatching { jsonSerializer.deserialize(message.toJsonString()) }
+            .getOrElse { Component.text(message.toString()) }
 
     /** Sends an already-built `Adventure` [component] to [sender], silently ignoring nulls. */
     @PaperOnly
@@ -132,7 +135,7 @@ object MessageUtil {
     /** Sends a localized message identified by [messageKey] to [player]. */
     @FabricOnly
     fun sendMessage(player: ServerPlayer?, messageKey: String, vararg args: Any) {
-        val config = com.dreamdisplays.platform.server.Server.config
+        val config = Server.config
         val raw = config.getMessageForPlayer(player, messageKey)
         val message = if (args.isNotEmpty() && raw is String) raw.format(*args) else raw
         sendColoredMessage(player, message)
@@ -147,11 +150,8 @@ object MessageUtil {
     fun formatMessage(message: Any?, vararg args: String): Any? = when (message) {
         null -> null
         is String -> if (args.isEmpty()) message else String.format(message, *args)
-        is Map<*, *> -> {
-            var json = gson.toJson(message)
-            for (arg in args) json = json.replaceFirst("%s", arg)
-            gson.fromJson(json, Map::class.java)
-        }
+        is Map<*, *> -> replacePlaceholders(message, args, intArrayOf(0))
+        is List<*> -> replacePlaceholders(message, args, intArrayOf(0))
         else -> message
     }
 
@@ -167,15 +167,104 @@ object MessageUtil {
     private fun toNmsComponent(message: Any): NmsComponent {
         return when (message) {
             is String -> parseAmpersandLegacy(message)
-            is Map<*, *> -> runCatching {
-                val jsonElement = gson.toJsonTree(message)
-                ComponentSerialization.CODEC.parse(JsonOps.INSTANCE, jsonElement).result().orElse(null)
-                    ?: parseAmpersandLegacy(message.toString())
-            }.getOrElse { parseAmpersandLegacy(message.toString()) }
-
+            is Map<*, *> -> nmsComponentFromJsonValue(message) ?: parseAmpersandLegacy(message.toString())
+            is List<*> -> nmsComponentFromJsonValue(message) ?: parseAmpersandLegacy(message.toString())
             else -> parseAmpersandLegacy(message.toString())
         }
     }
+
+    /** Replace placeholders in a JSON component map with [args]. */
+    @FabricOnly
+    private fun replacePlaceholders(value: Any?, args: Array<out String>, index: IntArray): Any? = when (value) {
+        is String -> {
+            var formatted: String = value
+            var placeholder = formatted.indexOf("%s")
+            while (placeholder >= 0 && index[0] < args.size) {
+                formatted = formatted.substring(0, placeholder) +
+                    args[index[0]++] +
+                    formatted.substring(placeholder + 2)
+                placeholder = formatted.indexOf("%s", placeholder)
+            }
+            formatted
+        }
+        is Map<*, *> -> value.entries.associate { (key, entryValue) ->
+            key.toString() to replacePlaceholders(entryValue, args, index)
+        }
+        is List<*> -> value.map { replacePlaceholders(it, args, index) }
+        else -> value
+    }
+
+    /** NMS component builder from a JSON component map. */
+    @FabricOnly
+    private fun nmsComponentFromJsonValue(value: Any?): NmsComponent? = when (value) {
+        is String -> NmsComponent.literal(value)
+        is Map<*, *> -> {
+            val root = when {
+                value.string("translate") != null -> NmsComponent.translatable(value.string("translate")!!)
+                else -> NmsComponent.literal(value.string("text") ?: "")
+            }
+            value.list("extra")?.forEach { child ->
+                nmsComponentFromJsonValue(child)?.let(root::append)
+            }
+            root.withJsonStyle(value)
+        }
+        is List<*> -> {
+            val root = NmsComponent.empty()
+            value.forEach { child -> nmsComponentFromJsonValue(child)?.let(root::append) }
+            root
+        }
+        else -> null
+    }
+
+    /** Applies JSON component style from a JSON component map. */
+    @FabricOnly
+    private fun MutableComponent.withJsonStyle(value: Map<*, *>): MutableComponent = withStyle { base ->
+        var style = base
+        value.string("color")?.let { color ->
+            val parsedColor = net.minecraft.network.chat.TextColor.parseColor(color).result().orElse(null)
+            if (parsedColor != null) style = style.withColor(parsedColor)
+        }
+        value.bool("bold")?.let { style = style.withBold(it) }
+        value.bool("italic")?.let { style = style.withItalic(it) }
+        value.bool("underlined")?.let { style = style.withUnderlined(it) }
+        value.bool("strikethrough")?.let { style = style.withStrikethrough(it) }
+        value.bool("obfuscated")?.let { style = style.withObfuscated(it) }
+
+        val clickEvent = value.map("clickEvent")
+        if (clickEvent?.string("action") == "open_url") {
+            clickEvent.string("value")?.let { url ->
+                runCatching { URI.create(url) }.getOrNull()?.let {
+                    style = style.withClickEvent(net.minecraft.network.chat.ClickEvent.OpenUrl(it))
+                }
+            }
+        }
+
+        val hoverEvent = value.map("hoverEvent")
+        if (hoverEvent?.string("action") == "show_text") {
+            val hoverComponent = nmsComponentFromJsonValue(hoverEvent["value"])
+                ?: hoverEvent.string("value")?.let(NmsComponent::literal)
+            hoverComponent?.let {
+                style = style.withHoverEvent(net.minecraft.network.chat.HoverEvent.ShowText(it))
+            }
+        }
+        style
+    }
+
+    /** Type-safe accessors for JSON component map values. */
+    @FabricOnly
+    private fun Map<*, *>.string(key: String): String? = this[key] as? String
+
+    /** Type-safe accessors for JSON component map values. */
+    @FabricOnly
+    private fun Map<*, *>.bool(key: String): Boolean? = this[key] as? Boolean
+
+    /** Type-safe accessors for JSON component map values. */
+    @FabricOnly
+    private fun Map<*, *>.map(key: String): Map<*, *>? = this[key] as? Map<*, *>
+
+    /** Type-safe accessors for JSON component list values. */
+    @FabricOnly
+    private fun Map<*, *>.list(key: String): List<*>? = this[key] as? List<*>
 
     /**
      * Sends a localized message to [player], replacing `{0}`, `{1}` ... placeholders with
@@ -185,8 +274,7 @@ object MessageUtil {
     @FabricOnly
     fun sendMessageWithMaterials(player: ServerPlayer?, messageKey: String, vararg materialKeys: String) {
         if (player == null) return
-        val config = com.dreamdisplays.platform.server.Server.config
-        val rawMessage = config.getMessageForPlayer(player, messageKey) as? String ?: run {
+        val rawMessage = Server.config.getMessageForPlayer(player, messageKey) as? String ?: run {
             sendMessage(player, messageKey)
             return
         }

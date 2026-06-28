@@ -57,7 +57,6 @@ dependencies {
 
     implementation(project(":core"))
     implementation(project(":util"))
-    implementation(libs.gson)
     implementation(libs.kotlinxSerializationProtobuf)
     implementation(libs.kotlinxSerializationJson)
     implementation(libs.kotlinxCoroutinesCore)

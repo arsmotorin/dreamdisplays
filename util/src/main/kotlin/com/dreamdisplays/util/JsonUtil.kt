@@ -1,13 +1,18 @@
 package com.dreamdisplays.util
 
+import com.dreamdisplays.util.json.DreamJson
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 
 /**
  * Lenient field accessors for `kotlinx.serialization` [JsonObject]s. Each helper returns null instead
@@ -53,3 +58,42 @@ fun JsonObject.optBoolean(key: String, default: Boolean = false): Boolean {
     if (value is JsonNull) return default
     return runCatching { value.jsonPrimitive.booleanOrNull }.getOrNull() ?: default
 }
+
+/** Converts a `kotlinx.serialization` JSON tree into ordinary Kotlin values. */
+fun JsonElement.toPlainJsonValue(): Any? = when (this) {
+    JsonNull -> null
+    is JsonObject -> entries.associate { (key, value) -> key to value.toPlainJsonValue() }
+    is JsonArray -> map { it.toPlainJsonValue() }
+    is JsonPrimitive -> when {
+        isString -> content
+        booleanOrNull != null -> booleanOrNull
+        longOrNull != null -> longOrNull
+        doubleOrNull != null -> doubleOrNull
+        else -> content
+    }
+}
+
+/** Converts ordinary Kotlin JSON-like values into a `kotlinx.serialization` JSON tree. */
+fun Any?.toJsonElement(): JsonElement = when (this) {
+    null -> JsonNull
+    is JsonElement -> this
+    is Map<*, *> -> buildJsonObject {
+        this@toJsonElement.forEach { (key, value) ->
+            put(key.toString(), value.toJsonElement())
+        }
+    }
+    is Iterable<*> -> buildJsonArray {
+        this@toJsonElement.forEach { add(it.toJsonElement()) }
+    }
+    is Array<*> -> buildJsonArray {
+        this@toJsonElement.forEach { add(it.toJsonElement()) }
+    }
+    is Boolean -> JsonPrimitive(this)
+    is Number -> JsonPrimitive(this)
+    is String -> JsonPrimitive(this)
+    else -> JsonPrimitive(toString())
+}
+
+/** Serializes ordinary Kotlin JSON-like values with the project's shared JSON settings. */
+fun Any?.toJsonString(): String =
+    DreamJson.compact.encodeToString(JsonElement.serializer(), toJsonElement())

@@ -17,10 +17,8 @@ import com.dreamdisplays.platform.server.playback.TimelineManager
 import com.dreamdisplays.platform.server.playback.WatchPartyManager
 import com.dreamdisplays.platform.server.utils.MessageUtil
 import com.dreamdisplays.platform.server.utils.VersionUtil
-import com.google.gson.Gson
 import io.github.arsmotorin.ofrat.PaperOnly
 import net.kyori.adventure.text.TextReplacementConfig
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
 import org.bukkit.entity.Player
 import org.jspecify.annotations.NullMarked
 import org.semver4j.Semver
@@ -36,7 +34,6 @@ import java.util.UUID
 @NullMarked
 object DisplayActions {
     private val logger = LoggerFactory.getLogger("DreamDisplays/DisplayActions")
-    private val gson by lazy { Gson() }
 
     /** Handles a client-requested deletion, enforcing owner-or-permission check. */
     fun delete(player: Player, displayId: UUID) {
@@ -248,8 +245,7 @@ object DisplayActions {
         val message = when (val rawMessage = Main.config.getMessageForPlayer(player, "newVersion")) {
             is String -> String.format(rawMessage, version.toString())
             else -> {
-                val component = GsonComponentSerializer.gson()
-                    .deserialize(gson.toJson(rawMessage))
+                val component = MessageUtil.deserializeJsonComponent(rawMessage)
 
                 component.replaceText(
                     TextReplacementConfig.builder()

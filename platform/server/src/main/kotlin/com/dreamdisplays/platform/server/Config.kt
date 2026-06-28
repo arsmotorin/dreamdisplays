@@ -1,8 +1,9 @@
 package com.dreamdisplays.platform.server
 
 import com.dreamdisplays.platform.server.storage.StorageBackend
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.dreamdisplays.util.asJsonObjectOrNull
+import com.dreamdisplays.util.json.DreamJson
+import com.dreamdisplays.util.toPlainJsonValue
 import org.tomlj.Toml
 import org.tomlj.TomlTable
 import net.fabricmc.loader.api.FabricLoader
@@ -15,6 +16,14 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+
+private fun loadLanguageMessages(file: File): Map<String, Any> {
+    val root = DreamJson.compact.parseToJsonElement(file.readText()).asJsonObjectOrNull()
+        ?: error("Language file root must be a JSON object.")
+    return root.mapNotNull { (key, value) ->
+        value.toPlainJsonValue()?.let { key to it }
+    }.toMap()
+}
 
 /**
  * Manages the configuration of the plugin.
@@ -169,11 +178,7 @@ class Config(private val plugin: Main) {
             val langFile = File(plugin.dataFolder, "lang/$fileName")
             if (langFile.exists()) {
                 runCatching {
-                    val msgs = GSON.fromJson<Map<String, Any>>(
-                        langFile.readText(),
-                        object : TypeToken<Map<String, Any>>() {}.type
-                    )
-                    languages[langCode] = msgs
+                    languages[langCode] = loadLanguageMessages(langFile)
                 }.onFailure {
                     logger.error("Error loading language file: $fileName.", it)
                 }
@@ -353,9 +358,6 @@ class Config(private val plugin: Main) {
     }
 
     companion object {
-        /** Default config file contents. */
-        private val GSON = Gson()
-
         /** Language files to extract from the plugin's JAR. */
         private val LANGUAGE_FILES =
             listOf(
@@ -527,11 +529,7 @@ class FabricConfig { // TODO: merge
             val langFile = File(configDir, "lang/$fileName")
             if (langFile.exists()) {
                 runCatching {
-                    val msgs = GSON.fromJson<Map<String, Any>>(
-                        langFile.readText(),
-                        object : TypeToken<Map<String, Any>>() {}.type
-                    )
-                    languages[langCode] = msgs
+                    languages[langCode] = loadLanguageMessages(langFile)
                 }.onFailure {
                     logger.error("Error loading language file: $fileName", it)
                 }
@@ -689,7 +687,6 @@ class FabricConfig { // TODO: merge
     }
 
     companion object {
-        private val GSON = Gson()
         val LANGUAGE_FILES = listOf(
             "en.json", "es.json", "fr.json", "it.json", "pl.json",
             "ru.json", "uk.json", "de.json", "cs.json", "be.json", "he.json"
