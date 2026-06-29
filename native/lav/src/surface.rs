@@ -161,7 +161,11 @@ unsafe fn describe_frame(
         Pixel::VIDEOTOOLBOX => {
             #[cfg(target_os = "macos")]
             {
-                macos::describe_videotoolbox(frame)
+                unsafe {
+                    // SAFETY: `frame` is an AVFrame cloned from ffmpeg-next and its format was
+                    // verified as VideoToolbox before this descriptor path is reached.
+                    macos::describe_videotoolbox(frame)
+                }
             }
             #[cfg(not(target_os = "macos"))]
             {
@@ -253,13 +257,22 @@ mod macos {
     pub unsafe fn describe_videotoolbox(
         frame: *mut ffi::AVFrame,
     ) -> Result<LavSurfaceDesc, String> {
-        let pixel_buffer = pixel_buffer(frame)?;
-        let surface = CVPixelBufferGetIOSurface(pixel_buffer);
+        let pixel_buffer = unsafe {
+            // Safety: frame is a retained VideoToolbox AVFrame supplied by the caller
+            pixel_buffer(frame)?
+        };
+        let surface = unsafe {
+            // Safety: pixel_buffer is a valid CVPixelBufferRef extracted from the frame
+            CVPixelBufferGetIOSurface(pixel_buffer)
+        };
         if surface.is_null() {
             return Err("VideoToolbox frame has no IOSurface backing.".to_string());
         }
 
-        let pixel_format = CVPixelBufferGetPixelFormatType(pixel_buffer);
+        let pixel_format = unsafe {
+            // Safety: pixel_buffer is a valid CVPixelBufferRef extracted from the frame
+            CVPixelBufferGetPixelFormatType(pixel_buffer)
+        };
         let format = match pixel_format {
             CV_420V | CV_420F => SURFACE_FORMAT_NV12_8,
             CV_X420 | CV_XF20 => SURFACE_FORMAT_P010_10,
@@ -270,7 +283,10 @@ mod macos {
             }
         };
 
-        let plane_count = IOSurfaceGetPlaneCount(surface);
+        let plane_count = unsafe {
+            // Safety: surface is a non-null IOSurfaceRef from CoreVideo
+            IOSurfaceGetPlaneCount(surface)
+        };
         if plane_count < 2 {
             return Err(format!(
                 "Expected at least two IOSurface planes, got {plane_count}."
@@ -283,8 +299,14 @@ mod macos {
         desc.texture_target = GL_TEXTURE_RECTANGLE;
         desc.plane_count = 2;
         for plane in 0..2 {
-            desc.plane_width[plane] = IOSurfaceGetWidthOfPlane(surface, plane) as u32;
-            desc.plane_height[plane] = IOSurfaceGetHeightOfPlane(surface, plane) as u32;
+            desc.plane_width[plane] = unsafe {
+                // Safety: surface has at least two planes, verified above
+                IOSurfaceGetWidthOfPlane(surface, plane) as u32
+            };
+            desc.plane_height[plane] = unsafe {
+                // Safety: surface has at least two planes, verified above
+                IOSurfaceGetHeightOfPlane(surface, plane) as u32
+            };
         }
         desc.width = desc.plane_width[0];
         desc.height = desc.plane_height[0];
@@ -300,15 +322,24 @@ mod macos {
         if plane >= desc.plane_count || texture_id == 0 {
             return ERR_BAD_ARGS;
         }
-        let pixel_buffer = match pixel_buffer(frame) {
+        let pixel_buffer = match unsafe {
+            // Safety: frame is a retained VideoToolbox AVFrame supplied by the caller
+            pixel_buffer(frame)
+        } {
             Ok(p) => p,
             Err(_) => return ERR_BAD_ARGS,
         };
-        let surface = CVPixelBufferGetIOSurface(pixel_buffer);
+        let surface = unsafe {
+            // Safety: pixel_buffer is a valid CVPixelBufferRef extracted from the frame
+            CVPixelBufferGetIOSurface(pixel_buffer)
+        };
         if surface.is_null() {
             return ERR_UNSUPPORTED;
         }
-        let ctx = CGLGetCurrentContext();
+        let ctx = unsafe {
+            // Safety: queries thread-local OpenGL state; returns null when no context is current
+            CGLGetCurrentContext()
+        };
         if ctx.is_null() {
             return ERR_IO;
         }
@@ -321,23 +352,26 @@ mod macos {
             _ => return ERR_UNSUPPORTED,
         };
 
-        glBindTexture(GL_TEXTURE_RECTANGLE, texture_id);
-        glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-        let rc = CGLTexImageIOSurface2D(
-            ctx,
-            GL_TEXTURE_RECTANGLE,
-            internal_format,
-            desc.plane_width[plane as usize] as GLsizei,
-            desc.plane_height[plane as usize] as GLsizei,
-            format,
-            ty,
-            surface,
-            plane,
-        );
+        let rc = unsafe {
+            // Safety: a current CGL context was verified above; texture_id is non-zero; surface
+            // is non-null; plane is in range for desc.
+            glBindTexture(GL_TEXTURE_RECTANGLE, texture_id);
+            glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            CGLTexImageIOSurface2D(
+                ctx,
+                GL_TEXTURE_RECTANGLE,
+                internal_format,
+                desc.plane_width[plane as usize] as GLsizei,
+                desc.plane_height[plane as usize] as GLsizei,
+                format,
+                ty,
+                surface,
+                plane,
+            )
+        };
         if rc == 0 {
             0
         } else {
@@ -349,7 +383,11 @@ mod macos {
         if frame.is_null() {
             return Err("Null AVFrame".to_string());
         }
-        let pixel_buffer = (*frame).data[3] as CVPixelBufferRef;
+        let pixel_buffer = unsafe {
+            // Safety: frame is non-null and points to a VideoToolbox AVFrame; data[3] is where
+            // libav exposes the CVPixelBufferRef for this hardware frame type.
+            (*frame).data[3] as CVPixelBufferRef
+        };
         if pixel_buffer.is_null() {
             Err("VideoToolbox frame has no CVPixelBufferRef in data[3].".to_string())
         } else {

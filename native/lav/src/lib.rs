@@ -70,7 +70,11 @@ pub unsafe extern "C" fn dd_lav_open(
     if url.is_null() || url_len == 0 || w == 0 || h == 0 {
         return 0;
     }
-    let bytes = std::slice::from_raw_parts(url, url_len as usize);
+    let bytes = unsafe {
+        // Safety: the caller guarantees url points to url_len readable bytes; null and
+        // zero-length inputs are rejected above.
+        std::slice::from_raw_parts(url, url_len as usize)
+    };
     catch_unwind(AssertUnwindSafe(|| {
         let url = String::from_utf8_lossy(bytes).into_owned();
         sessions().open(&url, w as usize, h as usize, start_micros, hw_accel)
@@ -97,7 +101,11 @@ pub unsafe extern "C" fn dd_lav_open_replay(
     if blob.is_null() || blob_len == 0 || w == 0 || h == 0 {
         return 0;
     }
-    let bytes = std::slice::from_raw_parts(blob, blob_len as usize);
+    let bytes = unsafe {
+        // Safety: the caller guarantees blob points to blob_len readable bytes; null and
+        // zero-length inputs are rejected above.
+        std::slice::from_raw_parts(blob, blob_len as usize)
+    };
     catch_unwind(AssertUnwindSafe(|| {
         sessions().open_replay(bytes, w as usize, h as usize, resume_nanos)
     }))
@@ -117,7 +125,10 @@ pub unsafe extern "C" fn dd_lav_read_frame_i420(handle: i64, dst: *mut u8, dst_l
     if dst.is_null() {
         return ERR_BAD_ARGS;
     }
-    let dst = std::slice::from_raw_parts_mut(dst, dst_len as usize);
+    let dst = unsafe {
+        // Safety: the caller guarantees dst points to dst_len writable bytes for this call
+        std::slice::from_raw_parts_mut(dst, dst_len as usize)
+    };
     catch_unwind(AssertUnwindSafe(|| sessions().read_frame(handle, dst))).unwrap_or(ERR_IO)
 }
 
@@ -141,14 +152,25 @@ pub unsafe extern "C" fn dd_lav_read_frame_i420_pts(
         return ERR_BAD_ARGS;
     }
     if !pts_nanos.is_null() {
-        *pts_nanos = NO_PTS_NANOS;
+        unsafe {
+            // Safety: non-null pts_nanos is guaranteed by the caller to point to one writable
+            // i64 for the duration of this call.
+            *pts_nanos = NO_PTS_NANOS;
+        }
     }
-    let dst = std::slice::from_raw_parts_mut(dst, dst_len as usize);
+    let dst = unsafe {
+        // Safety: the caller guarantees dst points to dst_len writable bytes for this call
+        std::slice::from_raw_parts_mut(dst, dst_len as usize)
+    };
     catch_unwind(AssertUnwindSafe(|| {
         let mut pts = NO_PTS_NANOS;
         let rc = sessions().read_frame_with_pts(handle, dst, &mut pts);
         if !pts_nanos.is_null() {
-            *pts_nanos = pts;
+            unsafe {
+                // Safety: non-null pts_nanos is guaranteed by the caller to point to one
+                // writable i64 for the duration of this call.
+                *pts_nanos = pts;
+            }
         }
         rc
     }))
@@ -167,9 +189,12 @@ pub unsafe extern "C" fn dd_lav_read_surface(handle: i64, desc: *mut LavSurfaceD
     if desc.is_null() {
         return ERR_BAD_ARGS;
     }
-    catch_unwind(AssertUnwindSafe(|| {
-        sessions().read_surface(handle, &mut *desc)
-    }))
+    let desc = unsafe {
+        // Safety: the caller guarantees desc points to writable memory for one
+        // LavSurfaceDesc; null is rejected above.
+        &mut *desc
+    };
+    catch_unwind(AssertUnwindSafe(|| sessions().read_surface(handle, desc)))
         .unwrap_or(ERR_IO)
 }
 
@@ -207,7 +232,10 @@ pub unsafe extern "C" fn dd_lav_error(handle: i64, dst: *mut u8, dst_len: u64) -
     if dst.is_null() {
         return ERR_BAD_ARGS;
     }
-    let dst = std::slice::from_raw_parts_mut(dst, dst_len as usize);
+    let dst = unsafe {
+        // Safety: the caller guarantees dst points to dst_len writable bytes for this call
+        std::slice::from_raw_parts_mut(dst, dst_len as usize)
+    };
     catch_unwind(AssertUnwindSafe(|| sessions().error(handle, dst))).unwrap_or(ERR_IO)
 }
 
@@ -242,7 +270,11 @@ pub unsafe extern "C" fn dd_lav_ring_snapshot(handle: i64, dst: *mut u8, dst_len
     let dst_slice: &mut [u8] = if dst.is_null() || dst_len == 0 {
         &mut []
     } else {
-        std::slice::from_raw_parts_mut(dst, dst_len as usize)
+        unsafe {
+            // Safety: non-null dst is guaranteed by the caller to point to dst_len writable
+            // bytes for this call.
+            std::slice::from_raw_parts_mut(dst, dst_len as usize)
+        }
     };
     catch_unwind(AssertUnwindSafe(|| sessions().snapshot(handle, dst_slice))).unwrap_or(ERR_IO)
 }
@@ -262,7 +294,11 @@ pub unsafe extern "C" fn dd_lav_ring_snapshot_at(
     let dst_slice: &mut [u8] = if dst.is_null() || dst_len == 0 {
         &mut []
     } else {
-        std::slice::from_raw_parts_mut(dst, dst_len as usize)
+        unsafe {
+            // Safety: non-null dst is guaranteed by the caller to point to dst_len writable
+            // bytes for this call.
+            std::slice::from_raw_parts_mut(dst, dst_len as usize)
+        }
     };
     let top_up = dst_len == 0;
     catch_unwind(AssertUnwindSafe(|| {

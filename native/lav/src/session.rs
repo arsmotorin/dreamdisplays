@@ -48,7 +48,11 @@ unsafe extern "C" fn interrupt_cb(opaque: *mut c_void) -> i32 {
     if opaque.is_null() {
         return 0;
     }
-    let flag = &*(opaque as *const AtomicBool);
+    let flag = unsafe {
+        // Safety: libav calls this with the interrupted AtomicBool pointer installed in
+        // open_live; null is rejected above and the Arc outlives the format context.
+        &*(opaque as *const AtomicBool)
+    };
     if flag.load(Ordering::Relaxed) {
         1
     } else {
@@ -835,26 +839,32 @@ unsafe fn parameters_from_codec_params(params: &CodecParams) -> Result<codec::Pa
         return Err(ffmpeg::Error::InvalidData);
     }
     let mut parameters = codec::Parameters::new();
-    let p = parameters.as_mut_ptr();
+    let p = unsafe {
+        // Safety: parameters is newly allocated and exclusively owned here
+        parameters.as_mut_ptr()
+    };
     if p.is_null() {
         return Err(ffmpeg::Error::Bug);
     }
-    (*p).codec_type = ffi::AVMediaType::AVMEDIA_TYPE_VIDEO;
-    (*p).codec_id = mem::transmute::<u32, ffi::AVCodecID>(params.codec_id as u32);
-    (*p).width = params.width;
-    (*p).height = params.height;
-    if !params.extradata.is_empty() {
-        let len = params.extradata.len();
-        let padded = len
-            .checked_add(ffi::AV_INPUT_BUFFER_PADDING_SIZE as usize)
-            .ok_or(ffmpeg::Error::InvalidData)?;
-        let dst = ffi::av_mallocz(padded).cast::<u8>();
-        if dst.is_null() {
-            return Err(ffmpeg::Error::Bug);
+    unsafe {
+        // Safety: p is the valid mutable AVCodecParameters pointer owned by parameters
+        (*p).codec_type = ffi::AVMediaType::AVMEDIA_TYPE_VIDEO;
+        (*p).codec_id = mem::transmute::<u32, ffi::AVCodecID>(params.codec_id as u32);
+        (*p).width = params.width;
+        (*p).height = params.height;
+        if !params.extradata.is_empty() {
+            let len = params.extradata.len();
+            let padded = len
+                .checked_add(ffi::AV_INPUT_BUFFER_PADDING_SIZE as usize)
+                .ok_or(ffmpeg::Error::InvalidData)?;
+            let dst = ffi::av_mallocz(padded).cast::<u8>();
+            if dst.is_null() {
+                return Err(ffmpeg::Error::Bug);
+            }
+            ptr::copy_nonoverlapping(params.extradata.as_ptr(), dst, len);
+            (*p).extradata = dst;
+            (*p).extradata_size = len as i32;
         }
-        ptr::copy_nonoverlapping(params.extradata.as_ptr(), dst, len);
-        (*p).extradata = dst;
-        (*p).extradata_size = len as i32;
     }
     Ok(parameters)
 }
@@ -874,13 +884,22 @@ fn packet_ts_nanos(ts: Option<i64>, time_base: ffmpeg::Rational, stream_start_ti
 ///
 /// Safety: `parameters` must wrap a valid `AVCodecParameters`.
 unsafe fn codec_params_from(parameters: &codec::Parameters, time_base: ffmpeg::Rational) -> CodecParams {
-    let p = parameters.as_ptr();
+    let p = unsafe {
+        // Safety: parameters wraps an AVCodecParameters owned by ffmpeg-next
+        parameters.as_ptr()
+    };
     if p.is_null() {
         return CodecParams::default();
     }
-    let cp = &*p;
+    let cp = unsafe {
+        // Safety: p is non-null and valid for the lifetime of parameters
+        &*p
+    };
     let extradata = if !cp.extradata.is_null() && cp.extradata_size > 0 {
-        std::slice::from_raw_parts(cp.extradata, cp.extradata_size as usize).to_vec()
+        unsafe {
+            // Safety: libav owns extradata with extradata_size bytes while parameters lives
+            std::slice::from_raw_parts(cp.extradata, cp.extradata_size as usize).to_vec()
+        }
     } else {
         Vec::new()
     };
@@ -1034,11 +1053,17 @@ unsafe fn codec_hw_pixel_format(
     const HW_DEVICE_CTX: i32 = ffi::AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX as i32;
     let mut i = 0;
     loop {
-        let cfg = ffi::avcodec_get_hw_config(codec, i);
+        let cfg = unsafe {
+            // Safety: codec is provided by libav and valid while probing its static HW configs
+            ffi::avcodec_get_hw_config(codec, i)
+        };
         if cfg.is_null() {
             return None;
         }
-        let cfg = &*cfg;
+        let cfg = unsafe {
+            // Safety: libav returned a non-null AVCodecHWConfig pointer for this index
+            &*cfg
+        };
         if cfg.device_type == backend.device_type
             && (cfg.methods & HW_DEVICE_CTX) != 0
             && backend.pix_fmts.contains(&cfg.pix_fmt)
@@ -1058,21 +1083,31 @@ unsafe extern "C" fn prefer_selected_hw_format(
     let selection = if ctx.is_null() {
         ptr::null()
     } else {
-        (*ctx).opaque.cast::<HwSelection>()
+        unsafe {
+            // Safety: libav passes the AVCodecContext currently invoking this callback
+            (*ctx).opaque.cast::<HwSelection>()
+        }
     };
     let desired = if selection.is_null() {
         ffi::AVPixelFormat::AV_PIX_FMT_NONE
     } else {
-        (*selection).pix_fmt
+        unsafe {
+            // Safety: selection was stored in AVCodecContext.opaque before decoder open and
+            // remains alive while libav invokes this callback.
+            (*selection).pix_fmt
+        }
     };
     let mut p = formats;
-    while *p != ffi::AVPixelFormat::AV_PIX_FMT_NONE {
-        if *p == desired {
-            return *p;
+    unsafe {
+        // Safety: libav supplies a non-null, AV_PIX_FMT_NONE-terminated array of formats.
+        while *p != ffi::AVPixelFormat::AV_PIX_FMT_NONE {
+            if *p == desired {
+                return *p;
+            }
+            p = p.add(1);
         }
-        p = p.add(1);
+        *formats
     }
-    *formats
 }
 
 #[cfg(test)]
