@@ -16,10 +16,14 @@ import com.mojang.blaze3d.platform.cursor.CursorTypes
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.components.EditBox
+//? if >=1.21.11 {
 import net.minecraft.client.input.CharacterEvent
 import net.minecraft.client.input.KeyEvent
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.client.renderer.RenderPipelines
+import net.minecraft.resources.Identifier
+//?} else
+/*import net.minecraft.resources.ResourceLocation as Identifier*/
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
@@ -256,7 +260,7 @@ class SuggestionsPanel(
         val thumbW = w - 4
         val thumb = Thumbnails.get(info.id)
         if (thumb != null) {
-            g.blit(RenderPipelines.GUI_TEXTURED, thumb, thumbX, thumbY, 0f, 0f, thumbW, thumbH, thumbW, thumbH)
+            blitTexture(g, thumb, thumbX, thumbY, thumbW, thumbH)
         } else {
             g.fill(thumbX, thumbY, thumbX + thumbW, thumbY + thumbH, 0xFF000000.toInt())
         }
@@ -300,6 +304,13 @@ class SuggestionsPanel(
         }
     }
 
+    private fun blitTexture(g: GuiGraphicsCompat, id: Identifier, x: Int, y: Int, w: Int, h: Int) {
+        //? if >=1.21.11 {
+        g.blit(RenderPipelines.GUI_TEXTURED, id, x, y, 0f, 0f, w, h, w, h)
+        //?} else
+        /*g.blit(id, x, y, 0f, 0f, w, h, w, h)*/
+    }
+
     override fun mouseScrolled(mouseX: Double, mouseY: Double, dx: Double, dy: Double): Boolean {
         if (!available()) return false
         if (!isMouseOver(mouseX, mouseY)) return false
@@ -313,6 +324,7 @@ class SuggestionsPanel(
         return true
     }
 
+    //? if >=1.21.11 {
     override fun mouseClicked(event: MouseButtonEvent, dbl: Boolean): Boolean {
         if (!available()) return false
         val mouseX = event.x()
@@ -334,6 +346,26 @@ class SuggestionsPanel(
         }
         return false
     }
+    //?} else
+    /*override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        if (!available()) return false
+        if (clearButton.isMouseOver(mouseX, mouseY)) return clearButton.mouseClicked(mouseX, mouseY, button)
+        if (searchButton.isMouseOver(mouseX, mouseY)) return searchButton.mouseClicked(mouseX, mouseY, button)
+        if (searchBox.isMouseOver(mouseX, mouseY)) {
+            val handled = searchBox.mouseClicked(mouseX, mouseY, button)
+            searchBox.isFocused = true
+            return handled
+        }
+        searchBox.isFocused = false
+        val card = if (button == 0) cardAt(mouseX, mouseY) else -1
+        if (card in controller.cards.indices) {
+            val s = SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 1.0f)
+            Minecraft.getInstance().soundManager.play(s)
+            onPick(controller.cards[card])
+            return true
+        }
+        return false
+    }*/
 
     private fun cardAt(mouseX: Double, mouseY: Double): Int {
         if (controller.statusKey != null) return -1
@@ -364,6 +396,7 @@ class SuggestionsPanel(
         return -1
     }
 
+    //? if >=1.21.11 {
     override fun keyPressed(event: KeyEvent): Boolean {
         if (!available()) return super.keyPressed(event)
         if (searchBox.isFocused) {
@@ -380,6 +413,23 @@ class SuggestionsPanel(
         if (searchBox.isFocused) return searchBox.charTyped(event)
         return super.charTyped(event)
     }
+    //?} else
+    /*override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
+        if (!available()) return super.keyPressed(keyCode, scanCode, modifiers)
+        if (searchBox.isFocused) {
+            if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+                controller.runSearch(searchBox.value)
+                return true
+            }
+            return searchBox.keyPressed(keyCode, scanCode, modifiers)
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers)
+    }
+
+    override fun charTyped(chr: Char, modifiers: Int): Boolean {
+        if (searchBox.isFocused) return searchBox.charTyped(chr, modifiers)
+        return super.charTyped(chr, modifiers)
+    }*/
 
     companion object {
         private const val HEADER_H = 14

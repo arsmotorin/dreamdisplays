@@ -451,7 +451,7 @@ object DisplayManager {
     @FabricOnly
     fun getReceivers(display: FabricDisplayData, server: MinecraftServer): List<ServerPlayer> {
         return server.playerList.players.filter { p ->
-            p.level().dimension().identifier().toString() == display.worldKey &&
+            RegionUtil.getPlayerLevelKey(p) == display.worldKey &&
                     p.blockPosition().isInRange(display)
         }
     }

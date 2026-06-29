@@ -148,7 +148,7 @@ object FabricVideoCommand {
         val targetPos = getTargetBlockPos(player)
             ?: return MessageUtil.sendMessage(player, "displayVideoWrongTargetBlock").let { 0 }
 
-        val worldKey = RegionUtil.getLevelKey(player.level())
+        val worldKey = RegionUtil.getPlayerLevelKey(player)
         val data = DisplayManager.isContains(worldKey, targetPos)
             ?: return MessageUtil.sendMessage(player, "noDisplay").let { 0 }
 

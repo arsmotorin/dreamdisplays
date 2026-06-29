@@ -38,10 +38,16 @@ import com.dreamdisplays.api.media.DreamMediaException
 import com.dreamdisplays.api.media.VideoQuality
 import com.dreamdisplays.platform.client.net.ProtocolRouter
 import net.minecraft.client.Minecraft
+//? if >=1.21.11 {
 import net.minecraft.client.renderer.rendertype.RenderType
+//?} else
+/*import net.minecraft.client.renderer.RenderType*/
 import net.minecraft.client.renderer.texture.DynamicTexture
 import net.minecraft.core.BlockPos
+//? if >=1.21.11 {
 import net.minecraft.resources.Identifier
+//?} else
+/*import net.minecraft.resources.ResourceLocation as Identifier*/
 import org.jetbrains.annotations.ApiStatus
 import org.slf4j.LoggerFactory
 import java.nio.ByteBuffer

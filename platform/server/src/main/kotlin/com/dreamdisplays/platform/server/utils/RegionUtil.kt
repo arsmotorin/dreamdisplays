@@ -4,8 +4,13 @@ import io.github.arsmotorin.ofrat.FabricOnly
 import io.github.arsmotorin.ofrat.PaperOnly
 
 import net.minecraft.resources.ResourceKey
+//? if >=1.21.11 {
+import net.minecraft.resources.Identifier
+//?} else
+/*import net.minecraft.resources.ResourceLocation as Identifier*/
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.server.level.ServerPlayer
 import org.bukkit.Location
 import org.bukkit.World
 import org.jspecify.annotations.NullMarked
@@ -57,14 +62,29 @@ object RegionUtil {
     /** Resolves a [ServerLevel] from a dimension key string like `"minecraft:overworld"`. */
     @FabricOnly
     fun getLevelByKey(server: MinecraftServer, worldKey: String): ServerLevel? {
-        val rl = runCatching { net.minecraft.resources.Identifier.parse(worldKey) }.getOrNull() ?: return null
+        val rl = runCatching { Identifier.parse(worldKey) }.getOrNull() ?: return null
         val key = ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, rl)
         return server.getLevel(key)
     }
 
     /** Returns the dimension key string (e.g. `"minecraft:overworld"`) for a given [ServerLevel]. */
     @FabricOnly
-    fun getLevelKey(level: ServerLevel): String = level.dimension().identifier().toString()
+    fun getLevelKey(level: ServerLevel): String =
+        //? if >=1.21.11 {
+        level.dimension().identifier().toString()
+        //?} else
+        /*level.dimension().location().toString()*/
+
+    /** Returns the dimension key string for a [ServerPlayer]'s current server level. */
+    @FabricOnly
+    fun getPlayerLevelKey(player: ServerPlayer): String = getLevelKey(playerServerLevel(player))
+
+    /** Returns the [ServerLevel] of a [ServerPlayer]. */
+    private fun playerServerLevel(player: ServerPlayer): ServerLevel =
+        //? if >=1.21.11 {
+        player.level()
+        //?} else
+        /*player.serverLevel()*/
 
     /** Data class describing a region in 3D space. */
     @PaperOnly

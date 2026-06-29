@@ -16,9 +16,14 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 //?} else
 /*import net.minecraft.client.gui.GuiGraphics*/
+//? if >=1.21.11 {
 import net.minecraft.client.renderer.RenderPipelines
+//?}
 import net.minecraft.client.renderer.texture.DynamicTexture
+//? if >=1.21.11 {
 import net.minecraft.resources.Identifier
+//?} else
+/*import net.minecraft.resources.ResourceLocation as Identifier*/
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.UUID
@@ -184,7 +189,10 @@ class PipOverlay(
             tex?.close()
             textureId?.let { mc.textureManager.release(it) }
             val img = NativeImage(NativeImage.Format.RGBA, fw, fh, false)
+            //? if >=1.21.11 {
             tex = DynamicTexture({ "dreamdisplays:pip" }, img)
+            //?} else
+            /*tex = DynamicTexture(img)*/
             textureId = Identifier.fromNamespaceAndPath(
                 Initializer.MOD_ID, "pip/${displayScreen.uuid}-${UUID.randomUUID()}"
             )
@@ -192,8 +200,8 @@ class PipOverlay(
             dynamicTexture = tex; texW = fw; texH = fh
         }
 
-        TextureUploadUtil.upload(
-            texture = tex.getTexture(),
+        TextureUploadUtil.uploadDynamicTexture(
+            texture = tex,
             src = buf,
             w = fw,
             h = fh,
@@ -272,12 +280,19 @@ class PipOverlay(
         val alpha = animProgress
 
         val matrices = g.pose()
+        //? if >=26 {
         matrices.pushMatrix()
         matrices.translate(cx + pipW / 2f, cy + pipH / 2f)
         matrices.scale(scale, scale)
         matrices.translate(-pipW / 2f, -pipH / 2f)
+        //?} else
+        /*matrices.pushPose()
+        matrices.translate((cx + pipW / 2f).toDouble(), (cy + pipH / 2f).toDouble(), PIP_Z)
+        matrices.scale(scale, scale, 1f)
+        matrices.translate((-pipW / 2f).toDouble(), (-pipH / 2f).toDouble(), 0.0)*/
 
         // Video content only. The main display texture is padded to fit the in-world display.
+        //? if >=1.21.11 {
         g.blit(
             RenderPipelines.GUI_TEXTURED,
             id,
@@ -293,6 +308,8 @@ class PipOverlay(
             fh,
             blendColor(0xFFFFFFFF.toInt(), alpha),
         )
+        //?} else
+        /*g.setColor(1f, 1f, 1f, alpha); g.blit(id, 0, 0, pipW, pipH, content.x.toFloat(), content.y.toFloat(), content.w, content.h, fw, fh); g.setColor(1f, 1f, 1f, 1f)*/
 
         // Border
         val active = hovering || dragging || resizing
@@ -303,7 +320,10 @@ class PipOverlay(
             renderResizeHandle(g, handleX, handleY, alpha)
         }
 
+        //? if >=26 {
         matrices.popMatrix()
+        //?} else
+        /*matrices.popPose()*/
         return true
     }
 
@@ -492,6 +512,7 @@ class PipOverlay(
         private const val RESIZE_SZ = 14
         private const val RESIZE_INSET = 6
         private const val SNAP_LERP_SPEED = 8f
+        private const val PIP_Z = 1_000.0
 
         private const val PANEL_BORDER = 0xFF606060.toInt()
         private const val ACCENT = 0xFF4A90E2.toInt()

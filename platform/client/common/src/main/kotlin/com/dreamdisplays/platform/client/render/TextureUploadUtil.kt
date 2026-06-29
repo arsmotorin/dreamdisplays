@@ -1,9 +1,12 @@
 package com.dreamdisplays.platform.client.render
 
+//? if >=1.21.11 {
 import com.mojang.blaze3d.opengl.GlTexture
-import com.mojang.blaze3d.platform.NativeImage
 import com.mojang.blaze3d.systems.RenderSystem
 import com.mojang.blaze3d.textures.GpuTexture
+//?}
+import com.mojang.blaze3d.platform.NativeImage
+import net.minecraft.client.renderer.texture.DynamicTexture
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.nio.ByteBuffer
@@ -11,6 +14,33 @@ import java.nio.ByteOrder
 
 /** Uploads raw video frames to Minecraft textures on `OpenGL` and backend-neutral renderers. */
 object TextureUploadUtil {
+    /** Uploads raw pixels into a [DynamicTexture] across both legacy GL-id and new GpuTexture APIs. */
+    fun uploadDynamicTexture(
+        texture: DynamicTexture,
+        src: ByteBuffer,
+        w: Int,
+        h: Int,
+        format: UploadPixelFormat,
+        glUploader: () -> AsyncTextureUploader,
+        rgbaScratch: ByteBuffer?,
+        setRgbaScratch: (ByteBuffer) -> Unit,
+    ) {
+        //? if >=1.21.11 {
+        upload(
+            texture = texture.getTexture(),
+            src = src,
+            w = w,
+            h = h,
+            format = format,
+            glUploader = glUploader,
+            rgbaScratch = rgbaScratch,
+            setRgbaScratch = setRgbaScratch,
+        )
+        //?} else
+        /*glUploader().upload(texture.getId(), src, w, h, format)*/
+    }
+
+    //? if >=1.21.11 {
     /** Uploads a raw RGB24 video frame to a Minecraft texture. */
     fun uploadRgb(
         texture: GpuTexture,
@@ -108,6 +138,7 @@ object TextureUploadUtil {
             throw e.targetException
         }
     }
+    //?}
 
     /** RGB24 -> RGBA32 conversion. */
     private fun rgbToRgba(src: ByteBuffer, dst: ByteBuffer, w: Int, h: Int) {

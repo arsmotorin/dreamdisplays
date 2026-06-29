@@ -1,10 +1,18 @@
 package com.dreamdisplays.platform.client.render
 
 import com.dreamdisplays.platform.client.Initializer
+//? if >=1.21.11 {
 import com.mojang.blaze3d.pipeline.RenderPipeline
 import net.minecraft.client.renderer.rendertype.RenderSetup
 import net.minecraft.client.renderer.rendertype.RenderType
 import net.minecraft.resources.Identifier
+//?} else
+/*import com.mojang.blaze3d.vertex.DefaultVertexFormat
+import com.mojang.blaze3d.vertex.VertexFormat
+import net.minecraft.client.renderer.GameRenderer
+import net.minecraft.client.renderer.RenderStateShard
+import net.minecraft.client.renderer.RenderType
+import net.minecraft.resources.ResourceLocation as Identifier*/
 
 /**
  * Shared unlit world render types for display quads.
@@ -13,6 +21,7 @@ import net.minecraft.resources.Identifier
  * lighting pipelines: shader packs commonly replace those and end up shading the video.
  */
 object DisplayUnlitRenderTypes {
+    //? if >=1.21.11 {
     /** Name of the texture sampler uniform in the display shader. */
     private const val SAMPLER_TEXTURE = "Sampler0"
 
@@ -49,4 +58,35 @@ object DisplayUnlitRenderTypes {
                 .invoke(api, pipeline, textured)
         }
     }
+    //?} else
+    /*fun create(name: String, id: Identifier): RenderType {
+        val state = RenderType.CompositeState.builder()
+            .setShaderState(RenderStateShard.ShaderStateShard(java.util.function.Supplier {
+                GameRenderer.getPositionTexColorShader()
+            }))
+            .setTextureState(RenderStateShard.TextureStateShard(id, false, false))
+            .setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
+            .setCullState(RenderStateShard.NO_CULL)
+            .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
+            .createCompositeState(false)
+        return RenderType::class.java.getMethod(
+            "create",
+            String::class.java,
+            VertexFormat::class.java,
+            VertexFormat.Mode::class.java,
+            Int::class.javaPrimitiveType,
+            Boolean::class.javaPrimitiveType,
+            Boolean::class.javaPrimitiveType,
+            state.javaClass,
+        ).invoke(
+            null,
+            name,
+            DefaultVertexFormat.POSITION_TEX_COLOR,
+            VertexFormat.Mode.QUADS,
+            1536,
+            false,
+            false,
+            state,
+        ) as RenderType
+    }*/
 }

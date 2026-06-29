@@ -35,7 +35,9 @@ import com.dreamdisplays.media.source.ytdlp.VideoMetadataCache
 import com.dreamdisplays.media.source.ytdlp.VideoTitleCache
 import net.minecraft.ChatFormatting
 import net.minecraft.client.Minecraft
+//? if >=1.21.11 {
 import net.minecraft.client.input.MouseButtonEvent
+//?}
 import net.minecraft.network.chat.Component
 import kotlin.math.abs
 import kotlin.math.floor
@@ -203,7 +205,7 @@ class DisplayMenu private constructor(
             playback.setBrightness(displayId, 1.0f)
             brightness.value = 1.0
         })
-        brightnessReset.enabledWhen = { videoReady() && abs(brightness.value - 0.5) > 0.01 }
+        brightnessReset.enabledWhen = { videoReady() && abs(brightness.value - 1.0) > 0.01 }
         brightnessReset.visibleWhen = notErrored
 
         val syncReset = addUi(IconButton("refresh") {
@@ -367,7 +369,7 @@ class DisplayMenu private constructor(
                     tooltipTitle("dreamdisplays.button.brightness.tooltip.1"),
                     tooltipBody("dreamdisplays.button.brightness.tooltip.2"),
                     Component.literal(""),
-                    tooltipValue("dreamdisplays.button.brightness.tooltip.3", floor(brightness.value * 200).toInt()),
+                    tooltipValue("dreamdisplays.button.brightness.tooltip.3", floor(brightness.value * 100).toInt()),
                 )
             },
             SettingsSection.Row("dreamdisplays.button.synchronization", sync, syncReset, extraGapBefore = 6) {
@@ -480,6 +482,7 @@ class DisplayMenu private constructor(
         }
     }
 
+    //? if >=1.21.11 {
     override fun onMouseClicked(event: MouseButtonEvent, doubleClick: Boolean): Boolean {
         // Coordinates are already in virtual space (UiScreenBase converted them); dropdown and mod
         // label are laid out in that same space, so hit-testing matches what's drawn at any GUI scale.
@@ -490,6 +493,15 @@ class DisplayMenu private constructor(
     }
 
     override fun onMouseReleased(event: MouseButtonEvent): Boolean = progress.commitDragIfActive()
+    //?} else
+    /*override fun onMouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        val mx = mouseX.toInt()
+        val my = mouseY.toInt()
+        if (dropdown.visible && button == 0 && dropdown.handleClick(mx, my)) return true
+        return modLabel.handleClick(mx, my)
+    }
+
+    override fun onMouseReleased(mouseX: Double, mouseY: Double, button: Int): Boolean = progress.commitDragIfActive()*/
 
     override fun isPauseScreen(): Boolean = false
 

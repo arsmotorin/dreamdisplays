@@ -9,9 +9,15 @@ import com.dreamdisplays.platform.client.displays.DisplayRegistry
 import com.dreamdisplays.platform.client.displays.DisplayScreen
 import com.dreamdisplays.api.render.RenderContext
 import com.dreamdisplays.api.render.TextureHandle
+//? if >=26 {
+//?} else
+/*import com.mojang.blaze3d.systems.RenderSystem*/
 import com.mojang.blaze3d.vertex.*
 import net.minecraft.client.Camera
+//? if >=1.21.11 {
 import net.minecraft.client.renderer.rendertype.RenderType
+//?} else
+/*import net.minecraft.client.renderer.RenderType*/
 import net.minecraft.world.phys.Vec3
 import kotlin.math.sin
 
@@ -55,7 +61,11 @@ object ScreenRenderer : ClientRenderService {
 
     /** Iterates all registered screens and lets the caller submit quads through the active renderer. */
     fun render(stack: PoseStack, camera: Camera, drawQuad: QuadRenderer) {
-        val cameraPos = camera.position()
+        val cameraPos =
+            //? if >=1.21.11 {
+            camera.position()
+            //?} else
+            /*camera.getPosition()*/
         for (displayScreen in DisplayRegistry.getScreens()) {
             if (displayScreen.isDormant || !displayScreen.hasTexture) continue
 
@@ -109,11 +119,7 @@ object ScreenRenderer : ClientRenderService {
     /** Draws a unit quad using the screen's GPU texture, ramping up the first-appear fade. */
     private fun renderGpuTexture(drawQuad: QuadRenderer, displayScreen: DisplayScreen) {
         val appear = displayScreen.appearProgress()
-        val base = if (displayScreen.isYuvTexture) {
-            displayScreen.brightness.coerceIn(0f, 2f) * 127.5f
-        } else {
-            255f
-        }
+        val base = if (displayScreen.isYuvTexture) displayScreen.brightness.coerceIn(0f, 1f) * 255f else 255f
         val c = (base * appear).toInt().coerceIn(0, 255)
         drawQuad(displayScreen.renderType!!) { pose, builder ->
             appendQuad(pose, builder, c, c, c, displayScreen.rotation)
@@ -248,9 +254,14 @@ object ScreenRenderer : ClientRenderService {
             draw262(stack, type, appendVertices)
             //?} else
             /*run {
-                val builder = Tesselator.getInstance().begin(type.mode(), type.format())
-                appendVertices(stack.last(), builder)
-                type.draw(builder.buildOrThrow())
+                RenderSystem.setShaderColor(1f, 1f, 1f, 1f)
+                try {
+                    val builder = Tesselator.getInstance().begin(type.mode(), type.format())
+                    appendVertices(stack.last(), builder)
+                    type.draw(builder.buildOrThrow())
+                } finally {
+                    RenderSystem.setShaderColor(1f, 1f, 1f, 1f)
+                }
             }*/
         }
 

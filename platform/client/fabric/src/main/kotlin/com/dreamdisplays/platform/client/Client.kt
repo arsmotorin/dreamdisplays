@@ -14,24 +14,33 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
+//? if >=1.21.11 {
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
-//? if >=26 {
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
 //?} else
-/*import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents*/
+/*import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents*/
 import net.minecraft.client.Camera
 import net.minecraft.client.Minecraft
+//? if >=1.21.11 {
 import net.minecraft.client.renderer.rendertype.RenderType
+//?} else
+/*import net.minecraft.client.renderer.RenderType*/
+//? if >=1.21.11 {
 import net.minecraft.resources.Identifier
+//?} else
+/*import net.minecraft.resources.ResourceLocation as Identifier*/
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Proxy
 
 @Suppress("UNUSED")
 class Client : ClientModInitializer, Mod {
+    /** If the `LevelRenderContext` has a `BufferSource` API, this is set to true. */
     private var customGeometryUnavailable = false
 
+    /** Called on client initialization. */
     override fun onInitializeClient() {
         // The Platform must be in the registry before onModInit so ClientStartupManager
         // can host the ClientApplication on top of it during bootstrap.
@@ -57,7 +66,7 @@ class Client : ClientModInitializer, Mod {
             }
         }
 
-        //? if >=26 {
+        //? if >=1.21.11 {
         LevelRenderEvents.BEFORE_GIZMOS.register { context ->
             val mc = Minecraft.getInstance()
             if (mc.level != null && mc.player != null) {
@@ -79,11 +88,12 @@ class Client : ClientModInitializer, Mod {
         /*WorldRenderEvents.AFTER_ENTITIES.register { context ->
             val mc = Minecraft.getInstance()
             if (mc.level != null && mc.player != null) {
-                ScreenRenderer.render(context.matrices(), context.gameRenderer().mainCamera)
+                ScreenRenderer.render(worldPoseStack(context), mainCamera(mc))
                 DisplayRegistry.getScreens().forEach { it.renderPopout() }
             }
         }*/
 
+        //? if >=1.21.11 {
         HudElementRegistry.addLast(
             Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "pip_overlay")
         ) { graphics, deltaTracker ->
@@ -92,6 +102,13 @@ class Client : ClientModInitializer, Mod {
                 deltaTracker.getGameTimeDeltaPartialTick(false)
             )
         }
+        //?} else
+        /*HudRenderCallback.EVENT.register { graphics, deltaTracker ->
+            Initializer.onRenderHud(
+                Minecraft.getInstance(), graphics,
+                deltaTracker.getGameTimeDeltaPartialTick(false)
+            )
+        }*/
 
         ClientTickEvents.END_CLIENT_TICK.register { Initializer.onEndTick(it) }
 
@@ -110,11 +127,13 @@ class Client : ClientModInitializer, Mod {
         ClientLifecycleEvents.CLIENT_STOPPING.register { Initializer.onStop() }
     }
 
+    /** Packet sender. */
     override fun sendPacket(packet: CustomPacketPayload) {
         ClientPlayNetworking.send(packet)
     }
 
-    //? if >=26 {
+    //? if >=1.21.11 {
+    /** Renders the screen using the `submitNodeCollector` API. */
     private fun renderSubmittedScreens(context: LevelRenderContext, mc: Minecraft) {
         val camera = mainCamera(mc)
         if (hasBufferSource(context)) {
@@ -141,6 +160,7 @@ class Client : ClientModInitializer, Mod {
         }
     }
 
+    /** Renders the screen using the `BufferSource` API. */
     private fun renderBufferedScreens(context: LevelRenderContext, mc: Minecraft) {
         if (!hasBufferSource(context)) {
             return
@@ -148,9 +168,11 @@ class Client : ClientModInitializer, Mod {
         renderWithBufferSource(context, mainCamera(mc))
     }
 
+    /** If the `LevelRenderContext` has a `BufferSource` API, returns true. */
     private fun hasBufferSource(context: LevelRenderContext): Boolean =
         runCatching { context.javaClass.getMethod("bufferSource") }.isSuccess
 
+    /** Renders the screen using the `BufferSource` API. */
     private fun renderWithBufferSource(context: LevelRenderContext, camera: Camera) {
         val bufferSource = runCatching {
             context.javaClass.getMethod("bufferSource").invoke(context)
@@ -166,13 +188,7 @@ class Client : ClientModInitializer, Mod {
         endBatch.invoke(bufferSource)
     }
 
-    private fun mainCamera(mc: Minecraft): Camera {
-        val gameRenderer = mc.gameRenderer
-        val method = runCatching { gameRenderer.javaClass.getMethod("mainCamera") }
-            .getOrElse { gameRenderer.javaClass.getMethod("getMainCamera") }
-        return method.invoke(gameRenderer) as Camera
-    }
-
+    /** Submits custom geometry to the GPU. */
     private fun submitCustomGeometry(
         stack: PoseStack,
         submitNodeCollector: Any,
@@ -192,7 +208,22 @@ class Client : ClientModInitializer, Mod {
     }
     //?}
 
+    /** Main camera accessor. */
+    private fun mainCamera(mc: Minecraft): Camera {
+        val gameRenderer = mc.gameRenderer
+        val method = runCatching { gameRenderer.javaClass.getMethod("mainCamera") }
+            .getOrElse { gameRenderer.javaClass.getMethod("getMainCamera") }
+        return method.invoke(gameRenderer) as Camera
+    }
+
+    /** World pose stack accessor. */
+    private fun worldPoseStack(context: Any): PoseStack =
+        runCatching { context.javaClass.getMethod("matrixStack") }
+            .getOrElse { context.javaClass.getMethod("matrices") }
+            .invoke(context) as PoseStack
+
     private companion object {
+        /** Logger. */
         private val logger = LoggerFactory.getLogger("DreamDisplays/FabricClient")
     }
 }

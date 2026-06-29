@@ -35,7 +35,15 @@ open class ScreenOverlay {
     ) {
         //?} else
         /*@Inject(
+            // 1.21.11 renders screens through renderWithTooltipAndSubtitles; 1.21.1 has no such method.
+            // Use renderWithTooltip there (the final wrapper that calls render() then draws the deferred
+            // tooltip) so the PiP lands on top of tooltips instead of under them.
+            //? if >=1.21.11 {
             method = ["renderWithTooltipAndSubtitles"],
+            //?}
+            //? if <1.21.11 {
+            method = ["renderWithTooltip"],
+            //?}
             at = [At("RETURN")],
             require = 0
         )
@@ -44,7 +52,15 @@ open class ScreenOverlay {
         if (overlays.isEmpty) return
         val mc = Minecraft.getInstance()
         if (mc.level == null || mc.player == null) return
-        val leftPressed = GLFW.glfwGetMouseButton(mc.window.handle(), GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS
+        val window =
+            //? if >=1.21.11 {
+            mc.window.handle()
+            //?} else
+            /*mc.window.window*/
+        val leftPressed = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS
+        //? if >=1.21.11 {
+        graphics.nextStratum()
+        //?}
         overlays.renderAll(MinecraftOverlayRenderContext(mc, graphics, mouseX, mouseY, leftPressed, partialTick))
     }
 }

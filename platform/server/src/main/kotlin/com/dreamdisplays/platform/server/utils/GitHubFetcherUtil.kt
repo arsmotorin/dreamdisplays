@@ -2,11 +2,11 @@ package com.dreamdisplays.platform.server.utils
 
 import io.github.arsmotorin.ofrat.PaperOnly
 
+import com.dreamdisplays.util.asJsonArrayOrNull
+import com.dreamdisplays.util.asJsonObjectOrNull
 import com.dreamdisplays.util.net.DreamHttpClient
+import com.dreamdisplays.util.optString
 import com.dreamdisplays.util.json.DreamJson
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import org.jspecify.annotations.NullMarked
 import org.slf4j.LoggerFactory
 
@@ -55,15 +55,29 @@ object GitHubFetcherUtil {
             return emptyList()
         }
 
-        return DreamJson.compact.decodeFromString<List<Release>>(response.bodyString())
-            .filter { it.tagName.isNotBlank() }
+        return parseReleases(response.bodyString())
     }
 
-    @Serializable
+    /** Parses only the GitHub release fields used by update checks; no generated serializer required. */
+    private fun parseReleases(body: String): List<Release> =
+        DreamJson.compact.parseToJsonElement(body)
+            .asJsonArrayOrNull()
+            ?.mapNotNull { element ->
+                val obj = element.asJsonObjectOrNull() ?: return@mapNotNull null
+                Release(
+                    tagName = obj.optString("tag_name").orEmpty(),
+                    name = obj.optString("name").orEmpty(),
+                    htmlUrl = obj.optString("html_url").orEmpty(),
+                    publishedAt = obj.optString("published_at").orEmpty(),
+                )
+            }
+            ?.filter { it.tagName.isNotBlank() }
+            ?: emptyList()
+
     data class Release(
-        @SerialName("tag_name") val tagName: String = "",
+        val tagName: String = "",
         val name: String = "",
-        @SerialName("html_url") val htmlUrl: String = "",
-        @SerialName("published_at") val publishedAt: String = "",
+        val htmlUrl: String = "",
+        val publishedAt: String = "",
     )
 }

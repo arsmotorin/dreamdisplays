@@ -1,3 +1,4 @@
+//? if >=1.21.11 {
 package com.dreamdisplays.platform.client.render
 
 import com.mojang.blaze3d.systems.RenderSystem
@@ -43,3 +44,4 @@ class VideoPlaneTexture(label: String, width: Int, height: Int) : AbstractTextur
         ) as GpuTexture
     }
 }
+//?}

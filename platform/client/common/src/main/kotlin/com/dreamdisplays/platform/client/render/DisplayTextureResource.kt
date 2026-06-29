@@ -3,10 +3,16 @@ package com.dreamdisplays.platform.client.render
 import com.dreamdisplays.platform.client.Initializer
 import com.mojang.blaze3d.platform.NativeImage
 import net.minecraft.client.Minecraft
+//? if >=1.21.11 {
 import net.minecraft.client.renderer.rendertype.RenderType
+//?} else
+/*import net.minecraft.client.renderer.RenderType*/
 import net.minecraft.client.renderer.texture.AbstractTexture
 import net.minecraft.client.renderer.texture.DynamicTexture
+//? if >=1.21.11 {
 import net.minecraft.resources.Identifier
+//?} else
+/*import net.minecraft.resources.ResourceLocation as Identifier*/
 import java.util.UUID
 
 /**
@@ -194,14 +200,20 @@ class DisplayTextureResource(private val uuid: UUID) {
 
     /** Builds one allocation of [w] x [h] pixels in whichever pipeline mode is currently active. */
     private fun build(w: Int, h: Int): Allocation =
+        //? if >=1.21.11 {
         if (DisplayYuvRenderTypes.active) buildYuv(w, h) else buildRgba(w, h)
+        //?} else
+        /*buildRgba(w, h)*/
 
     /** Builds the legacy single RGBA texture fed by CPU-converted frames. */
     private fun buildRgba(w: Int, h: Int): Allocation {
+        //? if >=1.21.11 {
         val newTexture = DynamicTexture(
             { UUID.randomUUID().toString() },
             NativeImage(NativeImage.Format.RGBA, w, h, false),
         )
+        //?} else
+        /*val newTexture = DynamicTexture(NativeImage(NativeImage.Format.RGBA, w, h, false))*/
         val newId = Identifier.fromNamespaceAndPath(
             Initializer.MOD_ID,
             "screen-main-texture-$uuid-${UUID.randomUUID()}",
@@ -215,6 +227,7 @@ class DisplayTextureResource(private val uuid: UUID) {
         )
     }
 
+    //? if >=1.21.11 {
     /** Builds the three I420 plane textures consumed by the YUV fragment shader. */
     private fun buildYuv(w: Int, h: Int): Allocation {
         val cw = (w + 1) / 2
@@ -243,6 +256,7 @@ class DisplayTextureResource(private val uuid: UUID) {
             fallbackRenderType = DisplayYuvRenderTypes.createFallback(),
         )
     }
+    //?}
 
     /** Closes the current and pending textures and unregisters them, leaving the resource empty. */
     fun release() {

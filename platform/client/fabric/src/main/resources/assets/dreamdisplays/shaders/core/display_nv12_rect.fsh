@@ -37,8 +37,7 @@ void main() {
     vec2 ySize = vec2(textureSize(Sampler0));
     vec2 p = texCoord0 * ySize;
 
-    // BT.709 limited range for 8-bit NV12/420v. Brightness follows the I420 shader contract:
-    // vertex color carries 0..2 brightness halved into normalized bytes.
+    // BT.709 limited range for 8-bit NV12/420v. Brightness follows the vertex color
     float y = (texture(Sampler0, p).r - 0.0625) * 1.164384;
     vec2 uv = texture(Sampler1, p * 0.5).rg - vec2(0.5);
     vec3 rgb = clamp(vec3(
@@ -47,7 +46,7 @@ void main() {
         y + 2.112402 * uv.x
     ), 0.0, 1.0);
 
-    vec4 color = vec4(rgb * vertexColor.rgb * 2.0, vertexColor.a) * ColorModulator;
+    vec4 color = vec4(rgb * vertexColor.rgb, vertexColor.a) * ColorModulator;
 
     // Render-distance fog only: fades the display toward the fog color as it nears the view
     // distance, fully gone beyond it. No environmental fog, so nearby displays stay untinted.

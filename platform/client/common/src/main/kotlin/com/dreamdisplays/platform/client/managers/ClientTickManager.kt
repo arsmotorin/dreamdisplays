@@ -139,7 +139,11 @@ object ClientTickManager {
 
         // The menu-open button comes from the KeyBindingRegistry; the click itself is routed
         // through the InputHandler chain (DisplayMenuInputHandler consumes sneak + click-on-display).
-        val window = minecraft.window.handle()
+        val window =
+            //? if >=1.21.11 {
+            minecraft.window.handle()
+            //?} else
+            /*minecraft.window.window*/
         val menuButton = DreamServices.registry.getOrNull<KeyBindingRegistry>()
             ?.findById(DisplayMenuInputHandler.OPEN_MENU_BINDING_ID)?.defaultKey
             ?: GLFW.GLFW_MOUSE_BUTTON_RIGHT

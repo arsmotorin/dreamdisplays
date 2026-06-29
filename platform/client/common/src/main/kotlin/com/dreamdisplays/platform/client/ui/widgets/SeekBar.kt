@@ -13,11 +13,16 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 //?}
 import net.minecraft.client.gui.narration.NarratedElementType
 import net.minecraft.client.gui.narration.NarrationElementOutput
+//? if >=1.21.11 {
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.client.renderer.RenderPipelines
+//?}
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.MutableComponent
+//? if >=1.21.11 {
 import net.minecraft.resources.Identifier
+//?} else
+/*import net.minecraft.resources.ResourceLocation as Identifier*/
 import net.minecraft.util.Mth
 
 /**
@@ -44,9 +49,15 @@ class SeekBar(
         val cur = if (dragging) dragTargetNanos else current()
         val value = if (dur > 0) Mth.clamp(cur / dur.toDouble(), 0.0, 1.0) else 0.0
 
+        //? if >=1.21.11 {
         g.blitSprite(RenderPipelines.GUI_TEXTURED, trackSprite(), x, y, width, height)
+        //?} else
+        /*g.blitSprite(trackSprite(), x, y, width, height)*/
         val handleX = x + (value * (width - 8).toDouble()).toInt()
+        //? if >=1.21.11 {
         g.blitSprite(RenderPipelines.GUI_TEXTURED, handleSprite(), handleX, y, 8, height)
+        //?} else
+        /*g.blitSprite(handleSprite(), handleX, y, 8, height)*/
 
         drawScrollingLabel(g, timeLabel(cur, dur), 4)
     }
@@ -83,6 +94,10 @@ class SeekBar(
     }
     //?}
 
+    // NeoForge reroutes mouseClicked to a Neo-only 3-arg onClick that Fabric lacks, so the legacy
+    // (1.21.1) branch overrides mouseClicked itself so drag-to-seek starts on both platforms. onDrag
+    // is unchanged across platforms.
+    //? if >=1.21.11 {
     override fun onClick(event: MouseButtonEvent, doubleClick: Boolean) {
         if (!active) return
         val dur = duration()
@@ -98,6 +113,23 @@ class SeekBar(
         if (dur <= 0) return
         dragTargetNanos = positionFromMouse(event.x(), dur)
     }
+    //?} else
+    /*override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        if (!isValidClickButton(button) || !clicked(mouseX, mouseY)) return false
+        val dur = duration()
+        if (dur <= 0) return false
+        dragTargetNanos = positionFromMouse(mouseX, dur)
+        dragging = true
+        return true
+    }
+
+    override fun onDrag(mouseX: Double, mouseY: Double, dragX: Double, dragY: Double) {
+        super.onDrag(mouseX, mouseY, dragX, dragY)
+        if (!dragging || !active) return
+        val dur = duration()
+        if (dur <= 0) return
+        dragTargetNanos = positionFromMouse(mouseX, dur)
+    }*/
 
     /** Commits an in-flight drag as a seek; returns true if a drag was active. Call from `mouseReleased`. */
     fun commitDragIfActive(): Boolean {

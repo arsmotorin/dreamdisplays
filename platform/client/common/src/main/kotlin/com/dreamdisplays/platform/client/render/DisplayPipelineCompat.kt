@@ -1,3 +1,4 @@
+//? if >=1.21.11 {
 package com.dreamdisplays.platform.client.render
 
 import com.mojang.blaze3d.pipeline.BlendFunction
@@ -27,3 +28,4 @@ internal fun RenderPipeline.Builder.withDisplayColorAndDepth(): RenderPipeline.B
     }
     return this
 }
+//?}

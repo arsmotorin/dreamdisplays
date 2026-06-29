@@ -12,11 +12,16 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 //?}
 import net.minecraft.client.gui.narration.NarratedElementType
 import net.minecraft.client.gui.narration.NarrationElementOutput
+//? if >=1.21.11 {
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.client.renderer.RenderPipelines
+//?}
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.MutableComponent
+//? if >=1.21.11 {
 import net.minecraft.resources.Identifier
+//?} else
+/*import net.minecraft.resources.ResourceLocation as Identifier*/
 import net.minecraft.util.Mth
 
 /**
@@ -70,11 +75,15 @@ class ValueSlider(
     }
 
     override fun draw(g: GuiGraphicsCompat, mouseX: Int, mouseY: Int, partialTick: Float) {
+        //? if >=1.21.11 {
         g.blitSprite(RenderPipelines.GUI_TEXTURED, trackSprite(), x, y, width, height)
         g.blitSprite(
             RenderPipelines.GUI_TEXTURED, handleSprite(),
             x + (value * (width - 8).toDouble()).toInt(), y, 8, height,
         )
+        //?} else
+        /*g.blitSprite(trackSprite(), x, y, width, height)
+        g.blitSprite(handleSprite(), x + (value * (width - 8).toDouble()).toInt(), y, 8, height)*/
         val color = if (active) 0xFFFFFF else 0xA0A0A0
         drawScrollingLabel(g, label(value).copy().withStyle { it.withColor(color) }, 2)
     }
@@ -85,6 +94,10 @@ class ValueSlider(
     }
     //?}
 
+    // NeoForge reroutes mouseClicked to a Neo-only 3-arg onClick that Fabric lacks, so the legacy
+    // (1.21.1) branch overrides mouseClicked itself so the click-to-set fires on both platforms.
+    // onDrag is unchanged across platforms.
+    //? if >=1.21.11 {
     override fun onClick(event: MouseButtonEvent, doubleClick: Boolean) {
         setValueFromMouse(event.x())
         playDownSound(Minecraft.getInstance().soundManager)
@@ -94,6 +107,18 @@ class ValueSlider(
         super.onDrag(event, dragX, dragY)
         setValueFromMouse(event.x())
     }
+    //?} else
+    /*override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        if (!isValidClickButton(button) || !clicked(mouseX, mouseY)) return false
+        setValueFromMouse(mouseX)
+        playDownSound(Minecraft.getInstance().soundManager)
+        return true
+    }
+
+    override fun onDrag(mouseX: Double, mouseY: Double, dragX: Double, dragY: Double) {
+        super.onDrag(mouseX, mouseY, dragX, dragY)
+        setValueFromMouse(mouseX)
+    }*/
 
     override fun setFocused(focused: Boolean) {
         super.setFocused(focused)
@@ -105,7 +130,10 @@ class ValueSlider(
         }
     }
 
+    //? if >=1.21.11 {
     override fun onRelease(event: MouseButtonEvent) {
+    //?} else
+    /*override fun onRelease(mouseX: Double, mouseY: Double) {*/
         // Non-live sliders defer the (expensive) apply until the drag / click is released
         if (!live && pendingCommit) {
             pendingCommit = false

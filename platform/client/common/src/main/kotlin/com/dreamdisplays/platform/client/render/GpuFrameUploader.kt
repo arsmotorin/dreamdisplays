@@ -3,7 +3,9 @@ package com.dreamdisplays.platform.client.render
 import com.dreamdisplays.api.media.FramePixelFormat
 import com.dreamdisplays.api.media.player.FrameUploader
 import com.dreamdisplays.api.media.player.GpuTextureRef
+//? if >=1.21.11 {
 import com.mojang.blaze3d.textures.GpuTexture
+//?}
 import net.minecraft.client.Minecraft
 import java.nio.ByteBuffer
 
@@ -23,10 +25,15 @@ class GpuFrameUploader : FrameUploader {
     private var rgbaUploadBuffer: ByteBuffer? = null
 
     /** False while the window is minimized (no GL context to upload into). */
-    override fun canUpload(): Boolean = !Minecraft.getInstance().window.isMinimized
+    override fun canUpload(): Boolean =
+        //? if >=1.21.11 {
+        !Minecraft.getInstance().window.isMinimized
+        //?} else
+        /*true*/
 
     /** Uploads an interleaved [src] frame into [target] in the given [format]. */
     override fun uploadInterleaved(target: GpuTextureRef, src: ByteBuffer, format: FramePixelFormat): Boolean {
+        //? if >=1.21.11 {
         val texture = (target as GpuTextureHandle).texture
         TextureUploadUtil.upload(
             texture = texture,
@@ -38,11 +45,15 @@ class GpuFrameUploader : FrameUploader {
             rgbaScratch = rgbaUploadBuffer,
             setRgbaScratch = { rgbaUploadBuffer = it },
         )
+        //?} else
+        /*val texture = target as GpuTextureHandle
+        glUploader().upload(texture.textureId, src, texture.width, texture.height, format.toUploadFormat())*/
         return true
     }
 
     /** Uploads the Y / U / V planes packed in [src] into their respective textures. */
     override fun uploadPlanar(y: GpuTextureRef, u: GpuTextureRef, v: GpuTextureRef, src: ByteBuffer): Boolean {
+        //? if >=1.21.11 {
         var offset = 0
         for ((i, ref) in arrayOf(y, u, v).withIndex()) {
             val texture: GpuTexture = (ref as GpuTextureHandle).texture
@@ -62,7 +73,13 @@ class GpuFrameUploader : FrameUploader {
             offset += planeBytes
         }
         return true
+        //?} else
+        /*return false*/
     }
+
+    /** Lazily creates the interleaved GL uploader. */
+    private fun glUploader(): AsyncTextureUploader =
+        uploader ?: AsyncTextureUploader(stateCache = true).also { uploader = it }
 
     /** Lazily creates the per-plane GL uploader for plane [i] (0 = Y, 1 = U, 2 = V). */
     private fun planeUploader(i: Int): AsyncTextureUploader =

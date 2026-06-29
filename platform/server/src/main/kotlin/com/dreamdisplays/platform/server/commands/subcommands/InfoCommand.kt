@@ -122,7 +122,7 @@ object FabricInfoCommand {
         val player = ctx.source.entity as? ServerPlayer
             ?: return ctx.source.sendFailure(Component.literal("Players only.")).let { 0 }
 
-        val worldKey = RegionUtil.getLevelKey(player.level())
+        val worldKey = RegionUtil.getPlayerLevelKey(player)
         val targetPos = getTargetBlockPos(player)
             ?: return MessageUtil.sendMessage(player, "noDisplay").let { 0 }
 

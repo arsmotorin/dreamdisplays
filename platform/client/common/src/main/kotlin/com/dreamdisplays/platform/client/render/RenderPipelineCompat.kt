@@ -1,3 +1,4 @@
+//? if >=1.21.11 {
 package com.dreamdisplays.platform.client.render
 
 import com.mojang.blaze3d.pipeline.RenderPipeline
@@ -124,3 +125,4 @@ internal object RenderPipelineCompat {
     private fun vanillaLayout(name: String): Any =
         Class.forName("net.minecraft.client.renderer.BindGroupLayouts").getField(name).get(null)
 }
+//?}
