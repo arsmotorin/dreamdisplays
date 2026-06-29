@@ -1,6 +1,8 @@
 package com.dreamdisplays.platform.client.render
 
 import com.dreamdisplays.api.display.model.DisplayFacing
+import com.dreamdisplays.platform.client.render.DisplayGeometry.SURFACE_OFFSET
+import com.dreamdisplays.platform.client.render.DisplayGeometry.applyScreenTransform
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.core.BlockPos
 import org.joml.Quaternionf

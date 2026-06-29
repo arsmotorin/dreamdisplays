@@ -2,6 +2,8 @@ package com.dreamdisplays.api.security
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
 import com.dreamdisplays.api.media.search.YouTubeVideoId
+import com.dreamdisplays.api.security.MediaUrlPolicy.MAX_LANG_LENGTH
+import com.dreamdisplays.api.security.MediaUrlPolicy.MAX_URL_LENGTH
 
 /**
  * Trust-boundary policy for client-supplied media URLs.

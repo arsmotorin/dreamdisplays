@@ -1,6 +1,7 @@
 package com.dreamdisplays.api.playback
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
+import com.dreamdisplays.api.playback.PlaybackMode.Companion.fromWire
 import kotlinx.serialization.Serializable
 
 /**

@@ -1,18 +1,17 @@
 package com.dreamdisplays.platform.server.utils
 
-import com.dreamdisplays.util.net.DreamHttpClient
 import com.dreamdisplays.util.json.DreamJson
+import com.dreamdisplays.util.net.DreamHttpClient
 import io.github.arsmotorin.ofrat.FabricOnly
 import io.github.arsmotorin.ofrat.PaperOnly
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
+import org.bukkit.Location
+import org.bukkit.entity.Player
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
-import org.bukkit.Location
-import org.bukkit.entity.Player
 
 /**
  * Utility for sending moderation reports to a Discord webhook. Rate limiting (per-display and

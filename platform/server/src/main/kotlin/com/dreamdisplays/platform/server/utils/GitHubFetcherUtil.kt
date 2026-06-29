@@ -1,12 +1,11 @@
 package com.dreamdisplays.platform.server.utils
 
-import io.github.arsmotorin.ofrat.PaperOnly
-
 import com.dreamdisplays.util.asJsonArrayOrNull
 import com.dreamdisplays.util.asJsonObjectOrNull
+import com.dreamdisplays.util.json.DreamJson
 import com.dreamdisplays.util.net.DreamHttpClient
 import com.dreamdisplays.util.optString
-import com.dreamdisplays.util.json.DreamJson
+import io.github.arsmotorin.ofrat.PaperOnly
 import org.jspecify.annotations.NullMarked
 import org.slf4j.LoggerFactory
 

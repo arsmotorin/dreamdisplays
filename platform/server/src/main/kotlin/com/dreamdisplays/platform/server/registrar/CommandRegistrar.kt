@@ -1,8 +1,5 @@
 package com.dreamdisplays.platform.server.registrar
 
-import io.github.arsmotorin.ofrat.FabricOnly
-import io.github.arsmotorin.ofrat.PaperOnly
-
 import com.dreamdisplays.platform.server.Main
 import com.dreamdisplays.platform.server.Server
 import com.dreamdisplays.platform.server.commands.subcommands.*
@@ -11,11 +8,13 @@ import com.mojang.brigadier.Command
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.tree.LiteralCommandNode
+import io.github.arsmotorin.ofrat.FabricOnly
+import io.github.arsmotorin.ofrat.PaperOnly
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.Commands
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
-import java.util.Locale
+import java.util.*
 
 /**
  * Command registrar. Uses Brigadier to build the `/display` command tree.

@@ -1,14 +1,13 @@
 package com.dreamdisplays.platform.server.meta
 
-import io.github.arsmotorin.ofrat.FabricOnly
-import io.github.arsmotorin.ofrat.PaperOnly
-
 import com.dreamdisplays.platform.server.utils.GitHubFetcherUtil
 import com.dreamdisplays.util.asJsonArrayOrNull
 import com.dreamdisplays.util.asJsonObjectOrNull
+import com.dreamdisplays.util.json.DreamJson
 import com.dreamdisplays.util.net.DreamHttpClient
 import com.dreamdisplays.util.optString
-import com.dreamdisplays.util.json.DreamJson
+import io.github.arsmotorin.ofrat.FabricOnly
+import io.github.arsmotorin.ofrat.PaperOnly
 import org.semver4j.Semver
 import org.slf4j.LoggerFactory
 import java.net.ConnectException
@@ -63,7 +62,7 @@ object Updater {
 
     /** Extracts a stable semver from a GitHub release tag; returns null for snapshots and unparseable tags. */
     private fun parseVersion(tag: String): Semver? =
-        Semver.coerce(tag)?.takeIf { it.isStable() }
+        Semver.coerce(tag)?.takeIf { it.isStable }
 }
 
 /**
@@ -146,7 +145,7 @@ object FabricUpdater {
 
     /** Extracts a stable semver from a GitHub release tag; returns null for snapshots and unparseable tags. */
     private fun parseVersion(tag: String): Semver? =
-        Semver.coerce(tag)?.takeIf { it.isStable() }
+        Semver.coerce(tag)?.takeIf { it.isStable }
 
     data class Release(
         val tagName: String = "",

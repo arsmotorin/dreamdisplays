@@ -1,6 +1,7 @@
 package com.dreamdisplays.api.media
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
+import com.dreamdisplays.api.media.VideoQuality.Companion.parse
 
 /**
  * Requested video quality for a display: either [Auto] (let the client pick the best available

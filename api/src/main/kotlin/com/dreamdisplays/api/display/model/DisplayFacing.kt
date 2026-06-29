@@ -1,6 +1,7 @@
 package com.dreamdisplays.api.display.model
 
 import com.dreamdisplays.api.DreamDisplaysUnstableApi
+import com.dreamdisplays.api.display.model.DisplayFacing.Companion.fromByte
 import kotlinx.serialization.Serializable
 
 /**

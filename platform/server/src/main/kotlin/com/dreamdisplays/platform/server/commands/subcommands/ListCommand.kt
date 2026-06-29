@@ -2,6 +2,7 @@ package com.dreamdisplays.platform.server.commands.subcommands
 
 import com.dreamdisplays.platform.server.Main
 import com.dreamdisplays.platform.server.Server
+import com.dreamdisplays.platform.server.commands.subcommands.ListCommand.Companion.PAGE_SIZE
 import com.dreamdisplays.platform.server.datatypes.FabricDisplayData
 import com.dreamdisplays.platform.server.datatypes.PaperDisplayData
 import com.dreamdisplays.platform.server.managers.DisplayManager
