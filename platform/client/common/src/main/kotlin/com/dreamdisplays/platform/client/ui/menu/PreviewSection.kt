@@ -1,10 +1,5 @@
 package com.dreamdisplays.platform.client.ui.menu
 
-//? if >=1.21.11 {
-//?}
-//? if >=1.21.11 {
-//?} else
-/*import net.minecraft.resources.ResourceLocation as Identifier*/
 import com.dreamdisplays.api.media.MediaServices
 import com.dreamdisplays.api.media.search.YouTubeUrls
 import com.dreamdisplays.media.source.ytdlp.VideoMetadataCache
@@ -24,10 +19,13 @@ import com.dreamdisplays.platform.client.ui.widgets.IconButton
 import com.dreamdisplays.platform.client.ui.widgets.SeekBar
 import com.mojang.blaze3d.platform.NativeImage
 import net.minecraft.client.Minecraft
-import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.client.renderer.texture.DynamicTexture
 import net.minecraft.network.chat.Component
+//? if >=1.21.11 {
+import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.resources.Identifier
+//?} else
+/*import net.minecraft.resources.ResourceLocation as Identifier*/
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.*

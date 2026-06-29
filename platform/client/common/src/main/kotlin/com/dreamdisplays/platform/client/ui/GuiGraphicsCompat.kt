@@ -4,9 +4,10 @@ package com.dreamdisplays.platform.client.ui
 import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.network.chat.Component
-
 //?} else
-/*import net.minecraft.client.gui.GuiGraphics*/
+/*import net.minecraft.client.gui.GuiGraphics
+import net.minecraft.client.gui.Font
+import net.minecraft.network.chat.Component*/
 
 /**
  * Version-neutral alias for the per-frame GUI draw target.
