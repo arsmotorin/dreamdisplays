@@ -139,8 +139,9 @@ class Client(modEventBus: IEventBus) : com.dreamdisplays.platform.client.Mod {
         }
     }
     //?} else
-    /** On render events. */
-    /*@SubscribeEvent fun onRenderAfterLevel(event: RenderLevelStageEvent) {
+    /*
+    // On render events.
+    @SubscribeEvent fun onRenderAfterLevel(event: RenderLevelStageEvent) {
         val mc = Minecraft.getInstance()
         if (mc.level == null || mc.player == null) return
         if (event.stage != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return
