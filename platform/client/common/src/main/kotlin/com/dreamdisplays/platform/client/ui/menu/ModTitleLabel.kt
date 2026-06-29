@@ -24,7 +24,7 @@ class ModTitleLabel {
     fun draw(g: GuiGraphicsCompat, x: Int, y: Int) {
         val font = Minecraft.getInstance().font
         val name = Component.literal("Dream Displays")
-        val ver = Component.literal(" ${GeneralUtil.getModVersion()}")
+        val ver = Component.literal(" ${GeneralUtil.getPrettyModVersion()}")
             .withStyle(Style.EMPTY.withColor(0xFF6AB7FF.toInt()))
         val label = name.copy().append(ver)
         g.drawText(font, label, x, y, 0xFFFFFFFF.toInt(), true)
