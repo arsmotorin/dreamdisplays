@@ -213,8 +213,7 @@ object DisplayManager {
         return location.isInRange(display)
     }
 
-    /** Removes a display from the cached Folia proximity index. */
-    @PaperOnly
+    /** Removes a display from the cached proximity index. */
     private fun forgetNearbyDisplay(displayId: UUID) {
         nearbyPlayersByDisplay.remove(displayId)
         nearbyDisplaysByPlayer.replaceAll { _, ids -> ids - displayId }
