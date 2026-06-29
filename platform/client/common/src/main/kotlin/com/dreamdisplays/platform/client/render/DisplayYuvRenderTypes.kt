@@ -2,14 +2,24 @@ package com.dreamdisplays.platform.client.render
 
 import com.dreamdisplays.platform.client.Initializer
 import com.dreamdisplays.media.player.nativebridge.NativeMedia
+//? if >=1.21.11 {
 import com.mojang.blaze3d.pipeline.RenderPipeline
+//?}
 import com.mojang.blaze3d.platform.NativeImage
+//? if >=1.21.11 {
 import com.mojang.blaze3d.textures.*
+//?}
 import net.minecraft.client.Minecraft
+//? if >=1.21.11 {
 import net.minecraft.client.renderer.rendertype.RenderSetup
 import net.minecraft.client.renderer.rendertype.RenderType
+//?} else
+/*import net.minecraft.client.renderer.RenderType*/
 import net.minecraft.client.renderer.texture.DynamicTexture
+//? if >=1.21.11 {
 import net.minecraft.resources.Identifier
+//?} else
+/*import net.minecraft.resources.ResourceLocation as Identifier*/
 
 /**
  * GPU-side YUV -> RGB path: a custom [RenderPipeline] that samples the three I420 planes
@@ -19,10 +29,10 @@ import net.minecraft.resources.Identifier
  * The vertex stage uses the mod's unlit `core/display_fog` (it emits the spherical/cylindrical
  * vertex distances so the fragment shader can apply vanilla distance fog without any lightmap or
  * normals); the fragment shader is `assets/dreamdisplays/shaders/core/display_yuv.fsh`. Brightness
- * rides in on the vertex color, scaled by 0.5 so the 0..2 range fits a normalized byte (the shader
- * multiplies by 2).
+ * rides in on the vertex color using the same 0..1 contract as Minecraft's normal textured pipelines.
  */
 object DisplayYuvRenderTypes {
+    //? if >=1.21.11 {
     /** Shared linear / clamp sampler used by all video planes. */
     private var sharedPlaneSampler: GpuSampler? = null
 
@@ -132,4 +142,28 @@ object DisplayYuvRenderTypes {
      */
     fun solidColorType(): RenderType =
         sharedSolidType ?: createFallback().also { sharedSolidType = it }
+    //?} else
+    /*val active: Boolean get() = false
+
+    private var whiteTextureId: Identifier? = null
+
+    fun createFallback(): RenderType {
+        val id = whiteTextureId ?: run {
+            val img = NativeImage(NativeImage.Format.RGBA, 1, 1, false)
+            img.setPixelRGBA(0, 0, -1)
+            val tex = DynamicTexture(img)
+            tex.upload()
+            val newId = Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "screen-white")
+            Minecraft.getInstance().textureManager.register(newId, tex)
+            whiteTextureId = newId
+            newId
+        }
+        return DisplayUnlitRenderTypes.create("dream-displays-fallback", id)
+    }
+
+    @Volatile
+    private var sharedSolidType: RenderType? = null
+
+    fun solidColorType(): RenderType =
+        sharedSolidType ?: createFallback().also { sharedSolidType = it }*/
 }

@@ -9,16 +9,23 @@ import com.dreamdisplays.util.toJsonString
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.HoverEvent
+//? if >=1.21.11 {
 import net.kyori.adventure.text.`object`.ObjectContents
+//?}
 import net.minecraft.core.registries.BuiltInRegistries
+//? if >=1.21.11 {
 import net.minecraft.data.AtlasIds
+//?}
 import net.minecraft.network.chat.Component as NmsComponent
 import net.minecraft.network.chat.MutableComponent
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+//? if >=1.21.11 {
 import net.minecraft.network.chat.contents.ObjectContents as NmsObjectContents
 import net.minecraft.network.chat.contents.objects.AtlasSprite
 import net.minecraft.resources.Identifier
+//?} else
+/*import net.minecraft.resources.ResourceLocation as Identifier*/
 import net.minecraft.server.level.ServerPlayer
 //? if >=26 {
 import net.minecraft.world.item.ItemStackTemplate
@@ -119,6 +126,7 @@ object MessageUtil {
     private fun materialSpriteComponent(mat: Material): Component {
         val ns = mat.key().namespace()
         val name = mat.key().value()
+        //? if >=1.21.11 {
         val atlas: Key
         val spriteKey: Key
         if (mat.isBlock) {
@@ -130,6 +138,9 @@ object MessageUtil {
         }
         return Component.`object`(ObjectContents.sprite(atlas, spriteKey))
             .hoverEvent(HoverEvent.showItem(mat.key(), 1))
+        //?} else
+        /*val key = "$ns:$name"
+        return Component.text(key).hoverEvent(HoverEvent.showText(Component.text(key)))*/
     }
 
     /** Sends a localized message identified by [messageKey] to [player]. */
@@ -234,7 +245,12 @@ object MessageUtil {
         if (clickEvent?.string("action") == "open_url") {
             clickEvent.string("value")?.let { url ->
                 runCatching { URI.create(url) }.getOrNull()?.let {
+                    //? if >=1.21.11 {
                     style = style.withClickEvent(net.minecraft.network.chat.ClickEvent.OpenUrl(it))
+                    //?} else
+                    /*style = style.withClickEvent(
+                        net.minecraft.network.chat.ClickEvent(net.minecraft.network.chat.ClickEvent.Action.OPEN_URL, url)
+                    )*/
                 }
             }
         }
@@ -244,7 +260,12 @@ object MessageUtil {
             val hoverComponent = nmsComponentFromJsonValue(hoverEvent["value"])
                 ?: hoverEvent.string("value")?.let(NmsComponent::literal)
             hoverComponent?.let {
+                //? if >=1.21.11 {
                 style = style.withHoverEvent(net.minecraft.network.chat.HoverEvent.ShowText(it))
+                //?} else
+                /*style = style.withHoverEvent(
+                    net.minecraft.network.chat.HoverEvent(net.minecraft.network.chat.HoverEvent.Action.SHOW_TEXT, it)
+                )*/
             }
         }
         style
@@ -287,6 +308,9 @@ object MessageUtil {
             val index = match.groupValues[1].toIntOrNull()
             if (index != null && index < materialKeys.size) {
                 val itemId = Identifier.parse(materialKeys[index])
+                val spriteComponent =
+                    //? if >=1.21.11 {
+                    run {
                 val item = BuiltInRegistries.ITEM.getValue(itemId)
                 val isBlock = item is net.minecraft.world.item.BlockItem
                 val atlasId = if (isBlock) AtlasIds.BLOCKS else AtlasIds.ITEMS
@@ -301,7 +325,10 @@ object MessageUtil {
                     //?} else
                     /*val hoverEvent = net.minecraft.network.chat.HoverEvent.ShowItem(ItemStack(item))
                     val spriteComponent = MutableComponent.create(NmsObjectContents(atlasSprite))*/
-                    .withStyle { it.withHoverEvent(hoverEvent) }
+                    spriteComponent.withStyle { it.withHoverEvent(hoverEvent) }
+                    }
+                    //?} else
+                    /*NmsComponent.literal(itemId.toString())*/
                 root.append(spriteComponent)
             }
             lastIndex = match.range.last + 1

@@ -1,3 +1,4 @@
+//? if >=1.21.11 {
 package com.dreamdisplays.platform.client.render
 
 import com.dreamdisplays.platform.client.Initializer
@@ -110,3 +111,4 @@ internal object Yuv262Reflect {
             }
         }
 }
+//?}

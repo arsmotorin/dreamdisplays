@@ -5,11 +5,18 @@ import com.dreamdisplays.platform.client.ui.GuiGraphicsCompat
 import com.dreamdisplays.platform.client.ui.kit.UiWidget
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.components.WidgetSprites
+//? if >=1.21.11 {
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.client.renderer.RenderPipelines
+//?}
 import net.minecraft.network.chat.Component
+//? if >=1.21.11 {
 import net.minecraft.resources.Identifier
+//?} else
+/*import net.minecraft.resources.ResourceLocation as Identifier*/
+//? if >=1.21.11 {
 import net.minecraft.util.ARGB
+//?}
 import kotlin.math.max
 
 /**
@@ -31,19 +38,36 @@ class IconButton(
     constructor(icon: String, onPress: () -> Unit) :
             this(icon = { modIcon(icon) }, onPress = onPress)
 
+    // NeoForge deprecates the 2-arg onClick and reroutes mouseClicked to a Neo-only 3-arg overload that
+    // Fabric lacks, so the legacy (1.21.1) branch overrides mouseClicked itself — the one click hook
+    // that fires on both platforms.
+    //? if >=1.21.11 {
     override fun onClick(event: MouseButtonEvent, doubleClick: Boolean) {
         onPress()
         playDownSound(Minecraft.getInstance().soundManager)
     }
+    //?} else
+    /*override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        if (!isValidClickButton(button) || !clicked(mouseX, mouseY)) return false
+        onPress()
+        playDownSound(Minecraft.getInstance().soundManager)
+        return true
+    }*/
 
     override fun draw(g: GuiGraphicsCompat, mouseX: Int, mouseY: Int, partialTick: Float) {
         val sprite = sprites.get(active, isHoveredOrFocused)
+        //? if >=1.21.11 {
         g.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y, width, height, ARGB.white(alpha))
+        //?} else
+        /*g.blitSprite(sprite, x, y, width, height)*/
 
         val iconSide = max(width - 2 * margin, height - 2 * margin)
         val dx = x + width / 2 - iconSide / 2
         val dy = y + height / 2 - iconSide / 2
+        //? if >=1.21.11 {
         g.blitSprite(RenderPipelines.GUI_TEXTURED, icon(), dx, dy, iconSide, iconSide, ARGB.white(alpha))
+        //?} else
+        /*g.blitSprite(icon(), dx, dy, iconSide, iconSide)*/
     }
 
     companion object {

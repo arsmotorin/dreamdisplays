@@ -4,6 +4,7 @@ import com.dreamdisplays.media.player.MediaPlayer
 import com.dreamdisplays.platform.client.render.DisplayTextureResource
 import com.dreamdisplays.platform.client.render.DisplayYuvRenderTypes
 import com.dreamdisplays.platform.client.render.GpuTextureHandle
+import net.minecraft.client.renderer.texture.AbstractTexture
 import org.slf4j.LoggerFactory
 import java.util.UUID
 
@@ -68,15 +69,15 @@ internal class DisplayFrameUploader(private val uuid: UUID) {
             val u = tex.uPlane ?: return false
             val v = tex.vPlane ?: return false
             mp.updateFramePlanar(
-                GpuTextureHandle(y.getTexture()),
-                GpuTextureHandle(u.getTexture()),
-                GpuTextureHandle(v.getTexture()),
+                gpuHandle(y, w, h),
+                gpuHandle(u, (w + 1) / 2, (h + 1) / 2),
+                gpuHandle(v, (w + 1) / 2, (h + 1) / 2),
                 w,
                 h
             )
         } else {
             val texture = tex.texture ?: return false
-            mp.updateFrame(GpuTextureHandle(texture.getTexture()), w, h)
+            mp.updateFrame(gpuHandle(texture, w, h), w, h)
         }
     }
 
@@ -89,16 +90,23 @@ internal class DisplayFrameUploader(private val uuid: UUID) {
             val u = tex.pendingUPlane ?: return false
             val v = tex.pendingVPlane ?: return false
             mp.updateIncomingFramePlanar(
-                GpuTextureHandle(y.getTexture()),
-                GpuTextureHandle(u.getTexture()),
-                GpuTextureHandle(v.getTexture()),
+                gpuHandle(y, w, h),
+                gpuHandle(u, (w + 1) / 2, (h + 1) / 2),
+                gpuHandle(v, (w + 1) / 2, (h + 1) / 2),
                 w,
                 h
             )
         } else {
             val texture = tex.pendingTexture ?: return false
-            mp.updateIncomingFrame(GpuTextureHandle(texture.getTexture()), w, h)
+            mp.updateIncomingFrame(gpuHandle(texture, w, h), w, h)
         }
+    }
+
+    private fun gpuHandle(texture: AbstractTexture, width: Int, height: Int): GpuTextureHandle {
+        //? if >=1.21.11 {
+        return GpuTextureHandle(texture.getTexture())
+        //?} else
+        /*return GpuTextureHandle(texture.getId(), width, height)*/
     }
 
     companion object {

@@ -3,16 +3,13 @@ package com.dreamdisplays.platform.server.meta
 import io.github.arsmotorin.ofrat.FabricOnly
 import io.github.arsmotorin.ofrat.PaperOnly
 
-import com.dreamdisplays.platform.server.Main.Companion.modVersion
-import com.dreamdisplays.platform.server.Main.Companion.pluginLatestVersion
-import com.dreamdisplays.platform.server.Server
 import com.dreamdisplays.platform.server.utils.GitHubFetcherUtil
+import com.dreamdisplays.util.asJsonArrayOrNull
+import com.dreamdisplays.util.asJsonObjectOrNull
 import com.dreamdisplays.util.net.DreamHttpClient
+import com.dreamdisplays.util.optString
 import com.dreamdisplays.util.json.DreamJson
 import org.semver4j.Semver
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import org.slf4j.LoggerFactory
 import java.net.ConnectException
 import java.net.SocketTimeoutException
@@ -41,15 +38,17 @@ object Updater {
 
             val stableVersions = releases.mapNotNull { parseVersion(it.tagName) }
 
-            modVersion = stableVersions.maxOrNull()
+            val latestMod = stableVersions.maxOrNull()
+            setSemverProperty(PAPER_MAIN_CLASS, "modVersion", latestMod)
 
-            pluginLatestVersion = releases
+            val latestPlugin = releases
                 .filter {
                     it.tagName.contains("spigot", ignoreCase = true) ||
                             it.tagName.contains("plugin", ignoreCase = true)
                 }
                 .mapNotNull { parseVersion(it.tagName)?.toString() }
-                .maxOrNull() ?: modVersion?.toString()
+                .maxOrNull() ?: latestMod?.toString()
+            setStringProperty(PAPER_MAIN_CLASS, "pluginLatestVersion", latestPlugin)
 
         } catch (_: UnknownHostException) {
             logger.warn("Cannot reach GitHub (DNS resolution failed). It seems that your hosting environment cannot resolve GitHub's domain.")
@@ -88,15 +87,17 @@ object FabricUpdater {
 
             val stableVersions = releases.mapNotNull { parseVersion(it.tagName) }
 
-            Server.modLatestVersion = stableVersions.maxOrNull()
+            val latestMod = stableVersions.maxOrNull()
+            setSemverProperty(FABRIC_SERVER_CLASS, "modLatestVersion", latestMod)
 
-            Server.pluginLatestVersion = releases
+            val latestPlugin = releases
                 .filter {
                     it.tagName.contains("spigot", ignoreCase = true) ||
                             it.tagName.contains("plugin", ignoreCase = true)
                 }
                 .mapNotNull { parseVersion(it.tagName)?.toString() }
-                .maxOrNull() ?: Server.modLatestVersion?.toString()
+                .maxOrNull() ?: latestMod?.toString()
+            setStringProperty(FABRIC_SERVER_CLASS, "pluginLatestVersion", latestPlugin)
 
         } catch (_: UnknownHostException) {
             logger.warn("Cannot reach GitHub (DNS resolution failed).")
@@ -126,17 +127,46 @@ object FabricUpdater {
         )
         if (response.code != 200) return emptyList()
 
-        return DreamJson.compact.decodeFromString<List<Release>>(response.bodyString())
-            .filter { it.tagName.isNotBlank() }
+        return parseReleases(response.bodyString())
     }
+
+    /** Parses only the GitHub release fields used by the updater; no generated serializer required. */
+    private fun parseReleases(body: String): List<Release> =
+        DreamJson.compact.parseToJsonElement(body)
+            .asJsonArrayOrNull()
+            ?.mapNotNull { element ->
+                val obj = element.asJsonObjectOrNull() ?: return@mapNotNull null
+                Release(
+                    tagName = obj.optString("tag_name").orEmpty(),
+                    name = obj.optString("name").orEmpty(),
+                )
+            }
+            ?.filter { it.tagName.isNotBlank() }
+            ?: emptyList()
 
     /** Extracts a stable semver from a GitHub release tag; returns null for snapshots and unparseable tags. */
     private fun parseVersion(tag: String): Semver? =
         Semver.coerce(tag)?.takeIf { it.isStable() }
 
-    @Serializable
     data class Release(
-        @SerialName("tag_name") val tagName: String = "",
+        val tagName: String = "",
         val name: String = "",
     )
+}
+
+private const val PAPER_MAIN_CLASS = "com.dreamdisplays.platform.server.Main"
+private const val FABRIC_SERVER_CLASS = "com.dreamdisplays.platform.server.Server"
+
+private fun setSemverProperty(className: String, property: String, value: Semver?) {
+    setCompanionProperty(className, property, Semver::class.java, value)
+}
+
+private fun setStringProperty(className: String, property: String, value: String?) {
+    setCompanionProperty(className, property, String::class.java, value)
+}
+
+private fun setCompanionProperty(className: String, property: String, type: Class<*>, value: Any?) {
+    val companion = Class.forName(className).getField("Companion").get(null)
+    companion.javaClass.getMethod("set${property.replaceFirstChar(Char::uppercaseChar)}", type)
+        .invoke(companion, value)
 }

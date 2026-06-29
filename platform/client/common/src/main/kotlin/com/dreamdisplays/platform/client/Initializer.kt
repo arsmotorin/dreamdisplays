@@ -102,6 +102,9 @@ object Initializer {
         /*fun onRenderHud(mc: Minecraft, graphics: GuiGraphics, partialTick: Float) {*/
         if (mc.level == null || mc.player == null) return
         if (MinecraftScreenUtil.currentScreen(mc) != null) return
+        //? if >=1.21.11 {
+        graphics.nextStratum()
+        //?}
         DreamServices.registry.getOrNull<OverlayManager>()
             ?.renderAll(MinecraftOverlayRenderContext(mc, graphics, -1, -1, false, partialTick))
     }

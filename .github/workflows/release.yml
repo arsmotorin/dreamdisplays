@@ -1,6 +1,7 @@
+# Publishing pipeline. Runs only for explicit release tags or a manual maintainer dispatch.
+
 name: Release
 
-# Publishing pipeline. Runs only for explicit release tags or a manual maintainer dispatch.
 on:
   push:
     tags:
@@ -157,7 +158,8 @@ jobs:
 
           minecraft_version = props.get("minecraft.version", mc)
           base_mc = minecraft_version.split("-", 1)[0]
-          publish_mc = "1.21" if base_mc.startswith("1.21.") else base_mc
+          publish_mc = "1.21.1" if base_mc == "1.21.11" else ("1.21" if base_mc == "1.21.1" else base_mc)
+          display_mc = "1.21.1" if base_mc.startswith("1.21.") else base_mc
           curseforge_publishable = (
               re.fullmatch(r"\d+(?:\.\d+)*", minecraft_version) is not None
               and minecraft_version != "1.21.11"
@@ -170,6 +172,7 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write(f"mc={mc}\n")
               f.write(f"publish_mc={publish_mc}\n")
+              f.write(f"display_mc={display_mc}\n")
               f.write(f"curseforge_publishable={str(curseforge_publishable).lower()}\n")
               f.write("mc_versions<<VERSIONS_EOF\n")
               f.write(minecraft_version + "\n")

@@ -14,6 +14,7 @@ pluginManagement {
         maven("https://oss.sonatype.org/content/repositories/snapshots")
         maven("https://maven.neoforged.net/releases")
         maven("https://maven.fabricmc.net/")
+        maven("https://maven.parchmentmc.org")
         maven("https://maven.quiltmc.org/repository/release/")
         maven("https://repo.papermc.io/repository/maven-public/")
     }
@@ -46,6 +47,7 @@ dependencyResolutionManagement {
     repositories {
         mavenCentral()
         maven("https://maven.fabricmc.net/")
+        maven("https://maven.parchmentmc.org")
         maven("https://maven.quiltmc.org/repository/release/")
         maven("https://maven.quiltmc.org/repository/snapshot/")
         maven("https://repo.lostyy.ru/releases")
@@ -74,6 +76,7 @@ include(":platform:server")
 stonecutter {
     create(rootProject) {
         versions(
+            "1.21.1",
             "1.21.11",
             "26.1.2",
             "26.2",

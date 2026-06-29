@@ -18,6 +18,21 @@ private fun scVersion(name: String): String = versionProps.getProperty(name)
 
 private val javaVersion = scVersion("java.version").toInt()
 
+// Some legacy Minecraft targets (e.g. 1.21.1) ship minecraft-dependencies with strictly pins on
+// Apache Commons that conflict with the project's newer versions. When a target declares the pinned
+// commons-compress version, force the whole Apache Commons set to the Minecraft-bundled versions so
+// resolution succeeds with a single version instead of failing on strictly-vs-newer.
+versionProps.getProperty("commons.compress.version")?.let { commonsCompressVersion ->
+    configurations.all {
+        resolutionStrategy.force(
+            "org.apache.commons:commons-compress:$commonsCompressVersion",
+            "commons-codec:commons-codec:1.16.0",
+            "commons-io:commons-io:2.15.1",
+            "org.apache.commons:commons-lang3:3.14.0",
+        )
+    }
+}
+
 java {
     toolchain { languageVersion.set(JavaLanguageVersion.of(javaVersion)) }
 }
@@ -58,6 +73,7 @@ run {
             inputs.dir(sourceDir).withPathSensitivity(PathSensitivity.RELATIVE)
         }
         inputs.property("legacy", legacy)
+        inputs.property("minecraftVersion", minecraftVersion)
         outputs.dir(chiselDir)
         doLast {
             outDir.deleteRecursively()
@@ -66,7 +82,7 @@ run {
             sourceDir.walkTopDown().filter { it.isFile && it.extension == "kt" }.forEach { file ->
                 val target = outDir.resolve(file.relativeTo(sourceDir).path)
                 target.parentFile.mkdirs()
-                target.writeText(if (legacy) chiselToLegacy(file.readLines()) else file.readText())
+                target.writeText(if (legacy) chiselToLegacy(file.readLines(), minecraftVersion) else file.readText())
             }
         }
     }

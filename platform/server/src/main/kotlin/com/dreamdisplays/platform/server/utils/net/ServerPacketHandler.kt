@@ -24,7 +24,9 @@ import kotlinx.coroutines.launch
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerPlayer
+//? if >=1.21.11 {
 import net.minecraft.server.players.NameAndId
+//?}
 import org.semver4j.Semver
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.milliseconds
@@ -77,7 +79,7 @@ object ServerPacketHandler {
 
     /** Streams every display in [player]'s world to them in small staggered batches. */
     fun sendAllDisplays(player: ServerPlayer, server: MinecraftServer) {
-        val playerWorldKey = player.level().dimension().identifier().toString()
+        val playerWorldKey = com.dreamdisplays.platform.server.utils.RegionUtil.getPlayerLevelKey(player)
         val displays = DisplayManager.getDisplays()
             .filterIsInstance<FabricDisplayData>()
             .filter { it.worldKey == playerWorldKey }
@@ -287,7 +289,17 @@ object ServerPacketHandler {
 
     /** Checks if [player] has operator level 2 permissions, which is the threshold for privileged actions. */
     fun isOpLevel2(player: ServerPlayer): Boolean {
-        return player.level().server.playerList.isOp(NameAndId(player.gameProfile))
+        val server =
+            //? if >=1.21.11 {
+            player.level().server
+            //?} else
+            /*player.serverLevel().server*/
+        return server.playerList.isOp(
+            //? if >=1.21.11 {
+            NameAndId(player.gameProfile)
+            //?} else
+            /*player.gameProfile*/
+        )
     }
 }
 

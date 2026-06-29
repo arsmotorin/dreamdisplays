@@ -92,7 +92,7 @@ class SettingsSection(
         val font = Minecraft.getInstance().font
         for (row in rows) {
             if (row.labelHover?.contains(mouseX, mouseY) == true) {
-                g.setComponentTooltipForNextFrame(font, row.tooltip(), anchorX, anchorY)
+                renderTooltip(g, row.tooltip(), anchorX, anchorY)
             }
         }
         for ((button, tooltip) in buttonTooltips) {
@@ -100,8 +100,16 @@ class SettingsSection(
             if (mouseX >= button.x && mouseX < button.x + button.width &&
                 mouseY >= button.y && mouseY < button.y + button.height
             ) {
-                tooltip()?.let { g.setComponentTooltipForNextFrame(font, it, anchorX, anchorY) }
+                tooltip()?.let { renderTooltip(g, it, anchorX, anchorY) }
             }
         }
+    }
+
+    private fun renderTooltip(g: GuiGraphicsCompat, lines: List<Component>, x: Int, y: Int) {
+        val font = Minecraft.getInstance().font
+        //? if >=1.21.11 {
+        g.setComponentTooltipForNextFrame(font, lines, x, y)
+        //?} else
+        /*g.renderComponentTooltip(font, lines, x, y)*/
     }
 }

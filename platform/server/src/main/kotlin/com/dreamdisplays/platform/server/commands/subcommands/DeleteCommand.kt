@@ -63,7 +63,7 @@ object FabricDeleteCommand {
             return 0
         }
 
-        val worldKey = RegionUtil.getLevelKey(player.level())
+        val worldKey = RegionUtil.getPlayerLevelKey(player)
 
         val data = DisplayManager.isContains(worldKey, targetPos)
             ?: return MessageUtil.sendMessage(player, "noDisplay").let { 0 }

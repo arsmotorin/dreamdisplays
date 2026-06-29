@@ -20,10 +20,15 @@ import com.dreamdisplays.media.source.ytdlp.VideoMetadataCache
 import com.dreamdisplays.media.source.ytdlp.VideoTitleCache
 import com.mojang.blaze3d.platform.NativeImage
 import net.minecraft.client.Minecraft
+//? if >=1.21.11 {
 import net.minecraft.client.renderer.RenderPipelines
+//?}
 import net.minecraft.client.renderer.texture.DynamicTexture
 import net.minecraft.network.chat.Component
+//? if >=1.21.11 {
 import net.minecraft.resources.Identifier
+//?} else
+/*import net.minecraft.resources.ResourceLocation as Identifier*/
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.UUID
@@ -98,14 +103,14 @@ class PreviewSection(
             // just-freed texture (otherwise: "Missing resource" + GL_INVALID_OPERATION).
             val texId = ds.textureId
             if (texId != null) {
-                g.blit(RenderPipelines.GUI_TEXTURED, texId, videoX, videoY, 0f, 0f, videoW, videoH, videoW, videoH)
+                blitTexture(g, texId, videoX, videoY, videoW, videoH)
             }
         } else if (ds.isVideoStarted && ds.isYuvTexture) {
             yuvPreview.attach()
             yuvPreview.uploadFrame()
             val previewId = yuvPreview.textureId
             if (previewId != null) {
-                g.blit(RenderPipelines.GUI_TEXTURED, previewId, videoX, videoY, 0f, 0f, videoW, videoH, videoW, videoH)
+                blitTexture(g, previewId, videoX, videoY, videoW, videoH)
             } else {
                 drawWaiting(g, font, x, y, w, h, videoX, videoY, videoW, videoH)
             }
@@ -128,7 +133,7 @@ class PreviewSection(
         videoH: Int,
     ) {
         currentThumbnail()?.let { thumb ->
-            g.blit(RenderPipelines.GUI_TEXTURED, thumb, videoX, videoY, 0f, 0f, videoW, videoH, videoW, videoH)
+            blitTexture(g, thumb, videoX, videoY, videoW, videoH)
             g.fill(videoX, videoY, videoX + videoW, videoY + videoH, 0x80000000.toInt())
         }
         val waiting = Component.translatable("dreamdisplays.ui.waiting").string
@@ -204,6 +209,13 @@ class PreviewSection(
         Thumbnails.get(id)?.let { return it }
         Thumbnails.request(id, YouTubeUrls.thumbnailUrl(id))
         return null
+    }
+
+    private fun blitTexture(g: GuiGraphicsCompat, id: Identifier, x: Int, y: Int, w: Int, h: Int) {
+        //? if >=1.21.11 {
+        g.blit(RenderPipelines.GUI_TEXTURED, id, x, y, 0f, 0f, w, h, w, h)
+        //?} else
+        /*g.blit(id, x, y, 0f, 0f, w, h, w, h)*/
     }
 
     fun close() {
@@ -292,7 +304,10 @@ class PreviewSection(
                 tex?.close()
                 textureId?.let { mc.textureManager.release(it) }
                 val img = NativeImage(NativeImage.Format.RGBA, fw, fh, false)
+                //? if >=1.21.11 {
                 tex = DynamicTexture({ "dreamdisplays:preview" }, img)
+                //?} else
+                /*tex = DynamicTexture(img)*/
                 textureId = Identifier.fromNamespaceAndPath(
                     com.dreamdisplays.platform.client.Initializer.MOD_ID,
                     "preview/${ds.uuid}-${UUID.randomUUID()}",
@@ -303,8 +318,8 @@ class PreviewSection(
                 texH = fh
             }
 
-            TextureUploadUtil.upload(
-                texture = tex.getTexture(),
+            TextureUploadUtil.uploadDynamicTexture(
+                texture = tex,
                 src = buf,
                 w = fw,
                 h = fh,

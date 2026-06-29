@@ -50,7 +50,11 @@ pub unsafe extern "C" fn dd_video_open(
     if argv_blob.is_null() || blob_len == 0 {
         return 0;
     }
-    let blob = std::slice::from_raw_parts(argv_blob, blob_len as usize);
+    let blob = unsafe {
+        // Safety: the caller guarantees argv_blob points to blob_len readable bytes; null
+        // and zero-length inputs are rejected above.
+        std::slice::from_raw_parts(argv_blob, blob_len as usize)
+    };
     catch_unwind(AssertUnwindSafe(|| {
         let Some(pix) = PixFmt::from_u32(pix_fmt) else { return 0; };
         let args: Vec<String> = blob
@@ -80,7 +84,10 @@ pub unsafe extern "C" fn dd_video_read_frame(
     if dst.is_null() {
         return ERR_BAD_ARGS;
     }
-    let dst = std::slice::from_raw_parts_mut(dst, dst_len as usize);
+    let dst = unsafe {
+        // Safety: the caller guarantees dst points to dst_len writable bytes for this call
+        std::slice::from_raw_parts_mut(dst, dst_len as usize)
+    };
     catch_unwind(AssertUnwindSafe(|| {
         sessions().read_frame(handle, dst, brightness_milli)
     }))
@@ -104,7 +111,10 @@ pub unsafe extern "C" fn dd_video_read_frame_rgba(
     if dst.is_null() {
         return ERR_BAD_ARGS;
     }
-    let dst = std::slice::from_raw_parts_mut(dst, dst_len as usize);
+    let dst = unsafe {
+        // Safety: the caller guarantees dst points to dst_len writable bytes for this call
+        std::slice::from_raw_parts_mut(dst, dst_len as usize)
+    };
     catch_unwind(AssertUnwindSafe(|| {
         sessions().read_frame_rgba(handle, dst, brightness_milli)
     }))
@@ -124,7 +134,10 @@ pub unsafe extern "C" fn dd_video_read_frame_i420(handle: i64, dst: *mut u8, dst
     if dst.is_null() {
         return ERR_BAD_ARGS;
     }
-    let dst = std::slice::from_raw_parts_mut(dst, dst_len as usize);
+    let dst = unsafe {
+        // Safety: the caller guarantees dst points to dst_len writable bytes for this call
+        std::slice::from_raw_parts_mut(dst, dst_len as usize)
+    };
     catch_unwind(AssertUnwindSafe(|| sessions().read_frame_i420(handle, dst))).unwrap_or(ERR_IO)
 }
 
@@ -150,8 +163,16 @@ pub unsafe extern "C" fn dd_i420_to_rgba(
     if (src_len as usize) < convert::nv12_frame_size(w, h) || (dst_len as usize) < w * h * 4 {
         return ERR_BAD_ARGS;
     }
-    let src = std::slice::from_raw_parts(src, src_len as usize);
-    let dst = std::slice::from_raw_parts_mut(dst, dst_len as usize);
+    let src = unsafe {
+        // Safety: the caller guarantees src points to src_len readable bytes; size was
+        // validated against the requested frame dimensions above.
+        std::slice::from_raw_parts(src, src_len as usize)
+    };
+    let dst = unsafe {
+        // Safety: The caller guarantees dst points to dst_len writable bytes; size was
+        // validated against the requested frame dimensions above.
+        std::slice::from_raw_parts_mut(dst, dst_len as usize)
+    };
     catch_unwind(AssertUnwindSafe(|| {
         convert::i420_to_rgba32_identity(src, w, h, dst);
         0
@@ -168,7 +189,10 @@ pub unsafe extern "C" fn dd_video_stderr(handle: i64, dst: *mut u8, dst_len: u64
     if dst.is_null() {
         return ERR_BAD_ARGS;
     }
-    let dst = std::slice::from_raw_parts_mut(dst, dst_len as usize);
+    let dst = unsafe {
+        // Safety: the caller guarantees dst points to dst_len writable bytes for this call
+        std::slice::from_raw_parts_mut(dst, dst_len as usize)
+    };
     catch_unwind(AssertUnwindSafe(|| sessions().stderr(handle, dst))).unwrap_or(ERR_IO)
 }
 

@@ -22,11 +22,17 @@ class MinecraftRenderContext(
     override val tickDelta: Float,
 ) : RenderContext {
     /** Camera world X. */
-    override val cameraX: Double get() = camera.position().x
+    override val cameraX: Double get() = cameraPosition().x
 
     /** Camera world Y. */
-    override val cameraY: Double get() = camera.position().y
+    override val cameraY: Double get() = cameraPosition().y
 
     /** Camera world Z. */
-    override val cameraZ: Double get() = camera.position().z
+    override val cameraZ: Double get() = cameraPosition().z
+
+    private fun cameraPosition() =
+        //? if >=1.21.11 {
+        camera.position()
+        //?} else
+        /*camera.getPosition()*/
 }

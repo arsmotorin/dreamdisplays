@@ -28,6 +28,7 @@ run {
 repositories {
     mavenCentral()
     maven("https://maven.fabricmc.net/")
+    maven("https://maven.parchmentmc.org")
     maven("https://maven.quiltmc.org/repository/release/")
     maven("https://maven.quiltmc.org/repository/snapshot/")
     maven("https://repo.lostyy.ru/releases")
@@ -100,7 +101,12 @@ dependencies {
     if (isLegacyObfuscated) {
         "mappings"(loomExt.layered {
             officialMojangMappings()
-            parchment("io.papermc.parchment.data:parchment:${scVersion("minecraft.version")}+build.3")
+            // Older legacy targets (1.21.1) predate the io.papermc.parchment.data coordinates and
+            // ship under org.parchmentmc.data; allow the version to override the default artifact.
+            parchment(
+                stonecutterVersions.getProperty("parchment.dependency")
+                    ?: "io.papermc.parchment.data:parchment:${scVersion("minecraft.version")}+build.3"
+            )
         })
         "modImplementation"("net.fabricmc:fabric-loader:${scVersion("fabric.loader.version")}")
         "modImplementation"("net.fabricmc.fabric-api:fabric-api:${scVersion("fabric.api.version")}")

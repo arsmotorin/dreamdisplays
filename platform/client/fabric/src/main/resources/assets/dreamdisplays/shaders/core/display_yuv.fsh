@@ -44,8 +44,7 @@ void main() {
         y + 2.112402 * u
     ), 0.0, 1.0);
 
-    // Brightness (0..2) arrives halved in the vertex color so it fits a normalized byte
-    vec4 color = vec4(rgb * vertexColor.rgb * 2.0, vertexColor.a) * ColorModulator;
+    vec4 color = vec4(rgb * vertexColor.rgb, vertexColor.a) * ColorModulator;
 
     // Render-distance fog only: fades the display toward the fog color as it nears the view
     // distance, fully gone beyond it. No environmental fog, so nearby displays stay untinted.
