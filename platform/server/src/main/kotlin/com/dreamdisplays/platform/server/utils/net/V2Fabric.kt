@@ -105,6 +105,7 @@ object FabricV2Networking {
                 isAdmin = ServerPacketHandler.isOpLevel2(player),
                 isReportingEnabled = Server.config.settings.webhookUrl.isNotEmpty(),
                 allowedFeatures = ServerFeature.playbackFeatureWires,
+                defaultVolume = Server.config.settings.defaultVolume,
             ),
         )
         ServerPacketHandler.recordVersionAndCheckUpdates(player, hello.modVersion)

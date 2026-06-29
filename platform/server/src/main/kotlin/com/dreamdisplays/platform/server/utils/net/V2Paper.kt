@@ -59,6 +59,7 @@ object PaperV2Networking : PluginMessageListener {
         isAdmin = player.hasPermission(Main.config.permissions.delete),
         isReportingEnabled = Main.config.settings.webhookUrl.isNotEmpty(),
         allowedFeatures = ServerFeature.playbackFeatureWires,
+        defaultVolume = Main.config.settings.defaultVolume,
     )
 
     /** Decodes an envelope frame and dispatches the packet; unknown type ids are skipped. */

@@ -31,6 +31,9 @@ mod_detection_enabled = true
 # Update notifications
 updates = true
 
+# Default volume for new players in percent (0 to 100, default 50)
+default_volume = 50
+
 [reports]
 # Report settings
 # webhook_url is a discord webhook URL for sending reports

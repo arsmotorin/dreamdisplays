@@ -103,7 +103,8 @@ class Config(private val plugin: Main) {
                 min_height = t?.getLong("display.min_height")?.toInt() ?: 1,
                 max_width = t?.getLong("display.max_width")?.toInt() ?: 32,
                 max_height = t?.getLong("display.max_height")?.toInt() ?: 24,
-                max_render_distance = t?.getDouble("display.max_render_distance") ?: 96.0
+                max_render_distance = t?.getDouble("display.max_render_distance") ?: 96.0,
+                default_volume = t?.getLong("display.default_volume")?.toInt()?.coerceIn(0, 100) ?: 50,
             )
         ).apply { initMaterials() }
         storage = StorageSection(
@@ -225,6 +226,8 @@ class Config(private val plugin: Main) {
         val maxWidth get() = display.max_width
         val maxHeight get() = display.max_height
         val maxRenderDistance get() = display.max_render_distance
+        /** Volume in [0, 1] ready for the wire; config stores 0–100 percent. */
+        val defaultVolume get() = display.default_volume / 200f
 
         /** Resolves [Material] names from the TOML, defaulting to diamond axe and black concrete. */
         internal fun initMaterials() {
@@ -258,6 +261,7 @@ class Config(private val plugin: Main) {
             val max_width: Int = 32,
             val max_height: Int = 24,
             val max_render_distance: Double = 96.0,
+            val default_volume: Int = 50,
         )
     }
 
@@ -453,7 +457,8 @@ class FabricConfig { // TODO: merge
                 min_height = t?.getLong("display.min_height")?.toInt() ?: 1,
                 max_width = t?.getLong("display.max_width")?.toInt() ?: 32,
                 max_height = t?.getLong("display.max_height")?.toInt() ?: 24,
-                max_render_distance = t?.getDouble("display.max_render_distance") ?: 96.0
+                max_render_distance = t?.getDouble("display.max_render_distance") ?: 96.0,
+                default_volume = t?.getLong("display.default_volume")?.toInt()?.coerceIn(0, 100) ?: 50,
             )
         )
         storage = StorageSection(
@@ -593,6 +598,8 @@ class FabricConfig { // TODO: merge
         val maxWidth get() = display.max_width
         val maxHeight get() = display.max_height
         val maxRenderDistance get() = display.max_render_distance
+        /** Volume in [0, 1] ready for the wire; config stores 0–100 percent. */
+        val defaultVolume get() = display.default_volume / 200f
 
         data class ReportsConfig(
             val webhook_url: String = "",
@@ -617,6 +624,7 @@ class FabricConfig { // TODO: merge
             val max_width: Int = 32,
             val max_height: Int = 24,
             val max_render_distance: Double = 96.0,
+            val default_volume: Int = 50,
         )
     }
 
@@ -712,6 +720,7 @@ particles = true
 particles_color = "#00FFFF"
 mod_detection_enabled = true
 updates = true
+default_volume = 50
 
 [reports]
 webhook_url = ""

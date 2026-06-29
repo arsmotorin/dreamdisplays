@@ -515,7 +515,7 @@ class DisplayScreen(
     private fun applyModeVolumeDefault(previousMode: PlaybackMode, nextMode: PlaybackMode) {
         if (previousMode == nextMode) return
         if (nextMode != PlaybackMode.SYNCED && nextMode != PlaybackMode.BROADCAST) return
-        if (abs(volume - ClientDisplaySettings.DEFAULT_VOLUME) > VOLUME_DEFAULT_EPSILON) return
+        if (abs(volume - defaultVolumeFor(previousMode)) > VOLUME_DEFAULT_EPSILON) return
         volume = defaultVolumeFor(nextMode)
     }
 
@@ -914,9 +914,10 @@ class DisplayScreen(
         private val logger = LoggerFactory.getLogger("DreamDisplays/DisplayScreen")
 
         /** Initial per-display volume for newly seen displays in [mode]. */
-        internal fun defaultVolumeFor(mode: PlaybackMode): Float = when (mode) {
-            PlaybackMode.SYNCED, PlaybackMode.BROADCAST -> ClientDisplaySettings.DEFAULT_SHARED_MODE_VOLUME
-            else -> ClientDisplaySettings.DEFAULT_VOLUME
+        internal fun defaultVolumeFor(mode: PlaybackMode): Float {
+            val serverDefault = ClientPacketManager.serverSnapshot.defaultVolume
+            if (serverDefault >= 0f) return serverDefault.coerceIn(0f, MAX_SERVER_DEFAULT_VOLUME) // No to bad servers
+            return ClientDisplaySettings.DEFAULT_VOLUME
         }
 
         /** Fallback target quality (pixel height) when none is resolvable. */
@@ -930,5 +931,8 @@ class DisplayScreen(
 
         /** Tolerance for recognizing an untouched legacy default volume. */
         private const val VOLUME_DEFAULT_EPSILON = 0.01f
+
+        /** Maximum server-prescribed default volume accepted by the client (200% in the UI). */
+        private const val MAX_SERVER_DEFAULT_VOLUME = 1.0f
     }
 }

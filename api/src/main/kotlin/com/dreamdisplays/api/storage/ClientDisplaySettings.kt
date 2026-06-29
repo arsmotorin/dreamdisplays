@@ -37,10 +37,7 @@ data class ClientDisplaySettings(
 ) {
 
     companion object {
-        /** Default volume for local displays. The UI presents this as 100%. */
-        const val DEFAULT_VOLUME = 0.5f
-
-        /** Default volume for synced and broadcast displays. The UI presents this as 50%. */
-        const val DEFAULT_SHARED_MODE_VOLUME = 0.25f
+        /** Default volume for all displays. The UI presents this as 50% (slider range is [0, 1] → [0%, 200%]). */
+        const val DEFAULT_VOLUME = 0.25f
     }
 }
