@@ -1,6 +1,6 @@
 package com.dreamdisplays.platform.server.commands.subcommands
 
-import io.github.arsmotorin.ofrat.PaperOnly
+import io.github.arnodoelinger.ofrat.PaperOnly
 import org.bukkit.command.CommandSender
 
 /**

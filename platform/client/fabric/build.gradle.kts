@@ -166,7 +166,7 @@ java {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     compilerOptions.freeCompilerArgs.addAll(
-        "-P", "plugin:io.github.arsmotorin.ofrat:platform=fabric"
+        "-P", "plugin:io.github.arnodoelinger.ofrat:platform=fabric"
     )
 }
 

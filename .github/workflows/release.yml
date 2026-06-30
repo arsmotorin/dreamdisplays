@@ -416,7 +416,7 @@ jobs:
                   {
                       "description": description,
                       "color": 4088314,
-                      "footer": {"text": "@arsmotorin"},
+                      "footer": {"text": "@arnodoelinger"},
                       "thumbnail": {"url": "https://i.imgur.com/p5bOhsj.png"},
                   }
               ],
@@ -436,7 +436,7 @@ jobs:
                               "style": 5,
                               "label": "Read full changelog",
                               "emoji": {"name": "\U0001F4DC"},
-                              "url": f"https://github.com/{os.environ.get('GITHUB_REPOSITORY', 'arsmotorin/dreamdisplays')}/releases/tag/v{version}",
+                              "url": f"https://github.com/{os.environ.get('GITHUB_REPOSITORY', 'arnodoelinger/dreamdisplays')}/releases/tag/v{version}",
                           },
                       ],
                   }

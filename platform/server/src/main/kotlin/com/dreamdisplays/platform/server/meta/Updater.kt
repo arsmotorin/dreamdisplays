@@ -1,7 +1,7 @@
 package com.dreamdisplays.platform.server.meta
 
-import io.github.arsmotorin.ofrat.FabricOnly
-import io.github.arsmotorin.ofrat.PaperOnly
+import io.github.arnodoelinger.ofrat.FabricOnly
+import io.github.arnodoelinger.ofrat.PaperOnly
 
 import com.dreamdisplays.platform.server.utils.GitHubFetcherUtil
 import com.dreamdisplays.util.asJsonArrayOrNull

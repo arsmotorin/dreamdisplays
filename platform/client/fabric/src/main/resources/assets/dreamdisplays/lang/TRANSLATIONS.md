@@ -7,16 +7,16 @@ request!
 
 ## Translated Languages
 
-| Language   | Code | Author          |
-|------------|------|-----------------|
-| English    | en   | arsmotorin      |
-| Polish     | pl   | arsmotorin      |
-| Russian    | ru   | arsmotorin      |
-| Ukrainian  | uk   | arsmotorin      |
-| German     | de   | arsmotorin, AI  |
-| Czech      | cs   | Suppleer, AI    |
-| Belarusian | be   | fosterrrrrr, AI |
-| Hebrew     | he   | Petro1t, AI     |
-| Spanish    | es   | AI              |
-| French     | fr   | AI              |
-| Italian    | it   | AI              |
+| Language   | Code | Author            |
+|------------|------|-------------------|
+| English    | en   | arnodoelinger     |
+| Polish     | pl   | arnodoelinger     |
+| Russian    | ru   | arnodoelinger     |
+| Ukrainian  | uk   | arnodoelinger     |
+| German     | de   | arnodoelinger, AI |
+| Czech      | cs   | Suppleer, AI      |
+| Belarusian | be   | fosterrrrrr, AI   |
+| Hebrew     | he   | Petro1t, AI       |
+| Spanish    | es   | AI                |
+| French     | fr   | AI                |
+| Italian    | it   | AI                |

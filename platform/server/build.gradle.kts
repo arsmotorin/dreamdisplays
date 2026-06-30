@@ -39,7 +39,7 @@ dependencies {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     compilerOptions.freeCompilerArgs.addAll(
-        "-P", "plugin:io.github.arsmotorin.ofrat:platform=paper"
+        "-P", "plugin:io.github.arnodoelinger.ofrat:platform=paper"
     )
 }
 

@@ -1,6 +1,6 @@
 package com.dreamdisplays.platform.server.registrar
 
-import io.github.arsmotorin.ofrat.PaperOnly
+import io.github.arnodoelinger.ofrat.PaperOnly
 
 import com.dreamdisplays.platform.server.Main
 import com.dreamdisplays.platform.server.managers.DisplayManager

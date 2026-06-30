@@ -1,11 +1,11 @@
-If you enjoy Dream Displays, consider [buying me a coffee](https://ko-fi.com/arsmotorin). Every contribution helps keep the project alive!
+If you enjoy Dream Displays, consider [buying me a coffee](https://ko-fi.com/arnodoelinger). Every contribution helps keep the project alive!
 
-[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/arsmotorin)
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/arnodoelinger)
 
 - - -
 
-[![Latest release](https://img.shields.io/github/release/arsmotorin/dreamdisplays.svg)](https://github.com/arsmotorin/dreamdisplays/releases/latest)
-[![License](https://img.shields.io/github/license/arsmotorin/dreamdisplays)](https://github.com/arsmotorin/dreamdisplays/blob/master/LICENSE)
+[![Latest release](https://img.shields.io/github/release/arnodoelinger/dreamdisplays.svg)](https://github.com/arnodoelinger/dreamdisplays/releases/latest)
+[![License](https://img.shields.io/github/license/arnodoelinger/dreamdisplays)](https://github.com/arnodoelinger/dreamdisplays/blob/master/LICENSE)
 [![Discord](http://img.shields.io/discord/1456716690879676501?label=Discord&style=flat&logo=discord)](https://discord.gg/uwMMZ2KWk6)
 
 <div align="center">
@@ -15,7 +15,7 @@ If you enjoy Dream Displays, consider [buying me a coffee](https://ko-fi.com/ars
     <span> | </span>
     <a href="https://www.curseforge.com/minecraft/mc-mods/dreamdisplays">CurseForge</a>
     <span> | </span>
-    <a href="https://github.com/arsmotorin/dreamdisplays">GitHub</a>
+    <a href="https://github.com/arnodoelinger/dreamdisplays">GitHub</a>
     <span> | </span>
     <a href="https://discord.com/invite/uwMMZ2KWk6">Discord</a>
   </div>
@@ -70,6 +70,6 @@ created, type `/display video <link to YouTube video> [language]`
 
 Done! To customize the display, look at it and press `Shift + RMB`
 
-[Read more in our wiki](https://github.com/arsmotorin/dreamdisplays/wiki).
+[Read more in our wiki](https://github.com/arnodoelinger/dreamdisplays/wiki).
 
 ![img](https://i.imgur.com/yyIKdp8.png)

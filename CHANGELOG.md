@@ -63,7 +63,7 @@
 
 ### Fixes
 
-- Fixed incompatibilities with high-quality shaders ([#108](https://github.com/arsmotorin/dreamdisplays/issues/108))
+- Fixed incompatibilities with high-quality shaders ([#108](https://github.com/arnodoelinger/dreamdisplays/issues/108))
 - Fixed unnecessary sync corrections while media is paused or parked
 - Fixed a rare internal service lookup issue that could affect features with multiple service implementations
 
@@ -148,7 +148,7 @@
 
 ### Fixes
 
-- Fixed audio cutting out after about 10 seconds ([#107](https://github.com/arsmotorin/dreamdisplays/pull/107))
+- Fixed audio cutting out after about 10 seconds ([#107](https://github.com/arnodoelinger/dreamdisplays/pull/107))
 - Fixed repeating video playback in local playback mode
 
 ## Server
@@ -193,7 +193,7 @@
 ## Highlights
 
 - Added support for Minecraft 26.2
-- Brought back Minecraft 1.21.11 support ([#91](https://github.com/arsmotorin/dreamdisplays/pull/91))
+- Brought back Minecraft 1.21.11 support ([#91](https://github.com/arnodoelinger/dreamdisplays/pull/91))
 - Added a native Rust media pipeline with `FFmpeg` and in-process LAV decoding
 - Added stable `Vulkan` support for display rendering (`OpenGL` rendering is still supported)
 - Replaced the old synchronization mode with new local, synced, and broadcast playback modes
@@ -205,7 +205,7 @@
 
 ### Features
 - Added support for Minecraft 26.2
-- Brought back Minecraft 1.21.11 support ([#91](https://github.com/arsmotorin/dreamdisplays/pull/91))
+- Brought back Minecraft 1.21.11 support ([#91](https://github.com/arnodoelinger/dreamdisplays/pull/91))
 - Added a new packet protocol v2
 - Added fallback support for protocol v1, but v1 is now deprecated and will be removed in the future
 - Introduced an unstable client-side API that will be scaled in the future
@@ -280,7 +280,7 @@
 - Fixed a critical `Quilt` entry point crash
 - Fixed an ancient `NeoForge` and IntelliJ IDEA compatibility issue
 - Fixed `NeoForge` client shutdown on normal server disconnect
-- Fixed FFmpeg extraction on Linux ([#93](https://github.com/arsmotorin/dreamdisplays/issues/93))
+- Fixed FFmpeg extraction on Linux ([#93](https://github.com/arnodoelinger/dreamdisplays/issues/93))
 - Fixed incompatibility between the popout window and `Vivecraft`
 - Fixed GUI scale handling in the display menu
 - Fixed several shader compatibility issues
@@ -327,7 +327,7 @@
 
 ### Fixes
 
-- Fixed `MariaDB` compatibility issue ([#88](https://github.com/arsmotorin/dreamdisplays/pull/88))
+- Fixed `MariaDB` compatibility issue ([#88](https://github.com/arnodoelinger/dreamdisplays/pull/88))
 - Fixed sending display enabled packets to clients
 - Fixed several `Fabric` server compatibility issues
 - Fixed several small server-side stability issues
@@ -372,7 +372,7 @@
 - Hardware-accelerated `FFmpeg` video decoding
 - Show max 72 recommended videos based on the current video instead of 24
 - Switch from RGBA to RGB24 for improved rendering performance
-- Fix the "You have to look at the display block" error when there is actually display ([#79](https://github.com/arsmotorin/dreamdisplays/issues/79))
+- Fix the "You have to look at the display block" error when there is actually display ([#79](https://github.com/arnodoelinger/dreamdisplays/issues/79))
 
 ## Client
 
@@ -400,12 +400,12 @@
 - Fix cropping at display edges
 - Fix mute logic and allow players to mute displays in sync mode
 - Fix admins can't delete displays through the menu
-- Fix the "You have to look at the display block" error when there is actually display ([#79](https://github.com/arsmotorin/dreamdisplays/issues/79))
-- Fix a strange version number in the menu ([#81](https://github.com/arsmotorin/dreamdisplays/issues/81))
+- Fix the "You have to look at the display block" error when there is actually display ([#79](https://github.com/arnodoelinger/dreamdisplays/issues/79))
+- Fix a strange version number in the menu ([#81](https://github.com/arnodoelinger/dreamdisplays/issues/81))
 - Fix version semantic versioning parsing for mod updates
 - Fix tiled thumbnail rendering in the menu
 - Fix texture race crash in some rare cases
-- Fix a locked quality bug ([#80](https://github.com/arsmotorin/dreamdisplays/issues/80))
+- Fix a locked quality bug ([#80](https://github.com/arnodoelinger/dreamdisplays/issues/80))
 - Fix seek time overwriting the current playback time
 - Fix hanging `yt-dlp` when cookies are unavailable
 
@@ -460,8 +460,8 @@
 - Fix `BufferOverflow` in specific edge cases
 - Fix some edge cases of audio desynchronization after long playback
 - Fix suggestion scroller not showing up when in large menu mode
-- Fix language selector ([#73](https://github.com/arsmotorin/dreamdisplays/issues/73))
-- Fix volume reset after leaving active display distance ([#76](https://github.com/arsmotorin/dreamdisplays/issues/76))
+- Fix language selector ([#73](https://github.com/arnodoelinger/dreamdisplays/issues/73))
+- Fix volume reset after leaving active display distance ([#76](https://github.com/arnodoelinger/dreamdisplays/issues/76))
 - Enhance project structure and code quality in some places
 
 ## Server
@@ -664,8 +664,8 @@
 
 - We've created a [Discord server](https://discord.gg/uwMMZ2KWk6)!
 - Video brightness control
-- Change maximum of render distance to 128 blocks ([#59](https://github.com/arsmotorin/dreamdisplays/issues/59))
-- Change maximum volume to 200% ([#60](https://github.com/arsmotorin/dreamdisplays/issues/60))
+- Change maximum of render distance to 128 blocks ([#59](https://github.com/arnodoelinger/dreamdisplays/issues/59))
+- Change maximum volume to 200% ([#60](https://github.com/arnodoelinger/dreamdisplays/issues/60))
 - Support CurseForge releases
 - Smoother video playback and some optimizations
 
@@ -675,8 +675,8 @@
 - Smoother video playback and some optimizations
 - Video brightness control
 - Store paused state of display
-- Change maximum of render distance to 128 blocks ([#59](https://github.com/arsmotorin/dreamdisplays/issues/59))
-- Change maximum volume to 200% ([#60](https://github.com/arsmotorin/dreamdisplays/issues/60))
+- Change maximum of render distance to 128 blocks ([#59](https://github.com/arnodoelinger/dreamdisplays/issues/59))
+- Change maximum volume to 200% ([#60](https://github.com/arnodoelinger/dreamdisplays/issues/60))
 - Fix playing videos after changing quality
 - Support CurseForge releases
 - Documentation in codebase of the mod
@@ -685,7 +685,7 @@
 
 - Refactors and small improvements
 - Documentation in codebase of the plugin
-- Improve update logic and fix ignoring mod versions ([#63](https://github.com/arsmotorin/dreamdisplays/issues/63))
+- Improve update logic and fix ignoring mod versions ([#63](https://github.com/arnodoelinger/dreamdisplays/issues/63))
 
 # 1.2.0 Release
 

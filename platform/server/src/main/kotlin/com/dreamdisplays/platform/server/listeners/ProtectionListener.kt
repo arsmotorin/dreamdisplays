@@ -5,8 +5,8 @@ import com.dreamdisplays.platform.server.managers.PlayerManager
 import com.dreamdisplays.platform.server.managers.SelectionManager
 import com.dreamdisplays.platform.server.utils.MessageUtil
 import com.dreamdisplays.platform.server.utils.RegionUtil
-import io.github.arsmotorin.ofrat.FabricOnly
-import io.github.arsmotorin.ofrat.PaperOnly
+import io.github.arnodoelinger.ofrat.FabricOnly
+import io.github.arnodoelinger.ofrat.PaperOnly
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer

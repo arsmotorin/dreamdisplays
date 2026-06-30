@@ -63,7 +63,7 @@ internal object DisplayGeometry {
      * the block wins the depth test and the screen reverts to the bare block. A wider gap keeps the
      * quad in front across the whole render distance.
      *
-     * @see <a href="https://github.com/arsmotorin/dreamdisplays/issues/108">Issue #108</a>
+     * @see <a href="https://github.com/arnodoelinger/dreamdisplays/issues/108">Issue #108</a>
      */
     private const val SHADER_SURFACE_OFFSET = 0.016f
 

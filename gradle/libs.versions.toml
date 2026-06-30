@@ -22,8 +22,8 @@ slf4j = "2.0.18"
 
 [libraries]
 jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
-ofratAnnotations = { module = "com.github.arsmotorin.ofrat:ofrat-annotations", version.ref = "ofrat" }
-ofratPlugin = { module = "com.github.arsmotorin.ofrat:ofrat-plugin", version.ref = "ofrat" }
+ofratAnnotations = { module = "com.github.arnodoelinger.ofrat:ofrat-annotations", version.ref = "ofrat" }
+ofratPlugin = { module = "com.github.arnodoelinger.ofrat:ofrat-plugin", version.ref = "ofrat" }
 kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlinxSerializationProtobuf = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinxSerialization" }
 kotlinxSerializationCore = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinxSerialization" }

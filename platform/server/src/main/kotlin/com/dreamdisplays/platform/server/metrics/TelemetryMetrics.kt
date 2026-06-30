@@ -6,7 +6,7 @@ import com.dreamdisplays.platform.server.Main
 import com.dreamdisplays.platform.server.managers.DisplayManager
 import com.dreamdisplays.platform.server.storage.StorageBackend
 import com.dreamdisplays.platform.server.utils.net.V2PlayerTracker
-import io.github.arsmotorin.ofrat.PaperOnly
+import io.github.arnodoelinger.ofrat.PaperOnly
 import org.bstats.bukkit.Metrics
 import org.bstats.charts.AdvancedPie
 import org.bstats.charts.SimplePie

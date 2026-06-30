@@ -3,8 +3,8 @@ package com.dreamdisplays.platform.server.datatypes
 import com.dreamdisplays.api.playback.PlaybackMode
 import com.dreamdisplays.api.display.model.ContentRotation
 import com.dreamdisplays.api.playback.PlaybackPermissions
-import io.github.arsmotorin.ofrat.FabricOnly
-import io.github.arsmotorin.ofrat.PaperOnly
+import io.github.arnodoelinger.ofrat.FabricOnly
+import io.github.arnodoelinger.ofrat.PaperOnly
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.world.phys.AABB

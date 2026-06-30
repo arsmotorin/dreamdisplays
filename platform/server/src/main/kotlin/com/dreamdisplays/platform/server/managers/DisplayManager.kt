@@ -3,8 +3,8 @@ package com.dreamdisplays.platform.server.managers
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.Expiry
-import io.github.arsmotorin.ofrat.FabricOnly
-import io.github.arsmotorin.ofrat.PaperOnly
+import io.github.arnodoelinger.ofrat.FabricOnly
+import io.github.arnodoelinger.ofrat.PaperOnly
 
 import com.dreamdisplays.core.protocol.DreamPacket
 import com.dreamdisplays.platform.server.Main.Companion.config

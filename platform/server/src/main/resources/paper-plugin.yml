@@ -4,7 +4,7 @@ main: com.dreamdisplays.platform.server.Main
 api-version: '${paperMinecraftApi}'
 description: 'Plugin for the Dream Displays mod.'
 authors:
-  - arsmotorin
+  - arnodoelinger
   - INotSleep
   - Kolyakot33
   - Toffikk

@@ -2,8 +2,8 @@ package com.dreamdisplays.platform.server.utils
 
 import com.dreamdisplays.util.net.DreamHttpClient
 import com.dreamdisplays.util.json.DreamJson
-import io.github.arsmotorin.ofrat.FabricOnly
-import io.github.arsmotorin.ofrat.PaperOnly
+import io.github.arnodoelinger.ofrat.FabricOnly
+import io.github.arnodoelinger.ofrat.PaperOnly
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import java.io.IOException

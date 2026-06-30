@@ -1,8 +1,8 @@
 package com.dreamdisplays.platform.server.datatypes
 
 import com.dreamdisplays.platform.server.managers.DisplayManager
-import io.github.arsmotorin.ofrat.FabricOnly
-import io.github.arsmotorin.ofrat.PaperOnly
+import io.github.arnodoelinger.ofrat.FabricOnly
+import io.github.arnodoelinger.ofrat.PaperOnly
 import org.jspecify.annotations.NullMarked
 import java.util.*
 

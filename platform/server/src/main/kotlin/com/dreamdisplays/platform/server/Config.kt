@@ -8,7 +8,7 @@ import org.tomlj.Toml
 import org.tomlj.TomlTable
 import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.server.level.ServerPlayer
-import io.github.arsmotorin.ofrat.*
+import io.github.arnodoelinger.ofrat.*
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.jspecify.annotations.NullMarked
@@ -90,7 +90,7 @@ class Config(private val plugin: Main) {
             updates = SettingsSection.UpdatesConfig(
                 enabled = t?.getBoolean("updates.enabled") ?: true,
                 repo_name = t?.getString("updates.repo_name") ?: "dreamdisplays",
-                repo_owner = t?.getString("updates.repo_owner") ?: "arsmotorin"
+                repo_owner = t?.getString("updates.repo_owner") ?: "arnodoelinger"
             ),
             display = SettingsSection.DisplayConfig(
                 selection_material = t?.getString("display.selection_material") ?: "DIAMOND_AXE",
@@ -245,7 +245,7 @@ class Config(private val plugin: Main) {
         data class UpdatesConfig(
             val enabled: Boolean = true,
             val repo_name: String = "dreamdisplays",
-            val repo_owner: String = "arsmotorin",
+            val repo_owner: String = "arnodoelinger",
         )
 
         /** Display section. */
@@ -444,7 +444,7 @@ class FabricConfig { // TODO: merge
             updates = SettingsSection.UpdatesConfig(
                 enabled = t?.getBoolean("updates.enabled") ?: true,
                 repo_name = t?.getString("updates.repo_name") ?: "dreamdisplays",
-                repo_owner = t?.getString("updates.repo_owner") ?: "arsmotorin"
+                repo_owner = t?.getString("updates.repo_owner") ?: "arnodoelinger"
             ),
             display = SettingsSection.DisplayConfig(
                 selection_material = t?.getString("display.selection_material") ?: "minecraft:diamond_axe",
@@ -609,7 +609,7 @@ class FabricConfig { // TODO: merge
         data class UpdatesConfig(
             val enabled: Boolean = true,
             val repo_name: String = "dreamdisplays",
-            val repo_owner: String = "arsmotorin",
+            val repo_owner: String = "arnodoelinger",
         )
 
         data class DisplayConfig(

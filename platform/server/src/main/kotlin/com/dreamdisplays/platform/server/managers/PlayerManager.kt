@@ -1,7 +1,7 @@
 package com.dreamdisplays.platform.server.managers
 
 import org.semver4j.Semver
-import io.github.arsmotorin.ofrat.*
+import io.github.arnodoelinger.ofrat.*
 import net.minecraft.server.level.ServerPlayer
 import org.bukkit.entity.Player
 import org.jspecify.annotations.NullMarked

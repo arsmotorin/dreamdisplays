@@ -7,7 +7,7 @@ import com.dreamdisplays.platform.server.datatypes.PaperSelectionData
 import com.dreamdisplays.platform.server.datatypes.SelectionData
 import com.dreamdisplays.platform.server.utils.MessageUtil
 import com.dreamdisplays.platform.server.utils.RegionUtil
-import io.github.arsmotorin.ofrat.*
+import io.github.arnodoelinger.ofrat.*
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.server.level.ServerPlayer

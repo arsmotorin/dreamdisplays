@@ -18,7 +18,7 @@ import com.dreamdisplays.platform.server.playback.TimelineManager
 import com.dreamdisplays.platform.server.playback.WatchPartyManager
 import com.dreamdisplays.platform.server.utils.MessageUtil
 import com.dreamdisplays.platform.server.utils.VersionUtil
-import io.github.arsmotorin.ofrat.FabricOnly
+import io.github.arnodoelinger.ofrat.FabricOnly
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking

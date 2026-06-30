@@ -23,7 +23,7 @@ import com.dreamdisplays.core.protocol.WatchPartyStart
 import com.dreamdisplays.platform.server.Server
 import com.dreamdisplays.platform.server.managers.DisplayManager
 import com.dreamdisplays.platform.server.managers.PlayerManager
-import io.github.arsmotorin.ofrat.FabricOnly
+import io.github.arnodoelinger.ofrat.FabricOnly
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerPlayer

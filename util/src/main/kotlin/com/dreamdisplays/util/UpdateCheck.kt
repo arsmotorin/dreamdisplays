@@ -12,7 +12,7 @@ object UpdateCheck {
     private val logger = LoggerFactory.getLogger("DreamDisplays/UpdateCheck")
 
     /** GitHub releases API. */
-    private const val API = "https://api.github.com/repos/arsmotorin/dreamdisplays/releases/latest"
+    private const val API = "https://api.github.com/repos/arnodoelinger/dreamdisplays/releases/latest"
 
     /** Check state. */
     @Volatile
@@ -53,7 +53,7 @@ object UpdateCheck {
                 DreamHttpClient.RequestOptions(
                     headers = DreamHttpClient.headersOf(
                         "User-Agent" to
-                                "DreamDisplays/${GeneralUtil.getModVersion()} (+github.com/arsmotorin/dreamdisplays)",
+                                "DreamDisplays/${GeneralUtil.getModVersion()} (+github.com/arnodoelinger/dreamdisplays)",
                         "Accept" to "application/vnd.github+json",
                     ),
                     connectTimeoutMs = 5_000,

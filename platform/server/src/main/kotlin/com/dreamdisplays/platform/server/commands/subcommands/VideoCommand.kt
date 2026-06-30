@@ -16,8 +16,8 @@ import com.dreamdisplays.platform.server.utils.RegionUtil
 import com.dreamdisplays.platform.server.utils.net.FabricPacketUtil
 import com.dreamdisplays.platform.server.utils.net.ServerPacketHandler
 import com.mojang.brigadier.context.CommandContext
-import io.github.arsmotorin.ofrat.FabricOnly
-import io.github.arsmotorin.ofrat.PaperOnly
+import io.github.arnodoelinger.ofrat.FabricOnly
+import io.github.arnodoelinger.ofrat.PaperOnly
 import kotlinx.coroutines.launch
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.core.BlockPos
