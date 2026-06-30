@@ -445,7 +445,11 @@ jobs:
 
           url = webhook + ("&" if "?" in webhook else "?") + "with_components=true&wait=true"
           data = json.dumps(payload).encode("utf-8")
-          req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+          headers = {
+              "Content-Type": "application/json",
+              "User-Agent": "Mozilla/5.0 (compatible; DreamDisplaysReleaseBot/1.0; +https://github.com/arnodoelinger/dreamdisplays)",
+          }
+          req = urllib.request.Request(url, data=data, headers=headers)
 
           try:
               with urllib.request.urlopen(req) as resp:
