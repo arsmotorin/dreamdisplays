@@ -1,7 +1,7 @@
 package com.dreamdisplays.platform.server.utils.net
 
-import io.github.arnodoelinger.ofrat.FabricOnly
-import io.github.arnodoelinger.ofrat.PaperOnly
+import io.github.arnodoelinger.platformweaver.FabricOnly
+import io.github.arnodoelinger.platformweaver.PaperOnly
 
 import com.dreamdisplays.platform.client.net.Packets
 import com.dreamdisplays.api.display.model.ContentRotation

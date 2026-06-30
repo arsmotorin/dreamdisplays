@@ -1,6 +1,6 @@
 package com.dreamdisplays.platform.server.scheduler
 
-import io.github.arnodoelinger.ofrat.PaperOnly
+import io.github.arnodoelinger.platformweaver.PaperOnly
 
 import com.dreamdisplays.platform.server.utils.PlatformUtil.isFolia
 import org.jspecify.annotations.NullMarked

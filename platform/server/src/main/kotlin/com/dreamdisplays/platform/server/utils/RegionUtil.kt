@@ -1,7 +1,7 @@
 package com.dreamdisplays.platform.server.utils
 
-import io.github.arnodoelinger.ofrat.FabricOnly
-import io.github.arnodoelinger.ofrat.PaperOnly
+import io.github.arnodoelinger.platformweaver.FabricOnly
+import io.github.arnodoelinger.platformweaver.PaperOnly
 
 import net.minecraft.resources.ResourceKey
 //? if >=1.21.11 {

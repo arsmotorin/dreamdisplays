@@ -1,6 +1,6 @@
 package com.dreamdisplays.platform.server.registrar
 
-import io.github.arnodoelinger.ofrat.PaperOnly
+import io.github.arnodoelinger.platformweaver.PaperOnly
 
 import com.dreamdisplays.platform.server.Main
 import com.dreamdisplays.platform.server.utils.net.PacketReceiver

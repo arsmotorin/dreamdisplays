@@ -85,8 +85,8 @@ configurations.register("mappedFabricApiElements") {
 }
 
 dependencies {
-    compileOnly(libs.ofratAnnotations)
-    "kotlinCompilerPluginClasspath"(libs.ofratPlugin)
+    compileOnly(libs.platformweaverAnnotations)
+    "kotlinCompilerPluginClasspath"(libs.platformweaverPlugin)
     compileOnly("io.papermc.paper:paper-api:${scVersion("paper.api.version")}")
     implementation(libs.bstats)
     implementation(libs.tomlj)
@@ -166,7 +166,7 @@ java {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     compilerOptions.freeCompilerArgs.addAll(
-        "-P", "plugin:io.github.arnodoelinger.ofrat:platform=fabric"
+        "-P", "plugin:io.github.arnodoelinger.platformweaver:platform=fabric"
     )
 }
 

@@ -8,7 +8,7 @@ import org.tomlj.Toml
 import org.tomlj.TomlTable
 import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.server.level.ServerPlayer
-import io.github.arnodoelinger.ofrat.*
+import io.github.arnodoelinger.platformweaver.*
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.jspecify.annotations.NullMarked

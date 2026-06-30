@@ -17,7 +17,7 @@ import com.dreamdisplays.platform.server.playback.TimelineManager
 import com.dreamdisplays.platform.server.playback.WatchPartyManager
 import com.dreamdisplays.platform.server.utils.MessageUtil
 import com.dreamdisplays.platform.server.utils.VersionUtil
-import io.github.arnodoelinger.ofrat.PaperOnly
+import io.github.arnodoelinger.platformweaver.PaperOnly
 import net.kyori.adventure.text.TextReplacementConfig
 import org.bukkit.entity.Player
 import org.jspecify.annotations.NullMarked

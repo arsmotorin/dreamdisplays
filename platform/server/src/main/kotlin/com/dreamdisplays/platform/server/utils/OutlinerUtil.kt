@@ -1,6 +1,6 @@
 package com.dreamdisplays.platform.server.utils
 
-import io.github.arnodoelinger.ofrat.PaperOnly
+import io.github.arnodoelinger.platformweaver.PaperOnly
 import org.bukkit.Color
 
 import org.bukkit.Location

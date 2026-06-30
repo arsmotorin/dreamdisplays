@@ -1,6 +1,6 @@
 package com.dreamdisplays.platform.server.utils
 
-import io.github.arnodoelinger.ofrat.PaperOnly
+import io.github.arnodoelinger.platformweaver.PaperOnly
 
 import com.dreamdisplays.util.asJsonArrayOrNull
 import com.dreamdisplays.util.asJsonObjectOrNull

@@ -23,7 +23,7 @@ import com.dreamdisplays.platform.server.registrar.ListenerRegistrar
 import com.dreamdisplays.platform.server.storage.StorageBackend
 import com.dreamdisplays.platform.server.utils.net.FabricV2Networking
 import com.dreamdisplays.platform.server.utils.net.ServerPacketHandler
-import io.github.arnodoelinger.ofrat.*
+import io.github.arnodoelinger.platformweaver.*
 import org.semver4j.Semver
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.fabricmc.api.ModInitializer
@@ -53,7 +53,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * These annotations are used to prevent code duplication and ensure that the plugin is only loaded
  * on the correct platform.
  *
- * @see <a href="https://github.com/arnodoelinger/OFRAT">OFRAT</a>
+ * @see <a href="https://github.com/arnodoelinger/PlatformWeaver">Platform Weaver</a>
  */
 @PaperOnly
 @NullMarked

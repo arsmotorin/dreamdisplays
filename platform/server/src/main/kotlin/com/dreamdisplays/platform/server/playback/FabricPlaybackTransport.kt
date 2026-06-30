@@ -7,7 +7,7 @@ import com.dreamdisplays.platform.server.managers.DisplayManager
 import com.dreamdisplays.platform.server.utils.net.FabricV2Networking
 import com.dreamdisplays.platform.server.utils.net.ServerPacketHandler
 import com.dreamdisplays.platform.server.utils.net.V2PlayerTracker
-import io.github.arnodoelinger.ofrat.FabricOnly
+import io.github.arnodoelinger.platformweaver.FabricOnly
 import net.minecraft.server.MinecraftServer
 import java.util.UUID
 
