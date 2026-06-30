@@ -21,7 +21,7 @@
  * project while the code lives in subprojects; this helper performs the equivalent transform into
  * a generated source directory that the Kotlin source set points at.
  */
-fun chiselToLegacy(lines: List<String>, minecraftVersion: String): String {
+fun chiselSource(lines: List<String>, minecraftVersion: String): String {
     val out = StringBuilder()
     var i = 0
     while (i < lines.size) {
@@ -55,7 +55,7 @@ fun chiselToLegacy(lines: List<String>, minecraftVersion: String): String {
             }
             if (keepIfBranch) {
                 // Recurse so nested directives inside the kept branch are resolved too
-                out.append(chiselToLegacy(ifBranch, minecraftVersion))
+                out.append(chiselSource(ifBranch, minecraftVersion))
             } else {
                 // Comment the inactive branch line-by-line (robust against nested block comments)
                 ifBranch.forEach { out.appendLine("//$$ $it") }
@@ -86,7 +86,7 @@ fun chiselToLegacy(lines: List<String>, minecraftVersion: String): String {
                     if (lastIdx >= 0) {
                         block[block.size - 1] = lastLine.removeRange(lastIdx, lastIdx + 2)
                     }
-                    out.append(chiselToLegacy(block, minecraftVersion))
+                    out.append(chiselSource(block, minecraftVersion))
                 }
                 i = j + 1
             }

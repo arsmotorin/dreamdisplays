@@ -56,13 +56,12 @@ tasks.withType<Jar>().configureEach {
 }
 
 // Stonecutter only versions the root project (dependency selection); the shared Kotlin code lives
-// in subprojects, so Stonecutter never processes the `//? if >=26 { ... //?} else /*...*/`
+// in subprojects, so Stonecutter never processes the `//? if >=26.2 { ... //?} else /*...*/`
 // directives in their source. This transform resolves those directives for the active Minecraft
 // version into a generated source directory that the Kotlin source set compiles instead of the
-// checked-in source. For 26.x the source is already valid, so the transform is a verbatim copy.
+// checked-in source.
 run {
     val minecraftVersion = scVersion("minecraft.version")
-    val legacy = minecraftVersion.startsWith("1.")
 
     val sourceDir = layout.projectDirectory.dir("src/main/kotlin").asFile
     val chiselDir = layout.buildDirectory.dir("generated/chisel/main/kotlin")
@@ -72,7 +71,6 @@ run {
         if (sourceDir.exists()) {
             inputs.dir(sourceDir).withPathSensitivity(PathSensitivity.RELATIVE)
         }
-        inputs.property("legacy", legacy)
         inputs.property("minecraftVersion", minecraftVersion)
         outputs.dir(chiselDir)
         doLast {
@@ -82,19 +80,16 @@ run {
             sourceDir.walkTopDown().filter { it.isFile && it.extension == "kt" }.forEach { file ->
                 val target = outDir.resolve(file.relativeTo(sourceDir).path)
                 target.parentFile.mkdirs()
-                target.writeText(if (legacy) chiselToLegacy(file.readLines(), minecraftVersion) else file.readText())
+                target.writeText(chiselSource(file.readLines(), minecraftVersion))
             }
         }
     }
 
-    // Only redirect the compiled source set to the generated copy for legacy (1.x) targets
-    if (legacy) {
-        extensions.configure<KotlinJvmProjectExtension> {
-            sourceSets.named("main") {
-                kotlin.setSrcDirs(listOf(chiselDir))
-            }
+    extensions.configure<KotlinJvmProjectExtension> {
+        sourceSets.named("main") {
+            kotlin.setSrcDirs(listOf(chiselDir))
         }
-        tasks.withType<KotlinCompile>().configureEach { dependsOn(chiselSource) }
-        tasks.matching { it.name == "sourcesJar" }.configureEach { dependsOn(chiselSource) }
     }
+    tasks.withType<KotlinCompile>().configureEach { dependsOn(chiselSource) }
+    tasks.matching { it.name == "sourcesJar" }.configureEach { dependsOn(chiselSource) }
 }
