@@ -1,3 +1,33 @@
+# 1.8.7 Release
+
+## Highlights
+
+- Hotfix for 1.21.1 servers
+- Fixed video freezing / losing audio after seeking
+- Fixed default volume protocol
+- Better shaders compatibility
+
+## Client
+
+### Improvements
+
+- Enhanced compatibility with specific shaders
+
+### Fixes
+
+- Fixed default volume protocol that was not working
+- Fixed video freezing / losing audio after seeking or pausing when the selected quality isn't actually available ([#121](https://github.com/arnodoelinger/dreamdisplays/issues/121))
+- Fixed video restarting right at the end of a video when the audio track finished a moment before the video did
+- Fixed z-fighting when player is very far away from the display
+
+## Server
+
+### Fixes
+
+- Fixed Java 25 conflict in 1.21.1
+- Fixed default volume protocol that was not working
+- Fixed doubled message about plugin's startup
+
 # 1.8.6 Release
 
 ## Highlights
