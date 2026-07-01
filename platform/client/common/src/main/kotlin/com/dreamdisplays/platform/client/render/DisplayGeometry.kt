@@ -53,7 +53,13 @@ internal object DisplayGeometry {
             sqrt(pos.distSqr(BlockPos(clampedX, clampedY, clampedZ)))
         }
 
-    /** Distance the quad floats in front of the supporting blocks, to avoid z-fighting. */
+    /**
+     * Distance the quad floats in front of the supporting blocks, in local block space. This is a
+     * secondary safety margin only: the primary defense against z-fighting is the GPU polygon-offset
+     * bias baked into the render pipeline itself (see `RenderPipelineCompat.configureDepth` /
+     * `DisplayUnlitRenderTypes`'s `POLYGON_OFFSET_LAYERING`), which operates in depth-buffer units and
+     * so stays effective at any camera distance.
+     */
     private const val SURFACE_OFFSET = 0.008f
 
     /**

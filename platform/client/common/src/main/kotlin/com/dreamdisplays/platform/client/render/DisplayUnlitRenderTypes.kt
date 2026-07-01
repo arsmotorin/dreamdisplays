@@ -68,6 +68,7 @@ object DisplayUnlitRenderTypes {
             .setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
             .setCullState(RenderStateShard.NO_CULL)
             .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
+            .setLayeringState(RenderStateShard.POLYGON_OFFSET_LAYERING)
             .createCompositeState(false)
         return RenderType::class.java.getMethod(
             "create",

@@ -31,6 +31,14 @@ internal object RenderPipelineCompat {
         return builder.build()
     }
 
+    /**
+     * Constant term of the GPU polygon-offset bias applied to display quads (see [configureDepth]).
+     * Matches vanilla's own [net.minecraft.client.renderer.RenderPipelines.WORLD_BORDER] pipeline,
+     * which floats a large flat quad in front of terrain the same way our screen floats in front of
+     * its backing block.
+     */
+    private const val DEPTH_BIAS = 3.0f
+
     /** Configures the depth state of the pipeline. */
     fun configureDepth(builder: RenderPipeline.Builder) {
         val builderClass = builder.javaClass
@@ -39,7 +47,8 @@ internal object RenderPipelineCompat {
         }.getOrNull()
         if (depthStencilStateClass != null) {
             val defaultDepth = depthStencilStateClass.getField("DEFAULT").get(null)
-            builderClass.getMethod("withDepthStencilState", depthStencilStateClass).invoke(builder, defaultDepth)
+            val biasedDepth = withPolygonOffset(depthStencilStateClass, defaultDepth)
+            builderClass.getMethod("withDepthStencilState", depthStencilStateClass).invoke(builder, biasedDepth)
             return
         }
 
@@ -53,6 +62,27 @@ internal object RenderPipelineCompat {
         runCatching {
             builderClass.getMethod("withDepthWrite", Boolean::class.javaPrimitiveType).invoke(builder, true)
         }
+    }
+
+    /**
+     * Rebuilds [defaultDepth] with a small GPU polygon-offset bias (`depthBiasScaleFactor` /
+     * `depthBiasConstant`) so the display quad wins the depth test against the block face directly
+     * behind it.
+     */
+    private fun withPolygonOffset(depthStencilStateClass: Class<*>, defaultDepth: Any): Any {
+        val depthTest = depthStencilStateClass.getMethod("depthTest").invoke(defaultDepth)
+        val writeDepth = depthStencilStateClass.getMethod("writeDepth").invoke(defaultDepth) as Boolean
+        val reversedZ = (depthTest as Enum<*>).name == "GREATER_THAN_OR_EQUAL"
+        val bias = if (reversedZ) DEPTH_BIAS else -DEPTH_BIAS
+
+        val compareOpClass = Class.forName("com.mojang.blaze3d.platform.CompareOp")
+        val ctor = depthStencilStateClass.getConstructor(
+            compareOpClass,
+            Boolean::class.javaPrimitiveType,
+            Float::class.javaPrimitiveType,
+            Float::class.javaPrimitiveType,
+        )
+        return ctor.newInstance(depthTest, writeDepth, bias, bias)
     }
 
     /** True if the current version of Minecraft supports `BindGroupLayout`s. */
