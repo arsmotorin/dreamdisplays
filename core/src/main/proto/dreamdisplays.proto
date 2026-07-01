@@ -76,6 +76,8 @@ message ServerHello {
   optional int32 maxDisplays = 6;
   // WARNING: a default value decoded when value is missing
   repeated string allowedFeatures = 7;
+  // WARNING: a default value decoded when value is missing
+  optional float defaultVolume = 8;
 }
 
 // serial name 'com.dreamdisplays.core.protocol.DisplayInfo'
