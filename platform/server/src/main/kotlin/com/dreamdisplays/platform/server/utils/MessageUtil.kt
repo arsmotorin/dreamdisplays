@@ -6,12 +6,8 @@ import io.github.arnodoelinger.platformweaver.PaperOnly
 import com.dreamdisplays.platform.server.Main
 import com.dreamdisplays.platform.server.Server
 import com.dreamdisplays.util.toJsonString
-import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.HoverEvent
-//? if >=1.21.11 {
-import net.kyori.adventure.text.`object`.ObjectContents
-//?}
 import net.minecraft.core.registries.BuiltInRegistries
 //? if >=1.21.11 {
 import net.minecraft.data.AtlasIds
@@ -115,32 +111,23 @@ object MessageUtil {
         }
         val remaining = rawMessage.substring(lastIndex)
         if (remaining.isNotEmpty()) builder.append(legacySerializer.deserialize(remaining))
-        sender.sendMessage(builder.build())
+        // asComponent() (from ComponentLike) has a stable Component return across versions;
+        // build() is covariantly overridden (BuildableComponent <=1.21.11, Component >=26), whose
+        // differing descriptor would throw NoSuchMethodError on the family this jar wasn't built on.
+        sender.sendMessage(builder.asComponent())
     }
 
     /**
-     * Block items live in the `minecraft:blocks` atlas (`block/<name>`);
-     * pure items live in `minecraft:items` (`item/<name>`).
+     * Block items live in the `minecraft:blocks` atlas (`block/<name>`); pure items live in
+     * `minecraft:items` (`item/<name>`). The sprite / object hover form needs the Adventure API added
+     * in 1.21.11, so it is delegated to [SpriteHoverRenderer] behind a runtime version gate; older
+     * servers fall back to a plain hover-text label so the single jar links on every version.
      */
     @PaperOnly
     private fun materialSpriteComponent(mat: Material): Component {
-        val ns = mat.key().namespace()
-        val name = mat.key().value()
-        //? if >=1.21.11 {
-        val atlas: Key
-        val spriteKey: Key
-        if (mat.isBlock) {
-            atlas = Key.key("minecraft", "blocks")
-            spriteKey = Key.key(ns, "block/$name")
-        } else {
-            atlas = Key.key("minecraft", "items")
-            spriteKey = Key.key(ns, "item/$name")
-        }
-        return Component.`object`(ObjectContents.sprite(atlas, spriteKey))
-            .hoverEvent(HoverEvent.showItem(mat.key(), 1))
-        //?} else
-        /*val key = "$ns:$name"
-        return Component.text(key).hoverEvent(HoverEvent.showText(Component.text(key)))*/
+        if (ServerVersion.isAtLeast_1_21_11) return SpriteHoverRenderer.render(mat)
+        val key = "${mat.key().namespace()}:${mat.key().value()}"
+        return Component.text(key).hoverEvent(HoverEvent.showText(Component.text(key)))
     }
 
     /** Sends a localized message identified by [messageKey] to [player]. */

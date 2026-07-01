@@ -22,6 +22,78 @@ if (isLegacyObfuscatedMinecraft) {
     evaluationDependsOn(":platform:client:fabric")
 }
 
+// The Paper jar is one cross-version artifact (dispatches 1.21.1 through 26.x at runtime via
+// ServerVersion), so it must always be compiled against this pinned Minecraft version: the oldest
+// one on the Java 21 toolchain, matching the paper_build_version calc in .github/workflows/_build.yml.
+// Building it on a newer, Java 25-only version (e.g. 26.2) would bake Java 25 bytecode into the one
+// jar every supported server loads, breaking every Java 21 server (Paper 1.21.1 / 1.21.11).
+val paperPinVersion = "1.21.11"
+run {
+    val pinnedJavaVersion = Properties().apply {
+        rootProject.file("versions/$paperPinVersion/gradle.properties").inputStream().use { input -> load(input) }
+    }.getProperty("java.version")
+    check(pinnedJavaVersion == "21") {
+        "versions/$paperPinVersion/gradle.properties has java.version=$pinnedJavaVersion, expected 21. " +
+            "The paperPinVersion in platform/server/build.gradle.kts must point at a Java 21 version."
+    }
+}
+
+tasks.named("compileKotlin") {
+    doFirst {
+        require(activeStonecutterVersion == paperPinVersion) {
+            "The Paper jar must be compiled with the active Stonecutter version pinned to $paperPinVersion " +
+                "(active is $activeStonecutterVersion). Run the root ':platform:server:buildPaper' task instead " +
+                "of building this module's tasks directly, or switch with " +
+                "./gradlew \"Set active project to $paperPinVersion\" first."
+        }
+    }
+}
+
+if (activeStonecutterVersion == paperPinVersion) {
+    tasks.build {
+        dependsOn(tasks.shadowJar)
+    }
+} else {
+    val buildPaper = tasks.register("buildPaper") {
+        group = "build"
+        description = "Builds the cross-version Paper jar, pinning the active Stonecutter version to " +
+            "$paperPinVersion (currently $activeStonecutterVersion) for a nested Gradle invocation."
+        // The nested invocation below always compiles at paperPinVersion (a legacy/obfuscated target),
+        // which shares :core, :util, :platform:client:common and :platform:client:fabric's chiseled
+        // source + compiled-classes directories with whatever *this* outer invocation is doing at the
+        // currently active version. Two Gradle processes writing Stonecutter-chiseled output for two
+        // different Minecraft versions into the same directory at once corrupts it silently (observed:
+        // client UI widgets resolving the wrong `//? if >=26` branch). Block until every task already
+        // in this invocation's graph for those shared projects has finished before starting the nested
+        // build, so the two never touch the same directory concurrently.
+        mustRunAfter(
+            rootProject.project(":core").tasks,
+            rootProject.project(":util").tasks,
+            rootProject.project(":platform:client:common").tasks,
+            rootProject.project(":platform:client:fabric").tasks,
+        )
+        doLast {
+            val activeFile = rootProject.file("versions/active.txt")
+            val previousVersion = activeFile.readText()
+            activeFile.writeText(paperPinVersion)
+            try {
+                val exitCode = ProcessBuilder(rootProject.file("gradlew").absolutePath, ":platform:server:shadowJar")
+                    .directory(rootProject.projectDir)
+                    .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+                    .redirectError(ProcessBuilder.Redirect.INHERIT)
+                    .start()
+                    .waitFor()
+                check(exitCode == 0) { "Nested Gradle build for the pinned Paper jar failed with exit code $exitCode." }
+            } finally {
+                activeFile.writeText(previousVersion)
+            }
+        }
+    }
+    tasks.named("build") {
+        setDependsOn(listOf(buildPaper))
+    }
+}
+
 repositories {
     if (isLegacyObfuscatedMinecraft) {
         maven(rootProject.layout.projectDirectory.dir(".gradle/loom-cache/remapped_mods"))
@@ -71,10 +143,6 @@ dependencies {
     implementation(libs.caffeine)
 }
 
-tasks.withType<JavaCompile>().configureEach {
-    options.release.set(scVersion("java.version").toInt())
-}
-
 tasks.processResources {
     val projectVersion = version.toString()
     val activeStonecutterVersion = rootProject.file("versions/active.txt").readText().trim()
@@ -95,10 +163,6 @@ tasks.processResources {
 
 tasks.jar {
     enabled = false
-}
-
-tasks.build {
-    dependsOn(tasks.shadowJar)
 }
 
 tasks.shadowJar {
@@ -129,7 +193,6 @@ tasks.shadowJar {
     }
     exclude("org/sqlite/native/Linux-Android/**")
     exclude("org/sqlite/native/Linux-Musl/x86/**")
-    // exclude("org/sqlite/native/FreeBSD/**")
     exclude("org/sqlite/native/Linux/ppc64/**")
     exclude("org/sqlite/native/Linux/riscv64/**")
     exclude("org/sqlite/native/Linux/arm/**")

@@ -45,6 +45,7 @@ jobs:
       stonecutter_versions: ${{ steps.stonecutter_versions.outputs.versions_json }}
       build_stonecutter_versions: ${{ steps.stonecutter_versions.outputs.build_versions_json }}
       primary_stonecutter_version: ${{ steps.stonecutter_versions.outputs.primary_version }}
+      paper_build_version: ${{ steps.stonecutter_versions.outputs.paper_build_version }}
       marketplace_publish_tasks: ${{ steps.stonecutter_versions.outputs.marketplace_tasks_json }}
       native_matrix: ${{ steps.stonecutter_versions.outputs.native_matrix_json }}
       required_native_platforms: ${{ steps.stonecutter_versions.outputs.required_native_platforms }}
@@ -71,10 +72,34 @@ jobs:
           if not versions:
               raise SystemExit("No Stonecutter versions found")
 
+          def read_props(path):
+              props = {}
+              with open(path) as f:
+                  for line in f:
+                      line = line.strip()
+                      if not line or line.startswith("#") or "=" not in line:
+                          continue
+                      key, value = line.split("=", 1)
+                      props[key.strip()] = value.strip()
+              return props
+
+          def version_key(v):
+              return tuple(int(x) if x.isdigit() else 0 for x in v.split("."))
+
+          PAPER_MIN = (1, 21, 11)
+          paper_build_candidates = sorted(
+              v for v in versions
+              if read_props(os.path.join("versions", v, "gradle.properties")).get("java.version") == "21"
+              and version_key(v) >= PAPER_MIN
+          )
+          if not paper_build_candidates:
+              raise SystemExit("No Java 21 Minecraft version >= 1.21.11 available to build the Paper jar")
+          paper_build_version = paper_build_candidates[0]
+
           tasks = (
               [{"kind": "fabric", "mc": version} for version in versions] +
               [{"kind": "neoforge", "mc": version} for version in versions] +
-              [{"kind": "paper", "mc": versions[-1]}]
+              [{"kind": "paper", "mc": paper_build_version}]
           )
 
           native_matrix = [
@@ -130,6 +155,7 @@ jobs:
               f.write(f"versions_json={json.dumps(versions)}\n")
               f.write(f"build_versions_json={json.dumps(build_versions)}\n")
               f.write(f"primary_version={versions[0]}\n")
+              f.write(f"paper_build_version={paper_build_version}\n")
               f.write(f"marketplace_tasks_json={json.dumps(tasks)}\n")
               f.write(f"native_matrix_json={json.dumps(selected_native_matrix)}\n")
               f.write(f"required_native_platforms={' '.join(required_native_platforms)}\n")
@@ -545,11 +571,25 @@ jobs:
         env:
           REQUIRED_NATIVE_PLATFORMS: ${{ needs.metadata.outputs.required_native_platforms }}
 
-      - name: Build with Gradle
+      - name: Build loaders with Gradle
         run: |
           ./gradlew \
             :platform:client:fabric:publishJar \
             :platform:client:neoforge:shadowJar \
+            --no-daemon \
+            --parallel \
+            --build-cache
+        env:
+          DREAMDISPLAYS_REQUIRE_NATIVES: "true"
+          DREAMDISPLAYS_REQUIRED_NATIVE_PLATFORMS: ${{ needs.metadata.outputs.required_native_platforms }}
+          GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Xmx4G
+
+      # The Paper jar is one cross-version artifact built only in the paper_build_version job
+      # (>=1.21.11); it dispatches 1.21.1 and 26.x at runtime, so it is not built per version.
+      - name: Build Paper with Gradle
+        if: matrix.mc == needs.metadata.outputs.paper_build_version
+        run: |
+          ./gradlew \
             :platform:server:shadowJar \
             --no-daemon \
             --parallel \

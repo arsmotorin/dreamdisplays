@@ -168,6 +168,7 @@ jobs:
           paper_1_21 = ["1.21"] + [f"1.21.{p}" for p in range(1, 12)]
           paper_26 = ["26.1", "26.1.1", "26.1.2", "26.2"]
           paper_versions = paper_1_21 + paper_26
+          paper_label = "1.21+"
 
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write(f"mc={mc}\n")
@@ -180,6 +181,7 @@ jobs:
               f.write("paper_versions<<VERSIONS_EOF\n")
               f.write("\n".join(paper_versions) + "\n")
               f.write("VERSIONS_EOF\n")
+              f.write(f"paper_label={paper_label}\n")
           EOF
 
       - name: Extract changelog
@@ -234,7 +236,7 @@ jobs:
         if: needs.build.outputs.is_marketplace_publishable == 'true' && matrix.task.kind == 'paper'
         uses: Kir-Antipov/mc-publish@v3.3
         with:
-          name: 'Dream Displays ${{ needs.build.outputs.pretty_version }} — Paper 1.21+'
+          name: 'Dream Displays ${{ needs.build.outputs.pretty_version }} — Paper ${{ steps.versions.outputs.paper_label }}'
           version: ${{ needs.build.outputs.version }}
           version-type: ${{ needs.build.outputs.is_preview == 'true' && 'alpha' || 'release' }}
           files: build/libs/dreamdisplays-paper-${{ needs.build.outputs.version }}.jar

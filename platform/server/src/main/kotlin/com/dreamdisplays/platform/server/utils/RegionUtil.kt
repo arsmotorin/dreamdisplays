@@ -14,6 +14,7 @@ import net.minecraft.server.level.ServerPlayer
 import org.bukkit.Location
 import org.bukkit.World
 import org.jspecify.annotations.NullMarked
+import java.lang.reflect.Method
 import kotlin.math.max
 import kotlin.math.min
 
@@ -81,10 +82,18 @@ object RegionUtil {
 
     /** Returns the [ServerLevel] of a [ServerPlayer]. */
     private fun playerServerLevel(player: ServerPlayer): ServerLevel =
-        //? if >=1.21.11 {
-        player.level()
-        //?} else
-        /*player.serverLevel()*/
+        serverLevelAccessor.invoke(player) as ServerLevel
+
+    /**
+     * `ServerPlayer.level()` (>=1.21.11) was named `serverLevel()` on older versions. Resolving it
+     * reflectively keeps the single cross-version jar free of a build-time-specific NMS accessor
+     * here (this path is `Fabric`-only in the `Paper` build, but stays version-agnostic for safety).
+     */
+    private val serverLevelAccessor: Method by lazy {
+        arrayOf("level", "serverLevel").firstNotNullOfOrNull { name ->
+            runCatching { ServerPlayer::class.java.getMethod(name) }.getOrNull()
+        } ?: error("ServerPlayer exposes neither level() nor serverLevel().")
+    }
 
     /** Data class describing a region in 3D space. */
     @PaperOnly

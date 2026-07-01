@@ -18,6 +18,18 @@ private fun scVersion(name: String): String = versionProps.getProperty(name)
 
 private val javaVersion = scVersion("java.version").toInt()
 
+private val javaFloor: Int = rootProject.file("versions").listFiles()
+    ?.filter { it.isDirectory }
+    ?.mapNotNull { dir ->
+        dir.resolve("gradle.properties").takeIf { it.isFile }?.let { file ->
+            Properties().apply { file.inputStream().use { load(it) } }.getProperty("java.version")?.toInt()
+        }
+    }
+    ?.minOrNull() ?: javaVersion
+
+private val platformIndependentModules = setOf(":api", ":core", ":util")
+private val bytecodeTarget: Int = if (project.path in platformIndependentModules) javaFloor else javaVersion
+
 // Some legacy Minecraft targets (e.g. 1.21.1) ship minecraft-dependencies with strictly pins on
 // Apache Commons that conflict with the project's newer versions. When a target declares the pinned
 // commons-compress version, force the whole Apache Commons set to the Minecraft-bundled versions so
@@ -43,11 +55,11 @@ extensions.configure<KotlinJvmProjectExtension> {
 
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = Charsets.UTF_8.name()
-    options.release.set(javaVersion)
+    options.release.set(bytecodeTarget)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions.jvmTarget.set(JvmTarget.fromTarget(javaVersion.toString()))
+    compilerOptions.jvmTarget.set(JvmTarget.fromTarget(bytecodeTarget.toString()))
     compilerOptions.optIn.add("com.dreamdisplays.api.DreamDisplaysUnstableApi")
 }
 
