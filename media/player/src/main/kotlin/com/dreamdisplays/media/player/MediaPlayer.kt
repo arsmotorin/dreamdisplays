@@ -56,13 +56,26 @@ class MediaPlayer(
     }
 
     companion object {
+        /** Logger. */
         private val logger = LoggerFactory.getLogger("DreamDisplays/MediaPlayer")
+
+        /** Debug. */
         val DEBUG: Boolean = System.getProperty("dreamdisplays.debug")?.toBoolean() == true
                 || System.getenv("DREAMDISPLAYS_DEBUG").let { it == "1" || it.equals("true", ignoreCase = true) }
+
+        /** Capture samples. */
         var captureSamples: Boolean = true
+
+        /** Sampler counter. */
         internal val samplesIn = AtomicLong()
+
+        /** Frames to GPU. */
         internal val framesToGpu = AtomicLong()
+
+        /** Dropped frames. */
         internal val framesDropped = AtomicLong()
+
+        /** Max fetch retries. */
         private const val MAX_FETCH_RETRIES = 3
 
         /** Hwaccel failures show up within the first few seconds, past this window assume the stream is just unreliable. */
@@ -75,6 +88,14 @@ class MediaPlayer(
         private const val REPEATED_STALL_WINDOW_NS = 90_000_000_000L
 
         /**
+         * The audio and video sides of a VOD are two independent `FFmpeg` processes decoding the same
+         * source, so their organic end-of-stream can land a moment apart. Within this window of the known
+         * duration, the audio pipe reaching EOF is treated as the track finishing normally rather than a
+         * crash, and is left to the video side's own EOS handling instead of triggering a stall recovery.
+         */
+        private const val AUDIO_EOS_NEAR_END_GUARD_NS = 3_000_000_000L
+
+        /**
          * On reappearance, cached replay resumes this far before the saved position. Default 0 =
          * zero rewind: the saved frame is held (no backward jump) while the live source warms up, then live
          * continues forward from the saved position. A non-zero lead trades a short re-watch of cached
@@ -82,7 +103,11 @@ class MediaPlayer(
          */
         private val REPLAY_LEAD_NS: Long =
             (System.getProperty("dreamdisplays.replayLeadMs")?.toLongOrNull()?.coerceAtLeast(0L) ?: 0L) * 1_000_000L
+
+        /** Thread counter. */
         private val INIT_THREAD_COUNTER = AtomicInteger()
+
+        /** Executor. */
         private val INIT_EXECUTOR: ExecutorService = Executors.newFixedThreadPool(
             Runtime.getRuntime().availableProcessors().coerceIn(2, 4),
         ) { r -> daemon(r, "MediaPlayer-init-${INIT_THREAD_COUNTER.incrementAndGet()}") }
@@ -149,7 +174,7 @@ class MediaPlayer(
         getBrightness = { brightness },
         onStreamEnd = ::handleStreamEnd,
         onQualitySwitchAborted = { host.cancelQualityHandoff() },
-        onAudioFailure = { stderr -> handleSessionStall("audio ended: ${MediaUtil.truncate(stderr)}") },
+        onAudioFailure = { stderr -> handleAudioFailure(stderr) },
         renderExecutor = env.renderExecutor,
         uploaderFactory = env.uploaderFactory,
         gpuYuvActive = env.config.gpuYuvActive,
@@ -202,7 +227,7 @@ class MediaPlayer(
      */
     fun park() = safeExecute {
         watchdog.stop()
-        if (!sessionManager.suspend()) watchdog.start() // not parkable after all → keep playing normally
+        if (!sessionManager.suspend()) watchdog.start() // Not parkable after all -> keep playing normally
     }
 
     /** Resumes a [park]ed player from its frozen position. */
@@ -643,6 +668,19 @@ class MediaPlayer(
     }
 
     /**
+     * Filters an audio-pipe-ended notification before treating it as a stall: within
+     * [AUDIO_EOS_NEAR_END_GUARD_NS] of a known VOD duration, the audio side finishing first is expected
+     * (see [AUDIO_EOS_NEAR_END_GUARD_NS]), so it's left to the video side's own normal-EOS handling.
+     */
+    private fun handleAudioFailure(stderr: String) {
+        if (!liveStream && durationHintNanos > 0L && durationHintNanos - clock.currentTime() <= AUDIO_EOS_NEAR_END_GUARD_NS) {
+            logger.debug("$debugLabel Audio pipe ended near VOD end (pos=${clock.currentTime()}, dur=$durationHintNanos); deferring to video EOS.")
+            return
+        }
+        handleSessionStall("audio ended: ${MediaUtil.truncate(stderr)}.")
+    }
+
+    /**
      * Recovers from a session that stopped delivering (video watchdog stall, or the audio process dying on
      * its own while video kept going). A single stall just restarts the same resolved streams — usually a
      * transient hiccup. A second stall shortly after means the restart didn't help, most likely because the
@@ -751,7 +789,7 @@ class MediaPlayer(
                 host.beginQualityHandoff()
                 safeExecute { beginQualitySwitch(newSs, pos) }
             } else {
-                // Nothing decoding (so, just paused): no frames would arrive to drive a handoff, so swap directly.
+                // Nothing decoding (so, just paused): no frames would arrive to drive a handoff, so swap directly
                 host.reloadTexture()
                 safeExecute { clock.seekOffsetNanos = pos }
             }
