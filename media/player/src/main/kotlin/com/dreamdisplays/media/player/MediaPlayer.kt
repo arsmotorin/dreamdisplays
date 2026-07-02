@@ -707,7 +707,12 @@ class MediaPlayer(
             safeExecute { if (!terminated.get()) initialize() }
         } else {
             logger.warn("$debugLabel Stream stalled ($reason); restarting.")
-            safeExecute { startStreams(ss, if (liveStream) 0L else clock.currentTime()) }
+            safeExecute {
+                val pos = if (liveStream) 0L else clock.currentTime()
+                // Restart in place when possible: the picture holds its last frame while the new
+                // session connects, instead of blanking through a blocking teardown.
+                if (!sessionManager.beginSeek(ss, pos, lastQuality, currentHwAccel())) startStreams(ss, pos)
+            }
         }
     }
 
