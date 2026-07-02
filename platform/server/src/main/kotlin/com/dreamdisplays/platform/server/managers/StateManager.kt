@@ -39,6 +39,9 @@ object StateManager {
     private const val SYNC_MIN_INTERVAL_MS = 250L
     private const val PERIODIC_BROADCAST_INTERVAL_MS = 2000L
 
+    /** Sanity ceiling (24h in ns) for client-reported position and duration. */
+    private const val MAX_TIME_NS = 24L * 60 * 60 * 1_000_000_000L
+
     /**
      * Validates a sync [packet] sent by [senderId], updates the per-display state, and applies
      * the rebroadcast rate limit. Returns true when the caller should rebroadcast to other
@@ -70,7 +73,7 @@ object StateManager {
         }
 
         if (packet.currentTime < 0 || packet.limitTime < 0
-            || packet.currentTime > 24L * 60 * 60 * 1_000_000_000L
+            || packet.currentTime > MAX_TIME_NS || packet.limitTime > MAX_TIME_NS
         ) return false
 
         val state = playStates.computeIfAbsent(displayId) { id -> StateData(id) }
