@@ -52,8 +52,13 @@ class DisplayTextureResource(private val uuid: UUID) {
         /** All texture-manager ids backing this allocation (for release). */
         val allIds: List<Identifier> get() = listOfNotNull(textureId) + planeIds
 
-        /** Closes the GPU textures and unregisters them from the texture manager. */
+        /** Set once [release] has run, so a deferred cancel racing a promote can never double-free. */
+        private var released = false
+
+        /** Closes the GPU textures and unregisters them from the texture manager. Render thread only; idempotent. */
         fun release() {
+            if (released) return
+            released = true
             val manager = Minecraft.getInstance().textureManager
             texture?.close()
             listOfNotNull(yPlane, uPlane, vPlane).forEach { it.close() }
@@ -195,7 +200,8 @@ class DisplayTextureResource(private val uuid: UUID) {
     fun discardPendingAsync() {
         val p = pending ?: return
         pending = null
-        Minecraft.getInstance().execute { p.release() }
+        // The render thread may promote p to current concurrently; release it only if it never went live.
+        Minecraft.getInstance().execute { if (p !== current) p.release() }
     }
 
     /** Builds one allocation of [w] x [h] pixels in whichever pipeline mode is currently active. */
