@@ -52,6 +52,11 @@ internal class VideoFramePipe(
     @Volatile
     private var activePrebuffer: FramePrebuffer? = null
 
+    /** When set and true, the reader idles between frames while keeping the process and pipe open — the
+     *  full pipe back-pressures `FFmpeg` into a warm standstill, so a resume continues instantly. */
+    @Volatile
+    private var parked: AtomicBoolean? = null
+
     /**
      * Returns true once a frame is available for upload or has already been uploaded to the GPU texture.
      */
@@ -100,11 +105,12 @@ internal class VideoFramePipe(
     fun start(
         proc: Process, w: Int, h: Int, seekOffsetNanos: Long, sourceFps: Double, stopFlag: AtomicBoolean,
         terminated: AtomicBoolean, getAudioClock: () -> Long, onFirstFrame: () -> Unit, getBrightness: () -> Double,
-        onEos: (stderr: String, normalEos: Boolean) -> Unit,
+        onEos: (stderr: String, normalEos: Boolean) -> Unit, parkFlag: AtomicBoolean? = null,
     ): Thread {
         clear()
         expectedW = w
         expectedH = h
+        parked = parkFlag
         lastFrameReceivedNanos.set(System.nanoTime())
         val frameNs = (1_000_000_000.0 / (sourceFps.takeIf { it > 1.0 } ?: DEFAULT_FPS)).toLong()
         val prebuffer = FramePrebuffer.createIfEnabled(
@@ -173,6 +179,20 @@ internal class VideoFramePipe(
             proc.inputStream.use { input ->
                 val rowBuf = ByteArray(w * 3)
                 while (!terminated.get() && !stopFlag.get()) {
+                    // Parked (warm pause / out of render distance): idle without reading; the full pipe
+                    // back-pressures FFmpeg into a standstill, keeping the decode and connection warm.
+                    val pk = parked
+                    if (pk != null && pk.get()) {
+                        while (pk.get() && !terminated.get() && !stopFlag.get()) {
+                            try {
+                                Thread.sleep(20)
+                            } catch (_: InterruptedException) {
+                                Thread.currentThread().interrupt(); break
+                            }
+                        }
+                        lastFrameReceivedNanos.set(System.nanoTime())
+                        continue
+                    }
                     if (!skipToP6(input)) {
                         normalEos = true; break
                     }

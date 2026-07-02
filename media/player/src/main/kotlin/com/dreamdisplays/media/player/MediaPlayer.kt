@@ -729,14 +729,15 @@ class MediaPlayer(
     }
 
     /**
-     * Pauses at the current position. Parkable VOD sessions stay warm so resume is immediate; other
-     * pipelines fall back to the old cold pause path.
+     * Pauses at the current position. VOD sessions on every pipeline stay warm (decoder / process and
+     * audio line kept open, position frozen) so resume is immediate; only live streams and sessions in
+     * a transitional state (bridge / quality switch) fall back to the cold pause path.
      */
     private fun doPause() {
         if (!sessionManager.isPlaying) return
         if (!liveStream) {
             watchdog.stop()
-            if (sessionManager.suspend()) {
+            if (sessionManager.suspend(allowExternalProcess = true)) {
                 state.set(PlaybackState.PAUSED)
                 return
             }

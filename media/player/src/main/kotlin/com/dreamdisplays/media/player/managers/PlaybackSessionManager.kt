@@ -114,8 +114,8 @@ internal class PlaybackSessionManager(
         /**
          * Launches the video decode (in-process libav, native `FFmpeg`, or pure-JVM `FFmpeg`, in that
          * order of preference) into this channel's pipe. Throws [IOException] when the native session
-         * cannot be opened. Never touches audio or the clock. [parkFlag] is honored only on the in-process
-         * libav path (the warm-parkable one).
+         * cannot be opened. Never touches audio or the clock. [parkFlag] is honored on every path: the
+         * in-process decoder idles in place, and the process paths park via pipe back-pressure.
          */
         fun launch(
             ffmpeg: String, streamSet: ActiveStreams, w: Int, h: Int, offsetNanos: Long,
@@ -145,6 +145,7 @@ internal class PlaybackSessionManager(
                     args = args, w = w, h = h, nv12 = nv12, seekOffsetNanos = offsetNanos, sourceFps = fps,
                     stopFlag = stop, terminated = terminated, getAudioClock = getAudioClock,
                     onFirstFrame = onFirstFrame, getBrightness = getBrightness, onEos = onEos,
+                    parkFlag = parkFlag,
                 ) ?: throw IOException("Native FFmpeg session failed to start")
                 process = null; thread = vt; return
             }
@@ -153,6 +154,7 @@ internal class PlaybackSessionManager(
                 proc = vp, w = w, h = h, seekOffsetNanos = offsetNanos, sourceFps = fps,
                 stopFlag = stop, terminated = terminated, getAudioClock = getAudioClock,
                 onFirstFrame = onFirstFrame, getBrightness = getBrightness, onEos = onEos,
+                parkFlag = parkFlag,
             )
             process = vp; thread = vt
         }
@@ -504,21 +506,31 @@ internal class PlaybackSessionManager(
     private var frozenPositionNanos = -1L
 
     /**
-     * Whether this session can be parked warm (steady in-process-libav playback): no external `FFmpeg`
-     * process to keep fed, no replay bridge or quality switch in flight. Only that path keeps the decoder
-     * open and idle on a held position so a returning display resumes instantly.
+     * Whether this session can be parked warm for out-of-render-distance dormancy: steady
+     * in-process-libav playback only, since a dormant pool member should not keep an external
+     * `FFmpeg` process and its connection tied up for an unbounded time.
      */
-    fun canPark(): Boolean =
-        isPlaying && !terminated.get() && active?.inProcess == true &&
+    fun canPark(): Boolean = canHoldWarm() && active?.inProcess == true
+
+    /**
+     * Whether the session can hold its position warm at all: something is playing, and no replay
+     * bridge or quality switch is in flight. Unlike [canPark] this includes the external-process
+     * pipelines — a full pipe back-pressures `FFmpeg` into a standstill, which is exactly what a
+     * user-initiated pause wants (instant resume, no cold restart).
+     */
+    private fun canHoldWarm(): Boolean =
+        isPlaying && !terminated.get() && active != null &&
                 bridgeCeilingNanos == Long.MAX_VALUE && incoming == null && audioHalf != null
 
     /**
      * Parks the live session: the video + audio reader threads idle in place (decoder + audio line stay
      * open, position frozen), so [resume] continues instantly without re-resolving or cold-decoding.
+     * [allowExternalProcess] extends this to the `FFmpeg`-process pipelines (used for user pause; see
+     * [canPark] for why dormancy parking stays in-process only).
      * Returns false when the session is not in a parkable state (caller should tear down instead).
      */
-    fun suspend(): Boolean {
-        if (!canPark() || parkFlag.get()) return false
+    fun suspend(allowExternalProcess: Boolean = false): Boolean {
+        if (!(if (allowExternalProcess) canHoldWarm() else canPark()) || parkFlag.get()) return false
         parkFlag.set(true)
         audio.pauseForPark()
         active?.pipe?.trimForPark()

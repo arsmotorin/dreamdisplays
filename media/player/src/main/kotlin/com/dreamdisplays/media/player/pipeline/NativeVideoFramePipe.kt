@@ -87,7 +87,8 @@ internal class NativeVideoFramePipe(
     private var lavHandle = 0L
 
     /** When set and true, the reader idles (no decode) while keeping the native session open — used to keep
-     *  the in-process LAV decoder warm while a display is parked out of render distance. Null = not parkable. */
+     *  the decoder warm while a display is warm-paused or parked out of render distance. On the process
+     *  path the full pipe back-pressures FFmpeg into a standstill. Null = not parkable. */
     @Volatile
     private var parked: AtomicBoolean? = null
 
@@ -134,11 +135,13 @@ internal class NativeVideoFramePipe(
         args: List<String>, w: Int, h: Int, nv12: Boolean, seekOffsetNanos: Long, sourceFps: Double,
         stopFlag: AtomicBoolean, terminated: AtomicBoolean, getAudioClock: () -> Long, onFirstFrame: () -> Unit,
         getBrightness: () -> Double, onEos: (stderr: String, normalEos: Boolean) -> Unit,
+        parkFlag: AtomicBoolean? = null,
     ): Thread? {
         release()
         clear()
         expectedW = w
         expectedH = h
+        parked = parkFlag
         lastFrameReceivedNanos.set(System.nanoTime())
 
         val hnd = NativeMedia.videoOpen(args, w, h, nv12)
