@@ -144,7 +144,8 @@ internal class VideoFramePipe(
         terminated: AtomicBoolean, getAudioClock: () -> Long, onFirstFrame: () -> Unit, getBrightness: () -> Double,
         onEos: (stderr: String, normalEos: Boolean) -> Unit, prebuffer: FramePrebuffer?,
     ) {
-        var frameSize = w * h * 3
+        // Dimensions are fixed per session (mismatched frames are skipped in the loop), so the size never changes.
+        val frameSize = w * h * 3
         var spare = surface.allocateFrameBuffer(frameSize)
         surface.recycleFrameBuffer(surface.allocateFrameBuffer(frameSize))
 
@@ -170,7 +171,7 @@ internal class VideoFramePipe(
 
         try {
             proc.inputStream.use { input ->
-                var rowBuf = ByteArray(w * 3)
+                val rowBuf = ByteArray(w * 3)
                 while (!terminated.get() && !stopFlag.get()) {
                     if (!skipToP6(input)) {
                         normalEos = true; break
@@ -186,30 +187,16 @@ internal class VideoFramePipe(
                         }
                         continue
                     }
-                    val requiredFrameSize = w * h * 3
-                    if (rowBuf.size < w * 3) rowBuf = ByteArray(w * 3)
-                    if (frameSize != requiredFrameSize
-                        || spare.capacity() < requiredFrameSize
-                    ) {
-                        frameSize = requiredFrameSize
-                        surface.resetPool()
-                        spare = surface.allocateFrameBuffer(frameSize)
-                        surface.recycleFrameBuffer(surface.allocateFrameBuffer(frameSize))
-                    }
-
-                    if (spare.capacity() < requiredFrameSize) {
-                        spare = surface.takeOrAllocate(requiredFrameSize)
-                    }
                     spare.clear()
-                    if (spare.remaining() < requiredFrameSize) {
-                        logger.warn("$debugLabel Reallocated undersized frame buffer: remaining=${spare.remaining()} required=$requiredFrameSize.")
-                        spare = surface.allocateFrameBuffer(requiredFrameSize)
+                    if (spare.remaining() < frameSize) {
+                        logger.warn("$debugLabel Reallocated undersized frame buffer: remaining=${spare.remaining()} required=$frameSize.")
+                        spare = surface.allocateFrameBuffer(frameSize)
                         spare.clear()
                     }
-                    if (!readFully(input, spare, rowBuf, requiredFrameSize)) {
+                    if (!readFully(input, spare, rowBuf, frameSize)) {
                         normalEos = true; break
                     }
-                    applyBrightness(spare, requiredFrameSize, getBrightness())
+                    applyBrightness(spare, frameSize, getBrightness())
                     spare.flip()
 
                     lastFrameReceivedNanos.set(System.nanoTime())
@@ -224,7 +211,7 @@ internal class VideoFramePipe(
                             popoutFrameSink?.let { sink -> sink(spare, w, h, FramePixelFormat.RGB24); spare.rewind() }
                             videoPts += frameNs; continue
                         }
-                        spare = prebuffer.submit(spare, videoPts, requiredFrameSize)
+                        spare = prebuffer.submit(spare, videoPts, frameSize)
                         if (MediaPlayer.DEBUG) MediaPlayer.samplesIn.incrementAndGet()
                         videoPts += frameNs
                         continue
@@ -242,7 +229,7 @@ internal class VideoFramePipe(
                         videoPts += frameNs; continue
                     }
 
-                    spare = surface.publish(spare, requiredFrameSize)
+                    spare = surface.publish(spare, frameSize)
                     if (MediaPlayer.DEBUG) MediaPlayer.samplesIn.incrementAndGet()
                     if (!firstFrame) {
                         firstFrame = true
