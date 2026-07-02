@@ -513,11 +513,8 @@ class MediaPlayer(
         // A full restart decodes at the current texture's dimensions, so any staged quality handoff
         // (which expects new dimensions) would never match and must be dropped to avoid a frozen frame.
         host.cancelQualityHandoff()
-        val hwAccel =
-            if (env.config.useHwAccel && !hwAccelDisabled) HwAccelBackend.detectDefault()
-            else HwAccelBackend.NONE
         sessionStartNanos = System.nanoTime()
-        sessionManager.start(streamSet, offsetNanos, lastQuality, hwAccel)
+        sessionManager.start(streamSet, offsetNanos, lastQuality, currentHwAccel())
         if (sessionManager.isPlaying) {
             state.set(PlaybackState.PLAYING)
             watchdog.start()
@@ -548,11 +545,8 @@ class MediaPlayer(
      */
     private fun attachLiveToReplay(streamSet: ActiveStreams, liveOffsetNanos: Long): Boolean {
         env.renderExecutor.execute { host.beginQualityHandoff() }
-        val hwAccel =
-            if (env.config.useHwAccel && !hwAccelDisabled) HwAccelBackend.detectDefault()
-            else HwAccelBackend.NONE
         sessionStartNanos = System.nanoTime()
-        if (!sessionManager.attachLiveAfterReplay(streamSet, liveOffsetNanos, lastQuality, hwAccel)) {
+        if (!sessionManager.attachLiveAfterReplay(streamSet, liveOffsetNanos, lastQuality, currentHwAccel())) {
             env.renderExecutor.execute { host.cancelQualityHandoff() }
             return false
         }
@@ -573,11 +567,12 @@ class MediaPlayer(
         hwAccelOverride: HwAccelBackend? = null,
     ) {
         if (terminated.get()) return
-        val hwAccel = hwAccelOverride
-            ?: if (env.config.useHwAccel && !hwAccelDisabled) HwAccelBackend.detectDefault()
-            else HwAccelBackend.NONE
-        sessionManager.beginQualitySwitch(streamSet, offsetNanos, lastQuality, hwAccel)
+        sessionManager.beginQualitySwitch(streamSet, offsetNanos, lastQuality, hwAccelOverride ?: currentHwAccel())
     }
+
+    /** The hardware decode backend for new sessions, honoring config and the per-stream software fallback. */
+    private fun currentHwAccel(): HwAccelBackend =
+        if (env.config.useHwAccel && !hwAccelDisabled) HwAccelBackend.detectDefault() else HwAccelBackend.NONE
 
     /**
      * Stops the watchdog and the current session.
@@ -630,7 +625,8 @@ class MediaPlayer(
         host.mediaError = DreamMediaException.Decode("Unrecoverable stream failure", isFatal = true)
     }
 
-    /** Keeps the existing restart behavior for non-local VOD modes after normal end. */
+    /** Loops non-local VOD modes after a normal end, seeking back to 0 in place when possible so the
+     *  wrap-around holds the last frame instead of blanking through a cold restart. */
     private fun restartFromBeginning() {
         if (!restartPending.compareAndSet(false, true)) return
         safeExecute {
@@ -638,8 +634,10 @@ class MediaPlayer(
                 val ss = streams
                 if (ss != null && !terminated.get() && !host.isPaused) {
                     endedAtEnd.set(false)
-                    clock.reset(0)
-                    startStreams(ss, 0)
+                    if (!sessionManager.beginSeek(ss, 0, lastQuality, currentHwAccel())) {
+                        clock.reset(0)
+                        startStreams(ss, 0)
+                    }
                     events.onSeek()
                 }
             } finally {
@@ -761,7 +759,10 @@ class MediaPlayer(
     }
 
     /**
-     * Moves the seek offset to [nanos] and, if playing, restarts `FFmpeg` from that position.
+     * Moves the seek offset to [nanos]. While playing this is an in-place seek: the picture freezes on
+     * its last frame and jumps once the target's first frame lands, with the old session dismantled in
+     * the background instead of a blocking teardown-then-cold-start. Falls back to a full restart when
+     * the session cannot be seeked in place.
      */
     private fun doSeek(nanos: Long, fire: Boolean) {
         if (!isReady || !seekable) return
@@ -769,7 +770,9 @@ class MediaPlayer(
         if (isPausedWarm()) freezePausedWarmSession()
         clock.seekOffsetNanos = nanos
         val ss = streams ?: return
-        if (sessionManager.isPlaying && !sessionManager.isParked()) startStreams(ss, nanos)
+        if (sessionManager.isPlaying && !sessionManager.isParked()) {
+            if (!sessionManager.beginSeek(ss, nanos, lastQuality, currentHwAccel())) startStreams(ss, nanos)
+        }
         if (fire) events.onSeek()
     }
 

@@ -334,6 +334,78 @@ internal class PlaybackSessionManager(
     }
 
     /**
+     * Seamless in-place seek: silences the old audio, freezes the picture on its last uploaded frame,
+     * and warms the same streams at [offsetNanos] as the new live channel — all without the blocking
+     * teardown-then-cold-start of a full [start]. The old session is dismantled on a background thread
+     * while the new decode is already connecting, and the audio is gated on the new channel's first
+     * presented frame exactly like a normal start. Returns false when the session is in a state that
+     * cannot be seeked in place (bridge / quality switch in flight, parked, not playing); the caller
+     * falls back to a full restart.
+     */
+    fun beginSeek(streamSet: ActiveStreams, offsetNanos: Long, lastQuality: Int, hwAccel: HwAccelBackend): Boolean {
+        if (!isPlaying || terminated.get() || parkFlag.get()) return false
+        if (bridgeCeilingNanos != Long.MAX_VALUE) return false
+        synchronized(switchLock) { if (incoming != null) return false }
+        val old = active ?: return false
+        val ffmpeg = FFmpegBinary.getPath() ?: return false
+
+        // Freeze the picture and cut the sound right away: the old consumer stops presenting within one
+        // poll (the GPU texture keeps the last frame on screen), and the clock parks at the target so the
+        // UI reads the seeked position immediately.
+        old.stop.set(true)
+        val oldAudio = audioHalf
+        audioHalf = null
+        oldAudio?.stop?.set(true)
+        audio.stop()
+        clock.reset(offsetNanos)
+
+        val (w, h) = targetDims(streamSet, lastQuality)
+        val channel = VideoChannel()
+        try {
+            val firstVideoFrame = CountDownLatch(1)
+            channel.launch(ffmpeg, streamSet, w, h, offsetNanos, hwAccel, onFirstFrame = {
+                clock.markFirstFrame()
+                firstVideoFrame.countDown()
+            }, onEos = onStreamEnd, parkFlag = parkFlag)
+            val ap = try {
+                MediaProcess.buildAudio(ffmpeg, streamSet.currentAudio.url, offsetNanos, AudioSink.SAMPLE_RATE)
+            } catch (e: IOException) {
+                channel.teardownProcess()
+                renderExecutor.execute { channel.pipe.cleanup() }
+                throw e
+            }
+            val aStop = AtomicBoolean()
+            val at = audio.start(ap, terminated, aStop, startGate = firstVideoFrame, onUnexpectedEnd = onAudioFailure)
+            synchronized(switchLock) { active = channel }
+            audioHalf = AudioHalf(ap, at, aStop)
+            updateRawFrameSink()
+            // The old halves are already stopping; finish dismantling them off-thread so the new decode
+            // never waits on process destruction or reader joins.
+            discardHalvesAsync(old, oldAudio)
+            return true
+        } catch (e: IOException) {
+            logger.error("$debugLabel Failed to start seek session.", e)
+            // Leave the old (stopping) channel as active: the caller's full restart will tear it down.
+            discardHalvesAsync(null, oldAudio)
+            return false
+        }
+    }
+
+    /** Dismantles a superseded video channel and / or audio half on a background thread. */
+    private fun discardHalvesAsync(video: VideoChannel?, audioHalf: AudioHalf?) {
+        daemon({
+            audioHalf?.let {
+                MediaProcess.gracefulDestroy(it.process)
+                joinSafely(it.thread)
+            }
+            video?.let { ch ->
+                ch.teardownProcess()
+                renderExecutor.execute { ch.pipe.cleanup() }
+            }
+        }, "MediaPlayer-session-discard").start()
+    }
+
+    /**
      * Starts cached replay video alone — no audio, no network — so a reappearing display shows frames
      * instantly. Resumes at [resumeNanos] and plays toward [liveEdgeNanos] (the saved position the live
      * source will resume at). The wall clock is clamped to [liveEdgeNanos] so replay never overruns
