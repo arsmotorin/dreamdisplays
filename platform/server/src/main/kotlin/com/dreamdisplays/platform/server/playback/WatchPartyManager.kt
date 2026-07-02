@@ -76,7 +76,8 @@ object WatchPartyManager {
             state = CREATED,
             timeline = Timeline.start(now, paused = true),
         )
-        sessions[display.id] = session
+        // Two near-simultaneous starts race the hasSession check above; only the first insert wins
+        if (sessions.putIfAbsent(display.id, session) != null) return false
         // The base-mode clock must stop driving the display while the party owns it
         TimelineManager.remove(display.id)
         broadcast(session, now)
