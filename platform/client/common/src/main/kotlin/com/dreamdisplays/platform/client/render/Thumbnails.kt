@@ -17,10 +17,13 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import java.util.Locale
+import java.security.MessageDigest
+import java.security.NoSuchAlgorithmException
+import java.util.HexFormat
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Deferred
@@ -30,7 +33,7 @@ import javax.imageio.ImageIO
 /**
  * Thumbnail manager that handles downloading, caching, and registering YouTube video thumbnails as Minecraft textures.
  * Thumbnails are cached both in memory and on disk (in `config/dreamdisplays/thumb-cache`) with a TTL of 7 days.
- * The cache file names are derived from the video ID, sanitized to be filesystem-safe. Thumbnail downloads and decodes
+ * The cache file names are derived by hashing the video ID, keeping case-sensitive IDs distinct. Thumbnail downloads and decodes
  * are performed asynchronously to avoid blocking the main thread.
  */
 object Thumbnails {
@@ -138,10 +141,16 @@ object Thumbnails {
         }
     }
 
-    /** Returns the cache file for [videoId], using a sanitized lowercase filename. */
-    private fun thumbFile(videoId: String): File {
-        val safe = videoId.lowercase(Locale.ROOT).replace(Regex("[^a-z0-9_-]"), "_")
-        return File(THUMB_CACHE_DIR.toFile(), "$safe.jpg")
+    /** Returns the cache file for [videoId], hashing the raw ID so case-sensitive IDs never collide. */
+    private fun thumbFile(videoId: String): File =
+        File(THUMB_CACHE_DIR.toFile(), hash(videoId) + ".jpg")
+
+    /** Returns a SHA-1 hex digest of [s], falling back to `hashCode` if SHA-1 is unavailable. */
+    private fun hash(s: String): String = try {
+        val md = MessageDigest.getInstance("SHA-1")
+        HexFormat.of().formatHex(md.digest(s.toByteArray(StandardCharsets.UTF_8)))
+    } catch (_: NoSuchAlgorithmException) {
+        Integer.toHexString(s.hashCode())
     }
 
     /** Decodes [bytes] into a [NativeImage], registers it with Minecraft's texture manager, and marks the entry ready. */
@@ -152,8 +161,7 @@ object Thumbnails {
             val tex = DynamicTexture({ "yt-thumb-$videoId" }, image)
             //?} else
             /*val tex = DynamicTexture(image)*/
-            val safe = videoId.lowercase(Locale.ROOT).replace(Regex("[^a-z0-9_]"), "_")
-            val id = Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "yt_thumb/$safe")
+            val id = Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "yt_thumb/${hash(videoId)}")
             Minecraft.getInstance().textureManager.register(id, tex)
             READY.put(videoId, id)
         } catch (e: IOException) {
