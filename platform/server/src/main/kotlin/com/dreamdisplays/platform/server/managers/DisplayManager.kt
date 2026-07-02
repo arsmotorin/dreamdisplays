@@ -390,9 +390,12 @@ object DisplayManager {
         val invalidDisplays = mutableListOf<PaperDisplayData>()
 
         displays.values.filterIsInstance<PaperDisplayData>().forEach { display ->
+            // An unloaded world (e.g. a Multiverse world that loads later) is not an invalid display:
+            // skip it this pass instead of wiping it from the database.
             val world = display.pos1.world
             if (world == null) {
-                invalidDisplays.add(display); return@forEach
+                getInstance().logger.warning("Skipping validation for display ${display.id}: world is not loaded.")
+                return@forEach
             }
 
             var hasBaseMaterial = false
@@ -541,8 +544,11 @@ object DisplayManager {
         val invalidDisplays = mutableListOf<FabricDisplayData>()
 
         displays.values.filterIsInstance<FabricDisplayData>().forEach { display ->
+            // An unloaded dimension is not an invalid display: skip it this pass instead of wiping
+            // it from the database.
             val level = RegionUtil.getLevelByKey(server, display.worldKey) ?: run {
-                invalidDisplays.add(display); return@forEach
+                Server.logger.warn("Skipping validation for display ${display.id}: dimension '${display.worldKey}' is not loaded.")
+                return@forEach
             }
             var hasBaseMaterial = false
             outerLoop@ for (x in display.minX..display.maxX) {
