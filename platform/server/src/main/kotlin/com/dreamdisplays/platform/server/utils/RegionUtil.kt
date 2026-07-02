@@ -14,7 +14,6 @@ import net.minecraft.server.level.ServerPlayer
 import org.bukkit.Location
 import org.bukkit.World
 import org.jspecify.annotations.NullMarked
-import java.lang.reflect.Method
 import kotlin.math.max
 import kotlin.math.min
 
@@ -80,20 +79,17 @@ object RegionUtil {
     @FabricOnly
     fun getPlayerLevelKey(player: ServerPlayer): String = getLevelKey(playerServerLevel(player))
 
-    /** Returns the [ServerLevel] of a [ServerPlayer]. */
-    private fun playerServerLevel(player: ServerPlayer): ServerLevel =
-        serverLevelAccessor.invoke(player) as ServerLevel
-
     /**
-     * `ServerPlayer.level()` (>=1.21.11) was named `serverLevel()` on older versions. Resolving it
-     * reflectively keeps the single cross-version jar free of a build-time-specific NMS accessor
-     * here (this path is `Fabric`-only in the `Paper` build, but stays version-agnostic for safety).
+     * Returns the [ServerLevel] of a [ServerPlayer]. `ServerPlayer.serverLevel()` was renamed to
+     * `level()` (covariant `ServerLevel`) in >=1.21.11. Resolved via a direct, version-gated call so
+     * loom remaps it correctly — a reflective by-name lookup fails in the remapped jar (the method is
+     * intermediary `method_...` there, not the literal `"level"` / `"serverLevel"` string).
      */
-    private val serverLevelAccessor: Method by lazy {
-        arrayOf("level", "serverLevel").firstNotNullOfOrNull { name ->
-            runCatching { ServerPlayer::class.java.getMethod(name) }.getOrNull()
-        } ?: error("ServerPlayer exposes neither level() nor serverLevel().")
-    }
+    private fun playerServerLevel(player: ServerPlayer): ServerLevel =
+        //? if >=1.21.11 {
+        player.level()
+        //?} else
+        /*player.serverLevel()*/
 
     /** Data class describing a region in 3D space. */
     @PaperOnly
