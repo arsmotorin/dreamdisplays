@@ -155,18 +155,24 @@ object Thumbnails {
 
     /** Decodes [bytes] into a [NativeImage], registers it with Minecraft's texture manager, and marks the entry ready. */
     private fun register(videoId: String, bytes: ByteArray) {
+        var image: NativeImage? = null
+        var tex: DynamicTexture? = null
         try {
-            val image = decode(bytes)
+            image = decode(bytes)
             //? if >=1.21.11 {
-            val tex = DynamicTexture({ "yt-thumb-$videoId" }, image)
+            tex = DynamicTexture({ "yt-thumb-$videoId" }, image)
             //?} else
-            /*val tex = DynamicTexture(image)*/
+            /*tex = DynamicTexture(image)*/
             val id = Identifier.fromNamespaceAndPath(Initializer.MOD_ID, "yt_thumb/${hash(videoId)}")
             Minecraft.getInstance().textureManager.register(id, tex)
             READY.put(videoId, id)
-        } catch (e: IOException) {
-            logger.warn("Decode failed for $videoId: ${e.message}")
+        } catch (e: Exception) {
+            // Runs inside a Minecraft.execute task, so nothing may escape onto the main thread.
+            logger.warn("Decode / register failed for $videoId: ${e.message}")
             BYTES.invalidate(videoId)
+            // The texture manager owns the texture only once registration succeeds; closing the
+            // texture also closes its image, so close the bare image only when no texture exists yet.
+            runCatching { tex?.close() ?: image?.close() }
         } finally {
             IN_FLIGHT.invalidate(videoId)
         }
